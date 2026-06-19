@@ -621,14 +621,107 @@
 
 <!-- STORYBOARD MODAL -->
 <div class="modal-bg" id="storyboard-modal">
-  <div class="modal wide">
-    <div class="modal-top"><h3>Storyboard</h3><button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')">✕</button></div>
-    <p class="modal-hint">Sequenza slide: immagine + titolo + nota regia.</p>
-    <div class="sb-slides" id="sb-slides"></div>
-    <button class="btn full" onclick="addSbSlide()" style="margin-top:4px;">+ Aggiungi slide</button>
-    <div class="modal-actions">
+  <div class="modal sb-modal-wide">
+    <!-- Header -->
+    <div class="modal-top">
+      <h3>Slide Builder</h3>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <button class="btn sm" onclick="sbDownloadPNG()" title="Esporta PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          PNG
+        </button>
+        <button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')">✕</button>
+      </div>
+    </div>
+    <!-- 3-col layout -->
+    <div class="sb-builder">
+      <!-- COL 1: Thumbnails -->
+      <div class="sb-nav">
+        <div class="sb-nav-head">
+          <span class="sec-lbl">Slide</span>
+          <button class="btn sm" onclick="addSbSlide()">+</button>
+        </div>
+        <div id="sb-thumbs"></div>
+      </div>
+      <!-- COL 2: Fields + upload -->
+      <div class="sb-fields">
+        <div class="sb-fields-scroll">
+          <div class="sec-lbl" style="margin-bottom:8px;">Contenuto slide</div>
+          <!-- Image upload -->
+          <div class="sb-img-zone" id="sb-img-zone">
+            <input type="file" id="sb-file-inp" accept="image/*" onchange="sbSetImage(this.files[0])"/>
+            <div id="sb-img-preview" style="display:none;position:absolute;inset:0;">
+              <img id="sb-img-el" style="width:100%;height:100%;object-fit:cover;"/>
+              <button class="sb-img-clear" onclick="sbClearImage()">✕</button>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span class="sb-img-lbl">Foto slide (opzionale)</span>
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label>Numero grande</label>
+            <input type="text" id="sb-f-num" placeholder="1." oninput="sbSync()"/>
+          </div>
+          <div class="field">
+            <label>Occhiello</label>
+            <input type="text" id="sb-f-eye" placeholder="CATEGORIA" oninput="sbSync()"/>
+          </div>
+          <div class="field">
+            <label>Titolo</label>
+            <input type="text" id="sb-f-tit" placeholder="Titolo principale" oninput="sbSync()"/>
+          </div>
+          <div class="field">
+            <label>Copy / note regia</label>
+            <textarea id="sb-f-cop" rows="3" placeholder="Descrivi il contenuto…" oninput="sbSync()"></textarea>
+          </div>
+          <div class="sb-style-section">
+            <div class="sec-lbl" style="margin-bottom:8px;">Stile</div>
+            <label class="sb-style-lbl">Sfondo</label>
+            <div class="sb-bg-row">
+              <button class="sb-bg-btn active" data-bg="lined" onclick="sbSetBg('lined',this)">Righe</button>
+              <button class="sb-bg-btn" data-bg="grid" onclick="sbSetBg('grid',this)">Quadr.</button>
+              <button class="sb-bg-btn" data-bg="ivory" onclick="sbSetBg('ivory',this)">Avorio</button>
+              <button class="sb-bg-btn" data-bg="dark" onclick="sbSetBg('dark',this)">Dark</button>
+            </div>
+            <label class="sb-style-lbl" style="margin-top:8px;">Colore numero</label>
+            <div class="sb-color-row">
+              <div class="sb-color-dot active" style="background:#2563eb;" data-c="#2563eb" onclick="sbSetColor('#2563eb',this)"></div>
+              <div class="sb-color-dot" style="background:#e8593c;" data-c="#e8593c" onclick="sbSetColor('#e8593c',this)"></div>
+              <div class="sb-color-dot" style="background:#16a34a;" data-c="#16a34a" onclick="sbSetColor('#16a34a',this)"></div>
+              <div class="sb-color-dot" style="background:#0dff00;border:.5px solid #ccc;" data-c="#0dff00" onclick="sbSetColor('#0dff00',this)"></div>
+              <div class="sb-color-dot" style="background:#1c1c1e;" data-c="#1c1c1e" onclick="sbSetColor('#1c1c1e',this)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- COL 3: Live preview -->
+      <div class="sb-preview-col">
+        <div class="sec-lbl" style="margin-bottom:8px;">Anteprima</div>
+        <div class="sb-fmt-row">
+          <button class="sb-fmt-btn" data-fmt="stories" onclick="sbSetFmt('stories',this)">9:16</button>
+          <button class="sb-fmt-btn active" data-fmt="feed" onclick="sbSetFmt('feed',this)">4:5</button>
+          <button class="sb-fmt-btn" data-fmt="square" onclick="sbSetFmt('square',this)">1:1</button>
+        </div>
+        <div class="sb-preview-wrap">
+          <div class="sb-canvas lined" id="sb-canvas">
+            <div class="sb-binder"><div class="sb-hole"></div><div class="sb-hole"></div><div class="sb-hole"></div></div>
+            <div class="sb-canvas-img" id="sb-canvas-img" style="display:none;"></div>
+            <span class="sb-p-num" id="sb-p-num" style="color:#2563eb;">1.</span>
+            <span class="sb-p-eye" id="sb-p-eye">CATEGORIA</span>
+            <span class="sb-p-tit" id="sb-p-tit">Titolo slide</span>
+            <p class="sb-p-cop" id="sb-p-cop">Corpo del testo.</p>
+          </div>
+        </div>
+        <div class="sb-slide-count" id="sb-slide-count">Slide 1 di 1</div>
+      </div>
+    </div>
+    <!-- Footer actions -->
+    <div class="modal-actions" style="border-top:.5px solid var(--border);margin-top:0;padding-top:12px;">
       <button class="btn sm" onclick="closeModal('storyboard-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="saveStoryboard()">Salva</button>
+      <div style="flex:1;"></div>
+      <button class="btn primary sm" onclick="saveStoryboard()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salva storyboard
+      </button>
     </div>
   </div>
 </div>
