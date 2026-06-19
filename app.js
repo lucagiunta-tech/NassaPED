@@ -1799,6 +1799,13 @@ function showBootOverlay(show){
 /* ════════ CARD EDITORIALE ════════ */
 let edTheme='light', edFmt='feed';
 
+function addPendingSlot(){
+  if(feedAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
+  const items=currentFeedItems();
+  items.unshift({type:'pending',url:'',name:'',date:'',showDate:false,copy:'',linkedStories:[],slides:[]});
+  setFeedItems(items);refreshFeed();autoSave();showToast('✓ Slot aggiunto');
+}
+
 function openEditorialModal(){
   // Pre-fill client name in eyebrow
   const cl=clients[globalClientIdx>=0?globalClientIdx:0];
