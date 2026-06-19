@@ -1409,13 +1409,20 @@ function showBootOverlay(show){
 let pilastri = {};
 
 const PILASTRI_COLORS = [
-  '#185FA5','#3B6D11','#854F0B','#791F1F','#3C3489','#0F6E56','#633806','#27500A'
+  '#006064', // turchese scuro
+  '#004d40', // verde acqua scuro
+  '#616100', // giallo lime scuro
+  '#0dff00', // verde brand
+  '#7f0000', // rosso scuro
+  '#37474f', // grigio blu
+  '#4a148c', // viola scuro
+  '#e65100', // arancio
 ];
 const PILASTRI_DEFAULT = [
-  {name:'Educativo',    color:'#185FA5', description:'Tutorial, spiegazioni, come funziona'},
-  {name:'Istituzionale',color:'#3B6D11', description:'Azienda, team, valori, storia'},
-  {name:'Promozionale', color:'#854F0B', description:'Offerte, prodotti, servizi'},
-  {name:'Ispirazionale',color:'#3C3489', description:'Citazioni, storie, emozioni'},
+  {name:'Educativo',    color:'#006064', description:'Tutorial, spiegazioni, come funziona'},
+  {name:'Istituzionale',color:'#004d40', description:'Azienda, team, valori, storia'},
+  {name:'Promozionale', color:'#616100', description:'Offerte, prodotti, servizi'},
+  {name:'Ispirazionale',color:'#0dff00', description:'Citazioni, storie, emozioni'},
 ];
 
 function getPilastri(clientName){
