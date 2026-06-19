@@ -5,12 +5,19 @@
 
 const SUPABASE_URL = 'https://eusxreazwqmwtsdbhhjr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1c3hyZWF6d3Ftd3RzZGJoaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDA0NTQsImV4cCI6MjA5NzQxNjQ1NH0.9ekxNnt9wGzEeGexUP_0mZGGsa-YIPZs5zblu-_OECg';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
 
 let dbx = null;
 let lastStateStr = '';
 
 async function initBackend() {
+  if (window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } else {
+    alert("Errore critico: Impossibile connettersi al database (Supabase non caricato). Fai un hard-refresh della pagina (Ctrl+Shift+R) o disattiva l'adblocker.");
+    return;
+  }
+
   const syncBtn = document.getElementById('dbx-sync-btn');
   const loginBtn = document.getElementById('dbx-login-btn');
   
