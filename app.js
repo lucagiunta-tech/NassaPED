@@ -1389,7 +1389,7 @@ function showBootOverlay(show){
     if(!ov){
       ov=document.createElement('div');ov.id='boot-overlay';
       ov.style.cssText='position:fixed;inset:0;background:var(--bg,#f5f5f7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .3s;';
-      const logo=document.createElement('div');logo.style.cssText='width:48px;height:48px;background:#0dff00;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#003d00;font-size:22px;font-weight:700;';logo.textContent='N';
+      const logo=document.createElement('div');logo.style.cssText='width:48px;height:48px;background:#0dff00;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#111;font-size:22px;font-weight:700;';logo.textContent='N';
       const txt=document.createElement('div');txt.style.cssText='font-size:13px;color:#6b6b6b;font-family:Inter,sans-serif;';txt.textContent='Caricamento dati…';
       const dot=document.createElement('div');dot.style.cssText='display:flex;gap:6px;';
       for(let i=0;i<3;i++){const d=document.createElement('div');d.style.cssText='width:7px;height:7px;border-radius:50%;background:#0dff00;opacity:.3;animation:bounce .8s ease-in-out '+(i*0.15)+'s infinite alternate;';dot.appendChild(d);}
