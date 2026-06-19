@@ -1195,7 +1195,14 @@ function renderPEDCal(){
 
 /* PIANO TESTO */
 function rebuildNotesSelects(){
-  const csel=document.getElementById('notes-client-sel');if(!csel)return;const prev=csel.value;csel.innerHTML='<option value="">— Cliente —</option>';clients.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.name;csel.appendChild(o);});if(prev)csel.value=prev;
+  // Sync notesClientIdx from globalClientIdx if not set
+  if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;
+  // Update hidden select for compat
+  const csel=document.getElementById('notes-client-sel');
+  if(csel){csel.innerHTML='<option value="">— Cliente —</option>';clients.forEach((cl,i)=>{const o=document.createElement('option');o.value=i;o.textContent=cl.name;csel.appendChild(o);});if(notesClientIdx>=0)csel.value=notesClientIdx;}
+  // Update visible client name
+  const nameEl=document.getElementById('notes-client-display');
+  if(nameEl)nameEl.textContent=notesClientIdx>=0&&clients[notesClientIdx]?clients[notesClientIdx].name:'— Seleziona cliente —';
   const msel=document.getElementById('notes-month-sel');if(!msel)return;if(notesClientIdx<0){msel.style.display='none';return;}
   msel.style.display='';const prevM=msel.value;msel.innerHTML='';
   // Build month list from actual notesData keys + current MONTH_OPTIONS
@@ -1214,6 +1221,8 @@ function renderNotesEditor(){
   const cl=clients[notesClientIdx];if(!cl)return;
   const key=cl.name+'|||'+notesMonth;
   ed.value=notesData[key]||'';
+  // Update display name in sel row
+  const nameEl=document.getElementById('notes-client-display');if(nameEl)nameEl.textContent=cl.name;
   // Update status bar
   const cs=document.getElementById('notes-client-status');if(cs)cs.textContent=cl.name;
   const ms=document.getElementById('notes-month-status');if(ms)ms.textContent=notesMonth;
