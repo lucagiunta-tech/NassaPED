@@ -261,8 +261,12 @@
     <!-- Context bar row 1: selectors + months + format -->
     <div class="feed-ctx-bar">
       <div class="feed-ctx-row1">
-        <select id="feed-client-sel" class="ctx-select" onchange="onFeedClientChange()"><option value="">— Cliente —</option></select>
-        <select id="feed-account-sel" class="ctx-select" onchange="onFeedAccountChange()" style="display:none;"></select>
+        <!-- Client comes from global context — show name only -->
+        <span class="notes-client-name" id="feed-client-display">—</span>
+        <!-- Hidden for JS compat -->
+        <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">— Cliente —</option></select>
+        <!-- Account selector — visible -->
+        <select id="feed-account-sel" class="ctx-select" onchange="onFeedAccountChange()"></select>
         <div class="ctx-divider"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
         <div class="ctx-fmt-badge" id="feed-fmt-badge">Instagram · 4:5</div>
