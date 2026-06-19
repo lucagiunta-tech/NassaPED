@@ -899,7 +899,6 @@ function toggleStoriesPanel(){
 }
 
 function openStoryboardModal(idx){
-  // Sync stories context if needed
   if(storiesClientIdx<0&&globalClientIdx>=0){
     storiesClientIdx=globalClientIdx;
     storiesAccountIdx=clients[globalClientIdx]?.accounts?.length>0?0:-1;
@@ -907,8 +906,19 @@ function openStoryboardModal(idx){
   if(!storiesMonth)storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
   sbEditIdx=idx;
   const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;
-  sbTmpSlides=st?.isStoryboard?(st.slides||[]).map(s=>({...s})):[];
-  renderSbSlides();openModal('storyboard-modal');
+  // Init slides — preserve existing or start fresh
+  sbTmpSlides=st?.isStoryboard&&st.slides?.length
+    ?(st.slides||[]).map(s=>({...s,blobUrl:'',_file:null}))
+    :[{url:'',blobUrl:'',num:'1.',eye:'',title:'',note:'',_file:null}];
+  sbCurSlide=0;sbBg='lined';sbColor='#2563eb';sbFmt='feed';
+  openModal('storyboard-modal');
+  // Render after modal is visible
+  setTimeout(()=>{
+    renderSbBuilder();
+    // Reset format to feed default
+    sbSetFmt('feed',document.querySelector('[data-fmt="feed"]'));
+    document.getElementById('sb-p-num').style.color=sbColor;
+  },0);
 }
 async function saveStoryboard(){
   if(!sbTmpSlides.length){showToast('Aggiungi almeno una slide','warn');return;}
@@ -932,12 +942,17 @@ async function saveStoryboard(){
       }catch(e){console.warn('Storyboard slide upload failed',e);}
     }
   }
+  // Clean slides before saving (remove blob URLs and file refs)
+  const cleanSlides=sbTmpSlides.map(s=>({
+    url:s.externalUrl||s.url||'',externalUrl:s.externalUrl||'',
+    num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',name:s.name||''
+  }));
   const arr=currentStoryItems();
   if(sbEditIdx!==null&&sbEditIdx>=0&&sbEditIdx<arr.length){
-    arr[sbEditIdx].slides=sbTmpSlides.map(s=>({...s}));
-    arr[sbEditIdx].url=sbTmpSlides[0].url||'';arr[sbEditIdx].isStoryboard=true;
+    arr[sbEditIdx].slides=cleanSlides;
+    arr[sbEditIdx].url=cleanSlides[0]?.url||'';arr[sbEditIdx].isStoryboard=true;
   }else{
-    arr.push({type:'image',url:sbTmpSlides[0].url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:sbTmpSlides.map(s=>({...s}))});
+    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides});
   }
   setStoryItems(arr);closeModal('storyboard-modal');refreshStories()
   showToast('✓ Storyboard salvato');
