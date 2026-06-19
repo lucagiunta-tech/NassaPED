@@ -197,6 +197,35 @@ let MONTH_OPTIONS = monthsForYear(CUR_YEAR);
 
 function monthsForYear(year) { return MONTHS.map(m => m + ' ' + year); }
 
+/* Platform → format mapping */
+const PLATFORM_FORMAT = {
+  'Instagram':  {ratio:'4/5', label:'Instagram · 4:5',  cols:4, cssRatio:'4/5'},
+  'Facebook':   {ratio:'1/1', label:'Facebook · 1:1',   cols:4, cssRatio:'1/1'},
+  'LinkedIn':   {ratio:'1/1', label:'LinkedIn · 1:1',   cols:4, cssRatio:'1/1'},
+  'YouTube':    {ratio:'16/9',label:'YouTube · 16:9',   cols:3, cssRatio:'16/9'},
+  'TikTok':     {ratio:'9/16',label:'TikTok · 9:16',    cols:5, cssRatio:'9/16'},
+  'Altro':      {ratio:'4/5', label:'4:5',              cols:4, cssRatio:'4/5'},
+};
+function getPlatformFormat(){
+  const acc=getAccount(feedClientIdx,feedAccountIdx);
+  return PLATFORM_FORMAT[acc?.platform]||PLATFORM_FORMAT['Instagram'];
+}
+function updateFeedFormat(){
+  const fmt=getPlatformFormat();
+  // Update badge
+  const badge=document.getElementById('feed-fmt-badge');
+  if(badge)badge.textContent=fmt.label;
+  // Update grid columns and cell aspect ratio
+  const grid=document.getElementById('feed-grid');
+  if(grid){
+    grid.style.gridTemplateColumns='repeat('+fmt.cols+',1fr)';
+    // Update CSS variable for cell aspect ratio
+    grid.style.setProperty('--cell-ratio',fmt.cssRatio);
+  }
+  // Update cell-wrap aspect ratio via CSS var
+  document.documentElement.style.setProperty('--feed-cell-ratio',fmt.cssRatio);
+}
+
 /* KEY HELPERS */
 function accountKey(accountId, month) { return accountId + '|||' + month; }
 function getAccount(ci, ai) { return clients[ci]?.accounts?.[ai] || null; }
@@ -355,7 +384,7 @@ function switchTab(tab){
   if(sAdd)sAdd.style.display='none';if(sFeed)sFeed.style.display=tab==='feed'?'flex':'none';if(sSt)sSt.style.display=tab==='stories'?'flex':'none';
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
   if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesEditor();}
-  if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
+  if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
   if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
   if(tab==='ped'){if(typeof renderPED==='function')renderPED();}
   if(tab==='pilastri'){renderPilastri();}
@@ -428,7 +457,7 @@ function rebuildStudioAccountSelect(){const sel=document.getElementById('na-clie
 /* FEED SELECTORS */
 function onFeedClientChange(){const v=document.getElementById('feed-client-sel').value;feedClientIdx=v===''?-1:parseInt(v);feedAccountIdx=-1;const accs=feedClientIdx>=0?(clients[feedClientIdx]?.accounts||[]):[];if(accs.length===1){feedAccountIdx=0;const sel=document.getElementById('feed-account-sel');if(sel)sel.style.display='none';}else if(accs.length>1){populateAccountSelect('feed-account-sel',feedClientIdx,-1);}else{const sel=document.getElementById('feed-account-sel');if(sel)sel.style.display='none';}if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
 function onFeedAccountChange(){const v=document.getElementById('feed-account-sel').value;feedAccountIdx=v===''?-1:parseInt(v);if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
-function renderFeedMonthPills(){const c=document.getElementById('feed-month-pills');if(!c)return;c.innerHTML='';if(feedAccountIdx<0)return;let pillYear=CUR_YEAR;if(feedMonth){const y=parseInt(feedMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.onclick=()=>{pillYear--;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.onclick=()=>{pillYear++;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===feedMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{feedMonth=m;renderFeedMonthPills();renderFeedGrid();updateFeedHeader();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
+function renderFeedMonthPills(){const c=document.getElementById('feed-month-pills')||document.querySelector('.feed-month-pills-inline');if(!c)return;c.innerHTML='';if(feedAccountIdx<0)return;let pillYear=CUR_YEAR;if(feedMonth){const y=parseInt(feedMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.onclick=()=>{pillYear--;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.onclick=()=>{pillYear++;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===feedMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{feedMonth=m;renderFeedMonthPills();renderFeedGrid();updateFeedHeader();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
 
 /* STORIES SELECTORS */
 function onStoriesClientChange(){const v=document.getElementById('stories-client-sel').value;storiesClientIdx=v===''?-1:parseInt(v);storiesAccountIdx=-1;const accs=storiesClientIdx>=0?(clients[storiesClientIdx]?.accounts||[]):[];if(accs.length===1){storiesAccountIdx=0;const sel=document.getElementById('stories-account-sel');if(sel)sel.style.display='none';}else if(accs.length>1){populateAccountSelect('stories-account-sel',storiesClientIdx,-1);}else{const sel=document.getElementById('stories-account-sel');if(sel)sel.style.display='none';}if(!storiesMonth)storiesMonth=MONTH_OPTIONS[new Date().getMonth()];renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
@@ -445,7 +474,7 @@ function onPreviewAccountChange(){const v=document.getElementById('preview-accou
 function refreshFeed(){renderFeedGrid();updateFeedStats();updateFeedHeader();autoSave();}
 
 function renderFeedGrid(){
-  const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';
+  const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';updateFeedFormat();
   const items=currentFeedItems();
   if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
   const total=Math.max(items.length+1,9);
@@ -489,7 +518,14 @@ function renderFeedGrid(){
         cell.addEventListener('dragend',()=>{feedDragSrc=null;document.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('dragging','drag-over-cell'));});
         const handle=document.createElement('div');handle.className='drag-handle';handle.innerHTML='⠿';cell.appendChild(handle);
         const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;cell.appendChild(num);
-        const badge=document.createElement('span');badge.className='cell-badge '+item.type;badge.textContent=item.type==='video'?'▶ REEL':item.type==='image'?'IMG':'❏❏ '+(item.slides?.length||0);cell.appendChild(badge);
+        const badge=document.createElement('div');badge.className='cell-badge '+item.type;
+        const bIcons={
+          image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto',
+          video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel',
+          carousel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>Caros. '+(item.slides?.length||0),
+        };
+        badge.innerHTML=bIcons[item.type]||item.type;
+        cell.appendChild(badge);
         if(item.isExternalLink){const d=document.createElement('div');d.className='cell-url-dot';d.title=(item.linkSource==='dropbox'?'Dropbox':item.linkSource==='frame'?'Frame.io':'Link')+': '+(item.externalUrl||'');cell.appendChild(d);}
         if((item.linkedStories||[]).length>0){const lb=document.createElement('div');lb.className='ls-badge-cell';lb.textContent='📱 '+item.linkedStories.length;cell.appendChild(lb);}
         const showDate=showAllDates&&item.showDate;
@@ -1353,10 +1389,10 @@ function showBootOverlay(show){
     if(!ov){
       ov=document.createElement('div');ov.id='boot-overlay';
       ov.style.cssText='position:fixed;inset:0;background:var(--bg,#f5f5f7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .3s;';
-      const logo=document.createElement('div');logo.style.cssText='width:48px;height:48px;background:#1A8C3F;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;';logo.textContent='N';
+      const logo=document.createElement('div');logo.style.cssText='width:48px;height:48px;background:#0dff00;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#003d00;font-size:22px;font-weight:700;';logo.textContent='N';
       const txt=document.createElement('div');txt.style.cssText='font-size:13px;color:#6b6b6b;font-family:Inter,sans-serif;';txt.textContent='Caricamento dati…';
       const dot=document.createElement('div');dot.style.cssText='display:flex;gap:6px;';
-      for(let i=0;i<3;i++){const d=document.createElement('div');d.style.cssText='width:7px;height:7px;border-radius:50%;background:#1A8C3F;opacity:.3;animation:bounce .8s ease-in-out '+(i*0.15)+'s infinite alternate;';dot.appendChild(d);}
+      for(let i=0;i<3;i++){const d=document.createElement('div');d.style.cssText='width:7px;height:7px;border-radius:50%;background:#0dff00;opacity:.3;animation:bounce .8s ease-in-out '+(i*0.15)+'s infinite alternate;';dot.appendChild(d);}
       const style=document.createElement('style');style.textContent='@keyframes bounce{to{opacity:1;transform:translateY(-4px)}}';
       ov.appendChild(style);ov.appendChild(logo);ov.appendChild(txt);ov.appendChild(dot);
       document.body.appendChild(ov);
@@ -1525,6 +1561,17 @@ function renderPilastriContent(body,ci){
 
 /* SIDEBAR TOGGLE */
 let sidebarExpanded = localStorage.getItem('sb_expanded') === '1';
+let feedPanelOpen = false;
+function toggleFeedPanel(){
+  feedPanelOpen=!feedPanelOpen;
+  const panel=document.getElementById('feed-ctx-panel');
+  const icon=document.getElementById('feed-expand-icon');
+  if(panel)panel.classList.toggle('open',feedPanelOpen);
+  if(icon)icon.innerHTML=feedPanelOpen
+    ?'<polyline points="18 15 12 9 6 15"/>'
+    :'<polyline points="6 9 12 15 18 9"/>';
+}
+
 function toggleSidebar(){
   sidebarExpanded = !sidebarExpanded;
   localStorage.setItem('sb_expanded', sidebarExpanded ? '1' : '0');
