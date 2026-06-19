@@ -22,6 +22,17 @@ async function getAccessToken() {
   return data.access_token;
 }
 
+function toDirectUrl(url) {
+  if (!url) return '';
+  // Convert Dropbox share link to direct embeddable URL
+  // www.dropbox.com/s/xxx/file.jpg?dl=0 → dl.dropboxusercontent.com/s/xxx/file.jpg
+  return url
+    .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+    .replace('?dl=0', '')
+    .replace('?dl=1', '')
+    .replace('?raw=1', '');
+}
+
 async function uploadToDropbox(token, buffer, destPath) {
   const uploadResp = await fetch('https://content.dropboxapi.com/2/files/upload', {
     method: 'POST',
@@ -46,10 +57,10 @@ async function uploadToDropbox(token, buffer, destPath) {
   // Handle "already exists" error from Dropbox
   if (linkData?.error?.['.tag'] === 'shared_link_already_exists') {
     const existingUrl = linkData.error?.shared_link_already_exists?.metadata?.url;
-    if (existingUrl) return existingUrl.replace('?dl=0', '?raw=1');
+    if (existingUrl) return toDirectUrl(existingUrl);
   }
 
-  return (linkData.url || '').replace('?dl=0', '?raw=1');
+  return toDirectUrl(linkData.url || '');
 }
 
 export const config = { api: { bodyParser: false } };
