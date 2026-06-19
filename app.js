@@ -3,53 +3,74 @@
    Stato globale
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 
-const DBX_CLIENT_ID = 'aahllr0ewvn0hfs';
+const SUPABASE_URL = 'https://eusxreazwqmwtsdbhhjr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1c3hyZWF6d3Ftd3RzZGJoaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDA0NTQsImV4cCI6MjA5NzQxNjQ1NH0.9ekxNnt9wGzEeGexUP_0mZGGsa-YIPZs5zblu-_OECg';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let dbx = null;
 let lastStateStr = '';
 
-function initDropbox() {
-  const hash = window.location.hash;
-  let token = localStorage.getItem('dbx_token');
-  if (hash.includes('access_token=')) {
-    const params = new URLSearchParams(hash.substring(1));
-    token = params.get('access_token');
-    localStorage.setItem('dbx_token', token);
-    window.location.hash = '';
-  }
+async function initBackend() {
+  const syncBtn = document.getElementById('dbx-sync-btn');
+  const loginBtn = document.getElementById('dbx-login-btn');
   
-  if (token) {
-    dbx = new Dropbox.Dropbox({ accessToken: token });
-    const loginBtn = document.getElementById('dbx-login-btn');
-    const syncBtn = document.getElementById('dbx-sync-btn');
-    if(loginBtn) loginBtn.style.display = 'none';
-    if(syncBtn) syncBtn.style.display = 'inline-flex';
-    loadFromDropbox();
-    
-    // Auto-save interval with fast debounce
-    let saveTimeout = null;
-    setInterval(() => {
-      if (!dbx) return;
-      const currentStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
-      if (lastStateStr !== currentStr) {
-        lastStateStr = currentStr;
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-          syncToDropbox(false);
-        }, 1000);
-      }
-    }, 500);
-  } else {
-    const loginBtn = document.getElementById('dbx-login-btn');
-    const syncBtn = document.getElementById('dbx-sync-btn');
-    if(loginBtn) loginBtn.style.display = 'inline-flex';
-    if(syncBtn) syncBtn.style.display = 'none';
+  if (loginBtn) loginBtn.style.display = 'none';
+  if (syncBtn) {
+    syncBtn.style.display = 'inline-flex';
+    syncBtn.textContent = 'Sync DB';
+    syncBtn.onclick = () => syncToSupabase(true);
   }
-}
 
-function dbxLogin() {
-  const dbxAuth = new Dropbox.DropboxAuth({ clientId: DBX_CLIENT_ID });
-  dbxAuth.getAuthenticationUrl(window.location.href.split('#')[0])
-    .then(authUrl => { window.location.href = authUrl; });
+  // Load initial state
+  await loadFromSupabase();
+
+  // Supabase Realtime subscription
+  supabase.channel('app_state')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: 'id=eq.1' }, payload => {
+      if (payload.new && payload.new.state_json) {
+        const globalData = payload.new.state_json;
+        const incomingStateStr = JSON.stringify({
+          clients: globalData.clients || [],
+          feeds: globalData.feeds || {},
+          stories: globalData.stories || {},
+          highlights: globalData.highlights || {},
+          pedPlans: globalData.pedPlans || {}
+        });
+        
+        // Only reload if the state actually differs from our local state
+        if (incomingStateStr !== lastStateStr) {
+          console.log('Realtime update received!');
+          loadFromSupabase(true);
+        }
+      }
+    })
+    .subscribe();
+
+  // Auto-save interval with fast debounce
+  let saveTimeout = null;
+  setInterval(() => {
+    const currentStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
+    if (lastStateStr !== currentStr) {
+      lastStateStr = currentStr;
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        syncToSupabase(false);
+      }, 1000);
+    }
+  }, 500);
+
+  // Fetch Dropbox token for background media uploads
+  try {
+    const res = await fetch('/api/get-dropbox-token');
+    if (res.ok) {
+      const data = await res.json();
+      dbx = new Dropbox.Dropbox({ accessToken: data.access_token });
+    } else {
+      console.warn('Failed to get Dropbox token. Uploads will fallback to local blobs.');
+    }
+  } catch (err) {
+    console.error('Error fetching Dropbox token:', err);
+  }
 }
 
 let clients = [];
@@ -416,7 +437,7 @@ async function queueFeedFiles(files) {
   }
   document.getElementById('dbx-loader').style.display = 'none';
   setFeedItems(items); refreshFeed();
-  if(typeof syncToDropbox === 'function') syncToDropbox(false);
+  if(typeof syncToSupabase === 'function') syncToSupabase(false);
 }
 function setFeedLinkTab(tab) {
   feedLinkTab=tab;
@@ -1255,7 +1276,7 @@ function showToast(msg,type){
 
 /* \u2500\u2500 INIT \u2500\u2500 */
 function init(){
-  initDropbox();
+  initBackend();
   const fdz=document.getElementById('feed-drop-zone');
   if(fdz){fdz.addEventListener('dragover',e=>{e.preventDefault();fdz.classList.add('drag-over');});fdz.addEventListener('dragleave',e=>{if(!fdz.contains(e.relatedTarget))fdz.classList.remove('drag-over');});fdz.addEventListener('drop',e=>{e.preventDefault();fdz.classList.remove('drag-over');queueFeedFiles(e.dataTransfer.files);});}
   const sdz=document.getElementById('stories-drop-zone');
@@ -1288,9 +1309,7 @@ async function uploadMediaToDropbox(file, clientName) {
   }
 }
 
-async function syncToDropbox(showToastMsg = true) {
-  if (!dbx) return;
-  
+async function syncToSupabase(showToastMsg = true) {
   const syncBtn = document.getElementById('dbx-sync-btn');
   if (syncBtn) {
     syncBtn.textContent = 'Saving...';
@@ -1305,32 +1324,10 @@ async function syncToDropbox(showToastMsg = true) {
     if(ltext) ltext.textContent = 'Salvataggio in corso...';
   }
   try {
-    const globalData = { version: '2.0', clients, pedPlans, meta: { showAllDates, showAllCopy } };
-    await dbx.filesUpload({
-      path: '/nassa studio/nassaportal/global.json',
-      contents: JSON.stringify(globalData, null, 2),
-      mode: {'.tag': 'overwrite'}
-    });
-
-    for (let c of clients) {
-      const safeClient = c.name.replace(/[^a-z0-9]/gi, '_');
-      const cFeeds = {}; const cStories = {}; const cHighlights = {};
-      (c.accounts || []).forEach(a => {
-        MONTH_OPTIONS.forEach(m => {
-          const k = accountKey(a.id, m);
-          if (feeds[k]) cFeeds[k] = feeds[k];
-          if (stories[k]) cStories[k] = stories[k];
-        });
-        if (highlights[a.id]) cHighlights[a.id] = highlights[a.id];
-      });
-
-      const cData = { feeds: cFeeds, stories: cStories, highlights: cHighlights };
-      await dbx.filesUpload({
-        path: `/nassa studio/nassaportal/${safeClient}/data.json`,
-        contents: JSON.stringify(cData, null, 2),
-        mode: {'.tag': 'overwrite'}
-      });
-    }
+    const stateJson = { clients, feeds, stories, highlights, pedPlans, meta: { showAllDates, showAllCopy } };
+    
+    const { error } = await supabase.from('app_state').upsert({ id: 1, state_json: stateJson });
+    if (error) throw error;
 
     lastStateStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
     
@@ -1338,18 +1335,18 @@ async function syncToDropbox(showToastMsg = true) {
       syncBtn.textContent = 'Saved \u2713';
       syncBtn.style.opacity = '1';
       syncBtn.style.pointerEvents = 'auto';
-      setTimeout(() => { if (syncBtn.textContent === 'Saved \u2713') syncBtn.textContent = 'Sync Dropbox'; }, 2000);
+      setTimeout(() => { if (syncBtn.textContent === 'Saved \u2713') syncBtn.textContent = 'Sync DB'; }, 2000);
     }
 
     if (showToastMsg) {
       const loader = document.getElementById('dbx-loader');
       if(loader) loader.style.display = 'none';
-      showToast('\u2713 Salvataggio su Dropbox completato');
+      showToast('\u2713 Salvataggio completato');
     }
   } catch (err) {
-    console.error('Dropbox sync error:', err);
+    console.error('Supabase sync error:', err);
     if (syncBtn) {
-      syncBtn.textContent = 'Sync Dropbox';
+      syncBtn.textContent = 'Sync DB';
       syncBtn.style.opacity = '1';
       syncBtn.style.pointerEvents = 'auto';
     }
@@ -1361,57 +1358,40 @@ async function syncToDropbox(showToastMsg = true) {
   }
 }
 
-async function loadFromDropbox() {
-  if (!dbx) return;
+async function loadFromSupabase(silent = false) {
   const loader = document.getElementById('dbx-loader');
-  if(loader) loader.style.display = 'flex';
-  const ltext = document.getElementById('dbx-loader-text');
-  if(ltext) ltext.textContent = 'Caricamento dati...';
+  if (!silent) {
+    if(loader) loader.style.display = 'flex';
+    const ltext = document.getElementById('dbx-loader-text');
+    if(ltext) ltext.textContent = 'Caricamento database...';
+  }
 
   try {
-    let globalData;
-    try {
-      const gRes = await dbx.filesDownload({ path: '/nassa studio/nassaportal/global.json' });
-      const text = await gRes.result.fileBlob.text();
-      globalData = JSON.parse(text);
-    } catch (e) {
-      console.warn('Global data not found or error');
-    }
-
-    if (globalData) {
+    const { data, error } = await supabase.from('app_state').select('state_json').eq('id', 1).single();
+    if (error && error.code !== 'PGRST116') console.error(error);
+    
+    if (data && data.state_json) {
+      const globalData = data.state_json;
       clients = globalData.clients || [];
       pedPlans = globalData.pedPlans || {};
-      if (globalData.meta) { showAllDates = globalData.meta.showAllDates !== false; showAllCopy = globalData.meta.showAllCopy !== false; }
-    }
-
-    try {
-      const listRes = await dbx.filesListFolder({ path: '/nassa studio/nassaportal' });
-      const clientFolders = listRes.result.entries.filter(e => e['.tag'] === 'folder');
-      
-      for (let folder of clientFolders) {
-        try {
-          const cRes = await dbx.filesDownload({ path: `${folder.path_display}/data.json` });
-          const text = await cRes.result.fileBlob.text();
-          const cData = JSON.parse(text);
-          Object.assign(feeds, cData.feeds || {});
-          Object.assign(stories, cData.stories || {});
-          Object.assign(highlights, cData.highlights || {});
-        } catch (e) {}
+      feeds = globalData.feeds || {};
+      stories = globalData.stories || {};
+      highlights = globalData.highlights || {};
+      if (globalData.meta) { 
+        showAllDates = globalData.meta.showAllDates !== false; 
+        showAllCopy = globalData.meta.showAllCopy !== false; 
       }
-    } catch (e) {
-      console.warn('Could not list folders');
     }
 
     feedClientIdx = -1; feedAccountIdx = -1; feedMonth = '';
     storiesClientIdx = -1; storiesAccountIdx = -1; storiesMonth = '';
     renderStudio(); rebuildAllSelects(); renderFeedGrid(); renderStoriesGrid(); updateFeedHeader(); updateStoriesHeader();
     lastStateStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
-    showToast('\u2713 Dati caricati da Dropbox');
+    if (!silent) showToast('\u2713 Dati caricati');
   } catch (err) {
-    console.error('Dropbox load error:', err);
-    alert('Errore caricamento da Dropbox: ' + err.message);
+    console.error('Supabase load error:', err);
+    if (!silent) alert('Errore caricamento da Supabase: ' + err.message);
   } finally {
-    const loader = document.getElementById('dbx-loader');
-    if(loader) loader.style.display = 'none';
+    if (!silent && loader) loader.style.display = 'none';
   }
 }
