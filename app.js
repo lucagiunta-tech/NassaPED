@@ -398,7 +398,7 @@ function backToClients(){switchTab('studio');}
 function addClient(){
   const name=document.getElementById('nc-name').value.trim();if(!name){document.getElementById('nc-name').focus();return;}
   if(clients.find(c=>c.name.toLowerCase()===name.toLowerCase())){showToast('Cliente già presente','warn');return;}
-  const id='c_'+Date.now();const defaultAccount={id:'a_'+Date.now(),name,platform:'Instagram'};
+  const id='c_'+Date.now();const defaultAccount={id:'a_'+Date.now(),name,platform:'Instagram'};const defaultBrand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
   clients.push({id,name,pkg:document.getElementById('nc-pkg').value,status:document.getElementById('nc-status').value,revenue:parseFloat(document.getElementById('nc-revenue').value)||0,accounts:[defaultAccount]});
   document.getElementById('nc-name').value='';document.getElementById('nc-revenue').value='';
   renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiunto');autoSave();
@@ -519,6 +519,28 @@ function renderFeedGrid(){
         const handle=document.createElement('div');handle.className='drag-handle';handle.innerHTML='⠿';cell.appendChild(handle);
         const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;cell.appendChild(num);
         const badge=document.createElement('div');badge.className='cell-badge '+item.type;
+        if(item.type==='editorial'){
+          // Render editorial card inline
+          const cols=item.editorialColors||{bg:'#f5f0e8',text:'#111',accent:'#1a3c5e',logo:'#0dff00',logoText:'#111'};
+          cell.style.background=cols.bg;cell.style.color=cols.text;cell.style.aspectRatio=_fmt.cssRatio;
+          const titleHtml=item.editorialAccent&&item.editorialTitle?.includes(item.editorialAccent)
+            ?item.editorialTitle.replace(item.editorialAccent,`<span style="color:${cols.accent};">${item.editorialAccent}</span>`)
+            :item.editorialTitle||'';
+          cell.innerHTML=`<div style="position:absolute;inset:0;padding:12px 11px 11px;display:flex;flex-direction:column;font-family:var(--font);">
+            <div style="font-size:7px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${item.editorialEyebrow||''}</div>
+            <div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${titleHtml}</div>
+            <div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div>
+            <div style="font-size:7px;opacity:.55;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+              <span style="font-size:6px;font-weight:700;opacity:.7;">${item.editorialAuthor||''}</span>
+              <span style="width:14px;height:14px;border-radius:3px;background:${cols.logo};color:${cols.logoText};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;">N</span>
+            </div>
+          </div>`;
+          // Ed badge
+          badge.className='cell-badge editorial';
+          badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card';
+          cell.appendChild(badge);
+        } else {
         const bIcons={
           image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto',
           video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel',
@@ -526,6 +548,7 @@ function renderFeedGrid(){
         };
         badge.innerHTML=bIcons[item.type]||item.type;
         cell.appendChild(badge);
+        }
         if(item.isExternalLink){const d=document.createElement('div');d.className='cell-url-dot';d.title=(item.linkSource==='dropbox'?'Dropbox':item.linkSource==='frame'?'Frame.io':'Link')+': '+(item.externalUrl||'');cell.appendChild(d);}
         if((item.linkedStories||[]).length>0){const lb=document.createElement('div');lb.className='ls-badge-cell';lb.textContent='📱 '+item.linkedStories.length;cell.appendChild(lb);}
         const showDate=showAllDates&&item.showDate;
@@ -1266,7 +1289,22 @@ document.addEventListener('click',e=>{if(!e.target.closest('#global-date-picker'
 document.addEventListener('scroll',()=>closeDatePicker(),true);
 
 /* EDIT CLIENT */
-function openEditClientModal(ci){ecEditIdx=ci;const cl=clients[ci];if(!cl)return;document.getElementById('ec-name').value=cl.name;document.getElementById('ec-pkg').value=cl.pkg;document.getElementById('ec-status').value=cl.status;document.getElementById('ec-revenue').value=cl.revenue||'';document.getElementById('edit-client-title').textContent='Modifica — '+cl.name;ecTmpAccounts=(cl.accounts||[]).map(a=>({...a}));renderEcAccounts();openModal('edit-client-modal');}
+function openEditClientModal(ci){
+  ecEditIdx=ci;const cl=clients[ci];if(!cl)return;
+  document.getElementById('ec-name').value=cl.name;
+  document.getElementById('ec-pkg').value=cl.pkg;
+  document.getElementById('ec-status').value=cl.status;
+  document.getElementById('ec-revenue').value=cl.revenue||'';
+  document.getElementById('edit-client-title').textContent='Modifica — '+cl.name;
+  ecTmpAccounts=(cl.accounts||[]).map(a=>({...a}));
+  // Load brand palette
+  const b=cl.brand||{primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
+  ['primary','secondary','bg','text'].forEach(k=>{
+    const inp=document.getElementById('ec-pal-'+k);if(inp)inp.value=b[k]||'';
+    ecPalUpdate(k);
+  });
+  renderEcAccounts();openModal('edit-client-modal');
+}
 function renderEcAccounts(){
   const list=document.getElementById('ec-accounts-list');if(!list)return;list.innerHTML='';
   if(!ecTmpAccounts.length){list.innerHTML='<div style="font-size:11px;color:var(--text-3);padding:4px 0;">Nessun account. Aggiungine uno sotto.</div>';return;}
@@ -1279,6 +1317,32 @@ function renderEcAccounts(){
     row.appendChild(main);row.appendChild(del);list.appendChild(row);
   });
 }
+function ecPalUpdate(key){
+  const inp=document.getElementById('ec-pal-'+key);if(!inp)return;
+  const val=inp.value.trim();
+  const hex=/^#[0-9a-fA-F]{6}$/.test(val)?val:'';
+  const preview=document.getElementById('ec-pal-preview-'+key);
+  const swatch=document.getElementById('ec-pal-swatch-'+key);
+  if(preview)preview.style.background=hex||'#eee';
+  if(swatch)swatch.style.background=hex||'#eee';
+  ecPalLivePreview();
+}
+function ecPalLivePreview(){
+  const get=k=>{const v=document.getElementById('ec-pal-'+k)?.value.trim();return /^#[0-9a-fA-F]{6}$/.test(v)?v:null;};
+  const bg=get('bg')||'#f5f0e8',primary=get('primary')||'#1a3c5e',secondary=get('secondary')||'#c8a96e',text=get('text')||'#111';
+  const cl=ecEditIdx>=0?clients[ecEditIdx]:null;const cname=cl?cl.name.split(' ')[0]:'Cliente';
+  // Feed preview
+  const feed=document.getElementById('ec-pal-card-feed');
+  if(feed){feed.style.background=bg;feed.style.color=text;
+    feed.innerHTML=`<div style="font-size:6px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.5;margin-bottom:5px;">Insight · ${cname}</div><div style="font-size:10px;font-weight:800;line-height:1.1;flex:1;letter-spacing:-.3px;">"Al centro di ogni progetto c'è <span style='color:${secondary};'>${cname}.</span>"</div><div style="height:1px;background:currentColor;opacity:.15;margin:4px 0;"></div><div style="font-size:6px;opacity:.55;line-height:1.4;">La qualità è ascolto e dedizione.</div><div style="font-size:6px;font-weight:700;opacity:.6;margin-top:5px;">${cname} · 2026</div>`;
+  }
+  // Story preview
+  const story=document.getElementById('ec-pal-card-story');
+  if(story){story.style.background=primary;story.style.color=bg;
+    story.innerHTML=`<div style="font-size:5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${secondary};margin-bottom:6px;">UGC</div><div style="font-size:8px;font-weight:800;line-height:1.1;flex:1;">"Finalmente un'azienda che <span style='color:${secondary};'>mantiene</span> le promesse."</div><div style="height:1px;background:${bg};opacity:.2;margin:4px 0;"></div><div style="font-size:5px;opacity:.7;margin-top:auto;">${cname}</div>`;
+  }
+}
+
 function ecAddAccount(){const name=document.getElementById('ec-new-acc-name').value.trim();const platform=document.getElementById('ec-new-acc-platform').value;if(!name){document.getElementById('ec-new-acc-name').focus();return;}ecTmpAccounts.push({id:'a_'+Date.now(),name,platform});document.getElementById('ec-new-acc-name').value='';renderEcAccounts();}
 function ecSave(){
   if(ecEditIdx<0)return;const name=document.getElementById('ec-name').value.trim();if(!name){document.getElementById('ec-name').focus();return;}
@@ -1291,6 +1355,14 @@ function ecSave(){
     delete highlights[aid];
   }});
   cl.accounts=ecTmpAccounts.map(a=>({...a}));
+  // Save brand palette
+  const getPal=k=>{const v=document.getElementById('ec-pal-'+k)?.value.trim();return /^#[0-9a-fA-F]{6}$/.test(v)?v:null;};
+  cl.brand={
+    primary:getPal('primary')||'#1a3c5e',
+    secondary:getPal('secondary')||'#c8a96e',
+    bg:getPal('bg')||'#f5f0e8',
+    text:getPal('text')||'#111111'
+  };
   if(oldName!==name){
     // Rename across ALL years in pedPlans
     Object.keys(pedPlans).filter(k=>k.startsWith(oldName+'|||')).forEach(k=>{
@@ -1432,6 +1504,110 @@ function showBootOverlay(show){
     ov.style.opacity='1';ov.style.pointerEvents='all';
   } else {
     if(ov){ov.style.opacity='0';ov.style.pointerEvents='none';setTimeout(()=>ov?.remove(),350);}
+  }
+}
+
+/* ════════ CARD EDITORIALE ════════ */
+let edTheme='light', edFmt='feed';
+
+function openEditorialModal(){
+  // Pre-fill client name in eyebrow
+  const cl=clients[globalClientIdx>=0?globalClientIdx:0];
+  if(cl){
+    const inp=document.getElementById('ed-eyebrow');
+    if(inp&&!inp.value)inp.value='Insight · '+cl.name.split(' ')[0];
+  }
+  document.getElementById('ed-title').value='';
+  document.getElementById('ed-accent').value='';
+  document.getElementById('ed-copy').value='';
+  document.getElementById('ed-author').value='';
+  edTheme='light';edFmt='feed';
+  document.querySelectorAll('.ed-theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme==='light'||b.dataset.fmt==='feed');});
+  renderEdPreview();
+  openModal('editorial-modal');
+}
+
+function setEdTheme(t){
+  edTheme=t;
+  document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));
+  renderEdPreview();
+}
+function setEdFmt(f){
+  edFmt=f;
+  document.querySelectorAll('[data-fmt]').forEach(b=>b.classList.toggle('active',b.dataset.fmt===f));
+  renderEdPreview();
+}
+
+function getEdColors(){
+  const cl=clients[globalClientIdx>=0?globalClientIdx:0];
+  const brand=cl?.brand||{primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
+  if(edTheme==='dark')  return {bg:'#111',text:'#f5f0e8',accent:brand.secondary||'#0dff00',logo:'#0dff00',logoText:'#111'};
+  if(edTheme==='brand') return {bg:brand.primary,text:brand.bg||'#f5f0e8',accent:brand.secondary,logo:brand.bg,logoText:brand.primary};
+  return {bg:brand.bg||'#f5f0e8',text:brand.text||'#111',accent:brand.primary,logo:'#0dff00',logoText:'#111'};
+}
+
+function renderEdPreview(){
+  const wrap=document.getElementById('ed-preview-wrap');
+  const card=document.getElementById('ed-card-preview');
+  if(!card)return;
+  const cols=getEdColors();
+  const eyebrow=document.getElementById('ed-eyebrow')?.value||'Insight';
+  const titleRaw=document.getElementById('ed-title')?.value||'"Il tuo titolo grande qui."';
+  const accentWord=document.getElementById('ed-accent')?.value?.trim();
+  const copy=document.getElementById('ed-copy')?.value||'Il testo descrittivo appare qui sotto il titolo.';
+  const author=document.getElementById('ed-author')?.value||'Firma · 2026';
+  // Highlight accent word in title
+  const titleHtml=accentWord&&titleRaw.includes(accentWord)
+    ?titleRaw.replace(accentWord,`<span style="color:${cols.accent};">${accentWord}</span>`)
+    :titleRaw;
+  card.className='ed-card-preview '+(edFmt==='story'?'story-fmt':'feed-fmt');
+  card.style.cssText=`background:${cols.bg};color:${cols.text};`;
+  const titleSize=edFmt==='story'?'14px':'22px';
+  const copySize=edFmt==='story'?'7px':'8px';
+  card.innerHTML=`
+    <div class="ecp-eyebrow" style="color:${cols.text};">${eyebrow}</div>
+    <div class="ecp-title" style="font-size:${titleSize};flex:1;">${titleHtml}</div>
+    <div class="ecp-div"></div>
+    <div class="ecp-copy" style="font-size:${copySize};">${copy}</div>
+    <div class="ecp-footer">
+      <div class="ecp-author">${author}</div>
+      <div class="ecp-logo" style="background:${cols.logo};color:${cols.logoText};">N</div>
+    </div>`;
+}
+
+function saveEditorialCard(){
+  const eyebrow=document.getElementById('ed-eyebrow')?.value||'';
+  const title=document.getElementById('ed-title')?.value||'';
+  const accent=document.getElementById('ed-accent')?.value||'';
+  const copy=document.getElementById('ed-copy')?.value||'';
+  const author=document.getElementById('ed-author')?.value||'';
+  if(!title){document.getElementById('ed-title').focus();showToast('Aggiungi un titolo','warn');return;}
+  const cols=getEdColors();
+  const item={
+    type:'editorial',
+    editorialTheme:edTheme,
+    editorialFmt:edFmt,
+    editorialEyebrow:eyebrow,
+    editorialTitle:title,
+    editorialAccent:accent,
+    editorialCopy:copy,
+    editorialAuthor:author,
+    editorialColors:cols,
+    copy:title,
+    date:'',
+    showDate:false,
+    url:'',
+    name:'Card: '+title.slice(0,20),
+  };
+  if(edFmt==='feed'){
+    const items=currentFeedItems();items.push(item);setFeedItems(items);
+    closeModal('editorial-modal');refreshFeed();autoSave();showToast('✓ Card aggiunta al feed');
+    switchTab('feed');
+  } else {
+    const st={...item,isStoryboard:false,date:'',note:''};
+    const arr=currentStoryItems();arr.push(st);setStoryItems(arr);
+    closeModal('editorial-modal');refreshStories();autoSave();showToast('✓ Card aggiunta alle stories');
+    switchTab('stories');
   }
 }
 
