@@ -424,7 +424,15 @@ function renderStudio(){
 function rebuildAllSelects(){rebuildFeedSelects();rebuildStoriesSelects();rebuildPreviewSelects();rebuildStudioAccountSelect();rebuildNotesSelects();}
 function populateClientSelect(selId,currentCi){const sel=document.getElementById(selId);if(!sel)return;sel.innerHTML='<option value="">— Cliente —</option>';clients.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.name;sel.appendChild(o);});if(currentCi>=0)sel.value=currentCi;}
 function populateAccountSelect(selId,clientIdx,currentAi){const sel=document.getElementById(selId);if(!sel)return;if(clientIdx<0||!clients[clientIdx]?.accounts?.length){sel.style.display='none';return;}sel.style.display='';sel.innerHTML='<option value="">— Account —</option>';clients[clientIdx].accounts.forEach((a,i)=>{const o=document.createElement('option');o.value=i;o.textContent=a.name+' ('+a.platform+')';sel.appendChild(o);});if(currentAi>=0)sel.value=currentAi;}
-function rebuildFeedSelects(){populateClientSelect('feed-client-sel',feedClientIdx);populateAccountSelect('feed-account-sel',feedClientIdx,feedAccountIdx);}
+function rebuildFeedSelects(){
+  // Show client name (no dropdown — client comes from global context)
+  const nameEl=document.getElementById('feed-client-display');
+  if(nameEl)nameEl.textContent=feedClientIdx>=0&&clients[feedClientIdx]?clients[feedClientIdx].name:'—';
+  // Keep hidden client select in sync for JS compat
+  populateClientSelect('feed-client-sel',feedClientIdx);
+  // Show account selector
+  populateAccountSelect('feed-account-sel',feedClientIdx,feedAccountIdx);
+}
 function rebuildStoriesSelects(){populateClientSelect('stories-client-sel',storiesClientIdx);populateAccountSelect('stories-account-sel',storiesClientIdx,storiesAccountIdx);}
 function rebuildPreviewSelects(){
   const msel=document.getElementById('preview-month-sel');if(!msel)return;
