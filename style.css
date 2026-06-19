@@ -244,28 +244,55 @@ tbody tr:hover .tr-actions{opacity:1;}
 .type-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 7px;border:1px solid var(--border);border-radius:var(--rs);background:rgba(255,255,255,.92);cursor:pointer;font-size:var(--fs-xs);color:var(--text-2);font-family:var(--font);font-weight:600;min-width:42px;transition:all .12s;}
 .type-btn:hover{border-color:var(--green);color:var(--green);background:#fff;}
 .picker-rm{z-index:2;position:relative;background:none;border:none;cursor:pointer;font-size:var(--fs-xs);color:var(--text-3);font-family:var(--font);}
-.cell-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);opacity:0;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;z-index:3;}
-.feed-cell:not(.empty-slot):hover .cell-overlay{background:rgba(0,0,0,.52);opacity:1;}
-.ov-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r);border:none;font-size:var(--fs-sm);font-family:var(--font);font-weight:500;cursor:pointer;min-width:110px;}
-.ov-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
-.ov-btn.ob-stories{background:rgba(178,223,219,.92);color:#004d40;}
-.ov-btn.ob-copy{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);}
-.ov-btn.ob-delete{background:rgba(239,68,68,.15);color:var(--red-lt);border:1px solid rgba(239,68,68,.2);}
-.ov-btn.ob-slide{background:rgba(255,255,255,.95);color:var(--text);}
-.ov-btn.ob-edit{background:rgba(255,255,255,.95);color:var(--text);}
-.ov-btn.ob-copy:hover{background:rgba(255,255,255,.22);}.ov-btn.ob-delete:hover{background:rgba(239,68,68,.28);}.ov-btn.ob-stories:hover{background:rgba(178,223,219,1);}.ov-btn.ob-slide:hover,.ov-btn.ob-edit:hover{background:#fff;}
-.drag-handle{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.45);color:#fff;width:20px;height:20px;border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;font-size:var(--fs-sm);cursor:grab;opacity:0;transition:opacity .15s;z-index:5;user-select:none;}
+/* ═══ FEED CELL OVERLAY — top-bar / bottom-bar / bottom sheet ═══ */
+
+/* TOP BAR — drag handle + number + badge, always visible, no overlaps */
+.cell-top-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:6px;padding:9px 9px 24px;background:linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%);z-index:4;pointer-events:none;}
+.drag-handle{width:24px;height:24px;border-radius:var(--rs);background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;cursor:grab;flex-shrink:0;opacity:0;transition:opacity .15s;pointer-events:all;user-select:none;}
 .feed-cell:not(.empty-slot):hover .drag-handle{opacity:1;}
 .drag-handle:active{cursor:grabbing;}
+.drag-handle svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;}
+.cell-num{font-size:18px;font-weight:800;color:#fff;line-height:1;flex:1;text-shadow:0 1px 4px rgba(0,0,0,.6);letter-spacing:-.5px;}
+/* TYPE BADGE — inside top-bar */
+.cell-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:var(--rs);font-size:var(--fs-sm);font-weight:700;letter-spacing:.1px;pointer-events:none;}
+.cell-badge svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+.cell-badge.image{background:var(--blue);color:var(--blue-dk);}
+.cell-badge.video{background:var(--teal);color:var(--teal-dk);}
+.cell-badge.carousel{background:var(--amber);color:var(--amber-dk);}
+.cell-badge.pending{background:rgba(255,255,255,.85);color:var(--text-2);}
+.cell-badge.editorial{background:rgba(255,255,255,.92);color:var(--text);}
+/* BOTTOM BAR — date, always visible */
+.date-bar{position:absolute;bottom:0;left:0;right:0;padding:24px 10px 10px;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 100%);z-index:4;display:flex;align-items:center;gap:6px;}
+.date-bar.hidden-bar{opacity:0;}
+.date-bar svg{width:14px;height:14px;stroke:rgba(255,255,255,.65);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.date-input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:var(--fs-sm);font-family:var(--font);font-weight:600;padding:0;min-width:0;cursor:pointer;letter-spacing:.1px;}
+.date-toggle{background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;font-size:var(--fs-xs);padding:0 0 0 2px;line-height:1;flex-shrink:0;}
+.date-toggle:hover{color:#fff;}
+/* CELL OVERLAY — bottom sheet, rises from bottom */
+.cell-overlay{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s;z-index:6;display:flex;flex-direction:column;justify-content:flex-end;}
+.feed-cell:not(.empty-slot):hover .cell-overlay{opacity:1;pointer-events:all;}
+.ov-sheet{background:rgba(14,14,14,.96);border-radius:var(--r) var(--r) 0 0;padding:5px 6px 10px;backdrop-filter:blur(10px);}
+.ov-btn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:none;border-radius:var(--rs);background:none;font-size:var(--fs-base);font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;transition:background .1s;white-space:nowrap;}
+.ov-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.ov-btn.ob-stories{color:var(--teal);}
+.ov-btn.ob-stories:hover{background:rgba(178,223,219,.1);}
+.ov-btn.ob-copy{color:rgba(255,255,255,.82);}
+.ov-btn.ob-copy:hover{background:rgba(255,255,255,.07);}
+.ov-btn.ob-delete{color:var(--red);}
+.ov-btn.ob-delete:hover{background:rgba(239,68,68,.1);}
+.ov-btn.ob-slide{color:rgba(255,255,255,.82);}
+.ov-btn.ob-slide:hover{background:rgba(255,255,255,.07);}
+.ov-btn.ob-edit{color:rgba(255,255,255,.82);}
+.ov-btn.ob-edit:hover{background:rgba(255,255,255,.07);}
+.ov-divider{height:.5px;background:rgba(255,255,255,.07);margin:2px 0;}
  /* replaced by new cell-badge in feed redesign */
 /* old video badge - replaced by new Streamtime colors below */
 .cell-badge.img{background:rgba(255,255,255,.88);color:var(--text);}
 /* old carousel badge - replaced by new Streamtime colors below */
-.cell-num{position:absolute;top:5px;left:29px;background:rgba(0,0,0,.4);color:#fff;font-size:var(--fs-xs);font-weight:700;padding:2px 4px;border-radius:var(--r-xs);z-index:4;}
+/* .cell-num now inside .cell-top-bar flex row */
 .cell-url-dot{position:absolute;bottom:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--teal-dk);z-index:4;border:1px solid rgba(255,255,255,.5);}
 .ls-badge-cell{position:absolute;top:28px;left:5px;background:rgba(178,223,219,.92);color:#004d40;font-size:var(--fs-xs);font-weight:600;padding:2px 6px;border-radius:var(--r-xs);z-index:4;}
-.date-bar{position:absolute;bottom:7px;left:7px;right:auto;z-index:4;display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:3px 8px;border-radius:var(--r-pill);min-height:0;}
-.date-bar.hidden-bar{display:none;}
+/* .date-bar now inside .cell-bottom-bar — defined in cell overlay section */
 .date-input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:var(--fs-sm);font-family:var(--font);font-weight:500;padding:0;min-width:0;cursor:pointer;letter-spacing:.1px;}
 .date-input::placeholder{color:rgba(255,255,255,.5);}
 .date-toggle{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:var(--fs-xs);padding:0 0 0 4px;line-height:1;flex-shrink:0;}
@@ -685,13 +712,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
 
 /* NEW CELL TYPE BADGES — Streamtime colors */
-.cell-badge{position:absolute;top:5px;right:5px;display:flex;align-items:center;gap:3px;padding:4px 7px;border-radius:var(--rs);font-size:var(--fs-xs);font-weight:700;letter-spacing:.2px;z-index:4;}
-.cell-badge svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
-.cell-badge.image{background:var(--blue);color:var(--blue-dk);}
-.cell-badge.video{background:var(--teal);color:var(--teal-dk);}
-.cell-badge.carousel{background:var(--amber);color:var(--amber-dk);}
-.cell-badge.pending{background:rgba(255,255,255,.85);color:var(--text-2);}
-.cell-badge.editorial{background:rgba(255,255,255,.92);color:var(--text);}
+/* .cell-badge now inside .cell-top-bar — defined in cell overlay section */
 
 /* ════ CALENDARIO TEATRO STYLE ════ */
 .cal-teatro-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
