@@ -1005,7 +1005,9 @@ function renderCalendar(){
     const y=calDate.getFullYear(),m=calDate.getMonth();if(lbl)lbl.textContent=MESI_IT[m]+' '+y;
     const firstDay=new Date(y,m,1);let startDow=firstDay.getDay();startDow=startDow===0?6:startDow-1;
     const daysInMonth=new Date(y,m+1,0).getDate();const daysInPrev=new Date(y,m,0).getDate();
-    let html='<div class="cal-month-grid">';GIORNIW.forEach(g=>{html+=`<div class="cal-day-header">${g}</div>`;});
+    let html='<div class="cal-teatro-grid">';
+    // Day headers
+    GIORNIW.forEach(g=>{html+=`<div class="cal-teatro-header">${g}</div>`;});
     let day=1,nextDay=1;const totalCells=Math.ceil((startDow+daysInMonth)/7)*7;
     for(let i=0;i<totalCells;i++){
       let cellY=y,cellM=m+1,cellD,isOther=false;
@@ -1013,16 +1015,46 @@ function renderCalendar(){
       else if(day>daysInMonth){cellD=nextDay++;cellM=m+2>12?1:m+2;cellY=m+2>12?y+1:y;isOther=true;}
       else{cellD=day++;}
       const dateStr=isoDate(cellY,cellM,cellD);const isToday=dateStr===today;const evs=events[dateStr]||[];
-      html+=`<div class="cal-day${isOther?' other-month':''}${isToday?' today':''}" onclick="openCalPanel('${dateStr}')">`;
-      html+=`<div class="cal-day-num">${cellD}</div><div class="cal-events">`;
-      evs.slice(0,3).forEach(ev=>{
-        const cls=ev.type==='feed'?'feed-post':ev.type==='story'?'story-item':ev.type==='ped'?(ev.pedType==='template'?'ped-template':'ped-autonoma'):'highlight-item';
-        const dot=ev.type==='ped'?(ev.pedType==='template'?'🎨':'👤'):'';
-        const thumbHtml=ev.thumb?`<img src="${ev.thumb}" class="cal-ev-thumb" onerror="this.style.display='none'" />`:(dot?`<span class="cal-ev-dot">${dot}</span>`:`<span class="cal-ev-dot">${ev.type==='feed'?'🖼':ev.type==='story'?'📱':'⭐'}</span>`);
-        html+=`<div class="cal-event ${cls}" onclick="event.stopPropagation();openCalPanel('${dateStr}')">${thumbHtml}<span class="cal-event-label">${ev.clientName.split(' — ')[0]}: ${ev.label}</span></div>`;
-      });
-      if(evs.length>3)html+=`<div class="cal-event-more">+${evs.length-3} altri</div>`;
-      html+='</div></div>';
+      html+=`<div class="cal-teatro-day${isOther?' cal-other':''}${isToday?' cal-today':''}${evs.length?' cal-has-events':''}" onclick="openCalPanel('${dateStr}')">`;
+      // Day number + weekday
+      const dowIdx=(new Date(cellY,cellM-1,cellD).getDay()+6)%7;
+      html+=`<div class="ctd-header"><div class="ctd-num">${cellD}</div><div class="ctd-dow">${GIORNIW[dowIdx]}</div></div>`;
+      // Separator line — only if has events
+      if(evs.length) html+=`<div class="ctd-sep"></div>`;
+      // Events
+      if(evs.length){
+        html+=`<div class="ctd-events">`;
+        const MAX=2;
+        evs.slice(0,MAX).forEach(ev=>{
+          const isStory=ev.type==='story';
+          const isPed=ev.type==='ped';
+          const thumbRatio=isStory?'9/16':'4/5';
+          let badgeCls='',badgeTxt='';
+          if(ev.type==='feed'){
+            if(ev.item?.type==='video'){badgeCls='cal-badge-reel';badgeTxt='Reel';}
+            else if(ev.item?.type==='carousel'){badgeCls='cal-badge-car';badgeTxt='Caros.';}
+            else{badgeCls='cal-badge-foto';badgeTxt='Foto';}
+          } else if(isStory){badgeCls='cal-badge-story';badgeTxt='Story';}
+          else if(isPed){badgeCls='cal-badge-ugc';badgeTxt='UGC';}
+          const thumbSrc=ev.thumb||'';
+          const thumbInner=thumbSrc
+            ?`<img src="${thumbSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`
+            :`<span style="font-size:10px;color:var(--text-3);">${isPed?(ev.pedType==='autonoma'?'👤':'🎨'):'📷'}</span>`;
+          const clientShort=ev.clientName.split(' — ')[0].split(' ').slice(0,2).join(' ');
+          const labelTxt=ev.item?.copy?ev.item.copy.slice(0,22):(ev.item?.brief?ev.item.brief.slice(0,22):ev.label||'—');
+          html+=`<div class="ctd-event">
+            <div class="ctd-thumb${isStory?' ctd-thumb-story':''}">${thumbInner}</div>
+            <div class="ctd-info">
+              <div class="ctd-client">${clientShort}</div>
+              <div class="ctd-label">${labelTxt}</div>
+              <span class="ctd-badge ${badgeCls}">${badgeTxt}</span>
+            </div>
+          </div>`;
+        });
+        if(evs.length>MAX)html+=`<div class="ctd-more">+${evs.length-MAX} altri</div>`;
+        html+=`</div>`;
+      }
+      html+='</div>';
     }
     html+='</div>';body.innerHTML=html;
   } else {
