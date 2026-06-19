@@ -64,17 +64,17 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .sb-main-nav{display:flex;flex-direction:column;height:100%;width:100%;}
 .sb-nav-top{flex:1;overflow-y:auto;padding:8px 0;}
 .sb-nav-foot{padding:4px 0 6px;}
-.sb-sec-lbl{font-size:10px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--text-3);padding:8px 0 3px;display:none;text-align:left;padding-left:14px;white-space:nowrap;}
+.sb-sec-lbl{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--text-3);padding:10px 0 4px;display:none;text-align:left;padding-left:14px;white-space:nowrap;}
 .sidebar.sb-expanded .sb-sec-lbl{display:block;}
 .sb-nav-item{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);transition:all .12s;margin:1px auto;flex-shrink:0;position:relative;}
-.sidebar.sb-expanded .sb-nav-item{width:auto;height:auto;padding:9px 12px;margin:1px 6px;justify-content:flex-start;gap:10px;border-radius:7px;}
-.sb-nav-item:hover{background:var(--bg);color:var(--text);}
+.sidebar.sb-expanded .sb-nav-item{width:auto;height:auto;padding:11px 14px;margin:1px 6px;justify-content:flex-start;gap:12px;border-radius:7px;}
+.sb-nav-item:hover{background:var(--green-lt);color:var(--text);}
 .sb-nav-item.active{background:var(--green);color:var(--green-text);}
-.sidebar.sb-expanded .sb-nav-item.active{background:var(--green-lt);color:var(--green);}
-.sb-nav-item svg{width:18px;height:18px;flex-shrink:0;}
-.sb-nav-label{font-size:13px;font-weight:400;white-space:nowrap;overflow:hidden;display:none;}
+.sidebar.sb-expanded .sb-nav-item.active{background:var(--green);color:var(--green-text);}
+.sb-nav-item svg{width:20px;height:20px;flex-shrink:0;}
+.sb-nav-label{font-size:15px;font-weight:400;white-space:nowrap;overflow:hidden;display:none;}
 .sidebar.sb-expanded .sb-nav-label{display:block;}
-.sidebar.sb-expanded .sb-nav-item.active .sb-nav-label{font-weight:600;}
+.sidebar.sb-expanded .sb-nav-item.active .sb-nav-label{font-weight:700;color:var(--green-text);}
 .sb-nav-sep{height:.5px;background:var(--border-lt);margin:5px auto;width:28px;}
 .sidebar.sb-expanded .sb-nav-sep{width:calc(100% - 24px);margin:5px 12px;}
 /* Toggle button */
