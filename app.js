@@ -280,6 +280,8 @@ function queueFeedFiles(files){
         // Find by name AND no externalUrl yet (not yet uploaded)
         const match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
         if(match>=0){
+          // FIX 4: revoke the local blob URL now that remote URL is confirmed
+          if(arr[match].url&&arr[match].url.startsWith('blob:')) URL.revokeObjectURL(arr[match].url);
           arr[match].externalUrl=sharedUrl;arr[match].url=sharedUrl;
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
@@ -318,7 +320,10 @@ function queueStoryFiles(files){
     for(const f of filesArr){
       const destPath='/nassa/'+CLOUD.user+'/stories/'+(storiesMonth||'misc')+'/'+f.name;
       const sharedUrl=await DROPBOX.upload(f,destPath);
-      if(sharedUrl){const a=currentStoryItems();const match=a.findIndex(it=>it.name===f.name&&!it.externalUrl);if(match>=0){a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;}setStoryItems(a);refreshStories();}
+      if(sharedUrl){const a=currentStoryItems();const match=a.findIndex(it=>it.name===f.name&&!it.externalUrl);if(match>=0){
+        // FIX 4: revoke blob after remote URL confirmed
+        if(a[match].url&&a[match].url.startsWith('blob:'))URL.revokeObjectURL(a[match].url);
+        a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;}setStoryItems(a);refreshStories();}
     }
   })();
 }
@@ -486,6 +491,8 @@ function refreshFeed(){renderFeedGrid();updateFeedStats();updateFeedHeader();aut
 
 function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';updateFeedFormat();
+  // FIX 5: drag delegation — listeners attached once to grid, not per-cell
+  // (removed at innerHTML='' above, re-added here)
   const items=currentFeedItems();
   if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
   const total=Math.max(items.length+1,9);
@@ -522,11 +529,9 @@ function renderFeedGrid(){
         }
         else if(item.type==='video'){const v=makeMedia(item.url,'video');v.onerror=()=>{cell.appendChild(needsReloadPh('▶',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
         else{const img=makeMedia(coverUrl,'image');img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('🖼',item.name));};cell.appendChild(img);}
+        // FIX 5: drag handled via event delegation on grid — just mark the cell
         cell.draggable=true;
-        cell.addEventListener('dragstart',e=>{feedDragSrc=idx;e.dataTransfer.effectAllowed='move';setTimeout(()=>cell.classList.add('dragging'),0);});
-        cell.addEventListener('dragover',e=>{e.preventDefault();if(feedDragSrc!==null&&feedDragSrc!==idx){document.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('drag-over-cell'));cell.classList.add('drag-over-cell');}});
-        cell.addEventListener('drop',e=>{e.preventDefault();if(feedDragSrc!==null&&feedDragSrc!==idx){const arr=currentFeedItems();const tmp=arr[feedDragSrc];arr[feedDragSrc]=arr[idx];arr[idx]=tmp;setFeedItems(arr);autoSave();}feedDragSrc=null;renderFeedGrid();});
-        cell.addEventListener('dragend',()=>{feedDragSrc=null;document.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('dragging','drag-over-cell'));});
+        cell.dataset.dragIdx=idx; // used by delegated drag handler
         const handle=document.createElement('div');handle.className='drag-handle';handle.innerHTML='⠿';cell.appendChild(handle);
         const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;cell.appendChild(num);
         const badge=document.createElement('div');badge.className='cell-badge '+item.type;
@@ -593,6 +598,37 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
+  // FIX 5: Attach drag events ONCE on grid via delegation (not per-cell)
+  // This replaces N*4 listeners with just 4 total
+  grid.addEventListener('dragstart',e=>{
+    const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
+    feedDragSrc=parseInt(cell.dataset.dragIdx);
+    e.dataTransfer.effectAllowed='move';
+    setTimeout(()=>cell.classList.add('dragging'),0);
+  });
+  grid.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
+    const idx=parseInt(cell.dataset.dragIdx);
+    if(feedDragSrc!==null&&feedDragSrc!==idx){
+      grid.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('drag-over-cell'));
+      cell.classList.add('drag-over-cell');
+    }
+  });
+  grid.addEventListener('drop',e=>{
+    e.preventDefault();
+    const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
+    const idx=parseInt(cell.dataset.dragIdx);
+    if(feedDragSrc!==null&&feedDragSrc!==idx){
+      const arr=currentFeedItems();const tmp=arr[feedDragSrc];arr[feedDragSrc]=arr[idx];arr[idx]=tmp;
+      setFeedItems(arr);autoSave();
+    }
+    feedDragSrc=null;renderFeedGrid();
+  });
+  grid.addEventListener('dragend',()=>{
+    feedDragSrc=null;
+    grid.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('dragging','drag-over-cell'));
+  });
 }
 
 function addEmptyFeedListeners(cell){cell.addEventListener('dragover',e=>{if(feedDragSrc!==null)return;if(e.dataTransfer.types.includes('Files')){e.preventDefault();cell.classList.add('file-hover');}});cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(feedDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueFeedFiles(e.dataTransfer.files);});}
@@ -659,11 +695,9 @@ function renderStoriesGrid(){
         else if(st.url){const img=document.createElement('img');img.src=st.url;img.alt='';cell.appendChild(img);}
         const num=document.createElement('span');num.className='story-num';num.textContent=i+1;cell.appendChild(num);
         const dh=document.createElement('div');dh.className='story-drag-h';dh.innerHTML='⠿';cell.appendChild(dh);
+        // FIX 5: drag via delegation on stories grid
         cell.draggable=true;
-        cell.addEventListener('dragstart',e=>{stDragSrc=idx;e.dataTransfer.effectAllowed='move';setTimeout(()=>cell.classList.add('dragging'),0);});
-        cell.addEventListener('dragover',e=>{e.preventDefault();if(stDragSrc!==null&&stDragSrc!==idx){document.querySelectorAll('.story-cell').forEach(c=>c.classList.remove('drag-over-st'));cell.classList.add('drag-over-st');}});
-        cell.addEventListener('drop',e=>{e.preventDefault();if(stDragSrc!==null&&stDragSrc!==idx){const a=currentStoryItems();const tmp=a[stDragSrc];a[stDragSrc]=a[idx];a[idx]=tmp;setStoryItems(a);autoSave();}stDragSrc=null;renderStoriesGrid();});
-        cell.addEventListener('dragend',()=>{stDragSrc=null;document.querySelectorAll('.story-cell').forEach(c=>c.classList.remove('dragging','drag-over-st'));});
+        cell.dataset.stDragIdx=idx;
         const ov=document.createElement('div');ov.className='story-overlay';
         if(st.isStoryboard){const eb=document.createElement('button');eb.className='ov-btn ob-edit';eb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Modifica';eb.onclick=e=>{e.stopPropagation();openStoryboardModal(idx);};ov.appendChild(eb);}
         const cpb=document.createElement('button');cpb.className='ov-btn ob-copy';cpb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia da…';cpb.onclick=e=>{e.stopPropagation();openCopyModal('stories');};ov.appendChild(cpb);
@@ -677,6 +711,35 @@ function renderStoriesGrid(){
       else{cell.classList.add('empty-story');addEmptyStoryListeners(cell);wrap.appendChild(cell);}
       grid.appendChild(wrap);
     }
+    // FIX 5: Stories drag delegation — 4 listeners on grid instead of N*4 on cells
+    grid.addEventListener('dragstart',e=>{
+      const cell=e.target.closest('[data-st-drag-idx]');if(!cell)return;
+      stDragSrc=parseInt(cell.dataset.stDragIdx);e.dataTransfer.effectAllowed='move';
+      setTimeout(()=>cell.classList.add('dragging'),0);
+    });
+    grid.addEventListener('dragover',e=>{
+      e.preventDefault();
+      const cell=e.target.closest('[data-st-drag-idx]');if(!cell)return;
+      const idx=parseInt(cell.dataset.stDragIdx);
+      if(stDragSrc!==null&&stDragSrc!==idx){
+        grid.querySelectorAll('.story-cell').forEach(c=>c.classList.remove('drag-over-st'));
+        cell.classList.add('drag-over-st');
+      }
+    });
+    grid.addEventListener('drop',e=>{
+      e.preventDefault();
+      const cell=e.target.closest('[data-st-drag-idx]');if(!cell)return;
+      const idx=parseInt(cell.dataset.stDragIdx);
+      if(stDragSrc!==null&&stDragSrc!==idx){
+        const a=currentStoryItems();const tmp=a[stDragSrc];a[stDragSrc]=a[idx];a[idx]=tmp;
+        setStoryItems(a);autoSave();
+      }
+      stDragSrc=null;renderStoriesGrid();
+    });
+    grid.addEventListener('dragend',()=>{
+      stDragSrc=null;
+      grid.querySelectorAll('.story-cell').forEach(c=>c.classList.remove('dragging','drag-over-st'));
+    });
     // PED stories section
     const pedMonth=storiesMonth||feedMonth||MONTH_OPTIONS[new Date().getMonth()];
     let pedItems=[],pedClientName='';
