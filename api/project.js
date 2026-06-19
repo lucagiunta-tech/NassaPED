@@ -1,13 +1,12 @@
-// Supabase proxy — keeps ALL credentials server-side
+// Supabase proxy — all credentials server-side
 // Required Vercel env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, NASSA_API_KEY
 import { createClient } from '@supabase/supabase-js';
 
 let _supabase = null;
 function getSupabase() {
   if (!_supabase) {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY env vars');
-    }
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY)
+      throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
     _supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY,
@@ -24,9 +23,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const key = req.headers['x-nassa-key'];
-  if (!key || key !== process.env.NASSA_API_KEY) {
+  if (!key || key !== process.env.NASSA_API_KEY)
     return res.status(401).json({ error: 'Unauthorized' });
-  }
 
   const user = req.method === 'GET' ? req.query.user : req.body?.user;
   if (!user) return res.status(400).json({ error: 'Missing user' });
@@ -46,13 +44,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       const { data: projectData } = req.body;
-      if (projectData === undefined) return res.status(400).json({ error: 'Missing data in body' });
+      if (projectData === undefined) return res.status(400).json({ error: 'Missing data' });
       const { error } = await supabase
         .from('projects')
-        .upsert(
-          { user_id: user, data: projectData, updated_at: new Date().toISOString() },
-          { onConflict: 'user_id' }
-        );
+        .upsert({ user_id: user, data: projectData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ ok: true });
     }
