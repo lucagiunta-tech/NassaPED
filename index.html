@@ -132,35 +132,8 @@
     <input type="text" id="stories-link-inp" style="display:none;"/>
   </div>
 
-  <!-- Studio add panel -->
-  <div id="sidebar-studio-add" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-    <div class="panel-head"><h2>Aggiungi</h2></div>
-    <div class="panel-scroll">
-      <div>
-        <div class="sec-lbl">Nuovo cliente</div>
-        <div class="field"><label>Nome</label><input type="text" id="nc-name" placeholder="Es: Ramaddini"/></div>
-        <div class="field"><label>Pacchetto</label>
-          <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
-        </div>
-        <div class="field"><label>Stato</label>
-          <select id="nc-status"><option>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
-        </div>
-        <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200"/></div>
-        <button class="btn primary full" onclick="addClient()">+ Aggiungi cliente</button>
-      </div>
-      <div class="divider"></div>
-      <div>
-        <div class="sec-lbl">Account aggiuntivo</div>
-        <p style="font-size:10px;color:var(--text-2);margin-bottom:8px;line-height:1.5;">Aggiungine uno solo se il cliente ha più profili social separati.</p>
-        <div class="field"><label>Cliente</label><select id="na-client"><option value="">— seleziona —</option></select></div>
-        <div class="field"><label>Nome account</label><input type="text" id="na-name" placeholder="Es: Cicero Modica IG"/></div>
-        <div class="field"><label>Piattaforma</label>
-          <select id="na-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
-        </div>
-        <button class="btn full" style="border-color:var(--teal);color:var(--teal);" onclick="addAccount()">+ Aggiungi account</button>
-      </div>
-    </div>
-  </div>
+  <!-- sidebar-studio-add moved to modal -->
+  <div id="sidebar-studio-add" style="display:none;"></div>
 </div><!-- /sidebar -->
 
 <!-- MAIN -->
