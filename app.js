@@ -1248,35 +1248,31 @@ function toggleNotesPreview(){
 
 function renderMarkdown(md){
   if(!md)return'';
-  let h=md
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    // headings
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
-    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-    // bold/italic
+  const lines=md.split('\n');
+  let html='';let inUl=false;let inOl=false;let inP=false;
+  const closeP=()=>{if(inP){html+='</p>';inP=false;}};
+  const closeUl=()=>{if(inUl){html+='</ul>';inUl=false;}};
+  const closeOl=()=>{if(inOl){html+='</ol>';inOl=false;}};
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline=s=>esc(s)
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    // links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
-    // images
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1"/>')
-    // blockquote
-    .replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>')
-    // hr
-    .replace(/^---$/gm,'<hr/>')
-    // ul
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>
-?)+/g,(m)=>'<ul>'+m+'</ul>')
-    // ol
-    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
-    // paragraphs
-    .replace(/
-{2,}/g,'</p><p>')
-    .replace(/
-/g,'<br/>');
-  return '<p>'+h+'</p>';
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;margin:6px 0;"/>');
+  lines.forEach(line=>{
+    if(/^### /.test(line)){closeP();closeUl();closeOl();html+='<h3>'+inline(line.slice(4))+'</h3>';}
+    else if(/^## /.test(line)){closeP();closeUl();closeOl();html+='<h2>'+inline(line.slice(3))+'</h2>';}
+    else if(/^# /.test(line)){closeP();closeUl();closeOl();html+='<h1>'+inline(line.slice(2))+'</h1>';}
+    else if(/^---$/.test(line)){closeP();closeUl();closeOl();html+='<hr/>';}
+    else if(/^> /.test(line)){closeP();closeUl();closeOl();html+='<blockquote>'+inline(line.slice(2))+'</blockquote>';}
+    else if(/^- /.test(line)){closeP();closeOl();if(!inUl){html+='<ul>';inUl=true;}html+='<li>'+inline(line.slice(2))+'</li>';}
+    else if(/^\d+\. /.test(line)){closeP();closeUl();if(!inOl){html+='<ol>';inOl=true;}html+='<li>'+inline(line.replace(/^\d+\. /,''))+'</li>';}
+    else if(line.trim()===''){closeUl();closeOl();closeP();}
+    else{closeUl();closeOl();if(!inP){html+='<p>';inP=true;}else html+=' ';html+=inline(line);}
+  });
+  closeP();closeUl();closeOl();
+  return html;
 }
 
 function updateNotesToc(){
