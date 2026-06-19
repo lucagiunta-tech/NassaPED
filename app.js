@@ -390,7 +390,16 @@ function switchTab(tab){
   if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesEditor();}
   if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
   if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
-  if(tab==='ped'){if(typeof renderPED==='function')renderPED();}
+  if(tab==='ped'){
+    // BUG #1 FIX: sync feedClientIdx/Month from globalClientIdx if not set
+    // UGC uses currentClientIdx (alias feedClientIdx) and currentMonth (alias feedMonth)
+    if(feedClientIdx<0&&globalClientIdx>=0){
+      feedClientIdx=globalClientIdx;
+      feedAccountIdx=clients[globalClientIdx]?.accounts?.length>0?0:-1;
+    }
+    if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];
+    if(typeof renderPED==='function')renderPED();
+  }
   if(tab==='pilastri'){renderPilastri();}
   if(tab==='cal'){if(typeof renderCalendar==='function')renderCalendar();}
   if(tab==='preview'){if(previewClientIdx<0&&globalClientIdx>=0){previewClientIdx=globalClientIdx;previewAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}syncPreviewSelectors();renderPreview();}
@@ -793,7 +802,7 @@ function renderStoriesGrid(){
     if(pedItems.length>0){
       const pedSection=document.createElement('div');pedSection.className='ped-story-section';
       const pedLbl=document.createElement('div');pedLbl.className='ped-story-section-lbl';
-      pedLbl.innerHTML=(pedItems.some(s=>s.type==='autonoma')?'👤 ':'')+(pedItems.some(s=>s.type==='template')?'🎨 ':'')+'UGC — piano del mese';
+      pedLbl.innerHTML='UGC — piano del mese';
       pedSection.appendChild(pedLbl);
       const pedGrid=document.createElement('div');pedGrid.className='stories-grid';
       pedItems.forEach((st,pi)=>{
@@ -812,13 +821,13 @@ function renderStoriesGrid(){
           }
           // Type badge overlay on top of image
           const badge=document.createElement('div');badge.className='ped-story-type-overlay '+(st.type||'autonoma');
-          badge.textContent=st.type==='autonoma'?'👤':'🎨';cell.appendChild(badge);
+          badge.innerHTML=st.type==='autonoma'?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';cell.appendChild(badge);
         } else {
           // No media yet — show upload prompt with category color
-          const icon=document.createElement('div');icon.className='ped-story-icon';icon.textContent=st.type==='autonoma'?'👤':'🎨';cell.appendChild(icon);
+          const icon=document.createElement('div');icon.className='ped-story-icon';icon.innerHTML=st.type==='autonoma'?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';cell.appendChild(icon);
           if(st.brief){const brief=document.createElement('div');brief.className='ped-story-brief-txt';brief.textContent=st.brief.slice(0,40);cell.appendChild(brief);}
           // Upload button
-          const upBtn=document.createElement('div');upBtn.className='ped-upload-btn';upBtn.textContent='↑ Carica media';
+          const upBtn=document.createElement('div');upBtn.className='ped-upload-btn';upBtn.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Carica media';
           const upInp=document.createElement('input');upInp.type='file';upInp.accept='image/*,video/*';
           upInp.style.cssText='position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:10;';
           upInp.onchange=async(e)=>{
@@ -831,9 +840,13 @@ function renderStoriesGrid(){
               const planKey=pedClientName+'|||'+pedMonth;
               const plan=pedPlans[planKey]||[];
               const idx=plan.findIndex(s=>s.id===st.id);
-              if(idx>=0){plan[idx].url=url;plan[idx].mediaType=detectType(file);}
+              if(idx>=0){plan[idx].url=url;plan[idx].mediaType=detectType(file);
+                // Also flag media type for detection
+                plan[idx].type_media=file.type.startsWith('video')?'video':'image';
+              }
               pedPlans[planKey]=plan;
-              autoSave();renderStoriesGrid();
+              // BUG #2 FIX: was calling renderStoriesGrid() — should call renderPED()
+              autoSave();renderPED();renderCalendar();
               showToast('✓ Media caricato');
             } else showToast('Errore upload','warn');
           };
@@ -1232,7 +1245,7 @@ function openCalPanel(dateStr){
   if(!evs.length){body.innerHTML='<p style="font-size:12px;color:var(--text-3);text-align:center;padding:20px;">Nessun contenuto programmato.</p>';panel.classList.add('open');return;}
   const feeds_=evs.filter(e=>e.type==='feed');const stories_=evs.filter(e=>e.type==='story');const hl_=evs.filter(e=>e.type==='highlight');const pedAuto_=evs.filter(e=>e.type==='ped'&&e.pedType==='autonoma');const pedTmpl_=evs.filter(e=>e.type==='ped'&&e.pedType==='template');
   const renderSection=(list,label,typeClass)=>{if(!list.length)return;const sec=document.createElement('div');const sl=document.createElement('div');sl.className='cal-panel-section';sl.textContent=label;sec.appendChild(sl);list.forEach(ev=>{const row=document.createElement('div');row.className='cal-panel-item';const thumb=document.createElement('div');thumb.className='cal-panel-thumb'+(typeClass==='story'?' story':'');if(ev.vidUrl){const v=document.createElement('video');v.src=ev.vidUrl;v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='width:100%;height:100%;object-fit:cover;';thumb.appendChild(v);}else if(ev.thumb){const img=document.createElement('img');img.src=ev.thumb;img.alt='';thumb.appendChild(img);}const info=document.createElement('div');info.className='cal-panel-info';const type_=document.createElement('div');type_.className=`cal-panel-type ${typeClass}`;type_.textContent=label.replace(/[📄📱⭐👤🎨] /,'');info.appendChild(type_);const cp=document.createElement('div');cp.className='cal-panel-copy';cp.textContent=ev.item.brief||ev.item.copy||ev.item.note||ev.item.name||ev.label||'—';info.appendChild(cp);if(ev.clientName){const cl_=document.createElement('div');cl_.style.cssText='font-size:10px;color:var(--text-3);margin-top:2px;';cl_.textContent=ev.clientName;info.appendChild(cl_);}if(ev.type==='feed'||ev.type==='story'||ev.type==='ped'){const tabDest=ev.type==='feed'?'feed':ev.type==='story'?'stories':'ped';const go=document.createElement('div');go.className='cal-panel-goto';go.innerHTML='→ Vai a '+(ev.type==='feed'?'Feed':ev.type==='story'?'Stories':'UGC');go.onclick=e=>{e.stopPropagation();switchTab(tabDest);closeCalPanel();};info.appendChild(go);}row.appendChild(thumb);row.appendChild(info);if(ev.type==='feed'&&ev.item)row.onclick=()=>{openLb(0,[ev.item]);};sec.appendChild(row);});body.appendChild(sec);};
-  renderSection(feeds_,'📄 Post feed','feed');renderSection(stories_,'📱 Stories','story');renderSection(hl_,'⭐ In evidenza','highlight');renderSection(pedAuto_,'👤 PED Autonoma','feed');renderSection(pedTmpl_,'🎨 PED Template','story');
+  renderSection(feeds_,'Post feed','feed');renderSection(stories_,'Stories','story');renderSection(hl_,'In evidenza','highlight');renderSection(pedAuto_,'UGC Autonoma','feed');renderSection(pedTmpl_,'UGC Template','story');
   panel.classList.add('open');
 }
 function closeCalPanel(){const p=document.getElementById('cal-day-panel');if(p)p.classList.remove('open');}
@@ -1267,9 +1280,12 @@ function pedGenerate(){
   const[moName,y]=currentMonth.split(' ');const moIdx=MESI_IT.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);const daysInMonth=new Date(year,moIdx+1,0).getDate();
   const existing=currentPedPlan();const existingDates=new Set(existing.map(s=>s.date));const newPlan=[...existing];
   for(let d=1;d<=daysInMonth;d++){const dt=new Date(year,moIdx,d);let dow=dt.getDay();dow=dow===0?6:dow-1;const iso=isoDate(year,moIdx+1,d);if(pedFreqDays.has(dow)&&!existingDates.has(iso)){newPlan.push({date:iso,type:'autonoma',brief:'',templateRef:'',id:pedUID()});}}
-  newPlan.sort((a,b)=>a.date.localeCompare(b.date));setCurrentPedPlan(newPlan);renderPED();
+  newPlan.sort((a,b)=>a.date.localeCompare(b.date));setCurrentPedPlan(newPlan);
+  // BUG #3 FIX: was missing autoSave + calendar update
+  autoSave();renderPED();renderCalendar();
+  showToast('✓ Piano UGC generato — '+newPlan.filter(s=>!existingDates.has(s.date)).length+' nuove date');
 }
-function pedClear(){if(!confirm('Svuotare il piano del mese?'))return;setCurrentPedPlan([]);renderPED();}
+function pedClear(){if(!confirm('Svuotare il piano del mese?'))return;setCurrentPedPlan([]);autoSave();renderPED();renderCalendar();showToast('Piano UGC svuotato');}
 
 function renderPEDCards(){
   const wrap=document.getElementById('ped-cards');if(!wrap)return;wrap.innerHTML='';
@@ -1279,12 +1295,12 @@ function renderPEDCards(){
     const card=document.createElement('div');card.className='ped-story-card';
     const head=document.createElement('div');head.className='ped-story-card-head';
     const dateEl=document.createElement('div');dateEl.className='ped-story-date';dateEl.textContent=fmtDate(st.date)||st.date;
-    const typeSel=document.createElement('select');typeSel.className='ped-story-type-sel';[['autonoma','👤 Autonoma'],['template','🎨 Template']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===st.type)o.selected=true;typeSel.appendChild(o);});typeSel.onchange=e=>{currentPedPlan()[i].type=e.target.value;renderPEDCards();renderPEDCal();};
-    const badge=document.createElement('span');badge.className='ped-type-badge';badge.textContent=st.type==='autonoma'?'👤':'🎨';
-    const del=document.createElement('button');del.className='ped-story-del';del.innerHTML='🗑';del.onclick=()=>{const p=currentPedPlan();p.splice(i,1);setCurrentPedPlan(p);renderPED();};
+    const typeSel=document.createElement('select');typeSel.className='ped-story-type-sel';[['autonoma','Autonoma'],['template','Template']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===st.type)o.selected=true;typeSel.appendChild(o);});typeSel.onchange=e=>{currentPedPlan()[i].type=e.target.value;renderPEDCards();renderPEDCal();};
+    const badge=document.createElement('span');badge.className='ped-type-badge';badge.innerHTML=st.type==='autonoma'?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
+    const del=document.createElement('button');del.className='ped-story-del';del.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.onclick=()=>{const p=currentPedPlan();p.splice(i,1);setCurrentPedPlan(p);renderPED();};
     head.appendChild(dateEl);head.appendChild(typeSel);head.appendChild(badge);head.appendChild(del);
     const body=document.createElement('div');body.className='ped-story-body';
-    const brief=document.createElement('textarea');brief.className='ped-story-brief';brief.placeholder=st.type==='autonoma'?'Brief per il cliente: cosa girare, dove, come…':'Descrizione contenuto / copy…';brief.value=st.brief||'';brief.oninput=e=>{currentPedPlan()[i].brief=e.target.value;};body.appendChild(brief);
+    const brief=document.createElement('textarea');brief.className='ped-story-brief';brief.placeholder=st.type==='autonoma'?'Brief per il cliente…':'Descrizione / copy…';brief.value=st.brief||'';brief.oninput=e=>{currentPedPlan()[i].brief=e.target.value;autoSave();};body.appendChild(brief);
     if(st.type==='template'){const tmpl=document.createElement('input');tmpl.type='text';tmpl.className='ped-story-template';tmpl.placeholder='Link o nome template (Canva, Adobe Express…)';tmpl.value=st.templateRef||'';tmpl.oninput=e=>{currentPedPlan()[i].templateRef=e.target.value;};body.appendChild(tmpl);}
     card.appendChild(head);card.appendChild(body);wrap.appendChild(card);
   });
@@ -1309,8 +1325,8 @@ function renderPEDCal(){
     const cell=document.createElement('div');cell.className='ped-cal-day'+(isOther?' other':'')+(isToday?' today':'');
     const num=document.createElement('div');num.className='ped-cal-day-num';num.textContent=cellD;cell.appendChild(num);
     const evs=document.createElement('div');evs.className='ped-cal-events';
-    (feedMap[ds]||[]).forEach(it=>{const e=document.createElement('div');e.className='ped-cal-ev feed';e.textContent='📸 '+(it.type==='video'?'Reel':'Post');evs.appendChild(e);});
-    (pedMap[ds]||[]).forEach(s=>{const e=document.createElement('div');e.className='ped-cal-ev '+s.type;e.textContent=(s.type==='autonoma'?'👤':'🎨')+' Story';evs.appendChild(e);});
+    (feedMap[ds]||[]).forEach(it=>{const e=document.createElement('div');e.className='ped-cal-ev feed';e.textContent=(it.type==='video'?'Reel':'Post');evs.appendChild(e);});
+    (pedMap[ds]||[]).forEach(s=>{const e=document.createElement('div');e.className='ped-cal-ev '+s.type;e.textContent=s.type==='autonoma'?'Autonoma':'Template';evs.appendChild(e);});
     cell.appendChild(evs);if((pedMap[ds]||[]).length){cell.title=(pedMap[ds]||[]).map(s=>s.brief||'(brief vuoto)').join(' | ');cell.style.cursor='pointer';}
     gridEl.appendChild(cell);
   }
