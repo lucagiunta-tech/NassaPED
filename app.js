@@ -91,13 +91,18 @@ const CLOUD = {
     clients.forEach(c => { if(!c.accounts) c.accounts=[]; if(!c.id) c.id='c_'+Date.now(); });
     feeds = {};
     Object.keys(data.feeds||{}).forEach(k => {
-      feeds[k] = (data.feeds[k]||[]).map(item => ({
-        ...item,
-        url: (item.externalUrl&&item.externalUrl.startsWith('http')) ? item.externalUrl : '',
-        needsReload: !(item.externalUrl&&item.externalUrl.startsWith('http')) && !!item.name,
-        // Restore slide URLs from externalUrl
-        slides: (item.slides||[]).map(s=>({...s, url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:s.url||''}))
-      }));
+      feeds[k] = (data.feeds[k]||[]).map(item => {
+        const hasUrl = item.externalUrl&&item.externalUrl.startsWith('http');
+        return {
+          ...item,
+          // Fix type: if pending but has a valid URL, restore as image
+          type: (item.type==='pending' && hasUrl) ? 'image' : item.type,
+          url: hasUrl ? item.externalUrl : '',
+          needsReload: !hasUrl && !!item.name,
+          // Restore slide URLs from externalUrl
+          slides: (item.slides||[]).map(s=>({...s, url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:s.url||''}))
+        };
+      });
     });
     stories = {};
     Object.keys(data.stories||{}).forEach(k => {
@@ -381,7 +386,7 @@ function renderStudio(){
   const countTxt=clients.length+' client'+(clients.length===1?'e':'i');if(el('studio-count'))el('studio-count').textContent=countTxt;
   const tbody=document.getElementById('clients-tbody');if(!tbody)return;tbody.innerHTML='';
   if(!clients.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-3);padding:24px;font-size:12px;">Nessun cliente. Aggiungine uno dal pannello.</td></tr>';return;}
-  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:var(--green);border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${a.platform}">${a.name} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${c.name}</td><td style="font-size:11px;">${accsHtml}</td><td><span class="pkg-badge">${c.pkg}</span></td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${c.status}</span></td><td class="muted">€ ${c.revenue.toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})">✎ Modifica</button></div></td>`;tbody.appendChild(tr);});
+  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:var(--green);border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${a.platform}">${a.name} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${c.name}</td><td style="font-size:11px;">${accsHtml}</td><td><span class="pkg-badge">${c.pkg}</span></td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${c.status}</span></td><td class="muted">€ ${c.revenue.toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})">✎ Modifica</button><button class="btn sm danger" onclick="removeClient(${i})">🗑 Elimina</button></div></td>`;tbody.appendChild(tr);});
 }
 
 /* SELECTS */
@@ -1125,7 +1130,7 @@ function loadProjectFile(input){
     try{
       const data=JSON.parse(e.target.result);if(!data.version||!data.clients)throw new Error('File non valido');
       clients=data.clients||[];clients.forEach(c=>{if(!c.accounts)c.accounts=[];if(!c.id)c.id='c_'+Date.now()+'_'+Math.random();});
-      feeds={};Object.keys(data.feeds||{}).forEach(k=>{feeds[k]=(data.feeds[k]||[]).map(item=>({...item,url:(item.externalUrl&&item.externalUrl.startsWith('http'))?item.externalUrl:'',needsReload:!(item.externalUrl&&item.externalUrl.startsWith('http'))&&!!item.name,slides:(item.slides||[]).map(s=>({...s,url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))}))}); 
+      feeds={};Object.keys(data.feeds||{}).forEach(k=>{feeds[k]=(data.feeds[k]||[]).map(item=>{const hasUrl=item.externalUrl&&item.externalUrl.startsWith('http');return{...item,type:(item.type==='pending'&&hasUrl)?'image':item.type,url:hasUrl?item.externalUrl:'',needsReload:!hasUrl&&!!item.name,slides:(item.slides||[]).map(s=>({...s,url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))};})});
       stories={};Object.keys(data.stories||{}).forEach(k=>{stories[k]=(data.stories[k]||[]).map(st=>({...st,url:(st.externalUrl&&st.externalUrl.startsWith('http'))?st.externalUrl:'',needsReload:!(st.externalUrl&&st.externalUrl.startsWith('http'))&&!!st.name,slides:(st.slides||[]).map(s=>({...s,url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))}))}); 
       highlights={};Object.keys(data.highlights||{}).forEach(k=>{highlights[k]=(data.highlights[k]||[]).map(h=>({name:h.name,coverUrl:(h.coverUrl&&h.coverUrl.startsWith('http'))?h.coverUrl:''}));});
       pedPlans={};Object.keys(data.pedPlans||{}).forEach(k=>{pedPlans[k]=data.pedPlans[k]||[];});
