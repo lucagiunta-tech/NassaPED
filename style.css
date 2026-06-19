@@ -112,7 +112,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 #feed-month-pills,#stories-month-pills{display:flex;flex-direction:column;gap:4px;}
 .month-pill{font-size:10px;padding:3px 8px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .12s;}
 .month-pill:hover{border-color:var(--green);color:var(--green);}
-.month-pill.active{background:var(--green);border-color:var(--green);color:var(--green-text);}
+.month-pill.active{background:var(--green);border-color:var(--green);color:#000;font-weight:700;}
 .year-nav{display:flex;align-items:center;gap:4px;margin-bottom:5px;}
 .year-nav-btn{background:none;border:1px solid var(--border);border-radius:var(--rs);padding:2px 7px;font-size:11px;font-family:var(--font);color:var(--text-2);cursor:pointer;line-height:1.4;transition:all .1s;}
 .year-nav-btn:hover{border-color:var(--green);color:var(--green);}
@@ -638,7 +638,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-month-pills-inline{display:flex;gap:3px;flex:1;overflow-x:auto;padding:2px 0;}
 .feed-month-pills-inline::-webkit-scrollbar{height:0;}
 .feed-month-pills-inline .month-pill{padding:6px 13px;border-radius:99px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;border:.5px solid var(--border);color:var(--text-2);background:var(--surface);flex-shrink:0;transition:all .1s;}
-.feed-month-pills-inline .month-pill.active{background:var(--green);color:#fff;border-color:var(--green);}
+.feed-month-pills-inline .month-pill.active{background:var(--green);color:#000;font-weight:700;border-color:var(--green);}
 .feed-month-pills-inline .year-nav{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 .feed-month-pills-inline .year-nav-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:16px;padding:0 3px;line-height:1;}
 .feed-month-pills-inline .year-label{font-size:15px;font-weight:600;color:var(--text-2);}
