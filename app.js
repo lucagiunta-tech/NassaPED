@@ -1116,9 +1116,12 @@ function todayISO(){const n=new Date();return isoDate(n.getFullYear(),n.getMonth
 
 function calGetAllEvents(){
   const events={};const addEv=(ds,ev)=>{if(!events[ds])events[ds]=[];events[ds].push(ev);};
-  // Scan ALL feed/story keys (not just current year) so calendar shows events from any year
+  // Filter by globalClientIdx — only show current client's events
   const allFeedKeys=Object.keys(feeds);const allStoryKeys=Object.keys(stories);
-  clients.forEach((cl,ci)=>{
+  const clientList=globalClientIdx>=0
+    ?[[clients[globalClientIdx],globalClientIdx]]  // solo cliente corrente
+    :clients.map((cl,ci)=>[cl,ci]);                // nessun cliente selezionato: mostra tutti
+  clientList.forEach(([cl,ci])=>{
     (cl.accounts||[]).forEach(acc=>{
       // Get all months that have data for this account
       const accKeys=allFeedKeys.filter(k=>k.startsWith(acc.id+'|||'));
