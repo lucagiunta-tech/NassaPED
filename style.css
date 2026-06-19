@@ -238,6 +238,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .nr-icon{font-size:20px;opacity:.5;}
 .nr-name{font-size:8px;color:rgba(255,255,255,.4);text-align:center;padding:0 6px;line-height:1.3;word-break:break-all;}
 .nr-label{font-size:8px;color:rgba(255,200,0,.7);font-weight:600;}
+.nr-reupload{font-size:9px;font-weight:600;color:#fff;background:rgba(26,140,63,.85);border-radius:3px;padding:3px 8px;margin-top:4px;cursor:pointer;white-space:nowrap;}
 .feed-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px 20px;color:var(--text-3);text-align:center;grid-column:1/-1;}
 .feed-empty .fe-icon{font-size:32px;}
 .feed-empty p{font-size:12px;line-height:1.6;}
