@@ -776,6 +776,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* Selectors row */
 .notes-sel-row{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:.5px solid var(--border);background:var(--surface);flex-shrink:0;}
 .notes-wc{font-size:11px;color:var(--text-3);}
+.notes-client-name{font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;}
 
 /* Toolbar */
 .notes-toolbar{display:flex;align-items:center;gap:2px;padding:5px 12px;border-bottom:.5px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap;}
