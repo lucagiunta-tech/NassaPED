@@ -682,6 +682,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .cell-badge.video{background:#b2dfdb;color:#00574b;}
 .cell-badge.carousel{background:#f0f4b2;color:#616100;}
 .cell-badge.pending{background:rgba(255,255,255,.85);color:#555;}
+.cell-badge.editorial{background:rgba(255,255,255,.92);color:#111;}
 
 /* ════ CALENDARIO TEATRO STYLE ════ */
 .cal-teatro-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
@@ -719,3 +720,38 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* Remove old cal-month-grid styles conflict */
 .cal-month-grid{display:none;}
+
+/* ════ BRAND PALETTE CLIENT MODAL ════ */
+.ec-palette-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.ec-pal-slot{display:flex;flex-direction:column;gap:4px;}
+.ec-pal-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);}
+.ec-pal-preview{height:32px;border-radius:6px;border:.5px solid var(--border);cursor:pointer;transition:transform .1s;}
+.ec-pal-preview:hover{transform:scale(1.04);}
+.ec-pal-row{display:flex;align-items:center;gap:5px;}
+.ec-pal-swatch{width:16px;height:16px;border-radius:3px;flex-shrink:0;border:.5px solid var(--border);}
+.ec-pal-inp{font-size:10px;font-weight:600;font-family:monospace;padding:3px 5px;border:.5px solid var(--border);border-radius:4px;width:100%;outline:none;color:var(--text);background:var(--surface);}
+.ec-pal-inp:focus{border-color:var(--green);}
+/* Live preview wrap */
+.ec-pal-preview-wrap{display:flex;gap:10px;align-items:center;padding:12px;background:var(--bg);border-radius:8px;border:.5px solid var(--border);margin-bottom:12px;}
+.ec-pal-card{width:80px;aspect-ratio:4/5;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;padding:8px 7px 7px;flex-shrink:0;font-family:var(--font);}
+.ec-pal-card-story{width:50px;aspect-ratio:9/16;}
+.ec-pal-hint{font-size:10px;color:var(--text-3);line-height:1.5;flex:1;}
+
+/* ════ EDITORIAL CARD MODAL ════ */
+.ed-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.ed-theme-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.ed-theme-btn{padding:5px 10px;border-radius:5px;border:.5px solid var(--border);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .1s;}
+.ed-theme-btn.active{border-color:var(--green);background:var(--green-lt);color:#111;}
+.ed-preview-wrap{border-radius:8px;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:16px;background:var(--bg);}
+.ed-card-preview{display:flex;flex-direction:column;font-family:var(--font);}
+.ed-card-preview.feed-fmt{width:180px;aspect-ratio:4/5;padding:16px 14px 14px;border-radius:8px;}
+.ed-card-preview.story-fmt{width:110px;aspect-ratio:9/16;padding:14px 12px 12px;border-radius:8px;}
+.ecp-eyebrow{font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.5;margin-bottom:8px;}
+.ecp-title{font-weight:800;line-height:1.08;letter-spacing:-1px;}
+.ed-card-preview.feed-fmt .ecp-title{font-size:22px;}
+.ed-card-preview.story-fmt .ecp-title{font-size:14px;}
+.ecp-div{height:1.5px;background:currentColor;opacity:.15;margin:8px 0;}
+.ecp-copy{font-size:8px;line-height:1.5;opacity:.6;}
+.ecp-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:8px;}
+.ecp-author{font-size:7px;font-weight:700;opacity:.7;}
+.ecp-logo{width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;}
