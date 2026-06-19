@@ -6,211 +6,237 @@
 <title>Nassa Studio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231A8C3F'/><text y='.9em' font-size='70' x='15' fill='white' font-family='Arial' font-weight='bold'>N</text></svg>"/>
 <link rel="stylesheet" href="style.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/10.33.0/Dropbox-sdk.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="app">
 
+<!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-brand"><div class="brand-mark">N</div></div>
-  <nav class="topbar-nav">
-    <div class="nav-tab" id="tab-studio" onclick="switchTab('studio')">Studio</div>
-    <div class="nav-tab active" id="tab-feed" onclick="switchTab('feed')">Feed</div>
-    <div class="nav-tab" id="tab-stories" onclick="switchTab('stories')">Stories</div>
-    <div class="nav-tab" id="tab-ped" onclick="switchTab('ped')">PED Stories</div>
-    <div class="nav-tab" id="tab-cal" onclick="switchTab('cal')">Calendario</div>
-    <div class="nav-tab" id="tab-preview" onclick="switchTab('preview')">Preview</div>
-  </nav>
-  <div class="topbar-space"></div>
+  <div class="topbar-brand">
+    <div class="brand-mark">N</div>
+    <div><div class="brand-name">Nassa Studio</div></div>
+  </div>
+  <div class="topbar-tabs">
+    <div class="nav-tab active" id="tab-studio" onclick="switchTab('studio')">Clienti</div>
+  </div>
   <div class="topbar-right">
-    <div class="user-actions">
-      <button class="btn btn-primary" id="dbx-sync-btn" style="display:none;">Sync DB</button>
-    </div>
-    <div class="ctx-pill" id="ctx-pill"></div>
-    <div class="avatar">AA</div>
+    <span class="cloud-badge" id="cloud-status" onclick="toggleUserSwitcher()" title="Cloud sync">☁ Cloud</span>
+    <div class="avatar" id="user-avatar" onclick="toggleUserSwitcher()">AA</div>
   </div>
 </div>
 
-<div id="dbx-loader" class="dbx-loader" style="display:none;">
-  <div class="spinner"></div>
-  <div id="dbx-loader-text">Sincronizzazione in corso...</div>
+<!-- SUBTOPBAR CLIENTE -->
+<div class="subtopbar" id="subtopbar">
+  <div class="subtopbar-client" onclick="backToClients()" title="Torna ai clienti">
+    <span class="subtopbar-back">‹</span>
+    <div>
+      <div class="subtopbar-name" id="subtopbar-name">—</div>
+      <div class="subtopbar-pkg" id="subtopbar-pkg"></div>
+    </div>
+  </div>
+  <div class="subtopbar-tabs">
+    <div class="sub-tab" id="sub-tab-notes"   onclick="switchTab('notes')">Piano</div>
+    <div class="sub-tab" id="sub-tab-feed"    onclick="switchTab('feed')">Feed</div>
+    <div class="sub-tab" id="sub-tab-stories" onclick="switchTab('stories')">Stories</div>
+    <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">PED Stories</div>
+    <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
+    <div class="sub-tab" id="sub-tab-preview" onclick="switchTab('preview')">Preview</div>
+  </div>
+  <div class="acc-switcher" id="acc-switcher" style="display:none;">
+    <span class="acc-lbl">Account</span>
+    <div id="acc-btns" style="display:flex;gap:4px;"></div>
+  </div>
+</div>
+
+<!-- USER SWITCHER -->
+<div class="user-switcher" id="user-switcher">
+  <div class="user-switcher-title">Utente</div>
+  <button class="user-btn" onclick="switchUser('shared')">Shared (team)</button>
+  <button class="user-btn" onclick="switchUser('luca')">Luca</button>
+  <button class="user-btn" onclick="switchUser('alberto')">Alberto</button>
+  <button class="user-btn" onclick="switchUser('giacomo')">Giacomo</button>
+  <button class="user-btn" onclick="switchUser('paolone')">Paolone</button>
+  <button class="user-btn" onclick="switchUser('akash')">Akash</button>
+  <button class="user-btn" onclick="switchUser('hermes')">Hermes</button>
+  <button class="user-btn" onclick="switchUser('matteo')">Matteo</button>
 </div>
 
 <div class="body">
-<div class="iconbar">
-  <div class="icon-btn" id="icon-studio" onclick="switchTab('studio')" title="Studio">📊</div>
-  <div class="icon-btn" id="icon-studio2" onclick="switchTab('studio')" title="Clienti">👥</div>
-  <div class="icon-sep"></div>
-  <div class="icon-btn active" id="icon-feed" onclick="switchTab('feed')" title="Feed">📋</div>
-  <div class="icon-btn" id="icon-stories" onclick="switchTab('stories')" title="Stories">📱</div>
-  <div class="icon-btn" id="icon-ped" onclick="switchTab('ped')" title="PED Stories">📅</div>
-  <div class="icon-btn" id="icon-cal" onclick="switchTab('cal')" title="Calendario">🗓</div>
-  <div class="icon-btn" id="icon-preview" onclick="switchTab('preview')" title="Preview">🖼</div>
-</div>
 
-<!-- STUDIO PANEL -->
-<div class="panel" id="panel-studio" style="display:none;">
-  <div class="panel-head"><h2>Clienti</h2></div>
-  <div class="panel-scroll">
-    <div>
-      <div class="sec-lbl">Aggiungi cliente</div>
-      <div class="field"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Ramaddini"/></div>
-      <div class="field"><label>Pacchetto</label>
-        <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
-      </div>
-      <div class="field"><label>Stato</label>
-        <select id="nc-status"><option>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
-      </div>
-      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200"/></div>
-      <button class="btn primary full" onclick="addClient()">+ Aggiungi cliente</button>
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <!-- Studio sidebar -->
+  <div id="sidebar-studio" style="display:flex;flex-direction:column;height:100%;">
+    <div style="padding:10px 8px;flex:1;overflow-y:auto;">
+      <div class="sidebar-label">Studio</div>
+      <div class="sidebar-item active" id="si-studio" onclick="switchTab('studio')"><span class="sidebar-icon">◫</span>Clienti</div>
+      <div class="sidebar-sep"></div>
+      <div class="sidebar-label">Contenuto</div>
     </div>
-    <div class="divider"></div>
-    <div>
-      <div class="sec-lbl">Aggiungi account aggiuntivo</div>
-      <div class="field"><label>Cliente</label><select id="na-client"><option value="">— seleziona —</option></select></div>
-      <div class="field"><label>Nome account / canale</label><input type="text" id="na-name" placeholder="Es: Cicero Modica IG"/></div>
-      <div class="field"><label>Piattaforma</label>
-        <select id="na-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
-      </div>
-      <p style="font-size:10px;color:var(--text-2);margin-bottom:6px;line-height:1.4;">Ogni cliente ha già un account principale. Aggiungine altri solo se gestisci più profili social separati.</p>
-      <button class="btn full" style="border-color:var(--teal);color:var(--teal);" onclick="addAccount()">+ Aggiungi account</button>
+    <div style="padding:10px 8px;border-top:1px solid var(--border-lt);">
+      <div style="padding:6px 10px;font-size:10px;color:var(--text-3);">Nassa Studio · 2026</div>
     </div>
-    <div class="divider"></div>
-    <div class="rule-chip"><strong>Strategy First.</strong> Nessun cliente senza Setup Strategico.</div>
   </div>
-</div>
 
-<!-- FEED PANEL -->
-<div class="panel" id="panel-feed">
-  <div class="feed-selector">
-    <div class="feed-selector-label">Seleziona feed</div>
-    <select id="feed-client-sel" onchange="onFeedClientChange()"><option value="">— Cliente —</option></select>
-    <select id="feed-account-sel" onchange="onFeedAccountChange()" style="display:none;"></select>
-    <div class="month-pills" id="feed-month-pills"></div>
-  </div>
-  <div class="panel-scroll">
-    <div>
-      <div class="sec-lbl">Carica contenuti</div>
-      <div class="drop-zone" id="feed-drop-zone">
-        <input type="file" id="feed-file-input" accept="image/*,video/*" multiple onchange="queueFeedFiles(this.files)"/>
-        <span class="dz-icon">📂</span>
-        <div class="dz-title">Trascina file qui</div>
-        <div class="dz-sub">o <strong>clicca per sfogliare</strong><br>JPG · PNG · MP4 · MOV</div>
-      </div>
-      <div style="margin-top:8px;">
-        <div class="link-tabs">
-          <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
-          <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Altro link</button>
-        </div>
-        <div class="link-row" style="margin-top:5px;">
-          <input type="text" id="feed-link-inp" placeholder="Incolla link Frame.io…" onkeydown="if(event.key==='Enter')addFeedLink()"/>
-          <button onclick="addFeedLink()">+</button>
-        </div>
-        <p style="font-size:9px;color:var(--text-3);margin-top:4px;" id="feed-link-hint">Copia il link di condivisione da Frame.io.</p>
-      </div>
+  <!-- Feed sidebar panel -->
+  <div id="sidebar-feed" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+    <div class="feed-selector">
+      <div class="feed-selector-label">Feed</div>
+      <select id="feed-client-sel" onchange="onFeedClientChange()"><option value="">— Cliente —</option></select>
+      <select id="feed-account-sel" onchange="onFeedAccountChange()" style="display:none;"></select>
+      <div id="feed-month-pills"></div>
     </div>
-    <div class="divider"></div>
-    <div>
-      <div class="sec-lbl">Riepilogo</div>
-      <div class="stats-row" style="margin-bottom:4px;">
-        <div class="stat-card"><div class="n" id="stat-tot">0</div><div class="l">Post</div></div>
-        <div class="stat-card"><div class="n" id="stat-vid">0</div><div class="l">Reel</div></div>
-        <div class="stat-card"><div class="n" id="stat-car">0</div><div class="l">Caros.</div></div>
+    <div class="panel-scroll">
+      <div>
+        <div class="sec-lbl">Carica</div>
+        <div class="drop-zone" id="feed-drop-zone">
+          <input type="file" id="feed-file-input" accept="image/*,video/*" multiple onchange="queueFeedFiles(this.files)"/>
+          <span class="dz-icon">📂</span>
+          <div class="dz-title">Trascina file qui</div>
+          <div class="dz-sub">o <strong>clicca per sfogliare</strong><br>JPG · PNG · MP4 · MOV</div>
+        </div>
+        <div style="margin-top:7px;">
+          <div class="link-tabs">
+            <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
+            <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Link</button>
+          </div>
+          <div class="link-row" style="margin-top:4px;">
+            <input type="text" id="feed-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addFeedLink()"/>
+            <button onclick="addFeedLink()">+</button>
+          </div>
+        </div>
       </div>
-      <div class="stats-row">
-        <div class="stat-card"><div class="n teal" id="stat-stories">0</div><div class="l">Stories</div></div>
-        <div class="stat-card"><div class="n teal" id="stat-stories-sb">0</div><div class="l">Board</div></div>
-        <div class="stat-card"><div class="n teal" id="stat-hl">0</div><div class="l">Evidenze</div></div>
+      <div class="divider"></div>
+      <div>
+        <div class="sec-lbl">Riepilogo</div>
+        <div class="stats-row" style="margin-bottom:4px;">
+          <div class="stat-card"><div class="n" id="stat-tot">0</div><div class="l">Post</div></div>
+          <div class="stat-card"><div class="n" id="stat-vid">0</div><div class="l">Reel</div></div>
+          <div class="stat-card"><div class="n" id="stat-car">0</div><div class="l">Caros.</div></div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="n teal" id="stat-stories">0</div><div class="l">Stories</div></div>
+          <div class="stat-card"><div class="n teal" id="stat-stories-sb">0</div><div class="l">Board</div></div>
+          <div class="stat-card"><div class="n teal" id="stat-hl">0</div><div class="l">Evidenze</div></div>
+        </div>
       </div>
+      <div class="divider"></div>
+      <div class="info-box" id="feed-status">Seleziona cliente e account.</div>
+      <div class="rule-chip"><strong>Max 2 revisioni</strong> — il terzo giro è a tariffa.</div>
     </div>
-    <div class="divider"></div>
-    <div class="info-box" id="feed-status">Seleziona un cliente per iniziare.</div>
-    <div class="divider"></div>
-    <div class="rule-chip"><strong>Regola Nassa:</strong> max 2 giri revisioni. Il terzo è a tariffa.</div>
   </div>
-</div>
 
-<!-- STORIES PANEL -->
-<div class="panel" id="panel-stories" style="display:none;">
-  <div class="feed-selector">
-    <div class="feed-selector-label">Seleziona account</div>
-    <select id="stories-client-sel" onchange="onStoriesClientChange()"><option value="">— Cliente —</option></select>
-    <select id="stories-account-sel" onchange="onStoriesAccountChange()" style="display:none;"></select>
-    <div class="month-pills" id="stories-month-pills"></div>
+  <!-- Stories sidebar panel -->
+  <div id="sidebar-stories" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+    <div class="feed-selector">
+      <div class="feed-selector-label">Stories</div>
+      <select id="stories-client-sel" onchange="onStoriesClientChange()"><option value="">— Cliente —</option></select>
+      <select id="stories-account-sel" onchange="onStoriesAccountChange()" style="display:none;"></select>
+      <div id="stories-month-pills"></div>
+    </div>
+    <div class="panel-scroll">
+      <div>
+        <div class="sec-lbl">Aggiungi</div>
+        <div class="drop-zone" id="stories-drop-zone">
+          <input type="file" id="stories-file-input" accept="image/*,video/*" multiple onchange="queueStoryFiles(this.files)"/>
+          <span class="dz-icon">📱</span>
+          <div class="dz-title">Trascina file qui</div>
+          <div class="dz-sub">o <strong>clicca per sfogliare</strong> · 9:16</div>
+        </div>
+        <div style="margin-top:7px;">
+          <div class="link-tabs">
+            <button class="link-tab active" id="sl-tab-frame" onclick="setStoriesLinkTab('frame')">Frame.io</button>
+            <button class="link-tab" id="sl-tab-other" onclick="setStoriesLinkTab('other')">Link</button>
+          </div>
+          <div class="link-row" style="margin-top:4px;">
+            <input type="text" id="stories-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addStoryLink()"/>
+            <button onclick="addStoryLink()">+</button>
+          </div>
+        </div>
+        <div style="margin-top:7px;">
+          <button class="btn full" style="border-color:var(--teal);color:var(--teal);" onclick="openStoryboardModal(null)">+ Storyboard</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="sec-lbl">Riepilogo</div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="n teal" id="stat-st-tot">0</div><div class="l">Stories</div></div>
+          <div class="stat-card"><div class="n teal" id="stat-st-sb">0</div><div class="l">Board</div></div>
+          <div class="stat-card"><div class="n teal" id="stat-st-hl">0</div><div class="l">Evidenze</div></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="rule-chip"><strong>Formato:</strong> 1080×1920 · 9:16</div>
+    </div>
   </div>
-  <div class="panel-scroll">
-    <div>
-      <div class="sec-lbl">Aggiungi story</div>
-      <div class="drop-zone" id="stories-drop-zone">
-        <input type="file" id="stories-file-input" accept="image/*,video/*" multiple onchange="queueStoryFiles(this.files)"/>
-        <span class="dz-icon">📱</span>
-        <div class="dz-title">Trascina file qui</div>
-        <div class="dz-sub">o <strong>clicca per sfogliare</strong><br>Formato 9:16</div>
-      </div>
-      <div style="margin-top:7px;">
-        <div class="link-tabs">
-          <button class="link-tab active" id="sl-tab-frame" onclick="setStoriesLinkTab('frame')">Frame.io</button>
-          <button class="link-tab" id="sl-tab-other" onclick="setStoriesLinkTab('other')">Altro link</button>
+
+  <!-- Studio add panel -->
+  <div id="sidebar-studio-add" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+    <div class="panel-head"><h2>Aggiungi</h2></div>
+    <div class="panel-scroll">
+      <div>
+        <div class="sec-lbl">Nuovo cliente</div>
+        <div class="field"><label>Nome</label><input type="text" id="nc-name" placeholder="Es: Ramaddini"/></div>
+        <div class="field"><label>Pacchetto</label>
+          <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
         </div>
-        <div class="link-row" style="margin-top:5px;">
-          <input type="text" id="stories-link-inp" placeholder="Incolla link Frame.io…" onkeydown="if(event.key==='Enter')addStoryLink()"/>
-          <button onclick="addStoryLink()">+</button>
+        <div class="field"><label>Stato</label>
+          <select id="nc-status"><option>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
         </div>
+        <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200"/></div>
+        <button class="btn primary full" onclick="addClient()">+ Aggiungi cliente</button>
       </div>
-      <div style="margin-top:7px;">
-        <button class="btn full" style="border-color:var(--teal);color:var(--teal);" onclick="openStoryboardModal(null)">+ Nuovo storyboard</button>
+      <div class="divider"></div>
+      <div>
+        <div class="sec-lbl">Account aggiuntivo</div>
+        <p style="font-size:10px;color:var(--text-2);margin-bottom:8px;line-height:1.5;">Aggiungine uno solo se il cliente ha più profili social separati.</p>
+        <div class="field"><label>Cliente</label><select id="na-client"><option value="">— seleziona —</option></select></div>
+        <div class="field"><label>Nome account</label><input type="text" id="na-name" placeholder="Es: Cicero Modica IG"/></div>
+        <div class="field"><label>Piattaforma</label>
+          <select id="na-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
+        </div>
+        <button class="btn full" style="border-color:var(--teal);color:var(--teal);" onclick="addAccount()">+ Aggiungi account</button>
       </div>
     </div>
-    <div class="divider"></div>
-    <div>
-      <div class="sec-lbl">Riepilogo</div>
-      <div class="stats-row">
-        <div class="stat-card"><div class="n teal" id="stat-st-tot">0</div><div class="l">Stories</div></div>
-        <div class="stat-card"><div class="n teal" id="stat-st-sb">0</div><div class="l">Board</div></div>
-        <div class="stat-card"><div class="n teal" id="stat-st-hl">0</div><div class="l">Evidenze</div></div>
-      </div>
-    </div>
-    <div class="divider"></div>
-    <div class="rule-chip"><strong>Formato:</strong> 1080×1920 · 9:16</div>
   </div>
-</div>
+</div><!-- /sidebar -->
 
 <!-- MAIN -->
 <div class="main">
 
-  <!-- STUDIO PAGE -->
-  <div class="tab-page" id="page-studio">
+  <!-- STUDIO -->
+  <div class="tab-page active" id="page-studio">
     <div class="content-bar">
       <span class="content-title">Studio</span>
-      <span class="content-tag">Dashboard clienti</span>
+      <span class="content-tag" id="studio-count">0 clienti</span>
       <div class="content-space"></div>
-      <span class="content-meta" id="studio-count">0 clienti</span>
+      <button class="btn sm primary" onclick="showStudioAdd()">+ Aggiungi</button>
     </div>
     <div class="studio-main">
       <div class="kpi-grid">
         <div class="kpi-card kpi-green">
           <div class="kpi-label">Fatturato mensile</div>
-          <div style="display:flex;align-items:baseline;gap:4px;"><span style="font-size:14px;font-weight:500;color:var(--green);">€</span><div class="kpi-val" id="kpi-revenue">0</div></div>
+          <div style="display:flex;align-items:baseline;gap:3px;"><span style="font-size:14px;font-weight:500;color:var(--green)">€</span><div class="kpi-val" id="kpi-revenue">0</div></div>
           <div class="kpi-sub" id="kpi-rev-sub">da 0 clienti attivi</div>
         </div>
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">Clienti attivi</div>
-          <div class="kpi-val" id="kpi-active">0</div>
+          <div class="kpi-val" style="color:var(--blue);" id="kpi-active">0</div>
           <div class="kpi-sub">retainer in corso</div>
         </div>
-        <div class="kpi-card" style="border-color:var(--teal-lt);">
+        <div class="kpi-card">
           <div class="kpi-label">Account totali</div>
           <div class="kpi-val" style="color:var(--teal);" id="kpi-accounts">0</div>
-          <div class="kpi-sub">Instagram, FB, TikTok…</div>
+          <div class="kpi-sub">profili social gestiti</div>
         </div>
         <div class="kpi-card kpi-amber">
           <div class="kpi-label">Ore stimate</div>
-          <div style="display:flex;align-items:baseline;gap:4px;"><input class="kpi-inp" id="kpi-hours" type="text" value="0" style="color:var(--amber);"/><span style="font-size:12px;color:var(--text-2);">h</span></div>
+          <div style="display:flex;align-items:baseline;gap:3px;"><input class="kpi-inp" id="kpi-hours" type="text" value="0" style="color:var(--amber);"/><span style="font-size:12px;color:var(--text-2);">h</span></div>
           <div class="kpi-sub">questo mese</div>
         </div>
       </div>
-      <div class="table-hd"><h3>Clienti retainer</h3><span style="font-size:11px;color:var(--text-2);" id="studio-count2">0 clienti</span></div>
+      <div class="table-hd"><h3>Clienti</h3></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Cliente</th><th>Account</th><th>Pacchetto</th><th>Stato</th><th>€/mese</th><th></th></tr></thead>
@@ -220,53 +246,69 @@
     </div>
   </div>
 
-  <!-- FEED PAGE -->
-  <div class="tab-page active" id="page-feed">
+  <!-- PIANO TESTO -->
+  <div class="tab-page" id="page-notes">
     <div class="content-bar">
-      <span class="content-title" id="feed-title">Feed Preview</span>
-      <span class="content-tag" id="feed-tag">1080×1350 · 4:5</span>
+      <span class="content-title">Piano testo</span>
+      <span class="content-tag">Calendario editoriale</span>
+      <div class="content-space"></div>
+      <select class="preview-sel" id="notes-client-sel" onchange="onNotesClientChange()"><option value="">— Cliente —</option></select>
+      <select class="preview-sel" id="notes-month-sel" onchange="renderNotesEditor()" style="display:none;"></select>
+    </div>
+    <div class="cal-text-area">
+      <textarea class="cal-text-editor" id="notes-editor"
+        placeholder="Scrivi qui il piano editoriale del mese...&#10;&#10;Es:&#10;Lun 1 — Reel backstage produzione&#10;Mar 2 — Carosello: 5 motivi per...&#10;Mer 3 — Story: dietro le quinte&#10;..."
+        oninput="saveNotesText()"></textarea>
+    </div>
+  </div>
+
+  <!-- FEED -->
+  <div class="tab-page" id="page-feed">
+    <div class="content-bar">
+      <span class="content-title" id="feed-title">Feed</span>
+      <span class="content-tag" id="feed-tag">4:5 · 1080×1350</span>
       <div class="content-space"></div>
       <span class="content-meta" id="feed-meta">0 post</span>
     </div>
     <div class="content-area">
       <div class="grid-toolbar">
         <div class="grid-hint-left">
-          <span class="hint-chip">☰ trascina</span> riordina &nbsp;·&nbsp;
-          <span class="hint-chip">hover</span> opzioni &nbsp;·&nbsp;
-          copy e data seguono il post
+          <span class="hint-chip">⠿ trascina</span> riordina &nbsp;·&nbsp; hover → opzioni
         </div>
         <div class="grid-toggles">
-          <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">📅 <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
-          <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">✏️ <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
+          <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">Data <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
+          <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
         </div>
       </div>
       <div class="feed-grid" id="feed-grid"></div>
     </div>
   </div>
 
-  <!-- STORIES PAGE -->
+  <!-- STORIES -->
   <div class="tab-page" id="page-stories">
     <div class="content-bar">
       <span class="content-title" id="stories-title">Stories</span>
-      <span class="content-tag">1080×1920 · 9:16</span>
+      <span class="content-tag">9:16 · 1080×1920</span>
       <div class="content-space"></div>
       <span class="content-meta" id="stories-meta">0 stories</span>
     </div>
     <div class="content-area">
       <div class="stories-section-lbl">Stories del mese</div>
       <div class="stories-grid" id="stories-grid"></div>
-      <div class="stories-section-lbl" style="margin-top:20px;">In evidenza</div>
-      <div class="hl-row" id="hl-row"></div>
+      <div style="margin-top:20px;">
+        <div class="stories-section-lbl">In evidenza</div>
+        <div class="hl-row" id="hl-row"></div>
+      </div>
     </div>
   </div>
 
-  <!-- PED PAGE -->
+  <!-- PED STORIES -->
   <div class="tab-page" id="page-ped">
     <div class="content-bar">
       <span class="content-title" id="ped-title">PED Stories</span>
       <span class="content-tag">Piano editoriale</span>
       <div class="content-space"></div>
-      <span class="content-meta" id="ped-meta">0 stories pianificate</span>
+      <span class="content-meta" id="ped-meta"></span>
     </div>
     <div class="ped-wrap">
       <div class="ped-left">
@@ -274,7 +316,7 @@
           <h3>Piano del mese</h3>
           <span id="ped-client-label">— seleziona cliente nel Feed</span>
         </div>
-        <div class="ped-scroll" id="ped-scroll">
+        <div class="ped-scroll">
           <div class="ped-empty-ped" id="ped-empty">
             <span class="pe-icon">📝</span>
             <p>Vai nel <strong>Feed</strong>, seleziona un cliente e un mese.<br>Poi torna qui per pianificare le stories.</p>
@@ -305,7 +347,7 @@
     </div>
   </div>
 
-  <!-- CALENDARIO PAGE -->
+  <!-- CALENDARIO -->
   <div class="tab-page" id="page-cal">
     <div class="cal-toolbar">
       <div class="cal-nav">
@@ -328,51 +370,33 @@
       </div>
     </div>
     <div class="cal-body" id="cal-body"></div>
-  </div>
-  <div class="cal-day-panel" id="cal-day-panel">
-    <div class="cal-day-panel-head">
-      <h3 id="cal-panel-date">—</h3>
-      <button class="btn ghost sm icon" onclick="closeCalPanel()">✕</button>
+    <div class="cal-day-panel" id="cal-day-panel">
+      <div class="cal-day-panel-head">
+        <h3 id="cal-panel-date">—</h3>
+        <button class="btn ghost sm icon" onclick="closeCalPanel()">✕</button>
+      </div>
+      <div class="cal-day-panel-body" id="cal-panel-body"></div>
     </div>
-    <div class="cal-day-panel-body" id="cal-panel-body"></div>
   </div>
 
-  <!-- PREVIEW PAGE -->
+  <!-- PREVIEW -->
   <div class="tab-page" id="page-preview">
     <div class="preview-wrap">
       <div class="preview-topbar">
-        <span style="font-size:11px;color:var(--text-2);">👁 Vista cliente</span>
-        <select class="preview-sel" id="preview-client-sel" onchange="onPreviewClientChange()"><option value="">— Cliente —</option></select>
-        <select class="preview-sel" id="preview-account-sel" onchange="onPreviewAccountChange()" style="display:none;"></select>
-        <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;"></select>
+        <div class="brand-mark" style="width:26px;height:26px;font-size:12px;">N</div>
+        <span style="font-size:13px;font-weight:600;color:var(--text);" id="preview-client-name">—</span>
         <div style="flex:1;"></div>
-        <span style="font-size:11px;color:var(--text-3);">Si aggiorna automaticamente</span>
+        <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;font-size:12px;"></select>
       </div>
-      <div class="preview-body">
-        <div class="preview-header">
-          <div class="preview-logo">N</div>
-          <div class="preview-htext">
-            <h2 id="preview-title">—</h2>
-            <p id="preview-sub">Anteprima contenuti mensili</p>
-          </div>
-          <div class="preview-hmeta"><span class="preview-chip" id="preview-chip">0 contenuti</span></div>
-        </div>
-        <div id="preview-empty" class="preview-empty">
-          <span class="pe-icon">📭</span>
-          <p>Seleziona cliente, account e mese per vedere l'anteprima.</p>
-        </div>
-        <div class="client-grid" id="preview-grid" style="display:none;"></div>
-        <div class="preview-footer">
-          <p>Anteprima preparata da</p>
-          <div class="nassa-sig">Nassa Studio · nassastudio.it</div>
-        </div>
+      <div class="preview-body" id="preview-body">
+        <div id="preview-empty" class="preview-empty"><p>Nessun cliente selezionato.</p></div>
       </div>
     </div>
     <div class="lightbox" id="lightbox" onclick="lbBg(event)">
       <div class="lb-wrap">
-        <button class="lb-nav lb-prev" id="lb-prev" onclick="lbNav(-1)">‹</button>
+        <button class="lb-nav lb-prev" onclick="lbNav(-1)">‹</button>
         <div class="lb-inner" id="lb-inner"></div>
-        <button class="lb-nav lb-next" id="lb-next" onclick="lbNav(1)">›</button>
+        <button class="lb-nav lb-next" onclick="lbNav(1)">›</button>
         <div class="lb-counter" id="lb-counter"></div>
         <div class="lb-copy" id="lb-copy"></div>
         <div class="lb-stories-strip" id="lb-stories-strip"></div>
@@ -384,19 +408,51 @@
 </div><!-- /body -->
 </div><!-- /app -->
 
-<!-- SAVE BAR -->
-<div class="save-bar">
-  <span class="save-bar-label">💾 Progetto</span>
-  <button class="btn sm" onclick="importProject()">⬆ Importa</button>
-  <button class="btn sm primary" onclick="exportProject()">⬇ Esporta</button>
-  <input type="file" id="import-input" class="import-hidden" accept=".json" onchange="loadProjectFile(this)"/>
+<!-- EDIT CLIENT MODAL -->
+<div class="modal-bg" id="edit-client-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-top">
+      <h3 id="edit-client-title">Modifica cliente</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('edit-client-modal')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="ec-name" placeholder="Nome"/></div>
+      <div class="field"><label>Pacchetto</label>
+        <select id="ec-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
+      </div>
+      <div class="field"><label>Stato</label>
+        <select id="ec-status"><option>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
+      </div>
+      <div class="field"><label>€/mese</label><input type="number" id="ec-revenue" placeholder="1200"/></div>
+    </div>
+    <div class="divider" style="margin:4px -18px;"></div>
+    <div>
+      <div class="sec-lbl">Account</div>
+      <div id="ec-accounts-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px;">
+        <div class="sec-lbl" style="margin-bottom:8px;">+ Aggiungi account</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
+          <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="ec-new-acc-name" placeholder="Es: Modica IG"/></div>
+          <div class="field" style="margin:0;"><label>Piattaforma</label>
+            <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
+          </div>
+          <button class="btn primary sm" onclick="ecAddAccount()" style="margin-bottom:1px;">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm danger" onclick="ecDeleteClient()">Elimina cliente</button>
+      <div style="flex:1;"></div>
+      <button class="btn sm" onclick="closeModal('edit-client-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="ecSave()">Salva modifiche</button>
+    </div>
+  </div>
 </div>
-<div class="toast" id="toast"></div>
 
-<!-- MODALS -->
+<!-- CAROUSEL MODAL -->
 <div class="modal-bg" id="carousel-modal">
   <div class="modal">
-    <div class="modal-top"><h3>Gestisci carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')">✕</button></div>
+    <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')">✕</button></div>
     <p class="modal-hint">La prima slide appare nella griglia.</p>
     <div class="c-upload-zone" id="c-upload-zone">
       <input type="file" id="c-file-input" accept="image/*" multiple onchange="addCarouselFiles(this.files)"/>
@@ -410,22 +466,24 @@
   </div>
 </div>
 
+<!-- STORYBOARD MODAL -->
 <div class="modal-bg" id="storyboard-modal">
   <div class="modal wide">
-    <div class="modal-top"><h3>📱 Storyboard</h3><button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')">✕</button></div>
-    <p class="modal-hint">Costruisci la sequenza. Ogni slide: immagine + titolo + nota regia.</p>
+    <div class="modal-top"><h3>Storyboard</h3><button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')">✕</button></div>
+    <p class="modal-hint">Sequenza slide: immagine + titolo + nota regia.</p>
     <div class="sb-slides" id="sb-slides"></div>
     <button class="btn full" onclick="addSbSlide()" style="margin-top:4px;">+ Aggiungi slide</button>
     <div class="modal-actions">
       <button class="btn sm" onclick="closeModal('storyboard-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="saveStoryboard()">Salva storyboard</button>
+      <button class="btn primary sm" onclick="saveStoryboard()">Salva</button>
     </div>
   </div>
 </div>
 
+<!-- HIGHLIGHT MODAL -->
 <div class="modal-bg" id="highlight-modal">
   <div class="modal" style="width:360px;">
-    <div class="modal-top"><h3>⭐ In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')">✕</button></div>
+    <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')">✕</button></div>
     <div class="field"><label>Nome</label><input type="text" id="hl-name" placeholder="Es: Menu · Estate · Team"/></div>
     <div class="c-upload-zone" id="hl-upload-zone">
       <input type="file" id="hl-file-input" accept="image/*" onchange="setHlCover(this.files)"/>
@@ -438,10 +496,11 @@
   </div>
 </div>
 
+<!-- LINK STORIES MODAL -->
 <div class="modal-bg" id="link-stories-modal">
   <div class="modal">
-    <div class="modal-top"><h3>📱 Collega stories al post</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')">✕</button></div>
-    <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare.</p>
+    <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')">✕</button></div>
+    <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare a questo post.</p>
     <div class="link-modal-grid" id="link-modal-grid"></div>
     <div class="modal-actions">
       <button class="btn sm" onclick="closeModal('link-stories-modal')">Annulla</button>
@@ -450,19 +509,35 @@
   </div>
 </div>
 
+<!-- COPY CONTENT MODAL -->
 <div class="modal-bg" id="copy-content-modal">
   <div class="modal">
-    <div class="modal-top"><h3>📋 Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')">✕</button></div>
-    <p class="modal-hint">Seleziona contenuti da un altro account o mese da copiare qui.</p>
-    <div class="field"><label>Account sorgente</label><select id="copy-src-account" onchange="loadCopyItems()"><option value="">— seleziona account —</option></select></div>
-    <div class="field"><label>Mese sorgente</label><select id="copy-src-month" onchange="loadCopyItems()"><option value="">— seleziona mese —</option></select></div>
+    <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')">✕</button></div>
+    <p class="modal-hint">Copia da un altro account o mese.</p>
+    <div class="field"><label>Account sorgente</label><select id="copy-src-account" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Mese</label><select id="copy-src-month" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
     <div class="copy-content-list" id="copy-content-list"></div>
     <div class="modal-actions">
       <button class="btn sm" onclick="closeModal('copy-content-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="executeCopy()">Copia selezionati</button>
+      <button class="btn primary sm" onclick="executeCopy()">Copia</button>
     </div>
   </div>
 </div>
+
+<!-- DROPBOX UPLOAD BAR -->
+<div class="dbx-upload-bar" id="dbx-upload-bar">
+  <div class="dbx-spinner"></div>
+  <span id="dbx-upload-text">Caricamento su Dropbox…</span>
+</div>
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <span class="save-bar-label">💾</span>
+  <button class="btn sm" onclick="importProject()">Importa</button>
+  <button class="btn sm primary" onclick="exportProject()">Esporta</button>
+  <input type="file" id="import-input" class="import-hidden" accept=".json" onchange="loadProjectFile(this)"/>
+</div>
+<div class="toast" id="toast"></div>
 
 <script src="app.js"></script>
 </body>
