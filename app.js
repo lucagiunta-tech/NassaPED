@@ -423,7 +423,7 @@ function renderStudio(){
 /* SELECTS */
 function rebuildAllSelects(){rebuildFeedSelects();rebuildStoriesSelects();rebuildPreviewSelects();rebuildStudioAccountSelect();rebuildNotesSelects();}
 function populateClientSelect(selId,currentCi){const sel=document.getElementById(selId);if(!sel)return;sel.innerHTML='<option value="">— Cliente —</option>';clients.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.name;sel.appendChild(o);});if(currentCi>=0)sel.value=currentCi;}
-function populateAccountSelect(selId,clientIdx,currentAi){const sel=document.getElementById(selId);if(!sel)return;if(clientIdx<0||!clients[clientIdx]?.accounts?.length){sel.style.display='none';return;}sel.style.display='';sel.innerHTML='<option value="">— Account —</option>';clients[clientIdx].accounts.forEach((a,i)=>{const o=document.createElement('option');o.value=i;o.textContent=a.name+' ('+a.platform+')';sel.appendChild(o);});if(currentAi>=0)sel.value=currentAi;}
+function populateAccountSelect(selId,clientIdx,currentAi){const sel=document.getElementById(selId);if(!sel)return;if(clientIdx<0||!clients[clientIdx]?.accounts?.length){sel.style.display='none';return;}sel.style.display='';sel.innerHTML='';clients[clientIdx].accounts.forEach((a,i)=>{const o=document.createElement('option');o.value=i;const cl=clients[clientIdx];const label=a.name===cl.name?a.platform:a.name+' · '+a.platform;o.textContent=label;sel.appendChild(o);});if(currentAi>=0)sel.value=currentAi;}
 function rebuildFeedSelects(){
   // Show client name (no dropdown — client comes from global context)
   const nameEl=document.getElementById('feed-client-display');
@@ -433,7 +433,12 @@ function rebuildFeedSelects(){
   // Show account selector
   populateAccountSelect('feed-account-sel',feedClientIdx,feedAccountIdx);
 }
-function rebuildStoriesSelects(){populateClientSelect('stories-client-sel',storiesClientIdx);populateAccountSelect('stories-account-sel',storiesClientIdx,storiesAccountIdx);}
+function rebuildStoriesSelects(){
+  // Keep hidden client select in sync
+  populateClientSelect('stories-client-sel',storiesClientIdx);
+  // Account selector only
+  populateAccountSelect('stories-account-sel',storiesClientIdx,storiesAccountIdx);
+}
 function rebuildPreviewSelects(){
   const msel=document.getElementById('preview-month-sel');if(!msel)return;
   if(previewAccountIdx<0){msel.style.display='none';return;}
@@ -1827,23 +1832,23 @@ function renderPilastri(){
   const body=document.getElementById('pilastri-body');if(!body)return;
   body.innerHTML='';
 
-  // Client selector header
+  // Header with client name (no dropdown — uses global context)
   const header=document.createElement('div');header.className='pilastri-header';
   const title=document.createElement('h2');title.className='pilastri-title';title.textContent='Pilastri contenuto';
-  const selWrap=document.createElement('div');selWrap.className='pilastri-sel-wrap';
-  const sel=document.createElement('select');sel.className='pilastri-client-sel';
-  sel.innerHTML='<option value="">— Seleziona cliente —</option>';
-  clients.forEach((cl,i)=>{const o=document.createElement('option');o.value=i;o.textContent=cl.name;sel.appendChild(o);});
-  if(globalClientIdx>=0)sel.value=globalClientIdx;
-  sel.onchange=()=>{body.dataset.ci=sel.value;renderPilastriContent(body,parseInt(sel.value));};
-  selWrap.appendChild(sel);
-  header.appendChild(title);header.appendChild(selWrap);
+  const ci0=globalClientIdx>=0?globalClientIdx:(clients.length>0?0:-1);
+  if(ci0>=0){
+    const clientName=document.createElement('span');clientName.className='notes-client-name';
+    clientName.textContent=clients[ci0]?.name||'';
+    header.appendChild(title);header.appendChild(clientName);
+  } else {
+    header.appendChild(title);
+  }
   body.appendChild(header);
 
   const content=document.createElement('div');content.id='pilastri-content';body.appendChild(content);
 
   const ci=globalClientIdx>=0?globalClientIdx:(clients.length>0?0:-1);
-  if(ci>=0){sel.value=ci;renderPilastriContent(body,ci);}
+  if(ci>=0){renderPilastriContent(body,ci);}
   else{content.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-3);font-size:13px;">Aggiungi un cliente per configurare i pilastri.</div>';}
 }
 
