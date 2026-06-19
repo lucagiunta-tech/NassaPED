@@ -465,3 +465,30 @@ tbody tr:hover .tr-actions{opacity:1;}
 .dp-day.selected:hover{background:var(--green-dk);}
 .dp-clear{width:100%;padding:5px;border:none;border-top:1px solid var(--border-lt);background:var(--bg);font-size:10px;color:var(--text-2);cursor:pointer;font-family:var(--font);transition:all .1s;}
 .dp-clear:hover{color:var(--red);}
+
+.dbx-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 18, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: var(--font);
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-left-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

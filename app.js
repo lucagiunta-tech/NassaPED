@@ -2,6 +2,52 @@
    NASSA STUDIO \u2014 v2.0
    Stato globale
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+
+const DBX_CLIENT_ID = 'aahllr0ewvn0hfs';
+let dbx = null;
+let lastStateStr = '';
+
+function initDropbox() {
+  const hash = window.location.hash;
+  let token = localStorage.getItem('dbx_token');
+  if (hash.includes('access_token=')) {
+    const params = new URLSearchParams(hash.substring(1));
+    token = params.get('access_token');
+    localStorage.setItem('dbx_token', token);
+    window.location.hash = '';
+  }
+  
+  if (token) {
+    dbx = new Dropbox.Dropbox({ accessToken: token });
+    const loginBtn = document.getElementById('dbx-login-btn');
+    const syncBtn = document.getElementById('dbx-sync-btn');
+    if(loginBtn) loginBtn.style.display = 'none';
+    if(syncBtn) syncBtn.style.display = 'inline-flex';
+    loadFromDropbox();
+    
+    // Auto-save interval
+    setInterval(() => {
+      if (!dbx) return;
+      const currentStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
+      if (lastStateStr !== currentStr) {
+        lastStateStr = currentStr;
+        syncToDropbox(false);
+      }
+    }, 15000);
+  } else {
+    const loginBtn = document.getElementById('dbx-login-btn');
+    const syncBtn = document.getElementById('dbx-sync-btn');
+    if(loginBtn) loginBtn.style.display = 'inline-flex';
+    if(syncBtn) syncBtn.style.display = 'none';
+  }
+}
+
+function dbxLogin() {
+  const dbxAuth = new Dropbox.DropboxAuth({ clientId: DBX_CLIENT_ID });
+  dbxAuth.getAuthenticationUrl(window.location.href.split('#')[0])
+    .then(authUrl => { window.location.href = authUrl; });
+}
+
 let clients = [];
 let feeds = {};
 let stories = {};
@@ -354,13 +400,19 @@ function needsReloadPh(icon, name) {
 }
 
 /* \u2500\u2500 FEED FILES \u2500\u2500 */
-function queueFeedFiles(files) {
+async function queueFeedFiles(files) {
   if (feedAccountIdx<0) { showToast('Seleziona cliente e account','warn'); return; }
+  const clientName = clients[feedClientIdx].name;
   const items = currentFeedItems();
-  Array.from(files).forEach(f=>{
-    items.push({type:detectType(f)==='video'?'video':'pending',url:URL.createObjectURL(f),name:f.name,date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type});
-  });
+  document.getElementById('dbx-loader').style.display = 'flex';
+  document.getElementById('dbx-loader-text').textContent = 'Upload in corso...';
+  for(let f of Array.from(files)){
+    const url = await uploadMediaToDropbox(f, clientName);
+    items.push({type:detectType(f)==='video'?'video':'pending',url:url,name:f.name,date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type});
+  }
+  document.getElementById('dbx-loader').style.display = 'none';
   setFeedItems(items); refreshFeed();
+  if(typeof syncToDropbox === 'function') syncToDropbox(false);
 }
 function setFeedLinkTab(tab) {
   feedLinkTab=tab;
@@ -380,13 +432,19 @@ function addFeedLink() {
 }
 
 /* \u2500\u2500 STORY FILES \u2500\u2500 */
-function queueStoryFiles(files) {
+async function queueStoryFiles(files) {
   if (storiesAccountIdx<0) { showToast('Seleziona cliente e account','warn'); return; }
+  const clientName = clients[storiesClientIdx].name;
   const arr = currentStoryItems();
-  Array.from(files).forEach(f=>{
-    arr.push({type:detectType(f),url:URL.createObjectURL(f),name:f.name,date:'',note:'',isStoryboard:false,slides:[]});
-  });
+  document.getElementById('dbx-loader').style.display = 'flex';
+  document.getElementById('dbx-loader-text').textContent = 'Upload in corso...';
+  for(let f of Array.from(files)){
+    const url = await uploadMediaToDropbox(f, clientName);
+    arr.push({type:detectType(f),url:url,name:f.name,date:'',note:'',isStoryboard:false,slides:[]});
+  }
+  document.getElementById('dbx-loader').style.display = 'none';
   setStoryItems(arr); refreshStories();
+  if(typeof syncToDropbox === 'function') syncToDropbox(false);
 }
 function setStoriesLinkTab(tab) {
   storiesLinkTab=tab;
@@ -561,7 +619,19 @@ function saveCarousel(){
   const items=currentFeedItems(); items[carouselEditIdx].slides=carouselTmp.map(s=>({...s})); items[carouselEditIdx].url=carouselTmp[0].url||'';
   setFeedItems(items); closeModal('carousel-modal'); refreshFeed();
 }
-function addCarouselFiles(files){ Array.from(files).forEach(f=>{if(f.type.startsWith('image'))carouselTmp.push({url:URL.createObjectURL(f),name:f.name});}); renderCThumbs(); }
+async function addCarouselFiles(files){ 
+  const clientName = feedClientIdx >= 0 ? clients[feedClientIdx].name : 'General';
+  document.getElementById('dbx-loader').style.display = 'flex';
+  document.getElementById('dbx-loader-text').textContent = 'Upload in corso...';
+  for(let f of Array.from(files)){
+    if(f.type.startsWith('image')){
+      const url = await uploadMediaToDropbox(f, clientName);
+      carouselTmp.push({url:url,name:f.name});
+    }
+  }
+  document.getElementById('dbx-loader').style.display = 'none';
+  renderCThumbs(); 
+}
 function removeCSlide(i){ if(carouselTmp[i].url.startsWith('blob:'))URL.revokeObjectURL(carouselTmp[i].url); carouselTmp.splice(i,1); renderCThumbs(); }
 function renderCThumbs(){
   const c=document.getElementById('c-thumbs');if(!c)return;c.innerHTML='';
@@ -677,7 +747,15 @@ function renderSbSlides(){
     if(sl.url){const img=document.createElement('img');img.src=sl.url;img.alt='';thumb.appendChild(img);}
     else{const ph=document.createElement('div');ph.className='sb-thumb-add';ph.innerHTML='\ud83d\uddbc';thumb.appendChild(ph);}
     const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.style.cssText='position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;';
-    fi.onchange=e=>{if(e.target.files[0]){sbTmpSlides[i].url=URL.createObjectURL(e.target.files[0]);renderSbSlides();}};
+    fi.onchange=async e=>{if(e.target.files[0]){
+      document.getElementById('dbx-loader').style.display = 'flex';
+      document.getElementById('dbx-loader-text').textContent = 'Upload in corso...';
+      const clientName = storiesClientIdx >= 0 ? clients[storiesClientIdx].name : 'General';
+      const url = await uploadMediaToDropbox(e.target.files[0], clientName);
+      sbTmpSlides[i].url=url;
+      document.getElementById('dbx-loader').style.display = 'none';
+      renderSbSlides();
+    }};
     thumb.appendChild(fi);row.appendChild(thumb);
     const con=document.createElement('div');con.className='sb-content';
     const ti=document.createElement('input');ti.type='text';ti.placeholder='Titolo\u2026';ti.value=sl.title||'';ti.oninput=e=>{sbTmpSlides[i].title=e.target.value;};
@@ -690,7 +768,16 @@ function renderSbSlides(){
 
 /* \u2500\u2500 HIGHLIGHT MODAL \u2500\u2500 */
 function openHighlightModal(idx){ hlEditIdx=idx; hlTmpCover=null; const hl=idx>=0?currentHighlights()[idx]:null; const nn=document.getElementById('hl-name');if(nn)nn.value=hl?hl.name:''; const ll=document.getElementById('hl-upload-lbl');if(ll)ll.innerHTML=hl?.coverUrl?'<strong>Clicca per cambiare copertina</strong>':'Carica copertina \u00b7 <strong>clicca per sfogliare</strong>'; openModal('highlight-modal'); }
-function setHlCover(files){ if(!files[0])return; hlTmpCover=URL.createObjectURL(files[0]); const ll=document.getElementById('hl-upload-lbl');if(ll)ll.innerHTML='<strong>\u2713 Copertina caricata</strong>'; }
+async function setHlCover(files){ 
+  if(!files[0])return; 
+  const clientName = storiesClientIdx >= 0 ? clients[storiesClientIdx].name : 'General';
+  document.getElementById('dbx-loader').style.display = 'flex';
+  document.getElementById('dbx-loader-text').textContent = 'Upload in corso...';
+  hlTmpCover = await uploadMediaToDropbox(files[0], clientName);
+  document.getElementById('dbx-loader').style.display = 'none';
+  const ll=document.getElementById('hl-upload-lbl');
+  if(ll)ll.innerHTML='<strong>\u2713 Copertina caricata</strong>'; 
+}
 function saveHighlight(){
   const name=(document.getElementById('hl-name')?.value||'').trim();if(!name){showToast('Inserisci un nome','warn');return;}
   const arr=currentHighlights();
@@ -1164,6 +1251,7 @@ function showToast(msg,type){
 
 /* \u2500\u2500 INIT \u2500\u2500 */
 function init(){
+  initDropbox();
   const fdz=document.getElementById('feed-drop-zone');
   if(fdz){fdz.addEventListener('dragover',e=>{e.preventDefault();fdz.classList.add('drag-over');});fdz.addEventListener('dragleave',e=>{if(!fdz.contains(e.relatedTarget))fdz.classList.remove('drag-over');});fdz.addEventListener('drop',e=>{e.preventDefault();fdz.classList.remove('drag-over');queueFeedFiles(e.dataTransfer.files);});}
   const sdz=document.getElementById('stories-drop-zone');
@@ -1178,3 +1266,127 @@ function init(){
   document.getElementById('icon-feed')?.classList.add('active');
 }
 document.addEventListener('DOMContentLoaded',init);
+
+async function uploadMediaToDropbox(file, clientName) {
+  if (!dbx) return URL.createObjectURL(file);
+  const safeClient = (clientName || 'General').replace(/[^a-z0-9]/gi, '_');
+  const path = `/nassa studio/nassaportal/${safeClient}/media/${Date.now()}_${file.name}`;
+  try {
+    const response = await dbx.filesUpload({ path: path, contents: file, autorename: true });
+    const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: response.result.path_display });
+    let url = linkRes.result.url;
+    url = url.replace('?dl=0', '?raw=1').replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+    return url;
+  } catch (err) {
+    console.error('Upload error', err);
+    alert('Errore upload: ' + err.message);
+    return URL.createObjectURL(file);
+  }
+}
+
+async function syncToDropbox(showToastMsg = true) {
+  if (!dbx) return;
+  if (showToastMsg) {
+    const loader = document.getElementById('dbx-loader');
+    if(loader) loader.style.display = 'flex';
+    const ltext = document.getElementById('dbx-loader-text');
+    if(ltext) ltext.textContent = 'Salvataggio in corso...';
+  }
+  try {
+    const globalData = { version: '2.0', clients, pedPlans, meta: { showAllDates, showAllCopy } };
+    await dbx.filesUpload({
+      path: '/nassa studio/nassaportal/global.json',
+      contents: JSON.stringify(globalData, null, 2),
+      mode: {'.tag': 'overwrite'}
+    });
+
+    for (let c of clients) {
+      const safeClient = c.name.replace(/[^a-z0-9]/gi, '_');
+      const cFeeds = {}; const cStories = {}; const cHighlights = {};
+      (c.accounts || []).forEach(a => {
+        MONTH_OPTIONS.forEach(m => {
+          const k = accountKey(a.id, m);
+          if (feeds[k]) cFeeds[k] = feeds[k];
+          if (stories[k]) cStories[k] = stories[k];
+        });
+        if (highlights[a.id]) cHighlights[a.id] = highlights[a.id];
+      });
+
+      const cData = { feeds: cFeeds, stories: cStories, highlights: cHighlights };
+      await dbx.filesUpload({
+        path: `/nassa studio/nassaportal/${safeClient}/data.json`,
+        contents: JSON.stringify(cData, null, 2),
+        mode: {'.tag': 'overwrite'}
+      });
+    }
+
+    lastStateStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
+    if (showToastMsg) {
+      const loader = document.getElementById('dbx-loader');
+      if(loader) loader.style.display = 'none';
+      showToast('\u2713 Salvataggio su Dropbox completato');
+    }
+  } catch (err) {
+    console.error('Dropbox sync error:', err);
+    if (showToastMsg) {
+      const loader = document.getElementById('dbx-loader');
+      if(loader) loader.style.display = 'none';
+      alert('Errore sincronizzazione: ' + err.message);
+    }
+  }
+}
+
+async function loadFromDropbox() {
+  if (!dbx) return;
+  const loader = document.getElementById('dbx-loader');
+  if(loader) loader.style.display = 'flex';
+  const ltext = document.getElementById('dbx-loader-text');
+  if(ltext) ltext.textContent = 'Caricamento dati...';
+
+  try {
+    let globalData;
+    try {
+      const gRes = await dbx.filesDownload({ path: '/nassa studio/nassaportal/global.json' });
+      const text = await gRes.result.fileBlob.text();
+      globalData = JSON.parse(text);
+    } catch (e) {
+      console.warn('Global data not found or error');
+    }
+
+    if (globalData) {
+      clients = globalData.clients || [];
+      pedPlans = globalData.pedPlans || {};
+      if (globalData.meta) { showAllDates = globalData.meta.showAllDates !== false; showAllCopy = globalData.meta.showAllCopy !== false; }
+    }
+
+    try {
+      const listRes = await dbx.filesListFolder({ path: '/nassa studio/nassaportal' });
+      const clientFolders = listRes.result.entries.filter(e => e['.tag'] === 'folder');
+      
+      for (let folder of clientFolders) {
+        try {
+          const cRes = await dbx.filesDownload({ path: `${folder.path_display}/data.json` });
+          const text = await cRes.result.fileBlob.text();
+          const cData = JSON.parse(text);
+          Object.assign(feeds, cData.feeds || {});
+          Object.assign(stories, cData.stories || {});
+          Object.assign(highlights, cData.highlights || {});
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('Could not list folders');
+    }
+
+    feedClientIdx = -1; feedAccountIdx = -1; feedMonth = '';
+    storiesClientIdx = -1; storiesAccountIdx = -1; storiesMonth = '';
+    renderStudio(); rebuildAllSelects(); renderFeedGrid(); renderStoriesGrid(); updateFeedHeader(); updateStoriesHeader();
+    lastStateStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
+    showToast('\u2713 Dati caricati da Dropbox');
+  } catch (err) {
+    console.error('Dropbox load error:', err);
+    alert('Errore caricamento da Dropbox: ' + err.message);
+  } finally {
+    const loader = document.getElementById('dbx-loader');
+    if(loader) loader.style.display = 'none';
+  }
+}

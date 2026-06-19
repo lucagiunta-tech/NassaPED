@@ -6,6 +6,7 @@
 <title>Nassa Studio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231A8C3F'/><text y='.9em' font-size='70' x='15' fill='white' font-family='Arial' font-weight='bold'>N</text></svg>"/>
 <link rel="stylesheet" href="style.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/10.33.0/Dropbox-sdk.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -22,9 +23,16 @@
   </nav>
   <div class="topbar-space"></div>
   <div class="topbar-right">
+    <button id="dbx-login-btn" class="btn sm" style="display:none; margin-right:8px;" onclick="dbxLogin()">Login Dropbox</button>
+    <button id="dbx-sync-btn" class="btn sm primary" style="display:none; margin-right:8px;" onclick="syncToDropbox(true)">Sync Dropbox</button>
     <div class="ctx-pill" id="ctx-pill"></div>
     <div class="avatar">AA</div>
   </div>
+</div>
+
+<div id="dbx-loader" class="dbx-loader" style="display:none;">
+  <div class="spinner"></div>
+  <div id="dbx-loader-text">Sincronizzazione in corso...</div>
 </div>
 
 <div class="body">
