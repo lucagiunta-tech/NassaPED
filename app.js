@@ -7,7 +7,7 @@ const SUPABASE_URL = 'https://eusxreazwqmwtsdbhhjr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1c3hyZWF6d3Ftd3RzZGJoaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDA0NTQsImV4cCI6MjA5NzQxNjQ1NH0.9ekxNnt9wGzEeGexUP_0mZGGsa-YIPZs5zblu-_OECg';
 let supabaseClient = null;
 
-let dbx = null;
+let dbxToken = null;
 let lastStateStr = '';
 
 async function initBackend() {
@@ -71,7 +71,7 @@ async function initBackend() {
     const res = await fetch('/api/get-dropbox-token');
     if (res.ok) {
       const data = await res.json();
-      dbx = new Dropbox.Dropbox({ accessToken: data.access_token });
+      dbxToken = data.access_token;
     } else {
       console.warn('Failed to get Dropbox token. Uploads will fallback to local blobs.');
     }
@@ -1300,18 +1300,61 @@ function init(){
 document.addEventListener('DOMContentLoaded',init);
 
 async function uploadMediaToDropbox(file, clientName) {
-  if (!dbx) return URL.createObjectURL(file);
+  if (!dbxToken) return URL.createObjectURL(file);
   const safeClient = (clientName || 'General').replace(/[^a-z0-9]/gi, '_');
   const path = `/nassa studio/nassaportal/${safeClient}/media/${Date.now()}_${file.name}`;
+  
   try {
-    const response = await dbx.filesUpload({ path: path, contents: file, autorename: true });
-    const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: response.result.path_display });
-    let url = linkRes.result.url;
+    // 1. Upload file using raw fetch
+    const uploadRes = await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + dbxToken,
+        'Dropbox-API-Arg': JSON.stringify({ path: path, autorename: true }),
+        'Content-Type': 'application/octet-stream'
+      },
+      body: file
+    });
+    
+    if (!uploadRes.ok) {
+      const errTxt = await uploadRes.text();
+      throw new Error(`Upload API err: ${uploadRes.status} ${errTxt}`);
+    }
+    const uploadData = await uploadRes.json();
+
+    // 2. Create shared link using raw fetch
+    const linkRes = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + dbxToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ path: uploadData.path_display })
+    });
+
+    if (!linkRes.ok) {
+      // If link already exists, it might throw a 409, but usually it just returns the link if we handle it
+      // Let's just catch and ignore or throw
+      const errTxt = await linkRes.text();
+      if (!errTxt.includes('shared_link_already_exists')) {
+        throw new Error(`Link API err: ${linkRes.status} ${errTxt}`);
+      }
+    }
+    
+    const linkData = await linkRes.json();
+    let url = linkData.url || linkData.error?.shared_link_already_exists?.metadata?.url;
+    if (!url) throw new Error("Could not extract shared link URL");
+    
     url = url.replace('?dl=0', '?raw=1').replace('www.dropbox.com', 'dl.dropboxusercontent.com');
     return url;
+
   } catch (err) {
     console.error('Upload error', err);
-    alert('Errore upload: ' + err.message);
+    if (err.message.includes('Failed to fetch')) {
+      alert('Errore di Rete: Il tuo AdBlocker o Brave Shields sta bloccando la connessione a Dropbox! Per favore disabilitalo per questo sito per permettere il caricamento dei file.');
+    } else {
+      alert('Errore upload: ' + err.message);
+    }
     return URL.createObjectURL(file);
   }
 }
