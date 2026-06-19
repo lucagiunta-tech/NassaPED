@@ -1,1 +1,9 @@
-{ "outputDirectory": "." }
+{
+  "outputDirectory": ".",
+  "functions": {
+    "api/*.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  }
+}
