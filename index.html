@@ -192,11 +192,8 @@
       <div class="notes-editor-col">
         <!-- Selectors row — client comes from global context -->
         <div class="notes-sel-row">
-          <span class="notes-client-name" id="notes-client-display">— Seleziona cliente —</span>
-          <div class="ctx-divider"></div>
           <select class="ctx-select" id="notes-month-sel" onchange="renderNotesEditor()"></select>
-          <!-- hidden for JS compat -->
-          <select id="notes-client-sel" onchange="onNotesClientChange()" style="display:none;"><option value="">— Cliente —</option></select>
+          <select id="notes-client-sel" onchange="onNotesClientChange()" style="display:none;"><option value="">—</option></select>
           <div style="flex:1;"></div>
           <span class="notes-wc" id="notes-wc">0 parole</span>
         </div>
@@ -261,12 +258,10 @@
     <!-- Context bar row 1: selectors + months + format -->
     <div class="feed-ctx-bar">
       <div class="feed-ctx-row1">
-        <!-- Client comes from global context — show name only -->
-        <span class="notes-client-name" id="feed-client-display">—</span>
-        <!-- Hidden for JS compat -->
-        <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">— Cliente —</option></select>
-        <!-- Account selector — visible -->
+        <!-- Account selector only — client fixed from global context -->
         <select id="feed-account-sel" class="ctx-select" onchange="onFeedAccountChange()"></select>
+        <!-- Hidden selects kept for JS compat -->
+        <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">—</option></select>
         <div class="ctx-divider"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
         <div class="ctx-fmt-badge" id="feed-fmt-badge">Instagram · 4:5</div>
