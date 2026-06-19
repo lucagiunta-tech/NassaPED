@@ -449,6 +449,48 @@
         </div>
       </div>
     </div>
+    <div class="divider" style="margin:12px -18px;"></div>
+    <div class="sec-lbl">🎨 Palette brand</div>
+    <div class="ec-palette-grid">
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Primario</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-primary"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-primary"></div>
+          <input class="ec-pal-inp" id="ec-pal-primary" type="text" placeholder="#1a3c5e" maxlength="7" oninput="ecPalUpdate('primary')"/>
+        </div>
+      </div>
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Secondario</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-secondary"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-secondary"></div>
+          <input class="ec-pal-inp" id="ec-pal-secondary" type="text" placeholder="#c8a96e" maxlength="7" oninput="ecPalUpdate('secondary')"/>
+        </div>
+      </div>
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Sfondo</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-bg"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-bg"></div>
+          <input class="ec-pal-inp" id="ec-pal-bg" type="text" placeholder="#f5f0e8" maxlength="7" oninput="ecPalUpdate('bg')"/>
+        </div>
+      </div>
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Testo</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-text"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-text"></div>
+          <input class="ec-pal-inp" id="ec-pal-text" type="text" placeholder="#111111" maxlength="7" oninput="ecPalUpdate('text')"/>
+        </div>
+      </div>
+    </div>
+    <!-- Live preview -->
+    <div class="ec-pal-preview-wrap" id="ec-pal-live-wrap">
+      <div class="ec-pal-card" id="ec-pal-card-feed"></div>
+      <div class="ec-pal-card ec-pal-card-story" id="ec-pal-card-story"></div>
+      <div class="ec-pal-hint">Anteprima card editoriale con i colori brand</div>
+    </div>
     <div class="modal-actions">
       <button class="btn sm danger" onclick="ecDeleteClient()">Elimina cliente</button>
       <div style="flex:1;"></div>
