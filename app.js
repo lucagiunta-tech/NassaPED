@@ -898,9 +898,27 @@ function toggleStoriesPanel(){
     :'<polyline points="6 9 12 15 18 9"/>';
 }
 
-function openStoryboardModal(idx){sbEditIdx=idx;const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;sbTmpSlides=st?.isStoryboard?(st.slides||[]).map(s=>({...s})):[];renderSbSlides();openModal('storyboard-modal');}
+function openStoryboardModal(idx){
+  // Sync stories context if needed
+  if(storiesClientIdx<0&&globalClientIdx>=0){
+    storiesClientIdx=globalClientIdx;
+    storiesAccountIdx=clients[globalClientIdx]?.accounts?.length>0?0:-1;
+  }
+  if(!storiesMonth)storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
+  sbEditIdx=idx;
+  const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;
+  sbTmpSlides=st?.isStoryboard?(st.slides||[]).map(s=>({...s})):[];
+  renderSbSlides();openModal('storyboard-modal');
+}
 async function saveStoryboard(){
   if(!sbTmpSlides.length){showToast('Aggiungi almeno una slide','warn');return;}
+  // Guard: sync stories context from global if not set
+  if(storiesClientIdx<0&&globalClientIdx>=0){
+    storiesClientIdx=globalClientIdx;
+    storiesAccountIdx=clients[globalClientIdx]?.accounts?.length>0?0:-1;
+  }
+  if(!storiesMonth)storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
+  if(storiesAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
   showToast('⟳ Caricamento slide su Dropbox…');
   for(let i=0;i<sbTmpSlides.length;i++){
     const s=sbTmpSlides[i];
