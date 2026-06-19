@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 :root{
-  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#003d00;
+  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#111;
   --teal:#b2dfdb;--teal-lt:#e8f5f4;--teal-dk:#004d40;
   --amber:#f0f4b2;--amber-dk:#616100;--amber-lt:#fafde8;
   --red:#ef4444;--red-lt:#ffb2b2;--red-dk:#7f0000;
