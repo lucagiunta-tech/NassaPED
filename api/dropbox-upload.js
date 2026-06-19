@@ -1,4 +1,4 @@
-// Dropbox upload proxy — keeps all Dropbox credentials server-side
+// Dropbox upload proxy — all credentials server-side
 // Required Vercel env vars: DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, NASSA_API_KEY
 import formidable from 'formidable';
 import { readFileSync, unlinkSync } from 'fs';
@@ -18,29 +18,37 @@ async function getAccessToken() {
     }),
   });
   const data = await resp.json();
-  if (!data.access_token) throw new Error('Failed to get Dropbox token');
+  if (!data.access_token) throw new Error('Failed to get Dropbox token: ' + JSON.stringify(data));
   return data.access_token;
 }
 
-async function uploadToDropbox(accessToken, fileBuffer, destPath) {
+async function uploadToDropbox(token, buffer, destPath) {
   const uploadResp = await fetch('https://content.dropboxapi.com/2/files/upload', {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer ' + accessToken,
+      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/octet-stream',
       'Dropbox-API-Arg': JSON.stringify({ path: destPath, mode: 'add', autorename: true, mute: false }),
     },
-    body: fileBuffer,
+    body: buffer,
   });
   const uploadData = await uploadResp.json();
-  if (!uploadData.id) throw new Error('Dropbox upload failed: ' + JSON.stringify(uploadData));
+  if (!uploadData.id) throw new Error('Upload failed: ' + JSON.stringify(uploadData));
 
+  // Try to create shared link; if it already exists, fetch existing one
   const linkResp = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
     method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ path: uploadData.path_display, settings: { requested_visibility: 'public' } }),
   });
   const linkData = await linkResp.json();
+
+  // Handle "already exists" error from Dropbox
+  if (linkData?.error?.['.tag'] === 'shared_link_already_exists') {
+    const existingUrl = linkData.error?.shared_link_already_exists?.metadata?.url;
+    if (existingUrl) return existingUrl.replace('?dl=0', '?raw=1');
+  }
+
   return (linkData.url || '').replace('?dl=0', '?raw=1');
 }
 
@@ -57,19 +65,20 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const form = formidable({ maxFileSize: 100 * 1024 * 1024 });
+    const form = formidable({ maxFileSize: 200 * 1024 * 1024 }); // 200MB
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => { if (err) reject(err); else resolve([fields, files]); });
     });
 
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
-    const destPath = (Array.isArray(fields.path) ? fields.path[0] : fields.path) || '/nassa/' + file.originalFilename;
     if (!file) return res.status(400).json({ error: 'No file provided' });
 
-    const fileBuffer = readFileSync(file.filepath);
-    const accessToken = await getAccessToken();
-    const sharedUrl = await uploadToDropbox(accessToken, fileBuffer, destPath);
-    unlinkSync(file.filepath);
+    const destPath = (Array.isArray(fields.path) ? fields.path[0] : fields.path) || '/nassa/' + file.originalFilename;
+    const buffer = readFileSync(file.filepath);
+    const token = await getAccessToken();
+    const sharedUrl = await uploadToDropbox(token, buffer, destPath);
+
+    try { unlinkSync(file.filepath); } catch(e) { /* ignore cleanup errors */ }
 
     return res.status(200).json({ url: sharedUrl, shared_link: sharedUrl });
   } catch (err) {
