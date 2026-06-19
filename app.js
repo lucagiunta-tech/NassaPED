@@ -525,85 +525,83 @@ function renderFeedGrid(){
         }
         else if(item.type==='video'){const v=makeMedia(item.url,'video');v.onerror=()=>{cell.appendChild(needsReloadPh('▶',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
         else{const img=makeMedia(coverUrl,'image');img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('🖼',item.name));};cell.appendChild(img);}
-        // FIX 5: drag via event delegation — just mark the cell
+        // drag via event delegation — mark the cell
         cell.draggable=true;
         cell.dataset.dragIdx=idx;
 
-        // ── TOP BAR: drag handle + number + type badge (never overlapping) ──
-        const SVG_CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-        const topBar=document.createElement('div');topBar.className='cell-top-bar';
-        const handle=document.createElement('div');handle.className='drag-handle';
-        handle.innerHTML='<svg viewBox="0 0 24 24"><circle cx="9" cy="5" r="1" fill="#fff"/><circle cx="9" cy="12" r="1" fill="#fff"/><circle cx="9" cy="19" r="1" fill="#fff"/><circle cx="15" cy="5" r="1" fill="#fff"/><circle cx="15" cy="12" r="1" fill="#fff"/><circle cx="15" cy="19" r="1" fill="#fff"/></svg>';
-        const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;
-        const badge=document.createElement('div');
+        // SVG icons as strings
+        const SVG_DOTS='<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="9" cy="5" r="1.2" fill="#fff"/><circle cx="9" cy="12" r="1.2" fill="#fff"/><circle cx="9" cy="19" r="1.2" fill="#fff"/><circle cx="15" cy="5" r="1.2" fill="#fff"/><circle cx="15" cy="12" r="1.2" fill="#fff"/><circle cx="15" cy="19" r="1.2" fill="#fff"/></svg>';
+        const SVG_CAL='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
 
+        // ── Editorial card background ──
+        const badge=document.createElement('div');
         if(item.type==='editorial'){
-          // Editorial card rendered inline as background
           const cols=item.editorialColors||{bg:'#f5f0e8',text:'#111',accent:'#1a3c5e',logo:'#0dff00',logoText:'#111'};
           cell.style.background=cols.bg;cell.style.color=cols.text;cell.style.aspectRatio=_fmt.cssRatio;
           const titleHtml=item.editorialAccent&&item.editorialTitle?.includes(item.editorialAccent)
             ?item.editorialTitle.replace(item.editorialAccent,`<span style="color:${cols.accent};">${item.editorialAccent}</span>`)
             :item.editorialTitle||'';
           const cardInner=document.createElement('div');
-          cardInner.style.cssText='position:absolute;inset:0;padding:12px 11px 11px;display:flex;flex-direction:column;font-family:var(--font);';
-          cardInner.innerHTML=`<div style="font-size:var(--fs-xs);font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${item.editorialEyebrow||''}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${titleHtml}</div><div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div><div style="font-size:var(--fs-xs);opacity:.55;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;"><span style="font-size:var(--fs-xs);font-weight:700;opacity:.7;">${item.editorialAuthor||''}</span><span style="width:14px;height:14px;border-radius:3px;background:${cols.logo};color:${cols.logoText};display:flex;align-items:center;justify-content:center;font-size:var(--fs-xs);font-weight:800;">N</span></div>`;
+          cardInner.style.cssText='position:absolute;inset:0;padding:12px 11px 44px;display:flex;flex-direction:column;font-family:var(--font);';
+          cardInner.innerHTML=`<div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${item.editorialEyebrow||''}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${titleHtml}</div><div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div><div style="font-size:11px;opacity:.55;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div>`;
           cell.appendChild(cardInner);
           badge.className='cell-badge editorial';
           badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card';
         } else {
-          const bIcons={
+          badge.className='cell-badge '+(item.type||'pending');
+          badge.innerHTML={
             image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto',
             video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel',
             carousel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>Caros.'+(item.slides?.length?' '+item.slides.length:''),
-          };
-          badge.className='cell-badge '+(item.type||'pending');
-          badge.innerHTML=bIcons[item.type]||'—';
+          }[item.type]||'—';
         }
 
+        // ── TOP BAR: drag + number + badge, in a flex row with gradient ──
+        const topBar=document.createElement('div');topBar.className='cell-top-bar';
+        const handle=document.createElement('div');handle.className='drag-handle';handle.innerHTML=SVG_DOTS;
+        const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;
         topBar.appendChild(handle);topBar.appendChild(num);topBar.appendChild(badge);
         cell.appendChild(topBar);
 
-        // External link dot
+        // Extra badges
         if(item.isExternalLink){const d=document.createElement('div');d.className='cell-url-dot';d.title=(item.linkSource==='dropbox'?'Dropbox':item.linkSource==='frame'?'Frame.io':'Link')+': '+(item.externalUrl||'');cell.appendChild(d);}
-        // Linked stories badge
         if((item.linkedStories||[]).length>0){const lb=document.createElement('div');lb.className='ls-badge-cell';lb.textContent='📱 '+item.linkedStories.length;cell.appendChild(lb);}
 
-        // ── BOTTOM BAR: date (always in its own zone) ──
+        // ── BOTTOM BAR: date with gradient, always at bottom ──
         const showDate=showAllDates&&item.showDate;
         const db=document.createElement('div');db.className='date-bar'+(showDate?'':' hidden-bar');
-        db.innerHTML=SVG_CAL;
-        const di=document.createElement('input');di.className='date-input';di.type='text';di.value=item.date;di.placeholder='data…';
+        const calWrap=document.createElement('span');calWrap.innerHTML=SVG_CAL;calWrap.style.cssText='display:flex;align-items:center;flex-shrink:0;';
+        const di=document.createElement('input');di.className='date-input';di.type='text';di.value=item.date||'';di.placeholder='data…';
         di.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};
         di.oninput=e=>{currentFeedItems()[idx].date=e.target.value;};
         const dt=document.createElement('button');dt.className='date-toggle';dt.textContent=item.showDate?'✓':'✕';
         dt.onclick=e=>{e.stopPropagation();currentFeedItems()[idx].showDate=!currentFeedItems()[idx].showDate;renderFeedGrid();};
-        db.appendChild(di);db.appendChild(dt);cell.appendChild(db);
+        db.appendChild(calWrap);db.appendChild(di);db.appendChild(dt);cell.appendChild(db);
 
-        // Date trigger button (shows on hover when no date bar)
+        // Date add button (hover, no date set)
         const dpTrigger=document.createElement('button');dpTrigger.className='date-add-btn dp-trigger-btn';
-        dpTrigger.innerHTML=SVG_CAL+(item.date?' '+item.date.split(' ').slice(1).join(' '):'+ data');
+        const calWrap2=document.createElement('span');calWrap2.innerHTML=SVG_CAL;calWrap2.style.cssText='display:flex;align-items:center;';
+        dpTrigger.appendChild(calWrap2);dpTrigger.appendChild(document.createTextNode(item.date?' '+item.date.split(' ').slice(1).join(' '):'+ data'));
         dpTrigger.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};cell.appendChild(dpTrigger);
 
-        // ── OVERLAY: bottom sheet — never covers top/bottom bars ──
+        // ── OVERLAY: bottom sheet inside the cell ──
         const ov=document.createElement('div');ov.className='cell-overlay';
         const sheet=document.createElement('div');sheet.className='ov-sheet';
+        const mkBtn=(cls,svgPath,label,fn)=>{
+          const b=document.createElement('button');b.className='ov-btn '+cls;
+          b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svgPath+'</svg>'+label;
+          b.onclick=e=>{e.stopPropagation();fn();};return b;
+        };
+        const mkDiv=()=>{const d=document.createElement('div');d.className='ov-divider';return d;};
         if(item.type==='carousel'){
-          const eb=document.createElement('button');eb.className='ov-btn ob-slide';
-          eb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>Modifica slide';
-          eb.onclick=e=>{e.stopPropagation();openCarouselModal(idx);};sheet.appendChild(eb);
-          const d0=document.createElement('div');d0.className='ov-divider';sheet.appendChild(d0);
+          sheet.appendChild(mkBtn('ob-slide','<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>','Modifica slide',()=>openCarouselModal(idx)));
+          sheet.appendChild(mkDiv());
         }
-        const lsb=document.createElement('button');lsb.className='ov-btn ob-stories';
-        lsb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>'+((item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories');
-        lsb.onclick=e=>{e.stopPropagation();openLinkStoriesModal(idx);};sheet.appendChild(lsb);
-        const d1=document.createElement('div');d1.className='ov-divider';sheet.appendChild(d1);
-        const cpb=document.createElement('button');cpb.className='ov-btn ob-copy';
-        cpb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copia da…';
-        cpb.onclick=e=>{e.stopPropagation();openCopyModal('feed');};sheet.appendChild(cpb);
-        const d2=document.createElement('div');d2.className='ov-divider';sheet.appendChild(d2);
-        const del=document.createElement('button');del.className='ov-btn ob-delete';
-        del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>Rimuovi';
-        del.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};sheet.appendChild(del);
+        sheet.appendChild(mkBtn('ob-stories','<rect x="7" y="2" width="10" height="20" rx="2"/>',((item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories'),()=>openLinkStoriesModal(idx)));
+        sheet.appendChild(mkDiv());
+        sheet.appendChild(mkBtn('ob-copy','<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>','Copia da…',()=>openCopyModal('feed')));
+        sheet.appendChild(mkDiv());
+        sheet.appendChild(mkBtn('ob-delete','<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>','Rimuovi',()=>removeFeedItem(idx)));
         ov.appendChild(sheet);cell.appendChild(ov);wrap.appendChild(cell);
         const cp=document.createElement('div');cp.className='copy-panel';cp.style.display=showAllCopy?'':'none';
         const cph=document.createElement('div');cph.className='copy-panel-header';const cl=document.createElement('div');cl.className='copy-label';cl.textContent='Caption';const expBtn=document.createElement('button');expBtn.className='copy-expand-btn';expBtn.textContent='▾';cph.appendChild(cl);cph.appendChild(expBtn);
