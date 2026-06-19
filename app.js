@@ -430,12 +430,8 @@ function rebuildAllSelects(){rebuildFeedSelects();rebuildStoriesSelects();rebuil
 function populateClientSelect(selId,currentCi){const sel=document.getElementById(selId);if(!sel)return;sel.innerHTML='<option value="">— Cliente —</option>';clients.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.name;sel.appendChild(o);});if(currentCi>=0)sel.value=currentCi;}
 function populateAccountSelect(selId,clientIdx,currentAi){const sel=document.getElementById(selId);if(!sel)return;if(clientIdx<0||!clients[clientIdx]?.accounts?.length){sel.style.display='none';return;}sel.style.display='';sel.innerHTML='';clients[clientIdx].accounts.forEach((a,i)=>{const o=document.createElement('option');o.value=i;const cl=clients[clientIdx];const label=a.name===cl.name?a.platform:a.name+' · '+a.platform;o.textContent=label;sel.appendChild(o);});if(currentAi>=0)sel.value=currentAi;}
 function rebuildFeedSelects(){
-  // Show client name (no dropdown — client comes from global context)
-  const nameEl=document.getElementById('feed-client-display');
-  if(nameEl)nameEl.textContent=feedClientIdx>=0&&clients[feedClientIdx]?clients[feedClientIdx].name:'—';
-  // Keep hidden client select in sync for JS compat
-  populateClientSelect('feed-client-sel',feedClientIdx);
-  // Show account selector
+  // Client fixed from global context — only populate account selector
+  populateClientSelect('feed-client-sel',feedClientIdx); // hidden, JS compat
   populateAccountSelect('feed-account-sel',feedClientIdx,feedAccountIdx);
 }
 function rebuildStoriesSelects(){
@@ -1273,12 +1269,9 @@ function renderPEDCal(){
 function rebuildNotesSelects(){
   // Sync notesClientIdx from globalClientIdx if not set
   if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;
-  // Update hidden select for compat
+  // Hidden select for JS compat only
   const csel=document.getElementById('notes-client-sel');
-  if(csel){csel.innerHTML='<option value="">— Cliente —</option>';clients.forEach((cl,i)=>{const o=document.createElement('option');o.value=i;o.textContent=cl.name;csel.appendChild(o);});if(notesClientIdx>=0)csel.value=notesClientIdx;}
-  // Update visible client name
-  const nameEl=document.getElementById('notes-client-display');
-  if(nameEl)nameEl.textContent=notesClientIdx>=0&&clients[notesClientIdx]?clients[notesClientIdx].name:'— Seleziona cliente —';
+  if(csel){csel.innerHTML='<option value="">—</option>';clients.forEach((cl,i)=>{const o=document.createElement('option');o.value=i;o.textContent=cl.name;csel.appendChild(o);});if(notesClientIdx>=0)csel.value=notesClientIdx;}
   const msel=document.getElementById('notes-month-sel');if(!msel)return;if(notesClientIdx<0){msel.style.display='none';return;}
   msel.style.display='';const prevM=msel.value;msel.innerHTML='';
   // Build month list from actual notesData keys + current MONTH_OPTIONS
@@ -1299,8 +1292,6 @@ function renderNotesEditor(){
   const cl=clients[notesClientIdx];if(!cl){ed.value='';return;}
   const key=cl.name+'|||'+notesMonth;
   ed.value=notesData[key]||'';
-  // Update display name in sel row
-  const nameEl=document.getElementById('notes-client-display');if(nameEl)nameEl.textContent=cl.name;
   // Update status bar
   const cs=document.getElementById('notes-client-status');if(cs)cs.textContent=cl.name;
   const ms=document.getElementById('notes-month-status');if(ms)ms.textContent=notesMonth;
@@ -1907,17 +1898,10 @@ function renderPilastri(){
   const body=document.getElementById('pilastri-body');if(!body)return;
   body.innerHTML='';
 
-  // Header with client name (no dropdown — uses global context)
+  // Header — client from global context, shown in subtopbar
   const header=document.createElement('div');header.className='pilastri-header';
   const title=document.createElement('h2');title.className='pilastri-title';title.textContent='Pilastri contenuto';
-  const ci0=globalClientIdx>=0?globalClientIdx:(clients.length>0?0:-1);
-  if(ci0>=0){
-    const clientName=document.createElement('span');clientName.className='notes-client-name';
-    clientName.textContent=clients[ci0]?.name||'';
-    header.appendChild(title);header.appendChild(clientName);
-  } else {
-    header.appendChild(title);
-  }
+  header.appendChild(title);
   body.appendChild(header);
 
   const content=document.createElement('div');content.id='pilastri-content';body.appendChild(content);
