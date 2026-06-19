@@ -678,7 +678,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* fmt-badge vars merged into :root above */
 
 /* Context bar */
-.feed-ctx-bar{background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.feed-ctx-bar{background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;width:100%;}
 .feed-ctx-row1{height:56px;display:flex;align-items:center;gap:10px;padding:0 16px;}
 .ctx-select{font-size:var(--fs-base);font-weight:500;padding:7px 11px;border:.5px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);cursor:pointer;outline:none;max-width:180px;font-family:var(--font);}
 .ctx-divider{width:.5px;height:20px;background:var(--border);flex-shrink:0;}
@@ -695,7 +695,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ctx-expand-btn svg{width:14px;height:14px;}
 
 /* Expandable panel */
-.feed-ctx-panel{display:none;padding:12px 16px;gap:20px;align-items:flex-start;border-top:.5px solid var(--border-lt);background:var(--bg);flex-wrap:wrap;}
+.feed-ctx-panel{display:none;padding:14px 16px;gap:20px;align-items:flex-start;border-top:.5px solid var(--border-lt);background:var(--bg);flex-wrap:wrap;min-height:80px;}
 .feed-ctx-panel.open{display:flex;}
 .feed-dz{position:relative;border:1.5px dashed var(--border);border-radius:var(--r);padding:16px 20px;text-align:center;cursor:pointer;background:var(--surface);transition:all .15s;min-width:200px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .feed-dz:hover,.feed-dz.drag-over{border-color:var(--green);background:var(--green-lt);}
