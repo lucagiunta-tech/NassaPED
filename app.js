@@ -1441,19 +1441,30 @@ function showBootOverlay(show){
 let pilastri = {};
 
 const PILASTRI_COLORS = [
-  '#006064', // turchese scuro
-  '#004d40', // verde acqua scuro
-  '#616100', // giallo lime scuro
+  '#b2ebf2', // turchese — Foto
+  '#b2dfdb', // verde acqua — Reel
+  '#f0f4b2', // giallo lime — Carosello
   '#0dff00', // verde brand
-  '#7f0000', // rosso scuro
-  '#37474f', // grigio blu
-  '#4a148c', // viola scuro
-  '#e65100', // arancio
+  '#ffb2b2', // rosso soft
+  '#c8b2f2', // viola soft
+  '#ffd6b2', // arancio soft
+  '#b2d4f2', // blu soft
 ];
+// Text colors paired with each background
+const PILASTRI_TEXT = {
+  '#b2ebf2':'#006064',
+  '#b2dfdb':'#004d40',
+  '#f0f4b2':'#616100',
+  '#0dff00':'#111',
+  '#ffb2b2':'#7f0000',
+  '#c8b2f2':'#3d0080',
+  '#ffd6b2':'#7a3500',
+  '#b2d4f2':'#003d80',
+};
 const PILASTRI_DEFAULT = [
-  {name:'Educativo',    color:'#006064', description:'Tutorial, spiegazioni, come funziona'},
-  {name:'Istituzionale',color:'#004d40', description:'Azienda, team, valori, storia'},
-  {name:'Promozionale', color:'#616100', description:'Offerte, prodotti, servizi'},
+  {name:'Educativo',    color:'#b2ebf2', description:'Tutorial, spiegazioni, come funziona'},
+  {name:'Istituzionale',color:'#b2dfdb', description:'Azienda, team, valori, storia'},
+  {name:'Promozionale', color:'#f0f4b2', description:'Offerte, prodotti, servizi'},
   {name:'Ispirazionale',color:'#0dff00', description:'Citazioni, storie, emozioni'},
 ];
 
@@ -1535,15 +1546,15 @@ function renderPilastriContent(body,ci){
 
   pils.forEach((p,pi)=>{
     const card=document.createElement('div');card.className='pilastri-card';
-    card.style.borderTopColor=p.color;
+    card.style.borderTopColor=p.color;card.dataset.textColor=PILASTRI_TEXT[p.color]||'#111';
 
     // Card header
     const cardHead=document.createElement('div');cardHead.className='pilastri-card-head';
-    const colorDot=document.createElement('div');colorDot.className='p-color-dot';colorDot.style.background=p.color;
+    const colorDot=document.createElement('div');colorDot.className='p-color-dot';colorDot.style.background=p.color;colorDot.style.border='.5px solid '+(PILASTRI_TEXT[p.color]||'#111');
     const nameInp=document.createElement('input');nameInp.className='p-name-inp';nameInp.value=p.name;
     nameInp.oninput=e=>{pils[pi].name=e.target.value;autoSave();};
     const colorSel=document.createElement('div');colorSel.className='p-color-sel';
-    PILASTRI_COLORS.forEach(col=>{const dot=document.createElement('div');dot.className='p-color-opt'+(col===p.color?' active':'');dot.style.background=col;dot.onclick=()=>{pils[pi].color=col;card.style.borderTopColor=col;colorDot.style.background=col;colorSel.querySelectorAll('.p-color-opt').forEach(d=>d.classList.remove('active'));dot.classList.add('active');autoSave();};colorSel.appendChild(dot);});
+    PILASTRI_COLORS.forEach(col=>{const dot=document.createElement('div');dot.className='p-color-opt'+(col===p.color?' active':'');dot.style.background=col;dot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');dot.onclick=()=>{pils[pi].color=col;card.style.borderTopColor=col;colorDot.style.background=col;colorDot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');colorSel.querySelectorAll('.p-color-opt').forEach(d=>d.classList.remove('active'));dot.classList.add('active');autoSave();};colorSel.appendChild(dot);});
     const delBtn=document.createElement('button');delBtn.className='p-del-btn';delBtn.textContent='✕';delBtn.title='Elimina pilastro';
     delBtn.onclick=()=>{if(confirm('Eliminare il pilastro "'+p.name+'"?')){pils.splice(pi,1);pilastri[cl.name]=pils;autoSave();renderPilastriContent(body,ci);}};
     cardHead.appendChild(colorDot);cardHead.appendChild(nameInp);cardHead.appendChild(delBtn);
