@@ -5,14 +5,14 @@
 
 const SUPABASE_URL = 'https://eusxreazwqmwtsdbhhjr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1c3hyZWF6d3Ftd3RzZGJoaGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NDA0NTQsImV4cCI6MjA5NzQxNjQ1NH0.9ekxNnt9wGzEeGexUP_0mZGGsa-YIPZs5zblu-_OECg';
-let supabase = null;
+let supabaseClient = null;
 
 let dbx = null;
 let lastStateStr = '';
 
 async function initBackend() {
   if (window.supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   } else {
     alert("Errore critico: Impossibile connettersi al database (Supabase non caricato). Fai un hard-refresh della pagina (Ctrl+Shift+R) o disattiva l'adblocker.");
     return;
@@ -32,7 +32,7 @@ async function initBackend() {
   await loadFromSupabase();
 
   // Supabase Realtime subscription
-  supabase.channel('app_state')
+  supabaseClient.channel('app_state')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state', filter: 'id=eq.1' }, payload => {
       if (payload.new && payload.new.state_json) {
         const globalData = payload.new.state_json;
@@ -1333,7 +1333,7 @@ async function syncToSupabase(showToastMsg = true) {
   try {
     const stateJson = { clients, feeds, stories, highlights, pedPlans, meta: { showAllDates, showAllCopy } };
     
-    const { error } = await supabase.from('app_state').upsert({ id: 1, state_json: stateJson });
+    const { error } = await supabaseClient.from('app_state').upsert({ id: 1, state_json: stateJson });
     if (error) throw error;
 
     lastStateStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
@@ -1374,7 +1374,7 @@ async function loadFromSupabase(silent = false) {
   }
 
   try {
-    const { data, error } = await supabase.from('app_state').select('state_json').eq('id', 1).single();
+    const { data, error } = await supabaseClient.from('app_state').select('state_json').eq('id', 1).single();
     if (error && error.code !== 'PGRST116') console.error(error);
     
     if (data && data.state_json) {
