@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Nassa Studio</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%231A8C3F'/><text y='.9em' font-size='70' x='15' fill='white' font-family='Arial' font-weight='bold'>N</text></svg>"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23003d00' font-family='Arial' font-weight='bold'>N</text></svg>"/>
 <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -120,97 +120,16 @@
   <!-- Content panels (feed, stories etc) — shown when in content tabs -->
   <div id="sidebar-studio" style="display:none;"></div>
 
-  <!-- Feed sidebar panel -->
-  <div id="sidebar-feed" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-    <div class="feed-selector">
-      <div class="feed-selector-label">Feed</div>
-      <select id="feed-client-sel" onchange="onFeedClientChange()"><option value="">— Cliente —</option></select>
-      <select id="feed-account-sel" onchange="onFeedAccountChange()" style="display:none;"></select>
-      <div id="feed-month-pills"></div>
-    </div>
-    <div class="panel-scroll">
-      <div>
-        <div class="sec-lbl">Carica</div>
-        <div class="drop-zone" id="feed-drop-zone">
-          <input type="file" id="feed-file-input" accept="image/*,video/*" multiple onchange="queueFeedFiles(this.files)"/>
-          <span class="dz-icon">📂</span>
-          <div class="dz-title">Trascina file qui</div>
-          <div class="dz-sub">o <strong>clicca per sfogliare</strong><br>JPG · PNG · MP4 · MOV</div>
-        </div>
-        <div style="margin-top:7px;">
-          <div class="link-tabs">
-            <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
-            <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Link</button>
-          </div>
-          <div class="link-row" style="margin-top:4px;">
-            <input type="text" id="feed-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addFeedLink()"/>
-            <button onclick="addFeedLink()">+</button>
-          </div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div>
-        <div class="sec-lbl">Riepilogo</div>
-        <div class="stats-row" style="margin-bottom:4px;">
-          <div class="stat-card"><div class="n" id="stat-tot">0</div><div class="l">Post</div></div>
-          <div class="stat-card"><div class="n" id="stat-vid">0</div><div class="l">Reel</div></div>
-          <div class="stat-card"><div class="n" id="stat-car">0</div><div class="l">Caros.</div></div>
-        </div>
-        <div class="stats-row">
-          <div class="stat-card"><div class="n teal" id="stat-stories">0</div><div class="l">Stories</div></div>
-          <div class="stat-card"><div class="n teal" id="stat-stories-sb">0</div><div class="l">Board</div></div>
-          <div class="stat-card"><div class="n teal" id="stat-hl">0</div><div class="l">Evidenze</div></div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="info-box" id="feed-status">Seleziona cliente e account.</div>
-      <div class="rule-chip"><strong>Max 2 revisioni</strong> — il terzo giro è a tariffa.</div>
-    </div>
-  </div>
+  <!-- Feed sidebar panel removed — moved to page-feed context bar -->
+  <div id="sidebar-feed" style="display:none;"></div>
 
-  <!-- Stories sidebar panel -->
-  <div id="sidebar-stories" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-    <div class="feed-selector">
-      <div class="feed-selector-label">Stories</div>
-      <select id="stories-client-sel" onchange="onStoriesClientChange()"><option value="">— Cliente —</option></select>
-      <select id="stories-account-sel" onchange="onStoriesAccountChange()" style="display:none;"></select>
-      <div id="stories-month-pills"></div>
-    </div>
-    <div class="panel-scroll">
-      <div>
-        <div class="sec-lbl">Aggiungi</div>
-        <div class="drop-zone" id="stories-drop-zone">
-          <input type="file" id="stories-file-input" accept="image/*,video/*" multiple onchange="queueStoryFiles(this.files)"/>
-          <span class="dz-icon">📱</span>
-          <div class="dz-title">Trascina file qui</div>
-          <div class="dz-sub">o <strong>clicca per sfogliare</strong> · 9:16</div>
-        </div>
-        <div style="margin-top:7px;">
-          <div class="link-tabs">
-            <button class="link-tab active" id="sl-tab-frame" onclick="setStoriesLinkTab('frame')">Frame.io</button>
-            <button class="link-tab" id="sl-tab-other" onclick="setStoriesLinkTab('other')">Link</button>
-          </div>
-          <div class="link-row" style="margin-top:4px;">
-            <input type="text" id="stories-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addStoryLink()"/>
-            <button onclick="addStoryLink()">+</button>
-          </div>
-        </div>
-        <div style="margin-top:7px;">
-          <button class="btn full" style="border-color:var(--teal);color:var(--teal);" onclick="openStoryboardModal(null)">+ Storyboard</button>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div>
-        <div class="sec-lbl">Riepilogo</div>
-        <div class="stats-row">
-          <div class="stat-card"><div class="n teal" id="stat-st-tot">0</div><div class="l">Stories</div></div>
-          <div class="stat-card"><div class="n teal" id="stat-st-sb">0</div><div class="l">Board</div></div>
-          <div class="stat-card"><div class="n teal" id="stat-st-hl">0</div><div class="l">Evidenze</div></div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="rule-chip"><strong>Formato:</strong> 1080×1920 · 9:16</div>
-    </div>
+  <!-- Stories sidebar panel removed — moved to page-stories context bar -->
+  <div id="sidebar-stories" style="display:none;">
+    <!-- Keep hidden IDs for JS compatibility -->
+    <select id="stories-client-sel" onchange="onStoriesClientChange()" style="display:none;"><option value="">— Cliente —</option></select>
+    <select id="stories-account-sel" onchange="onStoriesAccountChange()" style="display:none;"></select>
+    <input type="file" id="stories-file-input" accept="image/*,video/*" multiple onchange="queueStoryFiles(this.files)" style="display:none;"/>
+    <input type="text" id="stories-link-inp" style="display:none;"/>
   </div>
 
   <!-- Studio add panel -->
@@ -306,22 +225,63 @@
 
   <!-- FEED -->
   <div class="tab-page" id="page-feed">
-    <div class="content-bar">
-      <span class="content-title" id="feed-title">Feed</span>
-      <span class="content-tag" id="feed-tag">4:5 · 1080×1350</span>
-      <div class="content-space"></div>
-      <span class="content-meta" id="feed-meta">0 post</span>
-    </div>
-    <div class="content-area">
-      <div class="grid-toolbar">
-        <div class="grid-hint-left">
-          <span class="hint-chip">⠿ trascina</span> riordina &nbsp;·&nbsp; hover → opzioni
+    <!-- Context bar row 1: selectors + months + format -->
+    <div class="feed-ctx-bar">
+      <div class="feed-ctx-row1">
+        <select id="feed-client-sel" class="ctx-select" onchange="onFeedClientChange()"><option value="">— Cliente —</option></select>
+        <select id="feed-account-sel" class="ctx-select" onchange="onFeedAccountChange()" style="display:none;"></select>
+        <div class="ctx-divider"></div>
+        <div id="feed-month-pills" class="feed-month-pills-inline"></div>
+        <div class="ctx-fmt-badge" id="feed-fmt-badge">Instagram · 4:5</div>
+        <button class="ctx-expand-btn" id="feed-expand-btn" onclick="toggleFeedPanel()" title="Carica e opzioni">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="feed-expand-icon"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      <!-- Expandable panel -->
+      <div class="feed-ctx-panel" id="feed-ctx-panel">
+        <!-- Drop zone -->
+        <div class="feed-dz" id="feed-drop-zone">
+          <input type="file" id="feed-file-input" accept="image/*,video/*" multiple onchange="queueFeedFiles(this.files)"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="dz-title">Trascina file o <strong>clicca per sfogliare</strong></div>
+          <div class="dz-sub">JPG · PNG · MP4 · MOV</div>
         </div>
-        <div class="grid-toggles">
-          <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">Data <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
-          <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
+        <!-- Link -->
+        <div class="feed-ctx-section">
+          <div class="ctx-sec-lbl">Incolla link</div>
+          <div class="link-tabs" style="margin-bottom:5px;">
+            <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
+            <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Link</button>
+          </div>
+          <div class="link-row">
+            <input type="text" id="feed-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addFeedLink()"/>
+            <button onclick="addFeedLink()">+</button>
+          </div>
+        </div>
+        <!-- Stats -->
+        <div class="feed-ctx-section">
+          <div class="ctx-sec-lbl">Riepilogo</div>
+          <div class="ctx-stats">
+            <div class="ctx-stat"><div class="cs-n" id="stat-tot">0</div><div class="cs-l">Post</div></div>
+            <div class="ctx-stat"><div class="cs-n" id="stat-vid">0</div><div class="cs-l">Reel</div></div>
+            <div class="ctx-stat"><div class="cs-n" id="stat-car">0</div><div class="cs-l">Caros.</div></div>
+            <div class="ctx-stat"><div class="cs-n" id="stat-stories">0</div><div class="cs-l">Stories</div></div>
+            <div class="ctx-stat"><div class="cs-n" id="stat-hl">0</div><div class="cs-l">Evidenze</div></div>
+          </div>
+        </div>
+        <!-- Toggles + hint -->
+        <div class="feed-ctx-section" style="margin-left:auto;">
+          <div class="ctx-sec-lbl">Opzioni</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
+            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
+          </div>
+          <div class="ctx-hint">⠿ trascina · hover → opzioni</div>
         </div>
       </div>
+    </div>
+    <!-- Feed grid full width -->
+    <div class="feed-grid-area">
       <div class="feed-grid" id="feed-grid"></div>
     </div>
   </div>
@@ -408,7 +368,7 @@
       <div class="cal-space"></div>
       <div class="cal-legend">
         <span><span class="cal-legend-dot" style="background:var(--green);"></span>Feed</span>
-        <span><span class="cal-legend-dot" style="background:#3b82f6;"></span>Stories</span>
+        <span><span class="cal-legend-dot" style="background:var(--blue-dk);"></span>Stories</span>
         <span><span class="cal-legend-dot" style="background:var(--amber);"></span>Evidenza</span>
         <span><span class="cal-legend-dot" style="background:#7c3aed;"></span>PED Template</span>
         <span><span class="cal-legend-dot" style="background:#1a56c4;"></span>PED Autonoma</span>
