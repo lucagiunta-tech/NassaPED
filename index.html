@@ -190,10 +190,13 @@
       </div>
       <!-- Editor column -->
       <div class="notes-editor-col">
-        <!-- Selectors row -->
+        <!-- Selectors row — client comes from global context -->
         <div class="notes-sel-row">
-          <select class="ctx-select" id="notes-client-sel" onchange="onNotesClientChange()"><option value="">— Cliente —</option></select>
-          <select class="ctx-select" id="notes-month-sel" onchange="renderNotesEditor()" style="display:none;"></select>
+          <span class="notes-client-name" id="notes-client-display">— Seleziona cliente —</span>
+          <div class="ctx-divider"></div>
+          <select class="ctx-select" id="notes-month-sel" onchange="renderNotesEditor()"></select>
+          <!-- hidden for JS compat -->
+          <select id="notes-client-sel" onchange="onNotesClientChange()" style="display:none;"><option value="">— Cliente —</option></select>
           <div style="flex:1;"></div>
           <span class="notes-wc" id="notes-wc">0 parole</span>
         </div>
