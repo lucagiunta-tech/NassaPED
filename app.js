@@ -389,7 +389,7 @@ function switchTab(tab){
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
   if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesEditor();}
   if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
-  if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
+  if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();renderAccSwitcher();}
   if(tab==='ped'){
     // BUG #1 FIX: sync feedClientIdx/Month from globalClientIdx if not set
     // UGC uses currentClientIdx (alias feedClientIdx) and currentMonth (alias feedMonth)
@@ -891,9 +891,10 @@ function toggleStoriesPanel(){
   const panel=document.getElementById('stories-ctx-panel');
   const icon=document.getElementById('stories-expand-icon');
   if(!panel)return;
-  const open=panel.style.display==='flex';
-  panel.style.display=open?'none':'flex';
+  const open=panel.classList.contains('open');
+  panel.classList.toggle('open',!open);
   if(icon)icon.style.transform=open?'':'rotate(180deg)';
+  if(!open)initStoriesDZ();
 }
 
 function openStoryboardModal(idx){sbEditIdx=idx;const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;sbTmpSlides=st?.isStoryboard?(st.slides||[]).map(s=>({...s})):[];renderSbSlides();openModal('storyboard-modal');}
