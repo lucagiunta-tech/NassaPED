@@ -887,6 +887,15 @@ function addEmptyStoryListeners(cell){cell.addEventListener('dragover',e=>{if(st
 function removeStoryItem(i){const arr=currentStoryItems();if(!arr[i].isExternalLink)URL.revokeObjectURL(arr[i].url);arr.splice(i,1);setStoryItems(arr);refreshStories();}
 
 /* STORYBOARD MODAL */
+function toggleStoriesPanel(){
+  const panel=document.getElementById('stories-ctx-panel');
+  const icon=document.getElementById('stories-expand-icon');
+  if(!panel)return;
+  const open=panel.style.display==='flex';
+  panel.style.display=open?'none':'flex';
+  if(icon)icon.style.transform=open?'':'rotate(180deg)';
+}
+
 function openStoryboardModal(idx){sbEditIdx=idx;const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;sbTmpSlides=st?.isStoryboard?(st.slides||[]).map(s=>({...s})):[];renderSbSlides();openModal('storyboard-modal');}
 async function saveStoryboard(){
   if(!sbTmpSlides.length){showToast('Aggiungi almeno una slide','warn');return;}
