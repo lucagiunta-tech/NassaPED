@@ -418,8 +418,7 @@ function toggleAllCopy(){showAllCopy=!showAllCopy;const b=document.getElementByI
 
 /* CAROUSEL MODAL */
 function openCarouselModal(idx){carouselEditIdx=idx;const item=currentFeedItems()[idx];carouselTmp=(item.slides||[]).map(s=>({...s}));renderCThumbs();openModal('carousel-modal');}
-function saveCarousel(){if(!carouselTmp.length){showToast('Aggiungi almeno una slide','warn');return;}
-Aggiungi almeno una slide','warn');return;}const items=currentFeedItems();items[carouselEditIdx].slides=carouselTmp.map(s=>({...s}));items[carouselEditIdx].url=carouselTmp[0].url||'';setFeedItems(items);closeModal('carousel-modal');refreshFeed();autoSave();}
+function saveCarousel(){if(!carouselTmp.length){showToast('Aggiungi almeno una slide','warn');return;}const items=currentFeedItems();items[carouselEditIdx].slides=carouselTmp.map(s=>({...s}));items[carouselEditIdx].url=carouselTmp[0].url||'';setFeedItems(items);closeModal('carousel-modal');refreshFeed();autoSave();}
 function addCarouselFiles(files){Array.from(files).forEach(f=>{if(f.type.startsWith('image'))carouselTmp.push({url:URL.createObjectURL(f),name:f.name});});renderCThumbs();}
 function removeCSlide(i){URL.revokeObjectURL(carouselTmp[i].url);carouselTmp.splice(i,1);renderCThumbs();}
 function renderCThumbs(){const c=document.getElementById('c-thumbs');if(!c)return;c.innerHTML='';carouselTmp.forEach((s,i)=>{const th=document.createElement('div');th.className='c-thumb';const img=document.createElement('img');img.src=s.url;img.alt='';const del=document.createElement('button');del.className='c-thumb-del';del.textContent='✕';del.onclick=()=>removeCSlide(i);const num=document.createElement('span');num.className='c-thumb-num';num.textContent=i+1;th.appendChild(img);th.appendChild(del);th.appendChild(num);c.appendChild(th);});}
