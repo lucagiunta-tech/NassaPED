@@ -887,14 +887,15 @@ function addEmptyStoryListeners(cell){cell.addEventListener('dragover',e=>{if(st
 function removeStoryItem(i){const arr=currentStoryItems();if(!arr[i].isExternalLink)URL.revokeObjectURL(arr[i].url);arr.splice(i,1);setStoryItems(arr);refreshStories();}
 
 /* STORYBOARD MODAL */
+let storiesPanelOpen=false;
 function toggleStoriesPanel(){
+  storiesPanelOpen=!storiesPanelOpen;
   const panel=document.getElementById('stories-ctx-panel');
   const icon=document.getElementById('stories-expand-icon');
-  if(!panel)return;
-  const open=panel.classList.contains('open');
-  panel.classList.toggle('open',!open);
-  if(icon)icon.style.transform=open?'':'rotate(180deg)';
-  if(!open)initStoriesDZ();
+  if(panel)panel.classList.toggle('open',storiesPanelOpen);
+  if(icon)icon.innerHTML=storiesPanelOpen
+    ?'<polyline points="18 15 12 9 6 15"/>'
+    :'<polyline points="6 9 12 15 18 9"/>';
 }
 
 function openStoryboardModal(idx){sbEditIdx=idx;const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;sbTmpSlides=st?.isStoryboard?(st.slides||[]).map(s=>({...s})):[];renderSbSlides();openModal('storyboard-modal');}
