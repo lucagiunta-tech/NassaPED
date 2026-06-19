@@ -380,8 +380,7 @@ function switchTab(tab){
   });
   const subt=document.getElementById('subtopbar');if(subt)subt.classList.toggle('visible',tab!=='studio');
   const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');const sFeed=document.getElementById('sidebar-feed');const sSt=document.getElementById('sidebar-stories');
-  if(sStudio)sStudio.style.display=(tab==='studio'||tab==='notes'||tab==='ped'||tab==='cal'||tab==='preview')?'flex':'none';
-  if(sAdd)sAdd.style.display='none';if(sFeed)sFeed.style.display=tab==='feed'?'flex':'none';if(sSt)sSt.style.display=tab==='stories'?'flex':'none';
+  if(sStudio)sStudio.style.display='none';if(sAdd)sAdd.style.display='none';if(sFeed)sFeed.style.display='none';if(sSt)sSt.style.display='none';
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
   if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesEditor();}
   if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
@@ -391,7 +390,7 @@ function switchTab(tab){
   if(tab==='cal'){if(typeof renderCalendar==='function')renderCalendar();}
   if(tab==='preview'){if(previewClientIdx<0&&globalClientIdx>=0){previewClientIdx=globalClientIdx;previewAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}syncPreviewSelectors();renderPreview();}
 }
-function showStudioAdd(){const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');if(sStudio)sStudio.style.display='none';if(sAdd)sAdd.style.display='flex';}
+function showStudioAdd(){openModal('add-client-modal');rebuildStudioAccountSelect();}
 function backToClients(){switchTab('studio');}
 
 /* CLIENT MANAGEMENT */
@@ -403,8 +402,7 @@ function addClient(){
   document.getElementById('nc-name').value='';document.getElementById('nc-revenue').value='';
   renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiunto');autoSave();
   // Return to client list automatically
-  const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');
-  if(sAdd)sAdd.style.display='none';if(sStudio)sStudio.style.display='flex';
+  closeModal('add-client-modal');
 }
 function addAccount(){const ci=parseInt(document.getElementById('na-client').value);if(isNaN(ci)||ci<0){showToast('Seleziona un cliente','warn');return;}const name=document.getElementById('na-name').value.trim();if(!name){document.getElementById('na-name').focus();return;}const platform=document.getElementById('na-platform').value;const id='a_'+Date.now();clients[ci].accounts.push({id,name,platform});document.getElementById('na-name').value='';renderStudio();rebuildAllSelects();showToast('✓ Account aggiunto');autoSave();}
 function removeClient(i){if(!confirm('Rimuovere '+clients[i].name+' e tutti i suoi dati?'))return;clients[i].accounts.forEach(acc=>{// Delete ALL years of data, not just current MONTH_OPTIONS
