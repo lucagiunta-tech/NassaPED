@@ -682,3 +682,40 @@ tbody tr:hover .tr-actions{opacity:1;}
 .cell-badge.video{background:#b2dfdb;color:#00574b;}
 .cell-badge.carousel{background:#f0f4b2;color:#616100;}
 .cell-badge.pending{background:rgba(255,255,255,.85);color:#555;}
+
+/* ════ CALENDARIO TEATRO STYLE ════ */
+.cal-teatro-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.cal-teatro-header{background:var(--bg);padding:8px 14px;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.cal-teatro-day{background:var(--surface);padding:12px 12px 10px;min-height:140px;display:flex;flex-direction:column;cursor:pointer;transition:background .1s;gap:0;}
+.cal-teatro-day:hover{background:var(--bg);}
+.cal-teatro-day.cal-other{background:#fafafa;}
+.cal-teatro-day.cal-other .ctd-num{color:var(--text-3);}
+.cal-teatro-day.cal-today .ctd-num{color:var(--green);}
+.cal-teatro-day.cal-today{background:var(--green-lt);}
+
+/* Day number header */
+.ctd-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.ctd-num{font-size:32px;font-weight:800;color:var(--text);line-height:1;letter-spacing:-1.5px;}
+.ctd-dow{font-size:10px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+
+/* Green separator */
+.ctd-sep{height:2px;width:20px;background:var(--green);border-radius:99px;margin-bottom:8px;flex-shrink:0;}
+
+/* Events */
+.ctd-events{display:flex;flex-direction:column;gap:6px;flex:1;}
+.ctd-event{display:flex;gap:6px;align-items:flex-start;}
+.ctd-thumb{width:28px;height:35px;border-radius:3px;background:var(--bg);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.ctd-thumb-story{width:22px;height:35px;}
+.ctd-info{flex:1;min-width:0;}
+.ctd-client{font-size:8px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ctd-label{font-size:10px;font-weight:500;color:var(--text);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.ctd-badge{display:inline-flex;align-items:center;font-size:7px;font-weight:700;padding:1px 5px;border-radius:3px;margin-top:2px;letter-spacing:.2px;}
+.cal-badge-foto{background:#b2ebf2;color:#006064;}
+.cal-badge-reel{background:#b2dfdb;color:#004d40;}
+.cal-badge-car{background:#f0f4b2;color:#616100;}
+.cal-badge-story{background:#e8e8e8;color:#444;}
+.cal-badge-ugc{background:#f0f4b2;color:#616100;}
+.ctd-more{font-size:9px;color:var(--text-3);font-weight:500;margin-top:3px;}
+
+/* Remove old cal-month-grid styles conflict */
+.cal-month-grid{display:none;}
