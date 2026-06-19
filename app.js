@@ -25,15 +25,19 @@ function initDropbox() {
     if(syncBtn) syncBtn.style.display = 'inline-flex';
     loadFromDropbox();
     
-    // Auto-save interval
+    // Auto-save interval with fast debounce
+    let saveTimeout = null;
     setInterval(() => {
       if (!dbx) return;
       const currentStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
       if (lastStateStr !== currentStr) {
         lastStateStr = currentStr;
-        syncToDropbox(false);
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+          syncToDropbox(false);
+        }, 1000);
       }
-    }, 15000);
+    }, 500);
   } else {
     const loginBtn = document.getElementById('dbx-login-btn');
     const syncBtn = document.getElementById('dbx-sync-btn');
@@ -1286,6 +1290,14 @@ async function uploadMediaToDropbox(file, clientName) {
 
 async function syncToDropbox(showToastMsg = true) {
   if (!dbx) return;
+  
+  const syncBtn = document.getElementById('dbx-sync-btn');
+  if (syncBtn) {
+    syncBtn.textContent = 'Saving...';
+    syncBtn.style.opacity = '0.7';
+    syncBtn.style.pointerEvents = 'none';
+  }
+
   if (showToastMsg) {
     const loader = document.getElementById('dbx-loader');
     if(loader) loader.style.display = 'flex';
@@ -1321,6 +1333,14 @@ async function syncToDropbox(showToastMsg = true) {
     }
 
     lastStateStr = JSON.stringify({clients, feeds, stories, highlights, pedPlans});
+    
+    if (syncBtn) {
+      syncBtn.textContent = 'Saved \u2713';
+      syncBtn.style.opacity = '1';
+      syncBtn.style.pointerEvents = 'auto';
+      setTimeout(() => { if (syncBtn.textContent === 'Saved \u2713') syncBtn.textContent = 'Sync Dropbox'; }, 2000);
+    }
+
     if (showToastMsg) {
       const loader = document.getElementById('dbx-loader');
       if(loader) loader.style.display = 'none';
@@ -1328,6 +1348,11 @@ async function syncToDropbox(showToastMsg = true) {
     }
   } catch (err) {
     console.error('Dropbox sync error:', err);
+    if (syncBtn) {
+      syncBtn.textContent = 'Sync Dropbox';
+      syncBtn.style.opacity = '1';
+      syncBtn.style.pointerEvents = 'auto';
+    }
     if (showToastMsg) {
       const loader = document.getElementById('dbx-loader');
       if(loader) loader.style.display = 'none';
