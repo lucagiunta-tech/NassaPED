@@ -61,7 +61,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .subtopbar-client:hover{background:var(--surface);}
 .subtopbar-back{font-size:var(--fs-base);color:var(--text-3);}
 .subtopbar-name{font-size:var(--fs-base);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.subtopbar-pkg{font-size:var(--fs-xs);color:var(--text-3);margin-top:1px;}
+.subtopbar-pkg{margin-top:2px;display:flex;align-items:center;}
 .subtopbar-tabs{display:flex;align-items:stretch;flex:1;padding:0 4px;}
 .acc-switcher{display:flex;align-items:center;gap:4px;padding:0 10px;border-left:.5px solid var(--border);border-right:.5px solid var(--border);flex-shrink:0;}
 .acc-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r-pill);border:.5px solid var(--border);background:var(--surface);font-size:var(--fs-sm);font-family:var(--font);font-weight:500;color:var(--text-2);cursor:pointer;white-space:nowrap;transition:all .12s;}
