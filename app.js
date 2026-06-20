@@ -3255,24 +3255,37 @@ function buildAnnoData(year) {
   });
 
   // PED plans (UGC) → Canale 2
+  // FIX: usa stesso pattern del calendario (renderCalendar) che funziona
+  // Itera tutte le chiavi che iniziano con cl.name|||
+  // e filtra per anno con regex robusta invece di split fragile
   const pedPrefix = cl.name + '|||';
   Object.keys(pedPlans).forEach(k => {
     if(!k.startsWith(pedPrefix)) return;
-    const monthStr = k.replace(pedPrefix, '');
-    const parts = monthStr.split(' ');
-    if(parts[1] !== yr) return;
-    const mi = MONTHS.indexOf(parts[0]);
+    const monthStr = k.replace(pedPrefix, '').trim();
+    // Estrai anno con regex — gestisce spazi multipli e formati vari
+    const yearMatch = monthStr.match(/(\d{4})$/);
+    if(!yearMatch || yearMatch[1] !== yr) return;
+    // Estrai nome mese (tutto prima dell'anno)
+    const mName = monthStr.replace(yearMatch[1],'').trim();
+    const mi = MONTHS.indexOf(mName);
     if(mi < 0) return;
     if(!result[mi]) result[mi] = [];
     (pedPlans[k] || []).forEach(item => {
       if(!item.date) return;
-      const d = new Date(item.date);
-      if(isNaN(d)) return;
+      // item.date può essere ISO "2026-06-03" o italiano
+      let dayNum = null;
+      if(item.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // ISO format — estrai giorno direttamente senza timezone issues
+        dayNum = parseInt(item.date.split('-')[2]);
+      } else {
+        dayNum = parseDayFromItalianDate(item.date);
+      }
+      if(!dayNum) return;
       result[mi].push({
-        day: d.getDate(),
+        day: dayNum,
         ch: 2,
-        title: item.brief || 'UGC',
-        sub: item.type === 'autonoma' ? 'Autonoma' : 'Template',
+        title: item.brief || (item.type === 'autonoma' ? 'UGC Autonoma' : 'UGC Template'),
+        sub: item.type === 'autonoma' ? 'Autonoma' : 'Template Nassa',
         tag: 'UGC',
         raw: item
       });
