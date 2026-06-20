@@ -1575,7 +1575,6 @@ document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg')
 /* ════════ CALENDARIO ════════ */
 let calView='month',calDate=new Date();
 const GIORNIW=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
-const MESI_IT=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function setCalView(v){calView=v;document.getElementById('cal-btn-month').classList.toggle('active',v==='month');document.getElementById('cal-btn-week').classList.toggle('active',v==='week');renderCalendar();}
 function calNav(dir){if(calView==='month')calDate.setMonth(calDate.getMonth()+dir);else calDate.setDate(calDate.getDate()+dir*7);calDate=new Date(calDate);renderCalendar();}
 function calGoToday(){calDate=new Date();renderCalendar();}
@@ -1614,7 +1613,7 @@ function renderCalendar(){
   const body=document.getElementById('cal-body');if(!body)return;
   const lbl=document.getElementById('cal-month-label');const events=calGetAllEvents();const today=todayISO();
   if(calView==='month'){
-    const y=calDate.getFullYear(),m=calDate.getMonth();if(lbl)lbl.textContent=MESI_IT[m]+' '+y;
+    const y=calDate.getFullYear(),m=calDate.getMonth();if(lbl)lbl.textContent=MONTHS[m]+' '+y;
     const firstDay=new Date(y,m,1);let startDow=firstDay.getDay();startDow=startDow===0?6:startDow-1;
     const daysInMonth=new Date(y,m+1,0).getDate();const daysInPrev=new Date(y,m,0).getDate();
     let html='<div class="cal-teatro-grid">';
@@ -1671,7 +1670,7 @@ function renderCalendar(){
     html+='</div>';body.innerHTML=html;
   } else {
     const curr=new Date(calDate);const dow=curr.getDay();const diff=dow===0?-6:1-dow;curr.setDate(curr.getDate()+diff);
-    if(lbl)lbl.textContent='Settimana del '+curr.getDate()+' '+MESI_IT[curr.getMonth()];
+    if(lbl)lbl.textContent='Settimana del '+curr.getDate()+' '+MONTHS[curr.getMonth()];
     const weekDays=[];for(let i=0;i<7;i++){const d=new Date(curr);d.setDate(d.getDate()+i);weekDays.push(d);}
     let html='<div class="cal-week-wrap">';html+='<div class="cal-week-header" style="border-right:1px solid var(--border);border-bottom:1px solid var(--border);"></div>';
     weekDays.forEach(d=>{const ds=isoDate(d.getFullYear(),d.getMonth()+1,d.getDate());const isT=ds===today;html+=`<div class="cal-week-header${isT?' today':''}"><div class="wh-day">${GIORNIW[weekDays.indexOf(d)]}</div><div class="wh-num">${d.getDate()}</div></div>`;});
@@ -1695,7 +1694,7 @@ function openCalPanel(dateStr){
   const head=document.getElementById('cal-panel-date');const body=document.getElementById('cal-panel-body');if(!head||!body)return;
   const[y,mo,d]=dateStr.split('-');const dt=new Date(parseInt(y),parseInt(mo)-1,parseInt(d));
   const gg=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-  head.textContent=gg[dt.getDay()]+' '+parseInt(d)+' '+MESI_IT[parseInt(mo)-1]+' '+y;
+  head.textContent=gg[dt.getDay()]+' '+parseInt(d)+' '+MONTHS[parseInt(mo)-1]+' '+y;
   body.innerHTML='';
   if(!evs.length){body.innerHTML='<p style="font-size:12px;color:var(--text-3);text-align:center;padding:20px;">Nessun contenuto programmato.</p>';panel.classList.add('open');return;}
   const feeds_=evs.filter(e=>e.type==='feed');const stories_=evs.filter(e=>e.type==='story');const hl_=evs.filter(e=>e.type==='highlight');const pedAuto_=evs.filter(e=>e.type==='ped'&&e.pedType==='autonoma');const pedTmpl_=evs.filter(e=>e.type==='ped'&&e.pedType==='template');
@@ -1732,7 +1731,7 @@ function renderFreqDays(){
 
 function pedGenerate(){
   if(currentClientIdx<0||!currentMonth)return;if(pedFreqDays.size===0){alert('Seleziona almeno un giorno.');return;}
-  const[moName,y]=currentMonth.split(' ');const moIdx=MESI_IT.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);const daysInMonth=new Date(year,moIdx+1,0).getDate();
+  const[moName,y]=currentMonth.split(' ');const moIdx=MONTHS.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);const daysInMonth=new Date(year,moIdx+1,0).getDate();
   const existing=currentPedPlan();const existingDates=new Set(existing.map(s=>s.date));const newPlan=[...existing];
   for(let d=1;d<=daysInMonth;d++){const dt=new Date(year,moIdx,d);let dow=dt.getDay();dow=dow===0?6:dow-1;const iso=isoDate(year,moIdx+1,d);if(pedFreqDays.has(dow)&&!existingDates.has(iso)){newPlan.push({date:iso,type:'autonoma',brief:'',templateRef:'',id:pedUID()});}}
   newPlan.sort((a,b)=>a.date.localeCompare(b.date));setCurrentPedPlan(newPlan);
@@ -1773,7 +1772,7 @@ function renderPEDCal(){
   const headEl=document.getElementById('ped-cal-head');const gridEl=document.getElementById('ped-cal-grid');if(!headEl||!gridEl)return;
   headEl.innerHTML='';['L','M','M','G','V','S','D'].forEach(g=>{const d=document.createElement('div');d.className='ped-cal-dh';d.textContent=g;headEl.appendChild(d);});
   gridEl.innerHTML='';if(currentClientIdx<0||!currentMonth)return;
-  const[moName,y]=currentMonth.split(' ');const moIdx=MESI_IT.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);
+  const[moName,y]=currentMonth.split(' ');const moIdx=MONTHS.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);
   const firstDay=new Date(year,moIdx,1);let startDow=firstDay.getDay();startDow=startDow===0?6:startDow-1;
   const daysInMonth=new Date(year,moIdx+1,0).getDate();const daysInPrev=new Date(year,moIdx,0).getDate();const today=todayISO();
   const pedMap={};currentPedPlan().forEach(s=>{if(!pedMap[s.date])pedMap[s.date]=[];pedMap[s.date].push(s);});
@@ -2047,7 +2046,6 @@ function italianToISO(str){
 /* DATE PICKER */
 let dpOpenIdx=null,dpYear=new Date().getFullYear(),dpMonth=new Date().getMonth();
 const WEEKDAYS=['L','M','M','G','V','S','D'];
-const MONTH_NAMES=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
 function openDatePicker(idx,anchorEl){
   closeDatePicker();dpOpenIdx=idx;
@@ -2067,7 +2065,7 @@ function renderDatePickerContent(idx,popup){
   popup.innerHTML='';
   const hdr=document.createElement('div');hdr.className='dp-header';
   const prev=document.createElement('button');prev.className='dp-nav';prev.textContent='‹';prev.onclick=e=>{e.stopPropagation();dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}renderDatePickerContent(idx,popup);};
-  const lbl=document.createElement('div');lbl.className='dp-header-label';lbl.textContent=MONTH_NAMES[dpMonth]+' '+dpYear;
+  const lbl=document.createElement('div');lbl.className='dp-header-label';lbl.textContent=MONTHS[dpMonth]+' '+dpYear;
   const next=document.createElement('button');next.className='dp-nav';next.textContent='›';next.onclick=e=>{e.stopPropagation();dpMonth++;if(dpMonth>11){dpMonth=0;dpYear++;}renderDatePickerContent(idx,popup);};
   hdr.appendChild(prev);hdr.appendChild(lbl);hdr.appendChild(next);popup.appendChild(hdr);
   const wds=document.createElement('div');wds.className='dp-weekdays';WEEKDAYS.forEach(d=>{const wd=document.createElement('div');wd.className='dp-wd';wd.textContent=d;wds.appendChild(wd);});popup.appendChild(wds);
@@ -2665,8 +2663,6 @@ function autoSave(){if(CLOUD._booting)return;CLOUD.scheduleSave(()=>CLOUD.snapsh
 
 
 /* ══ ADS GANTT ══ */
-const ADS_MONTH_NAMES=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
-  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const ADS_PLAT_COLORS={instagram:'#378ADD',facebook:'#7F77DD',meta:'#7F77DD',linkedin:'#1D9E75',google:'#BA7517'};
 
 function adsGanttPrevMonth(){
@@ -2809,7 +2805,7 @@ function renderAdsGantt(){
       // Label: spent/budget
       const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
       bar.textContent=`€${(camp.spent||0).toLocaleString('it')} (${pct}%)`;
-      bar.title=`${camp.name} — ${s}→${e} ${ADS_MONTH_NAMES[adsGanttMonth]}
+      bar.title=`${camp.name} — ${s}→${e} ${ADS_MONTHS[adsGanttMonth]}
 Budget: €${camp.budget} | Speso: €${camp.spent||0} | ROAS: ${camp.roas||'—'}×`;
       tl.appendChild(bar);
     }
