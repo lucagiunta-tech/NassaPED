@@ -1645,3 +1645,174 @@ tbody tr:hover .tr-actions{opacity:1;}
   backdrop-filter:blur(4px);
 }
 .video-cover-pill:hover{background:rgba(0,0,0,.85);}
+
+
+/* ══════════════════════════════════════════════
+   MOBILE — max-width: 768px
+   ══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Variabili mobile ── */
+  :root {
+    --topbar: 52px;
+    --sidebar: 0px;
+    --fs-base: 14px;
+    --fs-sm: 12px;
+    --fs-xs: 10px;
+  }
+
+  /* ── Nascondi sidebar su mobile ── */
+  .sidebar { display: none !important; }
+
+  /* ── Topbar: compatta ── */
+  .topbar { height: var(--topbar); padding: 0 12px; }
+  .brand-name { display: none; }
+  .topbar-nav { display: none; } /* le tab sono nella subtopbar */
+  .topbar-right { gap: 6px; }
+  .cloud-badge { display: none; }
+
+  /* ── Subtopbar: scrollabile orizzontalmente ── */
+  .subtopbar {
+    height: auto;
+    flex-direction: column;
+    padding: 0;
+    overflow: visible;
+  }
+  .subtopbar-client {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    min-height: 40px;
+  }
+  .subtopbar-tabs {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 8px;
+    gap: 0;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .subtopbar-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ── Account switcher ── */
+  .acc-switcher { padding: 4px 12px; }
+
+  /* ── Feed context bar ── */
+  .feed-ctx-bar { flex-wrap: wrap; gap: 4px; padding: 6px 10px; }
+  .feed-ctx-row1 { flex-wrap: wrap; gap: 4px; width: 100%; }
+  .ctx-select { font-size: 12px; padding: 4px 6px; max-width: 140px; }
+
+  /* ── Selettore mesi: scrollabile orizzontalmente ── */
+  .month-strip, .feed-month-row, [class*="month-bar"] {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+    white-space: nowrap;
+    padding-bottom: 2px;
+  }
+  .month-strip::-webkit-scrollbar,
+  .feed-month-row::-webkit-scrollbar { display: none; }
+  .month-pill { flex-shrink: 0; }
+
+  /* ── Feed grid: 2 colonne su mobile ── */
+  .feed-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 3px;
+  }
+
+  /* ── Caption panel: più compatta ── */
+  .copy-panel { font-size: 12px; }
+  .copy-body textarea { font-size: 12px; rows: 2; }
+
+  /* ── Overlay: bottoni più grandi (touch target) ── */
+  .ov-btn { padding: 10px 12px; font-size: 12px; min-height: 44px; }
+  .ov-sheet { padding: 6px 8px 14px; }
+
+  /* ── Modal: full screen su mobile ── */
+  .modal-box, [class*="-modal"] > div {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 88vh !important;
+  }
+
+  /* ── Date picker: più largo ── */
+  .dp-popup { min-width: 280px; font-size: 13px; }
+  .dp-day { min-width: 34px; min-height: 34px; font-size: 12px; }
+
+  /* ── Anno / Calendario: scroll orizzontale ── */
+  .anno-grid, .anno-table { overflow-x: auto; }
+
+  /* ── Ads: colonna singola ── */
+  .ads-gantt { overflow-x: auto; }
+
+  /* ── Preview: griglia singola colonna ── */
+  .client-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 3px;
+  }
+
+  /* ── Storyboard sezione in Preview: 2 colonne ── */
+  #preview-body [style*="repeat(3,1fr)"] {
+    grid-template-columns: repeat(2,1fr) !important;
+  }
+
+  /* ── Feed format badge ── */
+  .feed-fmt-badge { font-size: 11px; }
+  #feed-fmt-sel-wrap { font-size: 11px; }
+
+  /* ── Topbar bottoni ── */
+  .topbar-right button, .topbar-right .avatar {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  /* ── Sb nav (slide builder) ── */
+  .sb-main-nav { display: none; }
+
+  /* ── Stories grid: 2 colonne ── */
+  .stories-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 3px;
+  }
+
+  /* ── Cell wrap: dimensioni ok ── */
+  .cell-wrap { break-inside: avoid; }
+
+  /* ── Toggle dates/copy: nascondi label su mobile ── */
+  .toggle-lbl { display: none; }
+
+  /* ── UGC card: layout verticale ── */
+  .ped-story-card-head { flex-wrap: wrap; gap: 4px; }
+
+  /* ── Appr stats bar: scroll orizzontale ── */
+  .appr-stats-bar { overflow-x: auto; flex-wrap: nowrap; }
+  .appr-filter-chip { flex-shrink: 0; white-space: nowrap; }
+}
+
+/* ── Extra small: iPhone SE ── */
+@media (max-width: 380px) {
+  .feed-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .sub-tab { padding: 8px 10px; font-size: 12px; }
+}
+
+/* ── Mobile: month pills scrollabili ── */
+@media (max-width: 768px) {
+  .feed-ctx-bar { padding: 4px 8px; gap: 4px; flex-direction: column; align-items: stretch; }
+  .feed-ctx-row1 { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+  .feed-ctx-row2 { display: flex; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .feed-ctx-row2::-webkit-scrollbar { display: none; }
+  .feed-month-pills-inline { display: flex; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; gap: 4px; padding: 4px 0; touch-action: pan-x; }
+  .feed-month-pills-inline::-webkit-scrollbar { display: none; }
+  .month-pill { flex-shrink: 0; }
+  .year-nav { flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
+}
