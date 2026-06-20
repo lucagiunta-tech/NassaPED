@@ -1611,26 +1611,6 @@ function calGetAllEvents(){
       (pedPlans[pkey]||[]).forEach((st)=>{if(!st.date)return;const lbl=(st.type==='autonoma'?'A — ':'T — ')+(st.brief?st.brief.slice(0,18):'Story pianificata');addEv(st.date,{type:'ped',label:lbl,thumb:null,item:st,clientIdx:ci,clientName:cl.name,month:mo,pedType:st.type});});
     });
 
-    // ADS campaigns — aggiunti per ogni giorno del range startDay→endDay
-    const adsKey = cl.id || null;
-    if(adsKey && adsCampaigns[adsKey]) {
-      (adsCampaigns[adsKey] || []).forEach(camp => {
-        if(!camp.startDay || !camp.endDay) return;
-        // Usiamo adsGanttYear/Month per contestualizzare le campagne
-        const yr = adsGanttYear;
-        const mo = adsGanttMonth; // 0-indexed
-        const start = Math.max(1, camp.startDay);
-        const end = Math.min(new Date(yr, mo+1, 0).getDate(), camp.endDay);
-        // Aggiungi evento di inizio campagna
-        const startISO = isoDate(yr, mo+1, start);
-        const endISO = isoDate(yr, mo+1, end);
-        addEv(startISO, {
-          type:'ads', label:'↳ '+esc(camp.name)+(camp.platform?' · '+camp.platform.toUpperCase():''),
-          camp:camp, clientIdx:ci, clientName:cl.name,
-          startISO, endISO, platform:camp.platform
-        });
-      });
-    }
   });
   return events;
 }
@@ -1673,7 +1653,6 @@ function renderCalendar(){
             else{badgeCls='cal-badge-foto';badgeTxt='Foto';}
           } else if(isStory){badgeCls='cal-badge-story';badgeTxt='Story';}
           else if(isPed){badgeCls='cal-badge-ugc';badgeTxt='UGC';}
-          else if(ev.type==='ads'){badgeCls='cal-badge-ads';badgeTxt='PAID';}
           const thumbSrc=ev.thumb||'';
           const thumbInner=thumbSrc
             ?`<img src="${thumbSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`
@@ -1724,9 +1703,9 @@ function openCalPanel(dateStr){
   head.textContent=gg[dt.getDay()]+' '+parseInt(d)+' '+MONTHS[parseInt(mo)-1]+' '+y;
   body.innerHTML='';
   if(!evs.length){body.innerHTML='<p style="font-size:12px;color:var(--text-3);text-align:center;padding:20px;">Nessun contenuto programmato.</p>';panel.classList.add('open');return;}
-  const feeds_=evs.filter(e=>e.type==='feed');const stories_=evs.filter(e=>e.type==='story');const hl_=evs.filter(e=>e.type==='highlight');const pedAuto_=evs.filter(e=>e.type==='ped'&&e.pedType==='autonoma');const pedTmpl_=evs.filter(e=>e.type==='ped'&&e.pedType==='template');const ads_=evs.filter(e=>e.type==='ads');
+  const feeds_=evs.filter(e=>e.type==='feed');const stories_=evs.filter(e=>e.type==='story');const hl_=evs.filter(e=>e.type==='highlight');const pedAuto_=evs.filter(e=>e.type==='ped'&&e.pedType==='autonoma');const pedTmpl_=evs.filter(e=>e.type==='ped'&&e.pedType==='template');
   const renderSection=(list,label,typeClass)=>{if(!list.length)return;const sec=document.createElement('div');const sl=document.createElement('div');sl.className='cal-panel-section';sl.textContent=label;sec.appendChild(sl);list.forEach(ev=>{const row=document.createElement('div');row.className='cal-panel-item';const thumb=document.createElement('div');thumb.className='cal-panel-thumb'+(typeClass==='story'?' story':'');if(ev.vidUrl){const v=document.createElement('video');v.src=ev.vidUrl;v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='width:100%;height:100%;object-fit:cover;';thumb.appendChild(v);}else if(ev.thumb){const img=document.createElement('img');img.src=ev.thumb;img.alt='';thumb.appendChild(img);}const info=document.createElement('div');info.className='cal-panel-info';const type_=document.createElement('div');type_.className=`cal-panel-type ${typeClass}`;type_.textContent=label.replace(/^[^a-zA-Z]+ /,'');info.appendChild(type_);const cp=document.createElement('div');cp.className='cal-panel-copy';cp.textContent=ev.item.brief||ev.item.copy||ev.item.note||ev.item.name||ev.label||'—';info.appendChild(cp);if(ev.clientName){const cl_=document.createElement('div');cl_.style.cssText='font-size:10px;color:var(--text-3);margin-top:2px;';cl_.textContent=ev.clientName;info.appendChild(cl_);}if(ev.type==='feed'||ev.type==='story'||ev.type==='ped'){const tabDest=ev.type==='feed'?'feed':ev.type==='story'?'stories':'ped';const go=document.createElement('div');go.className='cal-panel-goto';go.innerHTML='→ Vai a '+(ev.type==='feed'?'Feed':ev.type==='story'?'Stories':'UGC');go.onclick=e=>{e.stopPropagation();switchTab(tabDest);closeCalPanel();};info.appendChild(go);}row.appendChild(thumb);row.appendChild(info);if(ev.type==='feed'&&ev.item)row.onclick=()=>{openLb(0,[ev.item]);};sec.appendChild(row);});body.appendChild(sec);};
-  renderSection(feeds_,'Post feed','feed');renderSection(stories_,'Stories','story');renderSection(hl_,'In evidenza','highlight');renderSection(pedAuto_,'UGC Autonoma','feed');renderSection(pedTmpl_,'UGC Template','story');renderSection(ads_,'Campagne Paid','ads');
+  renderSection(feeds_,'Post feed','feed');renderSection(stories_,'Stories','story');renderSection(hl_,'In evidenza','highlight');renderSection(pedAuto_,'UGC Autonoma','feed');renderSection(pedTmpl_,'UGC Template','story');
   panel.classList.add('open');
 }
 function closeCalPanel(){const p=document.getElementById('cal-day-panel');if(p)p.classList.remove('open');}
@@ -3320,31 +3299,7 @@ function buildAnnoData(year) {
     });
   });
 
-  // Ads campaigns → Canale 0 (come feed, ma tipo 'Paid')
-  const adsClientKey = cl.id || null;
-  if(adsClientKey && adsCampaigns[adsClientKey]) {
-    (adsCampaigns[adsClientKey] || []).forEach(camp => {
-      if(!camp.startDay || !camp.endDay) return;
-      // Usa adsGanttYear/Month per contestualizzare
-      const yr2 = year;
-      MONTHS.forEach((mName2, mi2) => {
-        const dayStart = camp.startDay;
-        const daysInMonth = new Date(yr2, mi2+1, 0).getDate();
-        if(dayStart > daysInMonth) return;
-        if(!result[mi2]) result[mi2] = [];
-        result[mi2].push({
-          day: Math.min(dayStart, daysInMonth),
-          ch: 0,
-          title: camp.name || 'Campagna Paid',
-          sub: (camp.platform ? camp.platform.toUpperCase() : 'ADS') + (camp.budget ? ' · €'+camp.budget : ''),
-          tag: 'Paid',
-          raw: camp
-        });
-      });
-    });
-  }
-
-  // Note → Canale 1 (da notesData)
+    // Note → Canale 1 (da notesData)
   const notesPrefix = cl.name + '|||';
   Object.keys(notesData).forEach(k => {
     if(!k.startsWith(notesPrefix)) return;
