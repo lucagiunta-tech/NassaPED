@@ -1816,3 +1816,89 @@ tbody tr:hover .tr-actions{opacity:1;}
   .month-pill { flex-shrink: 0; }
   .year-nav { flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
 }
+
+/* ══ FEED — Vista lista (colonna singola) ══ */
+
+/* La griglia diventa colonna unica centrata */
+.feed-grid.feed-view-list {
+  grid-template-columns: 1fr !important;
+  max-width: 440px;
+  margin: 0 auto;
+  gap: 0;
+}
+
+/* Card in vista lista: immagine piena + info sotto */
+.feed-grid.feed-view-list .cell-wrap {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* Cella immagine — mantiene aspect-ratio 4:5 */
+.feed-grid.feed-view-list .feed-cell {
+  aspect-ratio: 4/5;
+  border-radius: 0;
+}
+
+/* Caption sempre espansa in lista */
+.feed-grid.feed-view-list .copy-panel {
+  display: flex !important;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+.feed-grid.feed-view-list .copy-body {
+  display: block !important;
+}
+.feed-grid.feed-view-list .copy-preview {
+  display: none !important;
+}
+.feed-grid.feed-view-list .copy-panel-header {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.feed-grid.feed-view-list .copy-body textarea {
+  border: none;
+  outline: none;
+  padding: 4px 12px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  width: 100%;
+  resize: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 60px;
+}
+
+/* Numero post in lista — più grande e visibile */
+.feed-grid.feed-view-list .cell-num {
+  font-size: 11px;
+}
+
+/* Barra data sempre visibile in lista */
+.feed-grid.feed-view-list .date-bar {
+  opacity: 1 !important;
+}
+.feed-grid.feed-view-list .hidden-bar {
+  display: none;
+}
+
+/* Badge approvazione in lista — più prominente */
+.feed-grid.feed-view-list .feed-appr-badge {
+  font-size: 11px;
+  padding: 4px 10px 4px 8px;
+}
+
+/* Su mobile: lista di default se schermo stretto */
+@media (max-width: 500px) {
+  /* Bottone vista sempre visibile */
+  #toggle-view { display: flex !important; }
+}
