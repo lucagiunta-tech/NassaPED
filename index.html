@@ -925,6 +925,24 @@
             <label>Copy / note regia</label>
             <textarea id="sb-f-cop" rows="3" placeholder="Descrivi il contenuto…" oninput="sbSync()"></textarea>
           </div>
+          <!-- Gruppo A: sfondo, nota regia, placeholder -->
+          <div class="field">
+            <label>Sfondo</label>
+            <select id="sb-f-sfondo" oninput="sbSync()" style="width:100%;font-size:var(--fs-sm);font-family:var(--font);border:.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;background:var(--surface);color:var(--text);">
+              <option value="Avorio">Avorio</option>
+              <option value="Righe">Righe</option>
+              <option value="Quadr.">Quadr.</option>
+              <option value="Dark">Dark</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nota regia</label>
+            <textarea id="sb-f-nota-regia" rows="2" placeholder="Istruzioni per il creator…" oninput="sbSync()" style="width:100%;resize:none;border:.5px solid var(--border-lt);border-left:2px solid #d4a800;border-radius:var(--rs);padding:6px 8px;font-size:var(--fs-sm);font-family:var(--font);color:#7a5c00;background:rgba(212,168,0,0.05);outline:none;"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+            <input type="checkbox" id="sb-f-placeholder" onchange="sbSync()" style="width:14px;height:14px;accent-color:var(--green);cursor:pointer;"/>
+            <label for="sb-f-placeholder" style="font-size:var(--fs-sm);color:var(--text-2);cursor:pointer;">Slide per video creator</label>
+          </div>
           <div class="sb-style-section">
             <div class="sec-lbl" style="margin-bottom:8px;">Stile</div>
             <label class="sb-style-lbl">Sfondo</label>
