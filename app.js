@@ -892,7 +892,14 @@ function toggleStoriesPanel(){
   storiesPanelOpen=!storiesPanelOpen;
   const panel=document.getElementById('stories-ctx-panel');
   const icon=document.getElementById('stories-expand-icon');
-  if(panel)panel.classList.toggle('open',storiesPanelOpen);
+  const btn=document.getElementById('stories-expand-btn');
+  if(panel){
+    panel.classList.toggle('open',storiesPanelOpen);
+    if(storiesPanelOpen&&btn){
+      const r=btn.closest('.feed-ctx-bar').getBoundingClientRect();
+      panel.style.top=r.bottom+'px';
+    }
+  }
   if(icon)icon.innerHTML=storiesPanelOpen
     ?'<polyline points="18 15 12 9 6 15"/>'
     :'<polyline points="6 9 12 15 18 9"/>';
@@ -2326,7 +2333,14 @@ function toggleFeedPanel(){
   feedPanelOpen=!feedPanelOpen;
   const panel=document.getElementById('feed-ctx-panel');
   const icon=document.getElementById('feed-expand-icon');
-  if(panel)panel.classList.toggle('open',feedPanelOpen);
+  const btn=document.getElementById('feed-expand-btn');
+  if(panel){
+    panel.classList.toggle('open',feedPanelOpen);
+    if(feedPanelOpen&&btn){
+      const r=btn.closest('.feed-ctx-bar').getBoundingClientRect();
+      panel.style.top=r.bottom+'px';
+    }
+  }
   if(icon)icon.innerHTML=feedPanelOpen
     ?'<polyline points="18 15 12 9 6 15"/>'
     :'<polyline points="6 9 12 15 18 9"/>';
