@@ -1086,7 +1086,31 @@ function renderStoriesGrid(){
       const cell=document.createElement('div');cell.className='story-cell';
       if(i<arr.length){
         const st=arr[i],idx=i;
-        if(st.isStoryboard){const coverUrl=st.slides?.[0]?.url||'';if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';cell.appendChild(img);}else{const ph=document.createElement('div');ph.style.cssText='position:absolute;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;';ph.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="6" x2="12" y2="6.01"/><line x1="12" y1="10" x2="12" y2="14"/></svg><span style="font-size:9px;color:rgba(255,255,255,.5);">'+(st.slides?.length||0)+' slide</span>';cell.appendChild(ph);}const b=document.createElement('span');b.className='story-badge storyboard';
+        if(st.isStoryboard){
+        const coverUrl=st.slides?.[0]?.url||'';
+        const firstSlide=st.slides?.[0]||{};
+        // Sfondo dalla palette SFONDI — default Avorio
+        const sfKey=firstSlide.sfondo||'Avorio';
+        const sfCol=(typeof SFONDI!=='undefined'&&SFONDI[sfKey])?SFONDI[sfKey]:{bg:'#F5F2EB',text:'#2a2a2a',acc:'#888'};
+
+        // Funzione mostra placeholder testuale
+        const showSbPh=()=>{
+          const ph=document.createElement('div');
+          ph.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:12px 10px;';
+          ph.style.background=sfCol.bg;
+          ph.innerHTML=(firstSlide.num?'<div style="font-size:22px;font-weight:700;font-family:Georgia,serif;color:'+sfCol.acc+';line-height:1;margin-bottom:4px;">'+firstSlide.num+'</div>':'')
+            +(firstSlide.eye?'<div style="font-size:7px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:'+sfCol.acc+';opacity:.6;margin-bottom:4px;">'+firstSlide.eye+'</div>':'')
+            +(firstSlide.title?'<div style="font-size:11px;font-weight:700;font-family:Georgia,serif;color:'+sfCol.text+';line-height:1.2;">'+firstSlide.title+'</div>'
+              :'<div style="font-size:9px;color:'+sfCol.acc+';opacity:.4;">'+(st.slides?.length||0)+' slide</div>');
+          cell.appendChild(ph);
+        };
+
+        if(coverUrl){
+          const img=document.createElement('img');
+          img.src=coverUrl;img.alt='';
+          img.onerror=()=>{ img.remove(); showSbPh(); };
+          cell.appendChild(img);
+        } else { showSbPh(); }const b=document.createElement('span');b.className='story-badge storyboard';
         b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="6" x2="12" y2="6.01"/><line x1="12" y1="10" x2="12" y2="14"/></svg>'+(st.slides?.length||0)+' slide';
         cell.appendChild(b);}
         else if(st.type==='video'){const v=makeMedia(st.url,'video');cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);const b=document.createElement('span');b.className='story-badge video';
