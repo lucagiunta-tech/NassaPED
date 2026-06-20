@@ -1183,3 +1183,6 @@ tbody tr:hover .tr-actions{opacity:1;}
 .appr-note-area{width:100%;border:.5px solid var(--border-lt);border-radius:var(--rs);padding:8px;font-size:12px;font-family:var(--font);color:var(--text);background:var(--surface);resize:none;outline:none;}
 .appr-note-area:focus{border-color:var(--green);}
 .appr-modal-foot{padding:12px 18px;border-top:.5px solid var(--border);display:flex;gap:8px;align-items:center;}
+
+/* Campagne Paid — viola brillante */
+.cal-badge-ads{background:#7c3aed;color:#fff;}
