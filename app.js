@@ -912,13 +912,16 @@ function openStoryboardModal(idx){
     :[{url:'',blobUrl:'',num:'1.',eye:'',title:'',note:'',_file:null}];
   sbCurSlide=0;sbBg='lined';sbColor='#2563eb';sbFmt='feed';
   openModal('storyboard-modal');
-  // Render after modal is visible
-  setTimeout(()=>{
-    renderSbBuilder();
-    // Reset format to feed default
-    sbSetFmt('feed',document.querySelector('[data-fmt="feed"]'));
-    document.getElementById('sb-p-num').style.color=sbColor;
-  },0);
+  // Render after modal is visible — use rAF for reliable timing
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      renderSbBuilder();
+      const fmtBtn=document.querySelector('.sb-fmt-btn[data-fmt="feed"]');
+      if(fmtBtn)sbSetFmt('feed',fmtBtn);
+      const pnum=document.getElementById('sb-p-num');
+      if(pnum)pnum.style.color=sbColor;
+    });
+  });
 }
 async function saveStoryboard(){
   if(!sbTmpSlides.length){showToast('Aggiungi almeno una slide','warn');return;}
