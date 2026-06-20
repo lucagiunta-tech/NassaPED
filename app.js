@@ -1522,6 +1522,8 @@ function renderPreview(){
     body.appendChild(grid);
   }
   const footer=document.createElement('div');footer.className='preview-footer';footer.innerHTML='<p>Anteprima preparata da</p><div class="nassa-sig">Nassa Studio · nassastudio.it</div>';body.appendChild(footer);
+  // Inietta overlay approvazione se attivo
+  if(apprMode){const _items=ready;setTimeout(()=>apprInjectGrid(_items),0);}
 }
 
 /* LIGHTBOX */
@@ -3507,6 +3509,302 @@ function renderAnnoTab() {
     </div>`;
     document.body.appendChild(modal);
   }
+}
+
+
+/* ══ SISTEMA APPROVAZIONE FEED ══ */
+
+const APPR_STATI = [
+  {key:'bozza',     label:'Bozza',        dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)',  border:'var(--border)'},
+  {key:'approvare', label:'Da Approvare',  dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',        border:'rgba(212,168,0,0.5)'},
+  {key:'approvato', label:'Approvato',     dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',        border:'rgba(26,122,74,0.4)'},
+];
+function apprGetStato(key){ return APPR_STATI.find(s=>s.key===key)||APPR_STATI[0]; }
+
+let apprMode = false;          // toggle on/off
+let apprFilter = 'tutti';      // filtro attivo
+let apprOpenMenu = null;       // id post con menu aperto
+let apprModalIdx = null;       // index post nel modal
+let apprModalItems = [];       // array corrente di feed items
+
+function toggleApprMode(){
+  apprMode = !apprMode;
+  const btn = document.getElementById('appr-toggle-btn');
+  const lbl = document.getElementById('appr-toggle-lbl');
+  const bar = document.getElementById('appr-stats-bar');
+  if(btn) btn.classList.toggle('active', apprMode);
+  if(lbl) lbl.textContent = apprMode ? 'Approvazione ON' : 'Approvazione';
+  if(bar) bar.style.display = apprMode ? 'flex' : 'none';
+  apprFilter = 'tutti';
+  renderPreview();
+}
+
+function apprGetItems(){
+  const ci = globalClientIdx >= 0 ? globalClientIdx : 0;
+  const cl = clients[ci];
+  if(!cl) return [];
+  const accs = cl.accounts || [];
+  const acc = accs[previewActiveAcc] || accs[0];
+  if(!acc) return [];
+  const msel = document.getElementById('preview-month-sel');
+  const month = (msel?.value) || feedMonth || MONTH_OPTIONS[new Date().getMonth()];
+  const key = accountKey(acc.id, month);
+  return (feeds[key] || []).filter(i => i.type !== 'pending');
+}
+
+function apprUpdateStats(items){
+  const bar = document.getElementById('appr-stats-bar');
+  if(!bar || !apprMode) return;
+  const counts = {bozza:0, approvare:0, approvato:0};
+  items.forEach(it => {
+    const st = it.apprStato || 'bozza';
+    counts[st] = (counts[st]||0) + 1;
+  });
+  const total = items.length;
+  ['bozza','approvare','approvato'].forEach(k => {
+    const cell = document.getElementById('appr-stat-'+k);
+    if(!cell) return;
+    const num = cell.querySelector('.appr-stat-num');
+    const barEl = cell.querySelector('.appr-stat-bar');
+    if(num) num.textContent = counts[k];
+    if(barEl) barEl.style.width = total ? Math.round(counts[k]/total*100)+'%' : '0%';
+  });
+  const tot = document.getElementById('appr-stat-totale');
+  if(tot) tot.textContent = total;
+
+  // Filtri
+  const filterRow = document.getElementById('appr-filter-row');
+  if(filterRow){
+    const opts = [{k:'tutti',label:'Tutti',dot:null},...APPR_STATI.map(s=>({k:s.key,label:s.label,dot:s.dot}))];
+    filterRow.innerHTML = opts.map(o=>`
+      <button class="appr-filter-chip${apprFilter===o.k?' active':''}" onclick="apprSetFilter('${o.k}')">
+        ${o.dot?`<span style="width:5px;height:5px;border-radius:50%;background:${apprFilter===o.k?'#fff':o.dot};display:inline-block;"></span>`:''}
+        ${o.label}
+        <span style="opacity:.5;font-size:10px;">${o.k==='tutti'?total:counts[o.k]||0}</span>
+      </button>`).join('');
+  }
+}
+
+function apprSetFilter(f){
+  apprFilter = f;
+  apprUpdateStats(apprGetItems());
+  renderPreview();
+}
+
+function apprChangeStato(idx, stato){
+  const items = apprGetItems();
+  if(!items[idx]) return;
+  const oldStato = items[idx].apprStato || 'bozza';
+  items[idx].apprStato = stato;
+  if(stato === 'approvare' && oldStato === 'bozza'){
+    items[idx].apprRevisions = (items[idx].apprRevisions || 0) + 1;
+  }
+  apprOpenMenu = null;
+  autoSave();
+  renderPreview();
+}
+
+function apprToggleMenu(idx){
+  apprOpenMenu = apprOpenMenu === idx ? null : idx;
+  renderPreview();
+}
+
+function openApprModal(idx, items){
+  apprModalIdx = idx;
+  apprModalItems = items;
+  const post = items[idx];
+  if(!post) return;
+  const s = apprGetStato(post.apprStato||'bozza');
+
+  document.getElementById('appr-modal-title').textContent =
+    `Post ${idx+1} · ${post.type||'Post'} · ${post.date||'—'}`;
+
+  // Thumb
+  const thumb = document.getElementById('appr-modal-thumb');
+  thumb.innerHTML = '';
+  const coverUrl = post.type==='carousel'&&post.slides?.length ? post.slides[0].url : post.url;
+  if(coverUrl){
+    const el = post.type==='video' ? makeMedia(coverUrl,'video') : makeMedia(coverUrl,'image');
+    if(el) thumb.appendChild(el);
+  } else {
+    thumb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:.2;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+  }
+
+  // Stato pills
+  const pillsEl = document.getElementById('appr-stato-pills');
+  pillsEl.innerHTML = APPR_STATI.map(st=>{
+    const active = (post.apprStato||'bozza') === st.key;
+    return `<button class="appr-stato-pill" onclick="apprModalSetStato('${st.key}')"
+      style="${active?`background:${st.bg};color:${st.text};border-color:${st.border};`:''}">
+      <span style="width:6px;height:6px;border-radius:50%;background:${st.dot};display:inline-block;"></span>
+      ${st.label}
+    </button>`;
+  }).join('');
+
+  // Note
+  const noteArea = document.getElementById('appr-note-area');
+  noteArea.value = post.apprNote || '';
+
+  // Bottone approva
+  const apprBtn = document.getElementById('appr-approva-btn');
+  if(apprBtn) apprBtn.style.display = post.apprStato==='approvato' ? 'none' : '';
+
+  document.getElementById('appr-modal-bg').style.display = 'flex';
+}
+
+function closeApprModal(){ document.getElementById('appr-modal-bg').style.display='none'; apprModalIdx=null; }
+
+function apprModalSetStato(stato){
+  if(apprModalIdx === null) return;
+  const post = apprModalItems[apprModalIdx];
+  if(!post) return;
+  const old = post.apprStato || 'bozza';
+  post.apprStato = stato;
+  if(stato==='approvare'&&old==='bozza') post.apprRevisions=(post.apprRevisions||0)+1;
+  // Aggiorna pills
+  const pillsEl = document.getElementById('appr-stato-pills');
+  if(pillsEl) pillsEl.innerHTML = APPR_STATI.map(st=>{
+    const active = stato === st.key;
+    return `<button class="appr-stato-pill" onclick="apprModalSetStato('${st.key}')"
+      style="${active?`background:${st.bg};color:${st.text};border-color:${st.border};`:''}">
+      <span style="width:6px;height:6px;border-radius:50%;background:${st.dot};display:inline-block;"></span>
+      ${st.label}
+    </button>`;
+  }).join('');
+  const apprBtn = document.getElementById('appr-approva-btn');
+  if(apprBtn) apprBtn.style.display = stato==='approvato'?'none':'';
+}
+
+function apprModalApprova(){
+  if(apprModalIdx===null) return;
+  apprModalSalva(true);
+  apprModalSetStato('approvato');
+  apprModalItems[apprModalIdx].apprStato = 'approvato';
+  closeApprModal();
+  autoSave();
+  renderPreview();
+}
+
+function apprModalSalva(skipClose){
+  if(apprModalIdx===null) return;
+  const note = document.getElementById('appr-note-area')?.value || '';
+  apprModalItems[apprModalIdx].apprNote = note;
+  autoSave();
+  if(!skipClose){ closeApprModal(); renderPreview(); }
+}
+
+/** Inietta l'overlay approvazione su ogni client-post nella griglia */
+function apprInjectGrid(items){
+  if(!apprMode) return;
+  const posts = document.querySelectorAll('.client-post');
+  posts.forEach((postEl, idx) => {
+    const item = items[idx];
+    if(!item) return;
+    // Applica filtro
+    const st = item.apprStato || 'bozza';
+    if(apprFilter !== 'tutti' && st !== apprFilter){
+      postEl.style.display = 'none';
+      return;
+    }
+    postEl.style.display = '';
+
+    const s = apprGetStato(st);
+    const cell = postEl.querySelector('.client-cell');
+    if(!cell) return;
+
+    // Badge stato + menu
+    if(!cell.querySelector('.appr-badge')){
+      const badgeWrap = document.createElement('div');
+      badgeWrap.style.cssText = 'position:absolute;top:8px;left:8px;z-index:5;';
+
+      const badge = document.createElement('button');
+      badge.className = 'appr-badge';
+      badge.style.cssText = `background:${s.bg};color:${s.text};border-color:${s.border};`;
+      badge.innerHTML = `<span class="appr-badge-dot" style="background:${s.dot};"></span>${s.label}`;
+      badge.onclick = (e) => { e.stopPropagation(); apprToggleMenu(idx); };
+      badgeWrap.appendChild(badge);
+
+      if(apprOpenMenu === idx){
+        const menu = document.createElement('div');
+        menu.className = 'appr-status-menu';
+        APPR_STATI.forEach((st2, si) => {
+          const item2 = document.createElement('div');
+          item2.className = 'appr-menu-item' + (st===st2.key?' current':'');
+          item2.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${st2.dot};flex-shrink:0;display:inline-block;"></span>${st2.label}${st===st2.key?'<span style="margin-left:auto;opacity:.4;">✓</span>':''}`;
+          item2.onclick = (e) => { e.stopPropagation(); apprChangeStato(idx, st2.key); };
+          if(si < APPR_STATI.length-1){
+            const sep = document.createElement('div');
+            sep.style.cssText = 'height:.5px;background:var(--border);';
+            menu.appendChild(item2);
+            menu.appendChild(sep);
+          } else {
+            menu.appendChild(item2);
+          }
+        });
+        badgeWrap.appendChild(menu);
+      }
+      cell.appendChild(badgeWrap);
+    }
+
+    // Border colorato sulla card
+    postEl.style.borderColor = st==='approvare'?'#d4a800':st==='approvato'?'#1a7a4a':'var(--border)';
+    postEl.style.borderWidth = st==='bozza'?'1px':'1.5px';
+
+    // Nota revisione
+    if(item.apprNote && st==='approvare' && !postEl.querySelector('.appr-rev-note')){
+      const revDiv = document.createElement('div');
+      revDiv.className = 'appr-rev-note';
+      revDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a800" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;margin-top:1px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span style="flex:1;">${esc(item.apprNote)}</span>
+        ${item.apprRevisions>0?`<span style="font-size:10px;color:#d4a800;white-space:nowrap;font-family:var(--font);">${item.apprRevisions} rev.</span>`:''}`;
+      const cell2 = postEl.querySelector('.client-cell');
+      if(cell2) cell2.after(revDiv);
+    }
+
+    // Azioni rapide
+    if(!postEl.querySelector('.appr-actions')){
+      const actions = document.createElement('div');
+      actions.className = 'appr-actions';
+      if(st==='bozza'){
+        const btn = document.createElement('button');
+        btn.className = 'appr-action-btn';
+        btn.style.cssText = 'border:.5px solid #d4a800;color:#7a5c00;';
+        btn.textContent = '→ Invia';
+        btn.onclick = (e) => { e.stopPropagation(); apprChangeStato(idx,'approvare'); };
+        actions.appendChild(btn);
+      }
+      if(st==='approvare'){
+        const btn = document.createElement('button');
+        btn.className = 'appr-action-btn';
+        btn.style.cssText = 'border:.5px solid #1a7a4a;color:#0f5230;';
+        btn.textContent = '✓ Approva';
+        btn.onclick = (e) => { e.stopPropagation(); apprChangeStato(idx,'approvato'); };
+        actions.appendChild(btn);
+      }
+      if(st==='approvato'){
+        const lbl = document.createElement('span');
+        lbl.style.cssText = 'font-size:10px;color:#1a7a4a;font-family:var(--font);';
+        lbl.textContent = '✓ Approvato';
+        actions.appendChild(lbl);
+      }
+      const detBtn = document.createElement('button');
+      detBtn.className = 'appr-action-btn';
+      detBtn.style.cssText = 'border:.5px solid var(--border);color:var(--text-2);margin-left:auto;';
+      detBtn.textContent = 'Dettaglio';
+      detBtn.onclick = (e) => { e.stopPropagation(); openApprModal(idx, items); };
+      actions.appendChild(detBtn);
+      postEl.appendChild(actions);
+    }
+  });
+
+  apprUpdateStats(items);
+
+  // Chiude menu su click fuori
+  document.addEventListener('mousedown', (e) => {
+    if(apprOpenMenu!==null && !e.target.closest('.appr-badge') && !e.target.closest('.appr-status-menu')){
+      apprOpenMenu = null;
+    }
+  }, {once:true});
 }
 
 /* INIT */
