@@ -858,13 +858,31 @@ function renderFeedGrid(){
         else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){if(item.coverUrl)v.setAttribute('poster',item.coverUrl);v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>{v.removeAttribute('poster');v.play().catch(()=>{});});cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;if(item.coverUrl)v.setAttribute('poster',item.coverUrl);});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
         else if(item.type==='carousel'&&item.slides?.length>1){
           // Carosello navigabile inline (Gruppo D)
-          try{
-            const player = buildCaroselloPlayer(item, idx, items, []);
-            cell.appendChild(player);
-          } catch(e){
-            console.warn('Carousel player error:', e);
-            const img=makeMedia(coverUrl,'image');
-            if(img) cell.appendChild(img);
+          // Controlla se le slide hanno URL valide (non blob: revocate)
+          const hasValidSlides = item.slides.some(s=>s.url&&!s.url.startsWith('blob:'));
+          if(!hasValidSlides){
+            // Slide non disponibili — mostra placeholder con delete diretto
+            const ph=document.createElement('div');
+            ph.style.cssText='position:absolute;inset:0;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;';
+            ph.innerHTML='<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'
+              +'<div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font);text-align:center;line-height:1.4;">Media non<br>disponibile</div>';
+            // Bottone ✕ sempre visibile
+            const delBtn=document.createElement('button');
+            delBtn.style.cssText='position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(220,50,50,.85);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:20;';
+            delBtn.innerHTML='✕';
+            delBtn.title='Rimuovi carosello';
+            delBtn.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};
+            cell.appendChild(ph);
+            cell.appendChild(delBtn);
+          } else {
+            try{
+              const player = buildCaroselloPlayer(item, idx, items, []);
+              cell.appendChild(player);
+            } catch(e){
+              console.warn('Carousel player error:', e);
+              const img=makeMedia(coverUrl,'image');
+              if(img) cell.appendChild(img);
+            }
           }
         }
         else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('img',item.name));}}
