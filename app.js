@@ -440,6 +440,8 @@ function switchTab(tab){
   if(tab==='pilastri'){renderPilastri();}
   if(tab==='cal'){if(typeof renderCalendar==='function')renderCalendar();}
   if(tab==='preview'){if(previewClientIdx<0&&globalClientIdx>=0){previewClientIdx=globalClientIdx;previewAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}syncPreviewSelectors();renderPreview();}
+  // FIX QA: renderAdsTab mancava dal switchTab — tab Ads non si aggiornava mai
+  if(tab==='ads'){renderAdsTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');rebuildStudioAccountSelect();}
 function backToClients(){switchTab('studio');}
@@ -590,8 +592,8 @@ function renderFeedGrid(){
           delOnly.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};
           cell.appendChild(delOnly);
         }
-        else if(item.type==='video'){const v=makeMedia(item.url,'video');v.onerror=()=>{cell.appendChild(needsReloadPh('▶',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
-        else{const img=makeMedia(coverUrl,'image');img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('🖼',item.name));};cell.appendChild(img);}
+        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){v.onerror=()=>{cell.appendChild(needsReloadPh('▶',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('▶',item.name));}}
+        else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('🖼',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('🖼',item.name));}}
         // drag via event delegation — mark the cell
         cell.draggable=true;
         cell.dataset.dragIdx=idx;
