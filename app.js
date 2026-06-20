@@ -1261,8 +1261,69 @@ function updateSbPreview(){
   const sl=sbTmpSlides[sbCurSlide]||{};
   const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||'';};
   s('sb-p-num',sl.num||'1.');s('sb-p-eye',sl.eye||'');s('sb-p-tit',sl.title||'Titolo');s('sb-p-cop',sl.note||'');
+
+  // Immagine
   const ci=document.getElementById('sb-canvas-img');
   if(ci){const src=sl.blobUrl||sl.url||'';if(src){ci.style.display='block';ci.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;"/>';}else{ci.style.display='none';}}
+
+  // Sfondo da SFONDI token (Gruppo A)
+  const canvas=document.getElementById('sb-canvas');
+  if(canvas && sl.sfondo && typeof SFONDI!=='undefined' && SFONDI[sl.sfondo]){
+    const sf=SFONDI[sl.sfondo];
+    canvas.style.background=sf.bg;
+    canvas.style.backgroundImage='none';
+    // Aggiorna colore testi
+    const numEl=document.getElementById('sb-p-num');
+    const titEl=document.getElementById('sb-p-tit');
+    const copEl=document.getElementById('sb-p-cop');
+    if(numEl)numEl.style.color=sf.acc;
+    if(titEl)titEl.style.color=sf.text;
+    if(copEl)copEl.style.color=sf.text;
+  } else if(canvas && !sl.sfondo){
+    // Ripristina default classe CSS
+    canvas.style.background='';
+    canvas.style.backgroundImage='';
+  }
+
+  // Nota regia (Gruppo A) — appare in fondo al canvas
+  let nrEl=document.getElementById('sb-p-nota-regia');
+  if(sl.noteRegia){
+    if(!nrEl){
+      nrEl=document.createElement('div');
+      nrEl.id='sb-p-nota-regia';
+      nrEl.style.cssText='margin-top:6px;font-size:8px;color:#7a5c00;line-height:1.4;border-left:2px solid #d4a800;padding-left:5px;background:rgba(212,168,0,0.07);padding:3px 5px;';
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:7px;font-family:var(--font);letter-spacing:.1em;text-transform:uppercase;color:#7a5c00;margin-bottom:2px;font-weight:600;';
+      lbl.textContent='REGIA';
+      nrEl.appendChild(lbl);
+      const txt=document.createElement('div');txt.id='sb-p-regia-txt';
+      nrEl.appendChild(txt);
+      if(canvas)canvas.appendChild(nrEl);
+    }
+    const txt=document.getElementById('sb-p-regia-txt');
+    if(txt)txt.textContent=sl.noteRegia;
+    nrEl.style.display='block';
+  } else if(nrEl){
+    nrEl.style.display='none';
+  }
+
+  // isPlaceholder — cornicetta tratteggiata (Gruppo A)
+  let phEl=document.getElementById('sb-p-placeholder-overlay');
+  if(sl.isPlaceholder){
+    if(!phEl){
+      phEl=document.createElement('div');
+      phEl.id='sb-p-placeholder-overlay';
+      phEl.style.cssText='position:absolute;inset:6px;border:1.5px dashed rgba(120,120,120,0.35);border-radius:4px;pointer-events:none;display:flex;align-items:center;justify-content:center;';
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:8px;font-family:var(--font);color:rgba(120,120,120,0.5);letter-spacing:.06em;text-transform:uppercase;';
+      lbl.textContent='video creator';
+      phEl.appendChild(lbl);
+      if(canvas)canvas.appendChild(phEl);
+    }
+    phEl.style.display='flex';
+  } else if(phEl){
+    phEl.style.display='none';
+  }
 }
 
 function updateSbCount(){
