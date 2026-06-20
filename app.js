@@ -1788,6 +1788,20 @@ function renderPreview(){
         const b=document.createElement('span');b.className='client-badge video';
         b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel';
         cell.appendChild(b);
+      } else if(item.type==='carousel'&&item.slides?.length>1){
+        // Carosello navigabile inline in Preview
+        try{
+          const player = buildCaroselloPlayer(item, i, ready, []);
+          cell.appendChild(player);
+          cell.style.overflow='hidden';
+        } catch(e){
+          console.warn('Preview carousel error:', e);
+          const img=makeMedia(coverUrl,'image');
+          if(img){img.style.pointerEvents='none';cell.appendChild(img);}
+          const b=document.createElement('span');b.className='client-badge carousel';
+          b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'+(item.slides?.length||0)+' slide';
+          cell.appendChild(b);
+        }
       } else {
         const img=makeMedia(coverUrl,'image');
         if(img){
