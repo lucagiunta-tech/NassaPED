@@ -2832,7 +2832,7 @@ function renderAdsGantt(){
       // Label: spent/budget
       const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
       bar.textContent=`€${(camp.spent||0).toLocaleString('it')} (${pct}%)`;
-      bar.title=`${camp.name} — ${s}→${e} ${ADS_MONTHS[adsGanttMonth]}
+      bar.title=`${camp.name} — ${s}→${e} ${MONTHS[adsGanttMonth]}
 Budget: €${camp.budget} | Speso: €${camp.spent||0} | ROAS: ${camp.roas||'—'}×`;
       tl.appendChild(bar);
     }
