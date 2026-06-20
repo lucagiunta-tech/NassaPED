@@ -1551,3 +1551,59 @@ tbody tr:hover .tr-actions{opacity:1;}
   padding:2px 7px;border-radius:20px;
   pointer-events:none;z-index:8;
 }
+
+/* ══ PREVIEW — Stats bar tipologia + approvazione ══ */
+.preview-stats-bar{
+  display:flex;align-items:center;gap:0;
+  padding:10px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  margin-bottom:14px;
+  flex-wrap:wrap;gap:8px;
+}
+.preview-stats-group{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.preview-stats-divider{
+  width:1px;height:24px;background:var(--border);
+  margin:0 4px;flex-shrink:0;
+}
+.preview-stat-item{
+  display:flex;align-items:center;gap:5px;
+}
+.psi-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+}
+.psi-val{
+  font-size:14px;font-weight:700;font-family:var(--font);
+  color:var(--text);line-height:1;
+}
+.psi-lbl{
+  font-size:10px;font-family:var(--font);
+  color:var(--text-2);text-transform:uppercase;
+  letter-spacing:.05em;
+}
+
+/* ══ STORYBOARD PREVIEW — placeholder testo slide senza immagine ══ */
+.sb-slide-ph-txt{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  justify-content:center;padding:16px 14px;
+  pointer-events:none;
+}
+.sb-ph-num{
+  font-size:28px;font-weight:700;font-family:Georgia,serif;
+  line-height:1;margin-bottom:4px;opacity:.6;
+}
+.sb-ph-eye{
+  font-size:8px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:6px;opacity:.5;
+}
+.sb-ph-tit{
+  font-size:13px;font-weight:700;font-family:Georgia,serif;
+  line-height:1.2;flex:1;
+}
+.sb-ph-cop{
+  font-size:8px;line-height:1.5;opacity:.6;margin-top:6px;
+}
