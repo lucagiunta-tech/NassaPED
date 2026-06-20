@@ -71,13 +71,17 @@
   <!-- Main icon sidebar — always visible -->
   <div class="sb-main-nav" id="sb-main-nav">
     <div class="sb-nav-top">
-      <div class="sb-sec-lbl">Studio</div>
+
+      <!-- HOME -->
       <div class="sb-nav-item active" id="si-studio" onclick="switchTab('studio')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         <span class="sb-nav-label">Clienti</span>
       </div>
+
       <div class="sb-nav-sep"></div>
-      <div class="sb-sec-lbl">Contenuto</div>
+
+      <!-- GRUPPO 1: CONTENUTO -->
+      <div class="sb-group-lbl">Contenuto</div>
       <div class="sb-nav-item" id="si-notes" onclick="switchTab('notes')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span class="sb-nav-label">Piano</span>
@@ -94,11 +98,31 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
         <span class="sb-nav-label">Stories</span>
       </div>
-
-
       <div class="sb-nav-item" id="si-ped" onclick="switchTab('ped')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="sb-nav-label">UGC</span>
+      </div>
+
+      <div class="sb-nav-sep"></div>
+
+      <!-- GRUPPO 2: PIANIFICAZIONE -->
+      <div class="sb-group-lbl">Pianificazione</div>
+      <div class="sb-nav-item" id="si-cal" onclick="switchTab('cal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="sb-nav-label">Calendario</span>
+      </div>
+      <div class="sb-nav-item" id="si-anno" onclick="switchTab('anno')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+        <span class="sb-nav-label">Anno</span>
+      </div>
+
+      <div class="sb-nav-sep"></div>
+
+      <!-- GRUPPO 3: GESTIONE -->
+      <div class="sb-group-lbl">Gestione</div>
+      <div class="sb-nav-item" id="si-ads" onclick="switchTab('ads')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        <span class="sb-nav-label">Ads</span>
       </div>
       <div class="sb-nav-item" id="si-preview" onclick="switchTab('preview')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
