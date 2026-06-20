@@ -2380,12 +2380,46 @@ const ADS_PLAT_COLORS={instagram:'#378ADD',facebook:'#7F77DD',meta:'#7F77DD',lin
 function adsGanttPrevMonth(){
   adsGanttMonth--;
   if(adsGanttMonth<0){adsGanttMonth=11;adsGanttYear--;}
-  renderAdsGantt();
+  renderAdsMonthPills();renderAdsGantt();
 }
 function adsGanttNextMonth(){
   adsGanttMonth++;
   if(adsGanttMonth>11){adsGanttMonth=0;adsGanttYear++;}
-  renderAdsGantt();
+  renderAdsMonthPills();renderAdsGantt();
+}
+
+function renderAdsMonthPills(){
+  const c=document.getElementById('ads-month-pills');
+  if(!c)return;
+  c.innerHTML='';
+
+  // Year nav
+  const ynav=document.createElement('div');
+  ynav.className='year-nav';
+  ynav.style.marginBottom='0';
+  const prev=document.createElement('button');
+  prev.className='year-nav-btn';prev.textContent='‹';
+  prev.onclick=()=>{adsGanttYear--;renderAdsMonthPills();renderAdsGantt();};
+  const lbl=document.createElement('span');
+  lbl.className='year-label';lbl.textContent=adsGanttYear;
+  const next=document.createElement('button');
+  next.className='year-nav-btn';next.textContent='›';
+  next.onclick=()=>{adsGanttYear++;renderAdsMonthPills();renderAdsGantt();};
+  ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);
+  c.appendChild(ynav);
+
+  // Month pills
+  const pillsWrap=document.createElement('div');
+  pillsWrap.style.cssText='display:flex;gap:3px;overflow-x:auto;flex-wrap:nowrap;';
+  const mShort=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  mShort.forEach((m,i)=>{
+    const p=document.createElement('button');
+    p.className='month-pill'+(i===adsGanttMonth?' active':'');
+    p.textContent=m;
+    p.onclick=()=>{adsGanttMonth=i;renderAdsMonthPills();renderAdsGantt();};
+    pillsWrap.appendChild(p);
+  });
+  c.appendChild(pillsWrap);
 }
 
 function adsAutoSpends(camp, days){
@@ -2406,7 +2440,6 @@ function adsAutoSpends(camp, days){
 function renderAdsGantt(){
   const el=id=>document.getElementById(id);
   const ganttEl=el('ads-gantt');
-  const monthLbl=el('ads-gantt-month');
   if(!ganttEl)return;
 
   const days=new Date(adsGanttYear,adsGanttMonth+1,0).getDate();
@@ -2414,7 +2447,6 @@ function renderAdsGantt(){
   const isNow=today.getFullYear()===adsGanttYear&&today.getMonth()===adsGanttMonth;
   const todayDay=isNow?today.getDate():-1;
 
-  if(monthLbl)monthLbl.textContent=ADS_MONTH_NAMES[adsGanttMonth]+' '+adsGanttYear;
 
   const camps=currentAdsCampaigns().filter(c=>c.startDay&&c.endDay);
   const LABEL_W=130;
@@ -2599,6 +2631,7 @@ function renderAdsTab(){
   }
 
   renderAdsCampList(camps);
+  renderAdsMonthPills();
   renderAdsGantt();
 }
 
