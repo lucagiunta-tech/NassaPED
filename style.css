@@ -1074,3 +1074,5 @@ tbody tr:hover .tr-actions{opacity:1;}
 #confirm-ok-btn.danger{background:var(--red);color:#fff;border-color:var(--red);}
 #confirm-ok-btn.danger:hover{background:var(--red-dk);border-color:var(--red-dk);}
 #confirm-ok-btn.warn{background:#d97706;color:#fff;border-color:#d97706;}
+
+/* deploy 20260620113301 */
