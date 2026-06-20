@@ -53,6 +53,43 @@ function pkgBadge(pkg){
   return `<span class="pkg-badge ${t.cls}">${t.icon} ${label}</span>`;
 }
 
+
+/* ══ CONFIRM MODAL — sostituisce confirm() nativo ══
+ * Uso: showConfirm({ title, body, okLabel, type:'danger'|'warn', onOk })
+ * type 'danger' → bottone rosso (eliminazioni irreversibili)
+ * type 'warn'   → bottone ambra (azioni reversibili ma impattanti)
+ */
+let _confirmCallback = null;
+
+function showConfirm({title='Conferma', body='', okLabel='Conferma', type='danger', onOk}){
+  const el  = id => document.getElementById(id);
+  const SVG_TRASH = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  const SVG_WARN  = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  
+  el('confirm-icon').innerHTML  = type==='danger' ? SVG_TRASH : SVG_WARN;
+  el('confirm-icon').className  = 'confirm-icon ' + type;
+  el('confirm-title').textContent = title;
+  el('confirm-body').innerHTML  = body;
+  el('confirm-ok-btn').textContent = okLabel;
+  el('confirm-ok-btn').className   = 'btn sm ' + type;
+  
+  _confirmCallback = onOk;
+  openModal('confirm-modal');
+  // Focus sul bottone Annulla per sicurezza (previene accidentale conferma)
+  setTimeout(()=>el('confirm-cancel-btn')?.focus(), 50);
+}
+
+function confirmOk(){
+  closeModal('confirm-modal');
+  if(typeof _confirmCallback === 'function') _confirmCallback();
+  _confirmCallback = null;
+}
+
+function confirmCancel(){
+  closeModal('confirm-modal');
+  _confirmCallback = null;
+}
+
 /* ══════════════════════════════════════════
    NASSA CLOUD — Supabase sync via /api/project
    All Supabase credentials stay server-side.
@@ -483,9 +520,16 @@ function addClient(){
   closeModal('add-client-modal');
 }
 function addAccount(){const ci=parseInt(document.getElementById('na-client').value);if(isNaN(ci)||ci<0){showToast('Seleziona un cliente','warn');return;}const name=document.getElementById('na-name').value.trim();if(!name){document.getElementById('na-name').focus();return;}const platform=document.getElementById('na-platform').value;const id='a_'+Date.now();clients[ci].accounts.push({id,name,platform});document.getElementById('na-name').value='';renderStudio();rebuildAllSelects();showToast('✓ Account aggiunto');autoSave();}
-function removeClient(i){if(!confirm('Rimuovere '+clients[i].name+' e tutti i suoi dati?'))return;clients[i].accounts.forEach(acc=>{// Delete ALL years of data, not just current MONTH_OPTIONS
+function removeClient(i){
+  showConfirm({
+    title:'Elimina cliente',
+    body:`Stai per eliminare <strong>${esc(clients[i].name)}</strong> e tutti i suoi dati (feed, stories, UGC, note). Questa azione è irreversibile.`,
+    okLabel:'Elimina',
+    type:'danger',
+    onOk:()=>{clients[i].accounts.forEach(acc=>{// Delete ALL years of data, not just current MONTH_OPTIONS
 Object.keys(feeds).filter(k=>k.startsWith(acc.id+'|||')).forEach(k=>delete feeds[k]);Object.keys(stories).filter(k=>k.startsWith(acc.id+'|||')).forEach(k=>delete stories[k]);delete highlights[acc.id];});// Delete PED plans and notes for this client
-Object.keys(pedPlans).filter(k=>k.startsWith(clients[i].name+'|||')).forEach(k=>delete pedPlans[k]);Object.keys(notesData).filter(k=>k.startsWith(clients[i].name+'|||')).forEach(k=>delete notesData[k]);if(feedClientIdx===i){feedClientIdx=-1;feedAccountIdx=-1;feedMonth='';renderFeedGrid();}else if(feedClientIdx>i)feedClientIdx--;clients.splice(i,1);renderStudio();rebuildAllSelects();autoSave();}
+Object.keys(pedPlans).filter(k=>k.startsWith(clients[i].name+'|||')).forEach(k=>delete pedPlans[k]);Object.keys(notesData).filter(k=>k.startsWith(clients[i].name+'|||')).forEach(k=>delete notesData[k]);if(feedClientIdx===i){feedClientIdx=-1;feedAccountIdx=-1;feedMonth='';renderFeedGrid();}else if(feedClientIdx>i)feedClientIdx--;clients.splice(i,1);renderStudio();rebuildAllSelects();autoSave();}});
+}
 function openClientFeed(ci){globalClientIdx=ci;feedClientIdx=ci;feedAccountIdx=clients[ci].accounts.length>0?0:-1;storiesClientIdx=ci;storiesAccountIdx=feedAccountIdx;notesClientIdx=ci;if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];if(!storiesMonth)storiesMonth=feedMonth;updateGlobalClientUI();switchTab('feed');rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();renderAccSwitcher();}
 function openAccountFeed(ci,aid){globalClientIdx=ci;feedClientIdx=ci;feedAccountIdx=clients[ci].accounts.findIndex(a=>a.id===aid);storiesClientIdx=ci;storiesAccountIdx=feedAccountIdx;notesClientIdx=ci;if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];if(!storiesMonth)storiesMonth=feedMonth;updateGlobalClientUI();switchTab('feed');rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();renderAccSwitcher();}
 
@@ -1218,12 +1262,18 @@ function sbSaveToCassetto(){
 
 function sbLoadFromCassetto(id){
   const entry=sbCassetto.find(e=>e.id===id);if(!entry)return;
-  if(!confirm('Sostituire le slide correnti con questa bozza?'))return;
+  showConfirm({
+    title:'Carica bozza',
+    body:'Le slide correnti verranno sostituite con questa bozza. Continui?',
+    okLabel:'Carica',
+    type:'warn',
+    onOk:()=>{
   sbTmpSlides=entry.slides.map(s=>({...s,blobUrl:'',_file:null}));
   sbCurSlide=0;
   renderSbBuilder();
   sbSwitchTab('editor',document.getElementById('sb-tab-editor'));
   showToast('✓ Bozza caricata');
+  }});
 }
 
 function sbDeleteFromCassetto(id){
@@ -1597,7 +1647,15 @@ function pedGenerate(){
   autoSave();renderPED();renderCalendar();
   showToast('✓ Piano UGC generato — '+newPlan.filter(s=>!existingDates.has(s.date)).length+' nuove date');
 }
-function pedClear(){if(!confirm('Svuotare il piano del mese?'))return;setCurrentPedPlan([]);autoSave();renderPED();renderCalendar();showToast('Piano UGC svuotato');}
+function pedClear(){
+  showConfirm({
+    title:'Svuota piano UGC',
+    body:'Tutti i contenuti pianificati per questo mese verranno rimossi. Continui?',
+    okLabel:'Svuota',
+    type:'warn',
+    onOk:()=>{setCurrentPedPlan([]);autoSave();renderPED();renderCalendar();showToast('Piano UGC svuotato');}
+  });
+}
 
 function renderPEDCards(){
   const wrap=document.getElementById('ped-cards');if(!wrap)return;wrap.innerHTML='';
@@ -1928,7 +1986,13 @@ function renderEcAccounts(){
     const nameInp=document.createElement('input');nameInp.className='ec-acc-name-inp';nameInp.value=acc.name;nameInp.placeholder='Nome account';nameInp.oninput=e=>{ecTmpAccounts[i].name=e.target.value;};
     const platSel=document.createElement('select');platSel.className='ec-acc-plat-inp';['Instagram','Facebook','TikTok','LinkedIn','YouTube','Altro'].forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;if(p===acc.platform)o.selected=true;platSel.appendChild(o);});platSel.onchange=e=>{ecTmpAccounts[i].platform=e.target.value;};
     main.appendChild(nameInp);main.appendChild(platSel);
-    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';del.onclick=()=>{if(!confirm('Rimuovere account "'+acc.name+'"? I dati feed e stories saranno eliminati.'))return;ecTmpAccounts.splice(i,1);renderEcAccounts();};
+    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';del.onclick=()=>{showConfirm({
+    title:'Rimuovi account',
+    body:`Rimuovere l'account <strong>${esc(acc.name)}</strong>? I dati feed e stories associati saranno eliminati.`,
+    okLabel:'Rimuovi',
+    type:'danger',
+    onOk:()=>{ecTmpAccounts.splice(i,1);renderEcAccounts();}
+  });};
     row.appendChild(main);row.appendChild(del);list.appendChild(row);
   });
 }
@@ -1993,7 +2057,17 @@ function ecSave(){
   if(globalClientIdx===ecEditIdx){feedClientIdx=ecEditIdx;feedAccountIdx=cl.accounts.length>0?Math.min(feedAccountIdx,cl.accounts.length-1):-1;storiesClientIdx=ecEditIdx;storiesAccountIdx=feedAccountIdx;updateGlobalClientUI();}
   closeModal('edit-client-modal');renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiornato');autoSave();
 }
-function ecDeleteClient(){if(ecEditIdx<0)return;const cl=clients[ecEditIdx];if(!confirm('Eliminare '+cl.name+' e tutti i suoi dati? Azione irreversibile.'))return;closeModal('edit-client-modal');removeClient(ecEditIdx);}
+function ecDeleteClient(){
+  if(ecEditIdx<0)return;
+  const cl=clients[ecEditIdx];
+  showConfirm({
+    title:'Elimina cliente',
+    body:`Eliminare <strong>${esc(cl.name)}</strong> e tutti i suoi dati? Questa azione è irreversibile.`,
+    okLabel:'Elimina definitivamente',
+    type:'danger',
+    onOk:()=>{closeModal('edit-client-modal');removeClient(ecEditIdx);}
+  });
+}
 
 /* EXPORT / IMPORT */
 function exportProject(){
@@ -2351,7 +2425,13 @@ function renderPilastriContent(body,ci){
     const colorSel=document.createElement('div');colorSel.className='p-color-sel';
     PILASTRI_COLORS.forEach(col=>{const dot=document.createElement('div');dot.className='p-color-opt'+(col===p.color?' active':'');dot.style.background=col;dot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');dot.onclick=()=>{pils[pi].color=col;card.style.borderTopColor=col;colorDot.style.background=col;colorDot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');colorSel.querySelectorAll('.p-color-opt').forEach(d=>d.classList.remove('active'));dot.classList.add('active');autoSave();};colorSel.appendChild(dot);});
     const delBtn=document.createElement('button');delBtn.className='p-del-btn';delBtn.textContent='✕';delBtn.title='Elimina pilastro';
-    delBtn.onclick=()=>{if(confirm('Eliminare il pilastro "'+p.name+'"?')){pils.splice(pi,1);pilastri[cl.name]=pils;autoSave();renderPilastriContent(body,ci);}};
+    delBtn.onclick=()=>{showConfirm({
+    title:'Elimina pilastro',
+    body:`Eliminare il pilastro <strong>${esc(p.name)}</strong>? I post associati non saranno eliminati.`,
+    okLabel:'Elimina',
+    type:'danger',
+    onOk:()=>{pils.splice(pi,1);pilastri[cl.name]=pils;autoSave();renderPilastriContent(body,ci);}
+  });};
     cardHead.appendChild(colorDot);cardHead.appendChild(nameInp);cardHead.appendChild(delBtn);
 
     const descInp=document.createElement('input');descInp.className='p-desc-inp';descInp.placeholder='Descrizione breve…';descInp.value=p.description||'';
@@ -2928,10 +3008,15 @@ async function saveAdsCampaign(){
 }
 
 function deleteAdsCampaign(id){
-  if(!confirm('Eliminare questa campagna?'))return;
-  const k=currentAdsKey();if(!k)return;
+  showConfirm({
+    title:'Elimina campagna',
+    body:'La campagna verrà eliminata definitivamente. I dati di spesa e ROAS andranno persi.',
+    okLabel:'Elimina campagna',
+    type:'danger',
+    onOk:()=>{const k=currentAdsKey();if(!k)return;
   adsCampaigns[k]=(adsCampaigns[k]||[]).filter(c=>c.id!==id);
   autoSave();renderAdsTab();showToast('Campagna eliminata');
+  }});
 }
 
 /* INIT */
