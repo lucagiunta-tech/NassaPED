@@ -950,8 +950,16 @@
         <div class="sb-fields-scroll" id="sb-panel-parser" style="display:none;">
           <div class="sec-lbl" style="margin-bottom:8px;">Parser note</div>
           <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Usa i tag <strong>[NUM]</strong> <strong>[OCCHIELLO]</strong> <strong>[TITOLO]</strong> <strong>[COPY]</strong> per compilare la slide automaticamente.</p>
-          <textarea id="sb-parser-input" rows="8" placeholder="[NUM] 1.&#10;[OCCHIELLO] Strategia&#10;[TITOLO] Documenta tutto&#10;[COPY] Cattura screenshot e file..." style="width:100%;resize:none;border:.5px solid var(--border);border-radius:var(--rs);padding:8px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);line-height:1.5;outline:none;"></textarea>
+          <textarea id="sb-parser-input" rows="8" oninput="sbLivePreview()" placeholder="[NUM] 1.&#10;[OCCHIELLO] Strategia&#10;[TITOLO] Documenta tutto&#10;[COPY] Cattura screenshot e file..." style="width:100%;resize:none;border:.5px solid var(--border);border-radius:var(--rs);padding:8px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);line-height:1.5;outline:none;"></textarea>
           <button class="btn primary sm" onclick="sbParseNote()" style="margin-top:8px;width:100%;">Applica alla slide attiva</button>
+          <!-- Live preview -->
+          <div id="sb-live-preview" class="sb-live-preview" style="display:none;">
+            <div class="sb-live-lbl">Anteprima live</div>
+            <div class="sb-live-num" id="sb-live-num"></div>
+            <div class="sb-live-eye" id="sb-live-eye"></div>
+            <div class="sb-live-tit" id="sb-live-tit"></div>
+            <div class="sb-live-cop" id="sb-live-cop"></div>
+          </div>
           <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer;" onclick="sbFillParserExample()">
             <div class="sec-lbl" style="margin-bottom:4px;">Esempio — clicca per inserire</div>
             <pre style="font-size:10px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;">[NUM] 1.
