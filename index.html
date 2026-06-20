@@ -46,6 +46,7 @@
     <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">UGC</div>
     <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
     <div class="sub-tab" id="sub-tab-preview" onclick="switchTab('preview')">Preview</div>
+    <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
   </div>
 </div>
 
@@ -516,8 +517,78 @@
   </div>
 
 </div><!-- /main -->
-</div><!-- /body -->
+</div><!-- /body --
+  <!-- PAGE ADS -->
+  <div class="tab-page" id="page-ads">
+    <div class="ads-page">
+      <div class="ads-toprow">
+        <div>
+          <div class="ads-page-title" id="ads-page-title">Performance Ads</div>
+          <div class="ads-page-sub">Dati manuali · sola lettura</div>
+        </div>
+        <button class="btn sm" onclick="openAddAdsCampaignModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuova campagna
+        </button>
+      </div>
+      <div class="content-area">
+        <div class="ads-metrics" id="ads-metrics"></div>
+        <div class="ads-alert" id="ads-alert" style="display:none;"></div>
+        <div class="ads-chart-card">
+          <div class="ads-chart-head">
+            <span class="ads-chart-title">Spesa per canale</span>
+            <div class="ads-filter-row" id="ads-filter-row"></div>
+          </div>
+          <div class="ads-bars" id="ads-bars"></div>
+        </div>
+        <div class="sec-lbl" style="margin:16px 0 8px;">Campagne</div>
+        <div class="ads-camp-list" id="ads-camp-list"></div>
+      </div>
+    </div>
+  </div>
+>
 </div><!-- /app -->
+<!-- ADS CAMPAIGN MODAL -->
+<div class="modal-bg" id="ads-camp-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" onclick="closeModal('ads-camp-modal')">✕</button></div>
+    <div class="field"><label>Nome campagna</label><input type="text" id="adm-name" placeholder="es. Estate 2026 — Awareness"/></div>
+    <div class="field"><label>Piattaforma</label>
+      <select id="adm-platform">
+        <option value="instagram">Instagram</option>
+        <option value="facebook">Facebook</option>
+        <option value="meta">Meta (IG+FB)</option>
+        <option value="linkedin">LinkedIn</option>
+        <option value="google">Google</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Budget totale (€)</label><input type="number" id="adm-budget" placeholder="1000" min="0"/></div>
+      <div class="field"><label>Spesa attuale (€)</label><input type="number" id="adm-spent" placeholder="0" min="0"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="field"><label>ROAS</label><input type="number" id="adm-roas" placeholder="4.2" step="0.1" min="0"/></div>
+      <div class="field"><label>CPC (€)</label><input type="number" id="adm-cpc" placeholder="0.35" step="0.01" min="0"/></div>
+      <div class="field"><label>Impression</label><input type="number" id="adm-imp" placeholder="48000" min="0"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Stato</label>
+        <select id="adm-status">
+          <option value="active">Attiva</option>
+          <option value="paused">In pausa</option>
+          <option value="draft">Bozza</option>
+          <option value="ended">Terminata</option>
+        </select>
+      </div>
+      <div class="field"><label>ROAS target</label><input type="number" id="adm-roas-target" placeholder="4.0" step="0.1" min="0"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('ads-camp-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="saveAdsCampaign()">Salva</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- EDIT CLIENT MODAL -->
 <div class="modal-bg" id="edit-client-modal">
