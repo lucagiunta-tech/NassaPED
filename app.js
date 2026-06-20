@@ -542,9 +542,9 @@ function switchTab(tab){
     const sn=document.getElementById('si-'+t);if(sn)sn.classList.toggle('active',t===tab);
   });
   const subt=document.getElementById('subtopbar');if(subt)subt.classList.toggle('visible',tab!=='studio');
-  // Sidebar visibile solo in Studio
+  // Sidebar visibile solo in Studio — usa classe .hidden per transizione CSS
   const sb=document.getElementById('sidebar');
-  if(sb) sb.style.display = tab==='studio' ? '' : 'none';
+  if(sb) sb.classList.toggle('hidden', tab!=='studio');
   const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');const sFeed=document.getElementById('sidebar-feed');const sSt=document.getElementById('sidebar-stories');
   if(sStudio)sStudio.style.display='none';if(sAdd)sAdd.style.display='none';if(sFeed)sFeed.style.display='none';if(sSt)sSt.style.display='none';
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
