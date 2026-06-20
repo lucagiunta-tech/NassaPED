@@ -2222,7 +2222,7 @@ function setGlobalClient(val){
 function updateGlobalClientUI(){
   const cl=globalClientIdx>=0?clients[globalClientIdx]:null;
   const subt=document.getElementById('subtopbar');const nameEl=document.getElementById('subtopbar-name');const pkgEl=document.getElementById('subtopbar-pkg');
-  if(subt)subt.classList.toggle('visible',!!cl&&currentTab!=='studio');if(nameEl)nameEl.textContent=cl?cl.name:'—';if(pkgEl)pkgEl.textContent=cl?cl.pkg:'';
+  if(subt)subt.classList.toggle('visible',!!cl&&currentTab!=='studio');if(nameEl)nameEl.textContent=cl?cl.name:'—';if(pkgEl)pkgEl.innerHTML=cl?pkgBadge(cl.pkg):'';
   renderAccSwitcher();
 }
 
