@@ -1074,7 +1074,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* deploy 20260620113301 */
 
 /* ══ TAB ANNO — Calendario Editoriale Annuale ══ */
-#page-anno{display:flex;flex-direction:column;overflow:hidden;}
+
 .anno-toprow{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:var(--surface);}
 .anno-year-nav{display:flex;align-items:center;gap:6px;}
 .anno-year-lbl{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text);min-width:52px;text-align:center;}
