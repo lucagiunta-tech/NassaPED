@@ -636,8 +636,8 @@
     <!-- 3-col layout -->
     <div class="sb-builder">
       <!-- COL 1: Thumbnails -->
-      <div class="sb-nav">
-        <div class="sb-nav-head">
+      <div class="sbcol-nav">
+        <div class="sbcol-head">
           <span class="sec-lbl">Slide</span>
           <button class="btn sm" onclick="addSbSlide()">+</button>
         </div>
@@ -645,7 +645,14 @@
       </div>
       <!-- COL 2: Fields + upload -->
       <div class="sb-fields">
-        <div class="sb-fields-scroll">
+        <!-- Tab switcher -->
+        <div class="sb-tab-row">
+          <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)">Editor</button>
+          <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)">Parser note</button>
+          <button class="sb-tab" id="sb-tab-cassetto" onclick="sbSwitchTab('cassetto',this)">Cassetto</button>
+        </div>
+        <!-- TAB: Editor -->
+        <div class="sb-fields-scroll" id="sb-panel-editor">
           <div class="sec-lbl" style="margin-bottom:8px;">Contenuto slide</div>
           <!-- Image upload -->
           <div class="sb-img-zone" id="sb-img-zone">
@@ -692,7 +699,34 @@
             </div>
           </div>
         </div>
-      </div>
+        </div><!-- end sb-panel-editor -->
+
+        <!-- TAB: Parser note -->
+        <div class="sb-fields-scroll" id="sb-panel-parser" style="display:none;">
+          <div class="sec-lbl" style="margin-bottom:8px;">Parser note</div>
+          <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Usa i tag <strong>[NUM]</strong> <strong>[OCCHIELLO]</strong> <strong>[TITOLO]</strong> <strong>[COPY]</strong> per compilare la slide automaticamente.</p>
+          <textarea id="sb-parser-input" rows="8" placeholder="[NUM] 1.&#10;[OCCHIELLO] Strategia&#10;[TITOLO] Documenta tutto&#10;[COPY] Cattura screenshot e file..." style="width:100%;resize:none;border:.5px solid var(--border);border-radius:var(--rs);padding:8px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);line-height:1.5;outline:none;"></textarea>
+          <button class="btn primary sm" onclick="sbParseNote()" style="margin-top:8px;width:100%;">Applica alla slide attiva</button>
+          <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer;" onclick="sbFillParserExample()">
+            <div class="sec-lbl" style="margin-bottom:4px;">Esempio — clicca per inserire</div>
+            <pre style="font-size:10px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;">[NUM] 1.
+[OCCHIELLO] Strategia
+[TITOLO] Documenta tutto
+[COPY] Cattura screenshot, timestamp e file. La prova di quando hai creato è la tua difesa.</pre>
+          </div>
+        </div>
+
+        <!-- TAB: Cassetto (bozze) -->
+        <div class="sb-fields-scroll" id="sb-panel-cassetto" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="sec-lbl">Bozze salvate</div>
+            <button class="btn sm" onclick="sbSaveToCassetto()">+ Salva corrente</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Salva lo storyboard corrente come bozza per riprenderlo dopo senza sovrascrivere le Stories.</p>
+          <div id="sb-cassetto-list"></div>
+        </div>
+
+      </div><!-- end sb-fields -->
       <!-- COL 3: Live preview -->
       <div class="sb-preview-col">
         <div class="sec-lbl" style="margin-bottom:8px;">Anteprima</div>
