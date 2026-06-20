@@ -3432,7 +3432,39 @@ function renderAnnoTab() {
     html += `</div></div>`;
   });
 
-  bandsEl.innerHTML = html;
+  // Empty state — nessun cliente o nessun contenuto con date
+  if(!cl) {
+    bandsEl.innerHTML = `
+      <div class="anno-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;opacity:.2;margin-bottom:14px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <p class="anno-empty-title">Nessun cliente selezionato</p>
+        <p class="anno-empty-sub">Seleziona un cliente dal menu in alto per vedere il suo calendario annuale.</p>
+      </div>`;
+  } else if(totalEvs === 0) {
+    const filterMsg = annoFilterTag ? ` con tag <strong>${annoFilterTag}</strong>` : '';
+    bandsEl.innerHTML = `
+      <div class="anno-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;opacity:.2;margin-bottom:14px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+        <p class="anno-empty-title">Nessun contenuto nel ${annoYear}${filterMsg}</p>
+        <p class="anno-empty-sub">I post appariranno qui non appena assegni una <strong>data</strong> ai contenuti in Feed, Stories o UGC.</p>
+        <div class="anno-empty-tips">
+          <div class="anno-empty-tip" onclick="switchTab('feed')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Vai a Feed →
+          </div>
+          <div class="anno-empty-tip" onclick="switchTab('stories')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+            Vai a Stories →
+          </div>
+          <div class="anno-empty-tip" onclick="switchTab('ped')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Vai a UGC →
+          </div>
+        </div>
+      </div>`;
+  } else {
+    bandsEl.innerHTML = html;
+  }
 
   // Footer
   const footer = eid('anno-footer');
@@ -3440,7 +3472,7 @@ function renderAnnoTab() {
     const cln = cl ? cl.name.toUpperCase() : 'NESSUN CLIENTE';
     footer.innerHTML = `
       <span class="anno-footer-txt">NASSA STUDIO · ${cln} · ${annoYear}</span>
-      <span class="anno-footer-txt">${totalEvs} EVENTI${annoFilterTag?' · '+annoFilterTag:''}</span>
+      <span class="anno-footer-txt">${totalEvs > 0 ? totalEvs + ' EVENTI' + (annoFilterTag?' · '+annoFilterTag:'') : '—'}</span>
     `;
   }
 
