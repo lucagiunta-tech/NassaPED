@@ -698,6 +698,121 @@ function onPreviewAccountChange(){const v=document.getElementById('preview-accou
 /* FEED GRID */
 function refreshFeed(){renderFeedGrid();updateFeedStats();updateFeedHeader();autoSave();}
 
+/* ══ CAROSELLO PLAYER INLINE — Feed (Gruppo D) ══ */
+function buildCaroselloPlayer(item, itemIdx, items, stArr){
+  const slides = item.slides || [];
+  const total = slides.length;
+  const state = { cur: 0, touchStart: null };
+
+  // Wrapper — overflow:hidden, position:relative
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative;width:100%;height:100%;overflow:hidden;user-select:none;';
+
+  // Track scorrevole
+  const track = document.createElement('div');
+  track.className = 'cc-track';
+  track.style.cssText = 'display:flex;width:100%;height:100%;transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);will-change:transform;';
+
+  slides.forEach((sl, i) => {
+    const slide = document.createElement('div');
+    slide.style.cssText = 'flex:0 0 100%;width:100%;height:100%;position:relative;';
+    if(sl.url){
+      const img = document.createElement('img');
+      img.src = sl.url;
+      img.alt = sl.alt || '';
+      img.draggable = false;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;';
+      slide.appendChild(img);
+    } else {
+      slide.innerHTML = `<div style="width:100%;height:100%;background:var(--cell-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--font);color:var(--text-3);letter-spacing:.06em;">${i+1} / ${total}</div>`;
+    }
+    track.appendChild(slide);
+  });
+  wrap.appendChild(track);
+
+  // Funzioni navigazione
+  function goTo(i){
+    state.cur = Math.max(0, Math.min(total-1, i));
+    track.style.transform = `translateX(-${state.cur * 100}%)`;
+    updateControls();
+  }
+
+  // Frecce ‹ ›
+  const btnPrev = document.createElement('button');
+  btnPrev.className = 'cc-arrow cc-prev';
+  btnPrev.setAttribute('aria-label','Slide precedente');
+  btnPrev.innerHTML = '‹';
+  btnPrev.onclick = e => { e.stopPropagation(); goTo(state.cur - 1); };
+
+  const btnNext = document.createElement('button');
+  btnNext.className = 'cc-arrow cc-next';
+  btnNext.setAttribute('aria-label','Slide successiva');
+  btnNext.innerHTML = '›';
+  btnNext.onclick = e => { e.stopPropagation(); goTo(state.cur + 1); };
+
+  wrap.appendChild(btnPrev);
+  wrap.appendChild(btnNext);
+
+  // Dots indicatori
+  const dotsWrap = document.createElement('div');
+  dotsWrap.className = 'cc-dots';
+
+  const dots = slides.map((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = 'cc-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Vai alla slide ' + (i+1));
+    dot.onclick = e => { e.stopPropagation(); goTo(i); };
+    dotsWrap.appendChild(dot);
+    return dot;
+  });
+  wrap.appendChild(dotsWrap);
+
+  // Counter "1 / 5"
+  const counter = document.createElement('div');
+  counter.className = 'cc-counter';
+  counter.textContent = `1 / ${total}`;
+  if(total > 1) wrap.appendChild(counter);
+
+  // Badge "Carosello"
+  const badge = document.createElement('div');
+  badge.className = 'cc-badge';
+  badge.textContent = 'Carosello';
+  wrap.appendChild(badge);
+
+  // Aggiorna controlli
+  function updateControls(){
+    btnPrev.style.display = state.cur > 0 ? 'flex' : 'none';
+    btnNext.style.display = state.cur < total - 1 ? 'flex' : 'none';
+    dots.forEach((d, i) => d.classList.toggle('active', i === state.cur));
+    counter.textContent = `${state.cur + 1} / ${total}`;
+  }
+  updateControls();
+
+  // Swipe touch
+  wrap.addEventListener('touchstart', e => {
+    state.touchStart = e.touches[0].clientX;
+  }, { passive: true });
+  wrap.addEventListener('touchend', e => {
+    if(state.touchStart === null) return;
+    const delta = state.touchStart - e.changedTouches[0].clientX;
+    if(Math.abs(delta) > 40){
+      delta > 0
+        ? goTo(Math.min(total-1, state.cur+1))
+        : goTo(Math.max(0, state.cur-1));
+    }
+    state.touchStart = null;
+  }, { passive: true });
+
+  // Click su wrap → apre lightbox al fullscreen (mantiene comportamento esistente)
+  wrap.onclick = e => {
+    // Solo se il click non viene da frecce/dots (stopPropagation lo gestisce)
+    openLb(itemIdx, items, stArr);
+  };
+
+  return wrap;
+}
+
+
 function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';updateFeedFormat();
   // FIX 5: drag delegation — listeners attached once to grid, not per-cell
@@ -737,6 +852,11 @@ function renderFeedGrid(){
           cell.appendChild(delOnly);
         }
         else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
+        else if(item.type==='carousel'&&item.slides?.length>1){
+          // Carosello navigabile inline (Gruppo D)
+          cell.appendChild(buildCaroselloPlayer(item, idx, items, stArr));
+          cell.style.overflow='hidden';
+        }
         else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('img',item.name));}}
         // drag via event delegation — mark the cell
         cell.draggable=true;
