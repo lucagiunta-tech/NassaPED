@@ -326,7 +326,7 @@
           <div class="ctx-sec-lbl">Opzioni</div>
           <div style="display:flex;flex-direction:column;gap:5px;">
             <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
-            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
+            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-right:3px;vertical-align:-1px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
           </div>
           <div class="ctx-hint">⠿ trascina · hover → opzioni</div>
         </div>
@@ -433,7 +433,7 @@
         </div>
         <div class="ped-scroll">
           <div class="ped-empty-ped" id="ped-empty">
-            <span class="pe-icon">📝</span>
+            <span class="pe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <p>Vai nel <strong>Feed</strong>, seleziona un cliente e un mese.<br>Poi torna qui per pianificare le stories.</p>
           </div>
           <div id="ped-freq-block" style="display:none;">
@@ -626,6 +626,8 @@
       </div>
     </div>
 
+
+
   <!-- MODAL APPROVAZIONE -->
   <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
     <div class="appr-modal" onclick="event.stopPropagation()">
@@ -774,7 +776,7 @@
       </div>
     </div>
     <div class="divider" style="margin:12px -18px;"></div>
-    <div class="sec-lbl">🎨 Palette brand</div>
+    <div class="sec-lbl">Palette brand</div>
     <div class="ec-palette-grid">
       <div class="ec-pal-slot">
         <label class="ec-pal-lbl">Primario</label>
