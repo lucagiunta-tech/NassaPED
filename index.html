@@ -511,6 +511,34 @@
         <span style="font-size:13px;font-weight:600;color:var(--text);" id="preview-client-name">—</span>
         <div style="flex:1;"></div>
         <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;font-size:12px;"></select>
+        <!-- Toggle modalità approvazione -->
+        <button class="appr-toggle-btn" id="appr-toggle-btn" onclick="toggleApprMode()" title="Modalità Approvazione">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="appr-toggle-lbl">Approvazione</span>
+        </button>
+      </div>
+      <!-- Stats bar approvazione (visibile solo in modalità appr) -->
+      <div class="appr-stats-bar" id="appr-stats-bar" style="display:none;">
+        <div class="appr-stat-cell" id="appr-stat-bozza">
+          <div class="appr-stat-num">0</div>
+          <div class="appr-stat-lbl">Bozza</div>
+          <div class="appr-stat-bar" style="background:#999;width:0%;"></div>
+        </div>
+        <div class="appr-stat-cell" id="appr-stat-approvare">
+          <div class="appr-stat-num">0</div>
+          <div class="appr-stat-lbl">Da Approvare</div>
+          <div class="appr-stat-bar" style="background:#d4a800;width:0%;"></div>
+        </div>
+        <div class="appr-stat-cell" id="appr-stat-approvato">
+          <div class="appr-stat-num">0</div>
+          <div class="appr-stat-lbl">Approvato</div>
+          <div class="appr-stat-bar" style="background:#1a7a4a;width:0%;"></div>
+        </div>
+        <div class="appr-stat-cell" style="border-right:none;">
+          <div class="appr-stat-num" id="appr-stat-totale">0</div>
+          <div class="appr-stat-lbl">Totale</div>
+        </div>
+        <div class="appr-filter-row" id="appr-filter-row"></div>
       </div>
       <div class="preview-body" id="preview-body">
         <div id="preview-empty" class="preview-empty"><p>Nessun cliente selezionato.</p></div>
@@ -524,6 +552,33 @@
         <div class="lb-counter" id="lb-counter"></div>
         <div class="lb-copy" id="lb-copy"></div>
         <div class="lb-stories-strip" id="lb-stories-strip"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL APPROVAZIONE -->
+  <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
+    <div class="appr-modal" onclick="event.stopPropagation()">
+      <div class="appr-modal-head">
+        <div>
+          <div class="appr-modal-title" id="appr-modal-title">Dettaglio Post</div>
+        </div>
+        <button onclick="closeApprModal()" class="appr-modal-close">✕</button>
+      </div>
+      <div class="appr-modal-body">
+        <div class="appr-modal-thumb" id="appr-modal-thumb"></div>
+        <div class="appr-modal-controls">
+          <div class="appr-modal-section-lbl">Stato</div>
+          <div class="appr-stato-pills" id="appr-stato-pills"></div>
+          <div class="appr-modal-section-lbl" style="margin-top:12px;">Note revisione</div>
+          <textarea class="appr-note-area" id="appr-note-area" rows="3" placeholder="Aggiungi note per l'agenzia..."></textarea>
+        </div>
+      </div>
+      <div class="appr-modal-foot">
+        <button class="btn sm" onclick="closeApprModal()">Annulla</button>
+        <button class="btn sm" id="appr-approva-btn" onclick="apprModalApprova()" style="background:#1a7a4a;color:#fff;border-color:#1a7a4a;">✓ Approva</button>
+        <button class="btn" onclick="apprModalSalva()" style="margin-left:auto;">Salva</button>
       </div>
     </div>
   </div>
