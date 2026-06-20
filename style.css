@@ -1076,42 +1076,42 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* ══ TAB ANNO — Calendario Editoriale Annuale ══ */
 
-.anno-toprow{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:var(--surface);}
+.anno-toprow{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:2px solid var(--green);flex-shrink:0;flex-wrap:wrap;background:var(--surface);}
 .anno-year-nav{display:flex;align-items:center;gap:6px;}
-.anno-year-lbl{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text);min-width:52px;text-align:center;}
+.anno-year-lbl{font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--text);min-width:52px;text-align:center;}
 .anno-tag-filters{display:flex;gap:5px;flex-wrap:wrap;}
 .anno-tag-btn{font-size:10px;font-family:var(--font);letter-spacing:.06em;padding:2px 9px;border-radius:var(--r-pill);cursor:pointer;text-transform:uppercase;transition:all .1s;background:transparent;border:.5px solid var(--border);color:var(--text-2);}
-.anno-tag-btn.active{border:1.5px solid var(--text);background:var(--text);color:var(--surface);}
+.anno-tag-btn.active{border:1.5px solid var(--green);background:var(--green);color:var(--green-text);}
 
 /* Column headers */
-.anno-col-headers{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);border-bottom:.5px solid var(--border);background:var(--surface);flex-shrink:0;padding-left:16px;position:sticky;top:0;z-index:2;}
+.anno-col-headers{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-left:16px;position:sticky;top:0;z-index:2;}
 .anno-col-hdr-month{padding:5px 0;}
-.anno-col-hdr{font-size:9px;font-family:var(--font);letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;border-left:.5px solid var(--border);padding:5px 12px;}
+.anno-col-hdr{font-size:11px;font-family:var(--font);letter-spacing:.06em;color:var(--text-2);text-transform:uppercase;border-left:.5px solid var(--border);padding:5px 12px;}
 
 /* Scrollable bands area */
 .anno-bands{flex:1;overflow-y:auto;min-height:0;}
-.anno-band{border-top:2px solid var(--text);}
-.anno-band-row{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);cursor:pointer;user-select:none;min-height:48px;padding-left:16px;}
+.anno-band{border-top:1px solid var(--border);}
+.anno-band-row{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);cursor:pointer;user-select:none;min-height:44px;padding-left:16px;}
 .anno-month-cell{padding:10px 0;display:flex;align-items:flex-start;}
-.anno-month-name{font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1;opacity:.85;}
+.anno-month-name{font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--text);line-height:1;}
 .anno-channel{border-left:.5px solid var(--border);padding:10px 10px;}
-.anno-ch-count{font-size:11px;color:var(--text-3);padding-top:2px;}
+.anno-ch-count{font-size:12px;color:var(--text-2);padding-top:2px;}
 
 /* Event items */
 .anno-ev-row{display:flex;gap:7px;margin-bottom:12px;align-items:flex-start;cursor:pointer;}
 .anno-ev-row:last-child{margin-bottom:0;}
-.anno-day-pri{font-size:20px;font-weight:700;color:var(--text);line-height:1;min-width:24px;flex-shrink:0;}
-.anno-day-sec{font-size:12px;font-weight:600;color:var(--text-2);line-height:1;min-width:20px;flex-shrink:0;padding-top:2px;}
+.anno-day-pri{font-size:18px;font-weight:700;color:var(--green);line-height:1;min-width:24px;flex-shrink:0;}
+.anno-day-sec{font-size:13px;font-weight:600;color:var(--text-2);line-height:1;min-width:20px;flex-shrink:0;padding-top:2px;}
 .anno-ev-content{flex:1;min-width:0;}
 .anno-ev-primary{border-left:2px solid;padding-left:6px;}
-.anno-ev-tag{font-size:9px;font-family:var(--font);letter-spacing:.08em;padding:1px 5px;border-radius:2px;font-weight:600;text-transform:uppercase;display:inline-block;margin-bottom:2px;}
-.anno-ev-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.anno-ev-sub{font-size:10px;color:var(--text-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.anno-ev-tag{font-size:10px;font-family:var(--font);letter-spacing:.05em;padding:2px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;display:inline-block;margin-bottom:2px;}
+.anno-ev-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.anno-ev-sub{font-size:11px;color:var(--text-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .anno-ev-label{font-size:11px;color:var(--text-2);font-style:italic;}
 
 /* Footer */
-.anno-footer{border-top:1.5px solid var(--text);display:flex;justify-content:space-between;padding:6px 16px;flex-shrink:0;background:var(--surface);}
-.anno-footer-txt{font-size:9px;font-family:var(--font);color:var(--text-3);letter-spacing:.1em;}
+.anno-footer{border-top:2px solid var(--green);display:flex;justify-content:space-between;padding:6px 16px;flex-shrink:0;background:var(--surface);}
+.anno-footer-txt{font-size:11px;font-family:var(--font);color:var(--text-2);letter-spacing:.05em;}
 
 /* Detail modal */
 .anno-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:9000;}
