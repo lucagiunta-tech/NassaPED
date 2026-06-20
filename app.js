@@ -42,8 +42,15 @@ function pkgBadge(pkg){
     'Professional':{cls:'pkg-professional',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'},
     'Full':        {cls:'pkg-full',         icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'},
   };
-  const t=tiers[pkg]||{cls:'pkg-starter',icon:''};
-  return `<span class="pkg-badge ${t.cls}">${t.icon} ${esc(pkg)}</span>`;
+  // Normalizza il valore: rimuove emoji e spazi iniziali
+  // Gestisce valori legacy come '🥉 Starter', '🥈 Essential', '🥇 Professional'
+  const clean = String(pkg||'').replace(/^[\p{Emoji}\p{Emoji_Presentation}\s]+/u,'').trim();
+  // Cerca match esatto o parziale (case-insensitive) tra le chiavi
+  const key = Object.keys(tiers).find(k=>clean.toLowerCase().startsWith(k.toLowerCase()))||'';
+  const t = tiers[key]||{cls:'pkg-starter',icon:''};
+  // Mostra solo la parola chiave pulita, senza emoji legacy
+  const label = key || clean || esc(pkg);
+  return `<span class="pkg-badge ${t.cls}">${t.icon} ${label}</span>`;
 }
 
 /* ══════════════════════════════════════════
