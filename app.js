@@ -81,13 +81,14 @@ const CLOUD = {
 
   snapshot() {
     return { version:'2.0', exportedAt: new Date().toISOString(),
-      clients, feeds, stories, highlights, pedPlans, notesData, pilastri,
+      clients, feeds, stories, highlights, pedPlans, notesData, pilastri, adsCampaigns,
       meta: { showAllDates, showAllCopy, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
   apply(data) {
     if (!data) return;
     clients = data.clients || [];
+    adsCampaigns = data.adsCampaigns || {};
     clients.forEach(c => { if(!c.accounts) c.accounts=[]; if(!c.id) c.id='c_'+Date.now(); });
     feeds = {};
     Object.keys(data.feeds||{}).forEach(k => {
@@ -374,7 +375,7 @@ function needsReloadPh(icon,name,reuploadFn){
 /* TAB SWITCHING */
 function switchTab(tab){
   currentTab=tab;
-  const allTabs=['studio','notes','pilastri','feed','stories','ped','cal','preview'];
+  const allTabs=['studio','notes','pilastri','feed','stories','ped','cal','preview','ads'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -2368,6 +2369,224 @@ function applySidebarState(){
 }
 
 function autoSave(){if(CLOUD._booting)return;CLOUD.scheduleSave(()=>CLOUD.snapshot());}
+
+
+/* ════ ADS TAB ════ */
+let adsCampaigns = {}; // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status}]
+let adsEditId = null;
+let adsFilter = 'all';
+
+const ADS_PLATFORM_LABELS = {
+  instagram:'Instagram', facebook:'Facebook', meta:'Meta (IG+FB)',
+  linkedin:'LinkedIn', google:'Google'
+};
+const ADS_PLATFORM_COLORS = {
+  instagram:'ig', facebook:'fb', meta:'meta', linkedin:'li', google:'gg'
+};
+
+function currentAdsKey(){
+  if(globalClientIdx<0)return null;
+  return clients[globalClientIdx]?.name||null;
+}
+
+function currentAdsCampaigns(){
+  const k=currentAdsKey();return k?(adsCampaigns[k]||[]):[];
+}
+
+function renderAdsTab(){
+  const camps=currentAdsCampaigns();
+  const cl=globalClientIdx>=0?clients[globalClientIdx]:null;
+  const el=id=>document.getElementById(id);
+
+  if(el('ads-page-title'))el('ads-page-title').textContent=(cl?cl.name+' — ':''  )+'Performance Ads';
+
+  // Metrics
+  const active=camps.filter(c=>c.status==='active');
+  const totalBudget=camps.reduce((s,c)=>s+(c.budget||0),0);
+  const totalSpent=camps.reduce((s,c)=>s+(c.spent||0),0);
+  const avgRoas=active.length?
+    (active.reduce((s,c)=>s+(c.roas||0),0)/active.length).toFixed(1):0;
+  const totalImp=camps.reduce((s,c)=>s+(c.impressions||0),0);
+
+  const metrics=el('ads-metrics');
+  if(metrics){
+    metrics.innerHTML=[
+      {lbl:'Budget totale',val:'€'+totalBudget.toLocaleString('it'),sub:totalSpent?'€'+totalSpent.toLocaleString('it')+' spesi':'—'},
+      {lbl:'ROAS medio',val:avgRoas+'×',sub:active.length+' camp. attive',cls:parseFloat(avgRoas)>=4?'up':parseFloat(avgRoas)>0&&parseFloat(avgRoas)<3?'dn':''},
+      {lbl:'CPC medio',val:active.length?'€'+(active.reduce((s,c)=>s+(c.cpc||0),0)/active.length).toFixed(2):'—',sub:''},
+      {lbl:'Impression tot.',val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—',sub:''},
+      {lbl:'Campagne',val:active.length+'/'+camps.length,sub:'attive / totali'}
+    ].map(m=>`<div class="ads-metric">
+      <div class="ads-metric-lbl">${m.lbl}</div>
+      <div class="ads-metric-val">${m.val}</div>
+      ${m.sub?`<div class="ads-metric-sub ${m.cls||''}">${m.sub}</div>`:''}
+    </div>`).join('');
+  }
+
+  // Alert: ROAS below target
+  const alert=el('ads-alert');
+  if(alert){
+    const under=camps.filter(c=>c.status==='active'&&c.roas>0&&c.roasTarget>0&&c.roas<c.roasTarget);
+    if(under.length){
+      const names=under.map(c=>'"'+c.name+'" ('+c.roas+'× vs target '+c.roasTarget+'×)').join(', ');
+      alert.style.display='flex';
+      alert.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      ROAS sotto target: ${names}`;
+    } else {
+      alert.style.display='none';
+    }
+  }
+
+  // Chart bars per platform
+  const bars=el('ads-bars');
+  if(bars){
+    const byPlatform={};
+    camps.forEach(c=>{const p=c.platform||'altro';byPlatform[p]=(byPlatform[p]||0)+(c.spent||0);});
+    const maxSpent=Math.max(...Object.values(byPlatform),1);
+    const colors={instagram:'#3b82f6',facebook:'#8b5cf6',meta:'#7c3aed',linkedin:'#22c55e',google:'#f59e0b'};
+    bars.innerHTML=Object.entries(byPlatform).sort((a,b)=>b[1]-a[1]).map(([p,s])=>`
+      <div class="ads-bar-row">
+        <span class="ads-bar-lbl">${ADS_PLATFORM_LABELS[p]||p}</span>
+        <div class="ads-bar-track"><div class="ads-bar-fill" style="width:${Math.round(s/maxSpent*100)}%;background:${colors[p]||'#888'};"></div></div>
+        <span class="ads-bar-val">€${s.toLocaleString('it')}</span>
+      </div>`).join('');
+    if(!Object.keys(byPlatform).length)bars.innerHTML='<div style="font-size:11px;color:var(--text-3);text-align:center;padding:12px 0;">Nessun dato di spesa</div>';
+  }
+
+  // Filter buttons
+  const filterRow=el('ads-filter-row');
+  if(filterRow){
+    const platforms=['all',...new Set(camps.map(c=>c.platform))];
+    filterRow.innerHTML=platforms.map(p=>`
+      <button class="ads-filt${adsFilter===p?' active':''}" onclick="adsSetFilter('${p}',this)">
+        ${p==='all'?'Tutte':ADS_PLATFORM_LABELS[p]||p}
+      </button>`).join('');
+  }
+
+  renderAdsCampList(camps);
+}
+
+function renderAdsCampList(camps){
+  const el=id=>document.getElementById(id);
+  const list=el('ads-camp-list');if(!list)return;
+
+  const filtered=adsFilter==='all'?camps:camps.filter(c=>c.platform===adsFilter);
+
+  if(!filtered.length){
+    list.innerHTML='<div class="ads-empty">Nessuna campagna. Clicca "+ Nuova campagna" per aggiungere.</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map(camp=>{
+    const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
+    const roasCls=camp.roas>=4?'good':camp.roas>0&&camp.roas<3?'warn':'';
+    const cpcCls=camp.cpc>0&&camp.cpc>1?'warn':'';
+    const platCls=ADS_PLATFORM_COLORS[camp.platform]||'ig';
+    return `<div class="ads-camp">
+      <div>
+        <div class="ads-camp-name">${camp.name}</div>
+        <div class="ads-camp-meta">
+          <span class="ads-plat ${platCls}">${ADS_PLATFORM_LABELS[camp.platform]||camp.platform}</span>
+          <span class="ads-status ${camp.status}">${{active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status}</span>
+          <span style="font-size:10px;color:var(--text-3);">€${(camp.spent||0).toLocaleString('it')} / €${(camp.budget||0).toLocaleString('it')} (${pct}%)</span>
+        </div>
+      </div>
+      <div class="ads-camp-kpis">
+        <div class="ads-kpi"><div class="ads-kpi-val ${roasCls}">${camp.roas?camp.roas+'×':'—'}</div><div class="ads-kpi-lbl">ROAS</div></div>
+        <div class="ads-div"></div>
+        <div class="ads-kpi"><div class="ads-kpi-val ${cpcCls}">€${camp.cpc?(camp.cpc).toFixed(2):'—'}</div><div class="ads-kpi-lbl">CPC</div></div>
+        <div class="ads-div"></div>
+        <div class="ads-kpi"><div class="ads-kpi-val">${camp.impressions>=1000?(camp.impressions/1000).toFixed(1)+'K':camp.impressions||'—'}</div><div class="ads-kpi-lbl">Impression</div></div>
+        <div class="ads-div"></div>
+        <button class="btn sm" onclick="openEditAdsCampaign('${camp.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="ads-camp-del" onclick="deleteAdsCampaign('${camp.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adsSetFilter(f,el){
+  adsFilter=f;
+  document.querySelectorAll('.ads-filt').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAdsCampList(currentAdsCampaigns());
+}
+
+function openAddAdsCampaignModal(){
+  adsEditId=null;
+  const el=id=>document.getElementById(id);
+  el('ads-modal-title').textContent='Nuova campagna Ads';
+  el('adm-name').value='';
+  el('adm-platform').value='instagram';
+  el('adm-budget').value='';
+  el('adm-spent').value='';
+  el('adm-roas').value='';
+  el('adm-cpc').value='';
+  el('adm-imp').value='';
+  el('adm-status').value='active';
+  el('adm-roas-target').value='';
+  openModal('ads-camp-modal');
+}
+
+function openEditAdsCampaign(id){
+  const camp=currentAdsCampaigns().find(c=>c.id===id);
+  if(!camp)return;
+  adsEditId=id;
+  const el=i=>document.getElementById(i);
+  el('ads-modal-title').textContent='Modifica campagna';
+  el('adm-name').value=camp.name||'';
+  el('adm-platform').value=camp.platform||'instagram';
+  el('adm-budget').value=camp.budget||'';
+  el('adm-spent').value=camp.spent||'';
+  el('adm-roas').value=camp.roas||'';
+  el('adm-cpc').value=camp.cpc||'';
+  el('adm-imp').value=camp.impressions||'';
+  el('adm-status').value=camp.status||'active';
+  el('adm-roas-target').value=camp.roasTarget||'';
+  openModal('ads-camp-modal');
+}
+
+function saveAdsCampaign(){
+  const g=id=>document.getElementById(id)?.value.trim()||'';
+  const name=g('adm-name');
+  if(!name){showToast('Inserisci il nome','warn');return;}
+  const k=currentAdsKey();
+  if(!k){showToast('Nessun cliente selezionato','warn');return;}
+  if(!adsCampaigns[k])adsCampaigns[k]=[];
+  const entry={
+    id:adsEditId||('ads_'+Date.now()),
+    name, platform:g('adm-platform'),
+    budget:parseFloat(g('adm-budget'))||0,
+    spent:parseFloat(g('adm-spent'))||0,
+    roas:parseFloat(g('adm-roas'))||0,
+    roasTarget:parseFloat(g('adm-roas-target'))||0,
+    cpc:parseFloat(g('adm-cpc'))||0,
+    impressions:parseInt(g('adm-imp'))||0,
+    status:g('adm-status')||'active',
+    updatedAt:new Date().toISOString()
+  };
+  if(adsEditId){
+    const idx=adsCampaigns[k].findIndex(c=>c.id===adsEditId);
+    if(idx>=0)adsCampaigns[k][idx]=entry;
+  } else {
+    adsCampaigns[k].push(entry);
+  }
+  closeModal('ads-camp-modal');
+  autoSave();
+  renderAdsTab();
+  showToast(adsEditId?'✓ Campagna aggiornata':'✓ Campagna aggiunta');
+}
+
+function deleteAdsCampaign(id){
+  if(!confirm('Eliminare questa campagna?'))return;
+  const k=currentAdsKey();if(!k)return;
+  adsCampaigns[k]=(adsCampaigns[k]||[]).filter(c=>c.id!==id);
+  autoSave();renderAdsTab();showToast('Campagna eliminata');
+}
 
 /* INIT */
 function init(){
