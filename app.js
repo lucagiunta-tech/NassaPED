@@ -1008,8 +1008,8 @@ function renderFeedGrid(){
           if(open)setTimeout(()=>ct.focus(),0);
         };
         cph.onclick=toggleCopy;prev.onclick=toggleCopy;
-        // If item already has copy, start expanded
-        if(item.copy){cpanel_body.classList.add('open');expBtn.classList.add('open');prev.style.display='none';}
+        // Se item ha copy, espandi solo su desktop
+        if(item.copy && window.innerWidth > 768){cpanel_body.classList.add('open');expBtn.classList.add('open');prev.style.display='none';}
         cp.appendChild(cph);cp.appendChild(prev);cp.appendChild(cpanel_body);wrap.appendChild(cp);
       }
     } else if(i===items.length){cell.classList.add('empty-slot');addEmptyFeedListeners(cell);const sp=document.createElement('span');sp.textContent='+ aggiungi';cell.appendChild(sp);wrap.appendChild(cell);}
