@@ -912,6 +912,11 @@ function openStoryboardModal(idx){
     :[{url:'',blobUrl:'',num:'1.',eye:'',title:'',note:'',_file:null}];
   sbCurSlide=0;sbBg='lined';sbColor='#2563eb';sbFmt='feed';
   openModal('storyboard-modal');
+  // Reset to editor tab
+  ['editor','parser','cassetto'].forEach(t=>{
+    const p=document.getElementById('sb-panel-'+t);if(p)p.style.display=t==='editor'?'':'none';
+  });
+  document.querySelectorAll('.sb-tab').forEach(b=>b.classList.toggle('active',b.id==='sb-tab-editor'));
   // Render after modal is visible — use rAF for reliable timing
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
@@ -1072,6 +1077,90 @@ function renderSbSlides(){
     con.appendChild(ti);con.appendChild(ni);row.appendChild(con);
     const del=document.createElement('button');del.className='sb-del';del.innerHTML='🗑';del.onclick=()=>removeSbSlide(i);row.appendChild(del);
     c.appendChild(row);
+  });
+}
+
+
+/* ══ SB TAB SWITCHER ══ */
+function sbSwitchTab(tab,el){
+  ['editor','parser','cassetto'].forEach(t=>{
+    const panel=document.getElementById('sb-panel-'+t);
+    if(panel)panel.style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('.sb-tab').forEach(b=>b.classList.toggle('active',b.id==='sb-tab-'+tab));
+  if(tab==='cassetto')renderSbCassetto();
+}
+
+/* ══ PARSER NOTE ══ */
+function sbParseNote(){
+  const raw=document.getElementById('sb-parser-input')?.value?.trim();
+  if(!raw){showToast('Incolla prima una nota','warn');return;}
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  let num='',eye='',tit='',cop='';
+  lines.forEach(l=>{
+    if(/^\[NUM\]/i.test(l))     num=l.replace(/^\[NUM\]\s*/i,'');
+    else if(/^\[OCCHIELLO\]/i.test(l)) eye=l.replace(/^\[OCCHIELLO\]\s*/i,'');
+    else if(/^\[TITOLO\]/i.test(l))    tit=l.replace(/^\[TITOLO\]\s*/i,'');
+    else if(/^\[COPY\]/i.test(l))      cop=l.replace(/^\[COPY\]\s*/i,'');
+  });
+  // Fallback: no tags — use line order
+  if(!num&&!eye&&!tit&&!cop&&lines.length>=2){eye=lines[0];tit=lines[1];cop=lines.slice(2).join(' ');}
+  if(!sbTmpSlides[sbCurSlide])return;
+  const sl=sbTmpSlides[sbCurSlide];
+  if(num)sl.num=num;if(eye)sl.eye=eye;if(tit)sl.title=tit;if(cop)sl.note=cop;
+  loadSbSlide(sbCurSlide);renderSbThumbs();
+  sbSwitchTab('editor',document.getElementById('sb-tab-editor'));
+  showToast('✓ Slide compilata dal parser');
+}
+
+function sbFillParserExample(){
+  const ta=document.getElementById('sb-parser-input');
+  if(ta)ta.value='[NUM] 1.\n[OCCHIELLO] Strategia\n[TITOLO] Documenta tutto\n[COPY] Cattura screenshot, timestamp e file. La prova di quando hai creato è la tua difesa migliore.';
+}
+
+/* ══ CASSETTO (bozze storyboard) ══ */
+let sbCassetto=JSON.parse(localStorage.getItem('sb_cassetto')||'[]');
+
+function sbSaveToCassetto(){
+  if(!sbTmpSlides.length){showToast('Nessuna slide da salvare','warn');return;}
+  const name=prompt('Nome bozza:','Bozza '+(sbCassetto.length+1));
+  if(!name)return;
+  const entry={id:Date.now(),name,savedAt:new Date().toISOString(),
+    slides:sbTmpSlides.map(s=>({num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',url:s.url||''}))};
+  sbCassetto.unshift(entry);
+  try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
+  renderSbCassetto();
+  showToast('✓ Bozza salvata nel cassetto');
+}
+
+function sbLoadFromCassetto(id){
+  const entry=sbCassetto.find(e=>e.id===id);if(!entry)return;
+  if(!confirm('Sostituire le slide correnti con questa bozza?'))return;
+  sbTmpSlides=entry.slides.map(s=>({...s,blobUrl:'',_file:null}));
+  sbCurSlide=0;
+  renderSbBuilder();
+  sbSwitchTab('editor',document.getElementById('sb-tab-editor'));
+  showToast('✓ Bozza caricata');
+}
+
+function sbDeleteFromCassetto(id){
+  sbCassetto=sbCassetto.filter(e=>e.id!==id);
+  try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
+  renderSbCassetto();
+}
+
+function renderSbCassetto(){
+  const c=document.getElementById('sb-cassetto-list');if(!c)return;
+  if(!sbCassetto.length){
+    c.innerHTML='<div class="sb-cass-empty">Nessuna bozza salvata.<br>Clicca "+ Salva corrente" per iniziare.</div>';return;
+  }
+  c.innerHTML='';
+  sbCassetto.forEach(entry=>{
+    const d=document.createElement('div');d.className='sb-cassetto-item';
+    const dt=new Date(entry.savedAt);
+    const dateStr=dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' '+dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    d.innerHTML=`<div><div class="sb-cass-name">${entry.name}</div><div class="sb-cass-meta">${entry.slides.length} slide · ${dateStr}</div></div><div class="sb-cass-actions"><button class="sb-cass-btn" onclick="sbLoadFromCassetto(${entry.id})">Carica</button><button class="sb-cass-btn" style="color:var(--red);" onclick="sbDeleteFromCassetto(${entry.id})">✕</button></div>`;
+    c.appendChild(d);
   });
 }
 
