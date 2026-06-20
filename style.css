@@ -957,6 +957,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* ════ ADS TAB ════ */
 .ads-page{display:flex;flex-direction:column;height:100%;}
+.anno-page{display:flex;flex-direction:column;height:100%;overflow:hidden;}
 .ads-toprow{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;flex-shrink:0;border-bottom:.5px solid var(--border);}
 .ads-page-title{font-size:var(--fs-md);font-weight:700;color:var(--text);}
 .ads-page-sub{font-size:var(--fs-xs);color:var(--text-3);margin-top:2px;}
