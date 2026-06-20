@@ -1630,3 +1630,18 @@ tbody tr:hover .tr-actions{opacity:1;}
 .appr-stats-bar{
   display:flex !important;
 }
+
+/* ══ FEED — Bottone cover pill su card video ══ */
+.video-cover-pill{
+  position:absolute;bottom:8px;right:8px;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:var(--r-pill);
+  font-size:9px;font-family:var(--font);font-weight:600;
+  letter-spacing:.03em;
+  background:rgba(0,0,0,.62);color:#fff;
+  border:1px solid rgba(255,255,255,.2);
+  cursor:pointer;z-index:12;
+  transition:background .15s;
+  backdrop-filter:blur(4px);
+}
+.video-cover-pill:hover{background:rgba(0,0,0,.85);}
