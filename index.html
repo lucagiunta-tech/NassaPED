@@ -582,6 +582,26 @@
       </div>
       <div class="field"><label>ROAS target</label><input type="number" id="adm-roas-target" placeholder="4.0" step="0.1" min="0"/></div>
     </div>
+    <!-- Creative asset -->
+    <div class="field">
+      <label>Creativo da sponsorizzare</label>
+      <div class="ads-creative-zone" id="adm-creative-zone" onclick="document.getElementById('adm-creative-inp').click()">
+        <input type="file" id="adm-creative-inp" accept="image/*,video/*" style="display:none;" onchange="adsPreviewCreative(this)"/>
+        <div id="adm-creative-preview" style="display:none;position:relative;">
+          <img id="adm-creative-img" style="max-width:100%;max-height:140px;border-radius:var(--rs);display:none;"/>
+          <video id="adm-creative-vid" muted playsinline preload="metadata" style="max-width:100%;max-height:140px;border-radius:var(--rs);display:none;"></video>
+          <button class="ads-creative-clear" onclick="event.stopPropagation();adsClearCreative()">✕</button>
+        </div>
+        <div id="adm-creative-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:var(--fs-xs);color:var(--text-3);margin-top:6px;">Immagine o reel da sponsorizzare</div>
+          <div style="font-size:10px;color:var(--text-3);">JPG · PNG · MP4 · MOV</div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:6px;">
+        <input type="text" id="adm-creative-url" placeholder="Oppure incolla URL esterno (Dropbox, Frame.io…)" style="font-size:var(--fs-xs);"/>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn sm" onclick="closeModal('ads-camp-modal')">Annulla</button>
       <button class="btn primary sm" onclick="saveAdsCampaign()">Salva</button>
