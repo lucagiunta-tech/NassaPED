@@ -1521,6 +1521,38 @@ function renderPreview(){
       if(item.copy?.trim()){const cd=document.createElement('div');cd.className='client-copy';cd.innerHTML='<div class="client-copy-lbl">Caption</div>';const ct=document.createElement('div');ct.textContent=item.copy;cd.appendChild(ct);post.appendChild(cd);}
       const linked=(item.linkedStories||[]).map(si=>stArr[si]).filter(Boolean);
       if(linked.length){const strip=document.createElement('div');strip.className='ls-strip';strip.innerHTML='<div class="ls-strip-lbl">📱</div>';linked.forEach(st=>{const circ=document.createElement('div');circ.className='ls-circle';const cu=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;if(cu){const img=document.createElement('img');img.src=cu;img.alt='';circ.appendChild(img);}strip.appendChild(circ);});post.appendChild(strip);}
+      // ── STATUS BADGE APPROVAZIONE ──
+      const apprSt = item.apprStato || 'bozza';
+      const revCount = item.apprRevisions || 0;
+      const APPR_CFG = {
+        bozza:     {label:'Bozza',       dot:'#999',    bg:'rgba(120,120,120,0.12)', text:'var(--text-3)',  border:'rgba(120,120,120,0.25)'},
+        approvare: {label:'In revisione', dot:'#d4a800', bg:'rgba(212,168,0,0.14)',  text:'#7a5c00',       border:'rgba(212,168,0,0.45)'},
+        approvato: {label:'Approvato',    dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)', text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
+      };
+      const cfg = APPR_CFG[apprSt] || APPR_CFG.bozza;
+      // Bordo card colorato per stato
+      if(apprSt !== 'bozza'){
+        post.style.borderColor = apprSt==='approvare' ? '#d4a800' : '#1a7a4a';
+        post.style.borderWidth = '1.5px';
+      }
+      // Badge stato in basso a sinistra sulla cella immagine
+      const stBadge = document.createElement('div');
+      stBadge.className = 'feed-appr-badge';
+      stBadge.style.cssText = `background:${cfg.bg};color:${cfg.text};border:1px solid ${cfg.border};`;
+      stBadge.innerHTML = `<span class="feed-appr-dot" style="background:${cfg.dot};"></span>${cfg.label}`;
+      stBadge.onclick = (e)=>{ e.stopPropagation(); cycleApprStato(idx, items); };
+      cell.appendChild(stBadge);
+      // Badge revisioni (solo se > 0)
+      if(revCount > 0){
+        const revBadge = document.createElement('div');
+        const revColor = revCount >= 3 ? '#ef4444' : revCount === 2 ? '#d4a800' : '#1a7a4a';
+        const revLabel = revCount >= 3 ? 'Fuori contratto' : `Rev. ${revCount}`;
+        revBadge.className = 'feed-rev-badge';
+        revBadge.style.cssText = `background:${revColor};color:#fff;`;
+        revBadge.title = revCount >= 3 ? `${revCount} revisioni — fuori dal contratto` : `${revCount} revision${revCount>1?'i':'e'}`;
+        revBadge.textContent = revCount >= 3 ? `⚠ ${revCount}` : revCount;
+        cell.appendChild(revBadge);
+      }
       grid.appendChild(post);
     });
     body.appendChild(grid);
@@ -3841,6 +3873,18 @@ function apprInjectGrid(items){
     }
   }, {once:true});
 }
+
+function cycleApprStato(idx, items){
+  if(!items[idx]) return;
+  const order = ['bozza','approvare','approvato'];
+  const cur = items[idx].apprStato || 'bozza';
+  const next = order[(order.indexOf(cur)+1) % order.length];
+  items[idx].apprStato = next;
+  if(next === 'approvare') items[idx].apprRevisions = (items[idx].apprRevisions||0)+1;
+  autoSave();
+  refreshFeed();
+}
+
 
 /* INIT */
 function init(){
