@@ -545,16 +545,9 @@
         <div class="ads-gantt-card">
           <div class="ads-gantt-head">
             <span class="ads-chart-title">Timeline campagne</span>
-            <div class="ads-month-nav">
-              <button class="btn sm icon" onclick="adsGanttPrevMonth()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <span class="ads-month-lbl" id="ads-gantt-month"></span>
-              <button class="btn sm icon" onclick="adsGanttNextMonth()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
           </div>
+          <!-- Month pills — same pattern as Feed/Stories -->
+          <div id="ads-month-pills" class="feed-month-pills-inline" style="margin-bottom:10px;"></div>
           <div class="ads-gantt-legend">
             <span class="ads-leg"><span class="ads-leg-dot" style="background:#378ADD;"></span>Instagram</span>
             <span class="ads-leg"><span class="ads-leg-dot" style="background:#7F77DD;"></span>Meta/FB</span>
