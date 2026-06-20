@@ -90,6 +90,62 @@ function confirmCancel(){
   _confirmCallback = null;
 }
 
+/* ══ TOAST-UNDO SYSTEM ══
+ * Uso: showUndoToast(label, undoFn)
+ * - Esegue l'azione immediatamente (già fatto dal chiamante)
+ * - Mostra toast con "Annulla" per 5 secondi + barra countdown
+ * - Se Annulla → chiama undoFn() e ri-renderizza
+ * - Se scade → persiste (autoSave già schedulato dal chiamante)
+ */
+let _undoTimer = null;
+let _undoBarTimer = null;
+
+function showUndoToast(label, undoFn){
+  // Cancella eventuale undo precedente pendente (ne può esistere uno solo)
+  clearTimeout(_undoTimer);
+  clearTimeout(_undoBarTimer);
+
+  const t = document.getElementById('toast');
+  if(!t) return;
+
+  // Costruisce il toast con barra progress + link Annulla
+  t.innerHTML = `
+    <span class="toast-label">${label}</span>
+    <button class="toast-undo-btn" onclick="triggerUndo()">Annulla</button>
+    <div class="toast-progress-bar"><div class="toast-progress-fill" id="toast-progress-fill"></div></div>
+  `;
+  t.className = 'toast toast-undo';
+  // Piccolo delay per trigger transition
+  setTimeout(() => {
+    t.classList.add('show');
+    // Avvia animazione barra
+    const fill = document.getElementById('toast-progress-fill');
+    if(fill){ fill.style.transition='width 5s linear'; fill.style.width='0%'; }
+  }, 10);
+
+  // Salva callback undo
+  window._pendingUndoFn = undoFn;
+
+  // Dopo 5s: nasconde toast, undo non più disponibile
+  _undoTimer = setTimeout(() => {
+    t.classList.remove('show');
+    window._pendingUndoFn = null;
+    setTimeout(() => { t.innerHTML=''; t.className='toast'; }, 300);
+  }, 5000);
+}
+
+function triggerUndo(){
+  clearTimeout(_undoTimer);
+  clearTimeout(_undoBarTimer);
+  const t = document.getElementById('toast');
+  if(t){ t.classList.remove('show'); setTimeout(()=>{t.innerHTML='';t.className='toast';},300); }
+  if(typeof window._pendingUndoFn === 'function'){
+    window._pendingUndoFn();
+    window._pendingUndoFn = null;
+    showToast('✓ Azione annullata');
+  }
+}
+
 /* ══════════════════════════════════════════
    NASSA CLOUD — Supabase sync via /api/project
    All Supabase credentials stay server-side.
@@ -806,7 +862,21 @@ function renderFeedGrid(){
 
 function addEmptyFeedListeners(cell){cell.addEventListener('dragover',e=>{if(feedDragSrc!==null)return;if(e.dataTransfer.types.includes('Files')){e.preventDefault();cell.classList.add('file-hover');}});cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(feedDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueFeedFiles(e.dataTransfer.files);});}
 function setFeedItemType(idx,type){const items=currentFeedItems();items[idx].type=type;if(type==='carousel'&&!items[idx].slides?.length)items[idx].slides=[{url:items[idx].url,name:items[idx].name}];setFeedItems(items);refreshFeed();if(type==='carousel')openCarouselModal(idx);}
-function removeFeedItem(i){const items=currentFeedItems();if(!items[i].isExternalLink)URL.revokeObjectURL(items[i].url);(items[i].slides||[]).forEach(s=>{if(s.url&&!s.externalUrl)URL.revokeObjectURL(s.url);});items.splice(i,1);setFeedItems(items);refreshFeed();}
+function removeFeedItem(i){
+  const items=currentFeedItems();
+  // Snapshot per undo — salva l'item e la posizione
+  const snapshot={item:{...items[i]},idx:i};
+  // Revoca blob URL subito (non recuperabile — non serve per undo, il file non è più in memoria)
+  if(!items[i].isExternalLink)URL.revokeObjectURL(items[i].url);
+  (items[i].slides||[]).forEach(s=>{if(s.url&&!s.externalUrl)URL.revokeObjectURL(s.url);});
+  items.splice(i,1);setFeedItems(items);refreshFeed();
+  // Undo: reinserisce l'item (senza media locale, ma con externalUrl se presente)
+  showUndoToast('Post rimosso',()=>{
+    const cur=currentFeedItems();
+    cur.splice(snapshot.idx,0,{...snapshot.item,url:snapshot.item.externalUrl||''});
+    setFeedItems(cur);refreshFeed();autoSave();
+  });
+}
 function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;}
 function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();}
 function toggleAllDates(){showAllDates=!showAllDates;const b=document.getElementById('toggle-dates'),c=document.getElementById('toggle-dates-chip');if(b)b.classList.toggle('off',!showAllDates);if(c){c.textContent=showAllDates?'ON':'OFF';c.classList.toggle('off',!showAllDates);}renderFeedGrid();}
@@ -1004,7 +1074,17 @@ function renderStoriesGrid(){
 }
 
 function addEmptyStoryListeners(cell){cell.addEventListener('dragover',e=>{if(stDragSrc!==null)return;if(e.dataTransfer.types.includes('Files')){e.preventDefault();cell.classList.add('file-hover');}});cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(stDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueStoryFiles(e.dataTransfer.files);});}
-function removeStoryItem(i){const arr=currentStoryItems();if(!arr[i].isExternalLink)URL.revokeObjectURL(arr[i].url);arr.splice(i,1);setStoryItems(arr);refreshStories();}
+function removeStoryItem(i){
+  const arr=currentStoryItems();
+  const snapshot={item:{...arr[i]},idx:i};
+  if(!arr[i].isExternalLink)URL.revokeObjectURL(arr[i].url);
+  arr.splice(i,1);setStoryItems(arr);refreshStories();
+  showUndoToast('Story rimossa',()=>{
+    const cur=currentStoryItems();
+    cur.splice(snapshot.idx,0,{...snapshot.item,url:snapshot.item.externalUrl||''});
+    setStoryItems(cur);refreshStories();autoSave();
+  });
+}
 
 /* STORYBOARD MODAL */
 let storiesPanelOpen=false;
@@ -1277,9 +1357,18 @@ function sbLoadFromCassetto(id){
 }
 
 function sbDeleteFromCassetto(id){
+  const entry=sbCassetto.find(e=>e.id===id);
+  const idx=sbCassetto.findIndex(e=>e.id===id);
   sbCassetto=sbCassetto.filter(e=>e.id!==id);
   try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
   renderSbCassetto();
+  if(entry){
+    showUndoToast('Bozza eliminata',()=>{
+      sbCassetto.splice(idx,0,entry);
+      try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
+      renderSbCassetto();
+    });
+  }
 }
 
 function renderSbCassetto(){
@@ -3014,8 +3103,14 @@ function deleteAdsCampaign(id){
     okLabel:'Elimina campagna',
     type:'danger',
     onOk:()=>{const k=currentAdsKey();if(!k)return;
+  const deleted=currentAdsCampaigns().find(camp=>camp.id===id);
+  const delIdx=currentAdsCampaigns().findIndex(camp=>camp.id===id);
   adsCampaigns[k]=(adsCampaigns[k]||[]).filter(c=>c.id!==id);
-  autoSave();renderAdsTab();showToast('Campagna eliminata');
+  renderAdsTab();
+  showUndoToast('Campagna eliminata',()=>{
+    if(deleted){adsCampaigns[k]=adsCampaigns[k]||[];adsCampaigns[k].splice(delIdx,0,deleted);renderAdsTab();autoSave();}
+  });
+  autoSave();
   }});
 }
 
