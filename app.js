@@ -1546,8 +1546,11 @@ function renderLb(){
     if(slideUrl){const img=document.createElement('img');img.src=slideUrl;img.alt='';inner.appendChild(img);}
     else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='';inner.appendChild(ph);}
     if(item.slides.length>1){
-      const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};inner.appendChild(sp);
-      const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
+      const wrap=inner.parentElement;
+      // Rimuovi frecce precedenti se esistono
+      wrap.querySelectorAll('.lb-slide-nav').forEach(el=>el.remove());
+      const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};wrap.appendChild(sp);
+      const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};wrap.appendChild(sn);
     }
   } else if(item.type==='video'){
     const v=makeMedia(item.url,'video',{controls:true,autoplay:true});
