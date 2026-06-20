@@ -237,6 +237,9 @@ const CLOUD = {
     if (!data) return;
     clients = data.clients || [];
     adsCampaigns = data.adsCampaigns || {};
+    // MIGRAZIONE: converte chiavi legacy clientName → client.id
+    // Eseguita una sola volta, poi il dato è già in formato nuovo
+    adsCampaigns = migrateAdsCampaignsKeys(adsCampaigns, clients);
     clients.forEach(c => { if(!c.accounts) c.accounts=[]; if(!c.id) c.id='c_'+Date.now(); });
     feeds = {};
     Object.keys(data.feeds||{}).forEach(k => {
@@ -2182,6 +2185,7 @@ function loadProjectFile(input){
       pilastri=data.pilastri||{};
       // FIX QA: ripristina campagne Ads (aggiunto dopo il codice di import originale)
       adsCampaigns=data.adsCampaigns||{};
+      adsCampaigns=migrateAdsCampaignsKeys(adsCampaigns,clients);
       // FIX 1: restore brand palette per client (was missing from import)
       clients.forEach(c=>{ if(!c.brand) c.brand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'}; });
       if(data.meta){showAllDates=data.meta.showAllDates!==false;showAllCopy=data.meta.showAllCopy!==false;if(Array.isArray(data.meta.pedFreqDays))pedFreqDays=new Set(data.meta.pedFreqDays);}
@@ -2783,6 +2787,36 @@ Budget: €${camp.budget} | Speso: €${camp.spent||0} | ROAS: ${camp.roas||'—
 }
 
 /* ════ ADS TAB ════ */
+
+/* ══ MIGRATION: adsCampaigns clientName → client.id ══
+ * Converte le chiavi legacy (nome cliente) in client.id stabile.
+ * Sicura da chiamare più volte — salta chiavi già nel formato corretto.
+ */
+function migrateAdsCampaignsKeys(adsData, clientList){
+  if(!adsData||!clientList) return adsData||{};
+  const result={};
+  const clientIds=new Set(clientList.map(c=>c.id));
+  
+  Object.keys(adsData).forEach(key=>{
+    if(clientIds.has(key)){
+      // Chiave già in formato id — copia diretta
+      result[key]=(result[key]||[]).concat(adsData[key]);
+    } else {
+      // Chiave legacy (nome) — cerca il client corrispondente
+      const match=clientList.find(c=>c.name===key);
+      if(match){
+        // Migra alla chiave id
+        result[match.id]=(result[match.id]||[]).concat(adsData[key]);
+        console.log('[ADS] Migrated adsCampaigns key:',key,'→',match.id);
+      } else {
+        // Cliente non trovato — mantieni la chiave (potrebbe essere dato orfano)
+        result[key]=adsData[key];
+      }
+    }
+  });
+  return result;
+}
+
 let adsCampaigns = {};
 let adsGanttYear = new Date().getFullYear();
 let adsGanttMonth = new Date().getMonth(); // 0-indexed // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status,creativeUrl,creativeType}]
@@ -2799,8 +2833,9 @@ const ADS_PLATFORM_COLORS = {
 };
 
 function currentAdsKey(){
+  // FIX: usa client.id stabile — immune a rename del cliente
   if(globalClientIdx<0)return null;
-  return clients[globalClientIdx]?.name||null;
+  return clients[globalClientIdx]?.id||null;
 }
 
 function currentAdsCampaigns(){
