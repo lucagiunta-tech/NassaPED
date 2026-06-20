@@ -193,7 +193,7 @@ const CLOUD = {
   scheduleSave(dataFn) {
     clearTimeout(CLOUD._saveTimer);
     CLOUD.setStatus('pending');
-    CLOUD._saveTimer = setTimeout(() => CLOUD.saveNow(dataFn()), 2000);
+    CLOUD._saveTimer = setTimeout(() => CLOUD.saveNow(dataFn()), 800);
   },
 
   async saveNow(projectData) {
@@ -438,6 +438,8 @@ function queueFeedFiles(files){
           arr[match].needsReload=false;delete arr[match]._uploadId;
         }
         setFeedItems(arr);refreshFeed();
+        // Salva immediatamente su Supabase dopo upload Dropbox completato
+        CLOUD.saveNow(CLOUD.snapshot());
       } else {
         // Upload Dropbox fallito — segna come needsReload così l'utente lo vede subito
         if(match>=0){ arr[match].needsReload=true; }
@@ -1102,7 +1104,8 @@ async function saveCarousel(){
   const items=currentFeedItems();
   items[carouselEditIdx].slides=carouselTmp.map(s=>({...s}));
   items[carouselEditIdx].url=carouselTmp[0].url||'';
-  setFeedItems(items);closeModal('carousel-modal');refreshFeed()
+  setFeedItems(items);closeModal('carousel-modal');refreshFeed();
+  CLOUD.saveNow(CLOUD.snapshot()); // salva subito dopo upload slide
   showToast('✓ Carosello salvato');
 }
 function addCarouselFiles(files){Array.from(files).forEach(f=>{if(f.type.startsWith('image'))carouselTmp.push({url:URL.createObjectURL(f),name:f.name});});renderCThumbs();}
@@ -1396,7 +1399,8 @@ async function saveStoryboard(){
   }else{
     arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides,isUGC:false,briefInviato:false,fileCaricato:false});
   }
-  setStoryItems(arr);closeModal('storyboard-modal');refreshStories()
+  setStoryItems(arr);closeModal('storyboard-modal');refreshStories();
+  CLOUD.saveNow(CLOUD.snapshot()); // salva subito dopo upload slides
   showToast('✓ Storyboard salvato');
 }
 
@@ -4752,7 +4756,7 @@ async function setVideoCover(file){
   if(url){
     items[videoCoverEditIdx].coverUrl = url;
     setFeedItems(items);
-    autoSave();
+    CLOUD.saveNow(CLOUD.snapshot()); // salva subito la cover
     refreshFeed();
     showToast('✓ Cover reel impostata');
   } else {
