@@ -1773,6 +1773,56 @@ function renderPreview(){
   const chip=document.getElementById('preview-chip');if(chip)chip.textContent=ready.length+' contenut'+(ready.length===1?'o':'i')+(accs.length>1?' · '+acc.name:'');
   if(!ready.length){const em=document.createElement('div');em.className='preview-empty';em.innerHTML='<p>Nessun contenuto per '+acc.name+' — '+month+'.</p>';body.appendChild(em);}
   else{
+    // ── STATS BAR: riepilogo per tipologia ──
+    const nFoto     = ready.filter(x=>x.type==='image'||x.type==='editorial').length;
+    const nReel     = ready.filter(x=>x.type==='video').length;
+    const nCarousel = ready.filter(x=>x.type==='carousel').length;
+    const nBozza    = ready.filter(x=>(x.apprStato||'bozza')==='bozza').length;
+    const nRevisione= ready.filter(x=>x.apprStato==='approvare').length;
+    const nApprovato= ready.filter(x=>x.apprStato==='approvato').length;
+
+    const statsBar = document.createElement('div');
+    statsBar.className = 'preview-stats-bar';
+    statsBar.innerHTML = `
+      <div class="preview-stats-group">
+        <div class="preview-stat-item">
+          <span class="psi-val">${ready.length}</span>
+          <span class="psi-lbl">Post</span>
+        </div>
+        ${nFoto ? `<div class="preview-stat-item">
+          <span class="psi-val">${nFoto}</span>
+          <span class="psi-lbl">Foto</span>
+        </div>` : ''}
+        ${nReel ? `<div class="preview-stat-item">
+          <span class="psi-val">${nReel}</span>
+          <span class="psi-lbl">Reel</span>
+        </div>` : ''}
+        ${nCarousel ? `<div class="preview-stat-item">
+          <span class="psi-val">${nCarousel}</span>
+          <span class="psi-lbl">Carosello</span>
+        </div>` : ''}
+      </div>
+      <div class="preview-stats-divider"></div>
+      <div class="preview-stats-group">
+        <div class="preview-stat-item">
+          <span class="psi-dot" style="background:#aaa;"></span>
+          <span class="psi-val">${nBozza}</span>
+          <span class="psi-lbl">Bozza</span>
+        </div>
+        <div class="preview-stat-item">
+          <span class="psi-dot" style="background:#f5c800;"></span>
+          <span class="psi-val">${nRevisione}</span>
+          <span class="psi-lbl">In revisione</span>
+        </div>
+        <div class="preview-stat-item">
+          <span class="psi-dot" style="background:#22c97a;"></span>
+          <span class="psi-val">${nApprovato}</span>
+          <span class="psi-lbl">Approvati</span>
+        </div>
+      </div>
+    `;
+    body.appendChild(statsBar);
+
     const grid=document.createElement('div');grid.className='client-grid';
     ready.forEach((item,i)=>{
       const post=document.createElement('div');post.className='client-post';
@@ -1986,9 +2036,28 @@ function renderPreview(){
         if(url){ slideImg.src=url; slideImg.style.display='block'; }
         else { slideImg.style.display='none'; }
 
-        // Sfondo dalla palette
-        const sfCfg = (typeof SFONDI !== 'undefined' && sl.sfondo) ? SFONDI[sl.sfondo] : null;
-        playerWrap.style.background = sfCfg ? sfCfg.bg : 'var(--cell-bg-dark)';
+        // Sfondo dalla palette — default Avorio se non impostato
+        const sfDefault = (typeof SFONDI !== 'undefined') ? SFONDI['Avorio'] : {bg:'#F5F2EB',text:'#2a2a2a',acc:'#888'};
+        const sfCfg = (typeof SFONDI !== 'undefined' && sl.sfondo && SFONDI[sl.sfondo]) ? SFONDI[sl.sfondo] : sfDefault;
+        playerWrap.style.background = sfCfg.bg;
+
+        // Placeholder testo quando non c'è immagine
+        let phTxt = playerWrap.querySelector('.sb-slide-ph-txt');
+        if(!url){
+          if(!phTxt){
+            phTxt = document.createElement('div');
+            phTxt.className = 'sb-slide-ph-txt';
+            playerWrap.insertBefore(phTxt, slideImg.nextSibling);
+          }
+          phTxt.style.color = sfCfg.text;
+          phTxt.innerHTML = (sl.num ? '<div class="sb-ph-num">'+sl.num+'</div>' : '')
+            + (sl.eye ? '<div class="sb-ph-eye">'+sl.eye+'</div>' : '')
+            + (sl.title ? '<div class="sb-ph-tit">'+sl.title+'</div>' : '<div class="sb-ph-tit" style="opacity:.3">Slide '+(state.cur+1)+'</div>')
+            + (sl.note ? '<div class="sb-ph-cop">'+sl.note+'</div>' : '');
+          phTxt.style.display = 'flex';
+        } else if(phTxt){
+          phTxt.style.display = 'none';
+        }
 
         // Badge UGC viola (Gruppo C)
         if(sb.isUGC){
