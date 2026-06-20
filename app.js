@@ -1571,6 +1571,75 @@ function renderPreview(){
     });
     body.appendChild(grid);
   }
+
+  // ── STORYBOARD SECTION ──
+  const storyboards = stArr.filter(st => st.isStoryboard && st.slides?.length);
+  if(storyboards.length){
+    const sbSec = document.createElement('div');
+    sbSec.style.cssText = 'margin-top:24px;';
+    const sbHead = document.createElement('div');
+    sbHead.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);';
+    sbHead.textContent = 'Storyboard · ' + storyboards.length + (storyboards.length===1?' elemento':' elementi');
+    sbSec.appendChild(sbHead);
+
+    const sbGrid = document.createElement('div');
+    sbGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
+
+    storyboards.forEach((sb, si) => {
+      const sbPost = document.createElement('div');
+      sbPost.style.cssText = 'display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;background:var(--surface);border:1px solid var(--border);';
+
+      const sbCell = document.createElement('div');
+      sbCell.style.cssText = 'position:relative;aspect-ratio:9/16;background:var(--cell-bg-dark);cursor:pointer;overflow:hidden;';
+      sbCell.onclick = () => {
+        const sbItems = sb.slides.map(sl=>({
+          type: (sl.url||'').match(/\.mp4|\.mov/i) ? 'video' : 'image',
+          url: sl.url||'', copy: sl.note||sl.title||'', slides:null
+        }));
+        openLb(0, sbItems, []);
+      };
+
+      // Cover — prima slide
+      const coverUrl = sb.slides[0]?.url || '';
+      if(coverUrl){
+        const img = document.createElement('img');
+        img.src = coverUrl;
+        img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+        sbCell.appendChild(img);
+      } else {
+        sbCell.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-3);font-size:12px;">Nessuna slide</div>';
+      }
+
+      // Badge slide count
+      const sbBadge = document.createElement('span');
+      sbBadge.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-family:var(--font);font-weight:600;padding:2px 7px;border-radius:var(--r-pill);';
+      sbBadge.textContent = sb.slides.length + ' slide';
+      sbCell.appendChild(sbBadge);
+
+      // Indicatore 9:16
+      const fmtBadge = document.createElement('span');
+      fmtBadge.style.cssText = 'position:absolute;bottom:8px;left:8px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:9px;font-family:var(--font);padding:1px 5px;border-radius:2px;border:0.5px solid rgba(255,255,255,.2);';
+      fmtBadge.textContent = 'Storyboard';
+      sbCell.appendChild(fmtBadge);
+
+      sbPost.appendChild(sbCell);
+
+      // Nome / note
+      if(sb.note){
+        const sbNote = document.createElement('div');
+        sbNote.style.cssText = 'padding:8px 10px;font-size:11px;color:var(--text-2);line-height:1.4;';
+        sbNote.textContent = sb.note;
+        sbPost.appendChild(sbNote);
+      }
+
+      sbGrid.appendChild(sbPost);
+    });
+
+    sbSec.appendChild(sbGrid);
+    body.appendChild(sbSec);
+  }
+
   const footer=document.createElement('div');footer.className='preview-footer';footer.innerHTML='<p>Anteprima preparata da</p><div class="nassa-sig">Nassa Studio · nassastudio.it</div>';body.appendChild(footer);
   // Aggiorna statistiche approvazione
   if(apprMode) apprUpdateStats(ready);
