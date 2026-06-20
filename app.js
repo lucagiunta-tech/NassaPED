@@ -428,18 +428,21 @@ function queueFeedFiles(files){
     for(const f of filesArr){
       const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
       const sharedUrl=await DROPBOX.upload(f,destPath);
+      const arr=currentFeedItems();
+      const match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
       if(sharedUrl){
-        const arr=currentFeedItems();
-        // Find by name AND no externalUrl yet (not yet uploaded)
-        const match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
         if(match>=0){
-          // FIX 4: revoke the local blob URL now that remote URL is confirmed
           if(arr[match].url&&arr[match].url.startsWith('blob:')) URL.revokeObjectURL(arr[match].url);
           arr[match].externalUrl=sharedUrl;arr[match].url=sharedUrl;
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
         }
-        setFeedItems(arr);refreshFeed()
+        setFeedItems(arr);refreshFeed();
+      } else {
+        // Upload Dropbox fallito — segna come needsReload così l'utente lo vede subito
+        if(match>=0){ arr[match].needsReload=true; }
+        setFeedItems(arr);refreshFeed();
+        showToast('⚠ Upload Dropbox fallito per '+f.name+' — ricarica il file','warn');
       }
     }
   })();
