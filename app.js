@@ -3441,6 +3441,29 @@ function renderAnnoTab() {
     html += `</div></div>`;
   });
 
+  // DEBUG PANEL — mostra info sui dati raw (rimuovere dopo fix)
+  const debugEl = document.getElementById('anno-debug');
+  if(debugEl && cl) {
+    const pedPrefix2 = cl.name + '|||';
+    const pedKeys = Object.keys(pedPlans).filter(k=>k.startsWith(pedPrefix2));
+    const pedTotal = pedKeys.reduce((s,k)=>{
+      const items = (pedPlans[k]||[]).filter(i=>i.date);
+      return s + items.length;
+    }, 0);
+    const allKeys = Object.keys(pedPlans);
+    debugEl.innerHTML = '<div style="font-size:11px;font-family:monospace;padding:10px;background:#f5f5f5;margin:8px;border-radius:4px;white-space:pre-wrap;">' +
+      'globalClientIdx: ' + globalClientIdx + '\n' +
+      'cl.name: "' + cl.name + '"\n' +
+      'annoYear: ' + annoYear + '\n' +
+      'pedPlans keys totali: ' + allKeys.length + '\n' +
+      'pedPlans keys con prefisso: ' + pedKeys.length + '\n' +
+      'Chiavi trovate: ' + JSON.stringify(pedKeys) + '\n' +
+      'Items con date: ' + pedTotal + '\n' +
+      'buildAnnoData result keys: ' + JSON.stringify(Object.keys(data).map(k=>k+':'+data[k].length)) +
+      '</div>';
+    debugEl.style.display = pedKeys.length > 0 ? 'block' : 'none';
+  }
+
   // Empty state — nessun cliente o nessun contenuto con date
   if(!cl) {
     bandsEl.innerHTML = `
