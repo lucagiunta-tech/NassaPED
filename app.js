@@ -721,7 +721,8 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
       img.src = sl.url;
       img.alt = sl.alt || '';
       img.draggable = false;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;';
+      img.onclick = e => { e.stopPropagation(); openLb(itemIdx, items, []); };
       slide.appendChild(img);
     } else {
       slide.innerHTML = `<div style="width:100%;height:100%;background:var(--cell-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--font);color:var(--text-3);letter-spacing:.06em;">${i+1} / ${total}</div>`;
@@ -803,11 +804,9 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
     state.touchStart = null;
   }, { passive: true });
 
-  // Click su wrap → apre lightbox al fullscreen (mantiene comportamento esistente)
-  wrap.onclick = e => {
-    // Solo se il click non viene da frecce/dots (stopPropagation lo gestisce)
-    openLb(itemIdx, items, stArr);
-  };
+  // Click su wrap → stopPropagation per non triggerare l'overlay della cell
+  // L'utente può usare l'overlay (tasto destro / hover) per aprire il lightbox
+  wrap.onclick = e => { e.stopPropagation(); };
 
   return wrap;
 }
