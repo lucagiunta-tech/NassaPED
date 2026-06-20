@@ -637,6 +637,24 @@
 </div>
 
 
+<!-- CONFIRM MODAL — sostituisce tutti i confirm() nativi -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="modal" style="width:380px;gap:12px;">
+    <div class="modal-top" style="border-bottom:none;padding-bottom:0;">
+      <div class="confirm-icon" id="confirm-icon"></div>
+      <button class="btn ghost sm icon" onclick="confirmCancel()">✕</button>
+    </div>
+    <div style="padding:0 18px 4px;">
+      <div class="confirm-title" id="confirm-title"></div>
+      <div class="confirm-body" id="confirm-body"></div>
+    </div>
+    <div class="modal-actions" style="padding:12px 18px;">
+      <button class="btn sm" id="confirm-cancel-btn" onclick="confirmCancel()">Annulla</button>
+      <button class="btn sm" id="confirm-ok-btn" onclick="confirmOk()">Conferma</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT CLIENT MODAL -->
 <div class="modal-bg" id="edit-client-modal">
   <div class="modal" style="width:480px;">
