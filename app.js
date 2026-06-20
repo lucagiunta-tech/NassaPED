@@ -396,7 +396,13 @@ function makeMedia(url,type,opts={}){
 }
 function needsReloadPh(icon,name,reuploadFn){
   const ph=document.createElement('div');ph.className='needs-reload-ph';
-  ph.innerHTML=`<div class="nr-icon">${icon}</div><div class="nr-name">${name||'file'}</div><div class="nr-label">ricarica media</div>`;
+  // FIX UX: usa SVG invece di emoji per cross-OS consistency
+  const svgIcon=icon==='img'
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+    :icon==='vid'
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'
+    :icon;
+  ph.innerHTML=`<div class="nr-icon">${svgIcon}</div><div class="nr-name">${name||'file'}</div><div class="nr-label">ricarica media</div>`;
   if(reuploadFn){
     const inp=document.createElement('input');inp.type='file';inp.accept='image/*,video/*';
     inp.style.cssText='position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;';
@@ -469,9 +475,20 @@ function renderStudio(){
   if(el('kpi-revenue'))el('kpi-revenue').textContent='€ '+totalRev.toLocaleString('it-IT');if(el('kpi-active'))el('kpi-active').textContent=active.length;if(el('kpi-accounts'))el('kpi-accounts').textContent=totalAccounts;if(el('kpi-rev-sub'))el('kpi-rev-sub').textContent='da '+active.length+(active.length===1?' cliente attivo':' clienti attivi');
   const countTxt=clients.length+' client'+(clients.length===1?'e':'i');if(el('studio-count'))el('studio-count').textContent=countTxt;
   const tbody=document.getElementById('clients-tbody');if(!tbody)return;tbody.innerHTML='';
-  if(!clients.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-3);padding:24px;font-size:12px;">Nessun cliente. Aggiungine uno dal pannello.</td></tr>';return;}
+  if(!clients.length){
+    // FIX UX: empty state con CTA chiara invece di testo generico
+    tbody.innerHTML=`<tr><td colspan="6">
+      <div class="studio-empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;opacity:.25;margin-bottom:12px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;">Nessun cliente ancora</p>
+        <p style="font-size:12px;color:var(--text-2);margin-bottom:16px;">Aggiungi il tuo primo cliente per iniziare a pianificare i contenuti.</p>
+        <button class="btn primary sm" onclick="openAddClientModal()">+ Aggiungi primo cliente</button>
+      </div>
+    </td></tr>`;
+    return;
+  }
   // FIX QA: tutti i dati utente (name, pkg, status) passano per esc() — previene XSS
-  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${esc(a.platform)}">${esc(a.name)} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td><span class="pkg-badge">${esc(c.pkg)}</span></td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})">✎ Modifica</button><button class="btn sm danger" onclick="removeClient(${i})">🗑 Elimina</button></div></td>`;tbody.appendChild(tr);});
+  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${esc(a.platform)}">${esc(a.name)} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td><span class="pkg-badge">${esc(c.pkg)}</span></td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})" title="Modifica cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg> Modifica</button><button class="btn sm danger" onclick="removeClient(${i})" title="Elimina cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></td>`;tbody.appendChild(tr);});
 }
 
 /* SELECTS */
@@ -569,12 +586,12 @@ function renderFeedGrid(){
         cell.classList.add('empty-slot');cell.style.overflow='hidden';
         const bg=document.createElement('img');bg.className='picker-bg';bg.src=item.url;cell.appendChild(bg);
         const pk=document.createElement('div');pk.className='type-picker';const lbl=document.createElement('div');lbl.className='type-picker-lbl';lbl.textContent='Tipo post';pk.appendChild(lbl);
-        const btns=document.createElement('div');btns.className='type-btns';[['🖼','Foto','image'],['▶','Reel','video'],['❏❏','Caros.','carousel']].forEach(([icon,label,type])=>{const b=document.createElement('button');b.className='type-btn';b.innerHTML=`<span class="ti">${icon}</span>${label}`;b.onclick=()=>setFeedItemType(idx,type);btns.appendChild(b);});pk.appendChild(btns);
+        const btns=document.createElement('div');btns.className='type-btns';[['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>','Foto','image'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>','Reel','video'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>','Caros.','carousel']].forEach(([icon,label,type])=>{const b=document.createElement('button');b.className='type-btn';b.innerHTML=`<span class="ti">${icon}</span>${label}`;b.onclick=()=>setFeedItemType(idx,type);btns.appendChild(b);});pk.appendChild(btns);
         const rm=document.createElement('button');rm.className='picker-rm';rm.textContent='✕ rimuovi';rm.onclick=()=>removeFeedItem(idx);pk.appendChild(rm);cell.appendChild(pk);wrap.appendChild(cell);
       } else {
         const coverUrl=item.type==='carousel'&&item.slides?.length?item.slides[0].url:item.url;
         if(item.needsReload&&!item.url){
-          const _icon=item.type==='video'?'▶':item.type==='carousel'?'❏❏':'🖼';
+          const _icon=item.type==='video'?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>':item.type==='carousel'?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>':'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
           const _rfn=async(file)=>{
             const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+file.name;
             showToast('⟳ Caricamento…');
@@ -592,8 +609,8 @@ function renderFeedGrid(){
           delOnly.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};
           cell.appendChild(delOnly);
         }
-        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){v.onerror=()=>{cell.appendChild(needsReloadPh('▶',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('▶',item.name));}}
-        else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('🖼',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('🖼',item.name));}}
+        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
+        else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('img',item.name));}}
         // drag via event delegation — mark the cell
         cell.draggable=true;
         cell.dataset.dragIdx=idx;
@@ -634,7 +651,7 @@ function renderFeedGrid(){
 
         // Extra badges
         if(item.isExternalLink){const d=document.createElement('div');d.className='cell-url-dot';d.title=(item.linkSource==='dropbox'?'Dropbox':item.linkSource==='frame'?'Frame.io':'Link')+': '+(item.externalUrl||'');cell.appendChild(d);}
-        if((item.linkedStories||[]).length>0){const lb=document.createElement('div');lb.className='ls-badge-cell';lb.textContent='📱 '+item.linkedStories.length;cell.appendChild(lb);}
+        if((item.linkedStories||[]).length>0){const lb=document.createElement('div');lb.className='ls-badge-cell';lb.textContent=''+item.linkedStories.length;cell.appendChild(lb);}
 
         // ── BOTTOM BAR: date with gradient, always at bottom ──
         const showDate=showAllDates&&item.showDate;
@@ -784,7 +801,7 @@ function renderStoriesGrid(){
       if(i<arr.length){
         const st=arr[i],idx=i;
         if(st.isStoryboard){const coverUrl=st.slides?.[0]?.url||'';if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';cell.appendChild(img);}else{const ph=document.createElement('div');ph.style.cssText='position:absolute;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;';ph.innerHTML='<span style="font-size:22px;">🎬</span><span style="font-size:9px;color:rgba(255,255,255,.5);">'+(st.slides?.length||0)+' slide</span>';cell.appendChild(ph);}const b=document.createElement('span');b.className='story-badge storyboard';b.textContent='🎬 '+(st.slides?.length||0);cell.appendChild(b);}
-        else if(st.type==='video'){const v=makeMedia(st.url,'video');cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);const b=document.createElement('span');b.className='story-badge video';b.textContent='▶';cell.appendChild(b);}
+        else if(st.type==='video'){const v=makeMedia(st.url,'video');cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);const b=document.createElement('span');b.className='story-badge video';b.textContent='';cell.appendChild(b);}
         else if(st.url){const img=document.createElement('img');img.src=st.url;img.alt='';cell.appendChild(img);}
         const num=document.createElement('span');num.className='story-num';num.textContent=i+1;cell.appendChild(num);
         const dh=document.createElement('div');dh.className='story-drag-h';dh.innerHTML='⠿';cell.appendChild(dh);
@@ -849,7 +866,7 @@ function renderStoriesGrid(){
         const wrap=document.createElement('div');wrap.className='story-wrap';
         const cell=document.createElement('div');
         cell.className='ped-story-cell '+(st.type||'autonoma');
-        cell.title=(st.type==='autonoma'?'👤 Autonoma':'🎨 Template Nassa')+(st.brief?' — '+st.brief:'');
+        cell.title=(st.type==='autonoma'?'Autonoma':'Template Nassa')+(st.brief?' — '+st.brief:'');
 
         // If has uploaded media → show it like a normal story
         if(st.url&&st.url.startsWith('http')){
@@ -905,7 +922,7 @@ function renderStoriesGrid(){
         const info=document.createElement('div');info.className='story-info ped-info';
         const di=document.createElement('div');di.style.cssText='font-size:9px;font-weight:600;';
         di.style.color=st.type==='autonoma'?'var(--amber)':'var(--green)';
-        di.textContent=(st.type==='autonoma'?'👤 Autonoma':'🎨 Template')+(st.date?' · '+fmtDate(st.date):'');
+        di.textContent=(st.type==='autonoma'?'Autonoma':'Template')+(st.date?' · '+fmtDate(st.date):'');
         info.appendChild(di);
         if(st.brief){const bn=document.createElement('div');bn.style.cssText='font-size:9px;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';bn.textContent=st.brief;info.appendChild(bn);}
         wrap.appendChild(info);
@@ -1122,7 +1139,7 @@ function renderSbSlides(){
     const ti=document.createElement('input');ti.type='text';ti.placeholder='Titolo…';ti.value=sl.title||'';ti.oninput=e=>{sbTmpSlides[i].title=e.target.value;};
     const ni=document.createElement('textarea');ni.placeholder='Nota regia…';ni.value=sl.note||'';ni.oninput=e=>{sbTmpSlides[i].note=e.target.value;};
     con.appendChild(ti);con.appendChild(ni);row.appendChild(con);
-    const del=document.createElement('button');del.className='sb-del';del.innerHTML='🗑';del.onclick=()=>removeSbSlide(i);row.appendChild(del);
+    const del=document.createElement('button');del.className='sb-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.onclick=()=>removeSbSlide(i);row.appendChild(del);
     c.appendChild(row);
   });
 }
@@ -1319,7 +1336,7 @@ function renderPreview(){
       if(item.type==='video'){
         const v=makeMedia(item.url,'video');
         if(v){cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
-        else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:24px;';ph.textContent='▶';cell.appendChild(ph);}
+        else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:24px;';ph.textContent='';cell.appendChild(ph);}
         const b=document.createElement('span');b.className='client-badge video';b.textContent='▶ REEL';cell.appendChild(b);
       } else {
         const img=makeMedia(coverUrl,'image');
@@ -1329,7 +1346,7 @@ function renderPreview(){
           cell.appendChild(img);
         } else {
           // Placeholder for missing image - still clickable
-          const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#e2e2e4;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:24px;';ph.textContent='🖼';cell.appendChild(ph);
+          const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#e2e2e4;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:24px;';ph.textContent='';cell.appendChild(ph);
         }
         if(item.type==='carousel'){const b=document.createElement('span');b.className='client-badge carousel';b.textContent='❏❏ '+(item.slides?.length||0);cell.appendChild(b);}
       }
@@ -1359,7 +1376,7 @@ function renderLb(){
   if(item.type==='carousel'&&item.slides?.length){
     const slideUrl=item.slides[lbSlide]?.url||item.url||'';
     if(slideUrl){const img=document.createElement('img');img.src=slideUrl;img.alt='';inner.appendChild(img);}
-    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='🖼';inner.appendChild(ph);}
+    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='';inner.appendChild(ph);}
     if(item.slides.length>1){
       const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};inner.appendChild(sp);
       const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
@@ -1370,7 +1387,7 @@ function renderLb(){
   } else {
     const url=item.url||item.externalUrl||'';
     if(url){const img=document.createElement('img');img.src=url;img.alt='';inner.appendChild(img);}
-    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='🖼';inner.appendChild(ph);}
+    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='';inner.appendChild(ph);}
   }
   const counterEl=document.getElementById('lb-counter');if(isCarousel)counterEl.textContent=(lbSlide+1)+' / '+item.slides.length+' slide';else counterEl.textContent=isMulti?(lbIdx+1)+' / '+lbItems.length:'';
   const copyEl=document.getElementById('lb-copy');if(copyEl){if(item.copy?.trim()){copyEl.textContent=item.copy;copyEl.className='lb-copy visible';}else{copyEl.textContent='';copyEl.className='lb-copy';}}
@@ -1503,7 +1520,7 @@ function renderCalendar(){
   const top=4+ei*40;
   const cls=ev.type==='feed'?'feed-post':ev.type==='story'?'story-item':ev.type==='ped'?(ev.pedType==='template'?'ped-template':'ped-autonoma'):'highlight-item';
   const dot=ev.type==='ped'?(ev.pedType==='template'?'🎨':'👤'):'';
-  const thumbHtml=ev.thumb?`<img src="${ev.thumb}" class="cal-ev-thumb-week" onerror="this.style.display='none'" />`:(dot?`<span>${dot}</span>`:`<span>${ev.type==='feed'?'🖼':'📱'}</span>`);
+  const thumbHtml=ev.thumb?`<img src="${ev.thumb}" class="cal-ev-thumb-week" onerror="this.style.display='none'" />`:(dot?`<span>${dot}</span>`:`<span>${ev.type==='feed'?'🖼':''}</span>`);
   html+=`<div class="cal-week-event ${cls}" style="top:${top}px;height:34px;" onclick="openCalPanel('${ds}')">${thumbHtml}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${ev.clientName.split(' — ')[0]}: ${ev.label}</span></div>`;
 });html+='</div>';});
     html+='</div>';body.innerHTML=html;
@@ -1892,7 +1909,7 @@ function renderEcAccounts(){
     const nameInp=document.createElement('input');nameInp.className='ec-acc-name-inp';nameInp.value=acc.name;nameInp.placeholder='Nome account';nameInp.oninput=e=>{ecTmpAccounts[i].name=e.target.value;};
     const platSel=document.createElement('select');platSel.className='ec-acc-plat-inp';['Instagram','Facebook','TikTok','LinkedIn','YouTube','Altro'].forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;if(p===acc.platform)o.selected=true;platSel.appendChild(o);});platSel.onchange=e=>{ecTmpAccounts[i].platform=e.target.value;};
     main.appendChild(nameInp);main.appendChild(platSel);
-    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='🗑';del.title='Rimuovi account';del.onclick=()=>{if(!confirm('Rimuovere account "'+acc.name+'"? I dati feed e stories saranno eliminati.'))return;ecTmpAccounts.splice(i,1);renderEcAccounts();};
+    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';del.onclick=()=>{if(!confirm('Rimuovere account "'+acc.name+'"? I dati feed e stories saranno eliminati.'))return;ecTmpAccounts.splice(i,1);renderEcAccounts();};
     row.appendChild(main);row.appendChild(del);list.appendChild(row);
   });
 }
@@ -2330,7 +2347,7 @@ function renderPilastriContent(body,ci){
         const th=document.createElement('div');th.className='p-post-th';
         const coverUrl=it.type==='carousel'&&it.slides?.[0]?it.slides[0].url:it.url;
         if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:3px;';th.appendChild(img);}
-        else{th.style.background='#ddd';th.innerHTML=`<span style="font-size:10px;">${it.type==='video'?'▶':'🖼'}</span>`;}
+        else{th.style.background='#ddd';th.innerHTML=`<span style="font-size:10px;">${it.type==='video'?'':'🖼'}</span>`;}
         // Click to unassign
         th.title='Clicca per rimuovere';th.onclick=()=>{it.pillarId=null;autoSave();renderPilastriContent(body,ci);};
         postsGrid.appendChild(th);
