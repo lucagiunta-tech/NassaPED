@@ -115,6 +115,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .sb-nav-label{font-size:var(--fs-base);font-weight:400;white-space:nowrap;overflow:hidden;display:none;}
 .sidebar.sb-expanded .sb-nav-label{display:block;}
 .sidebar.sb-expanded .sb-nav-item.active .sb-nav-label{font-weight:700;color:var(--green-text);}
+.sb-group-lbl{font-size:9px;font-family:var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);padding:8px 12px 3px;font-weight:600;opacity:.6;}
 .sb-nav-sep{height:.5px;background:var(--border-lt);margin:5px auto;width:28px;}
 .sidebar.sb-expanded .sb-nav-sep{width:calc(100% - 24px);margin:5px 12px;}
 /* Toggle button */
@@ -1188,3 +1189,29 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* Campagne Paid — viola brillante */
 .cal-badge-ads{background:#7c3aed;color:#fff;}
+
+/* ══ FEED — Badge stato approvazione ══ */
+.feed-appr-badge{
+  position:absolute;bottom:8px;left:8px;
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px 3px 6px;border-radius:var(--r-pill);
+  font-size:10px;font-family:var(--font);font-weight:600;
+  letter-spacing:.03em;text-transform:uppercase;
+  cursor:pointer;transition:opacity .15s;z-index:5;
+  backdrop-filter:blur(4px);
+}
+.feed-appr-badge:hover{opacity:.8;}
+.feed-appr-dot{
+  width:5px;height:5px;border-radius:50%;flex-shrink:0;
+}
+
+/* Badge revisioni */
+.feed-rev-badge{
+  position:absolute;top:8px;left:8px;
+  min-width:18px;height:18px;border-radius:9px;
+  padding:0 5px;
+  font-size:9px;font-weight:700;font-family:var(--font);
+  display:flex;align-items:center;justify-content:center;
+  cursor:default;z-index:5;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
