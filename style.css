@@ -217,7 +217,24 @@ tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:var(--bg);}
 tbody td{padding:10px 12px;font-size:var(--fs-base);color:var(--text);}
 td.muted{color:var(--text-2);}
-.pkg-badge{font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:var(--r-pill);background:var(--green-lt);color:#111;border:1px solid var(--green-mid);}
+/* ── pkg-badge: sistema differenziato per tier ── */
+.pkg-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:var(--fs-xs);font-weight:600;
+  padding:3px 9px;border-radius:var(--r-pill);
+  border:.5px solid transparent;
+  white-space:nowrap;
+}
+.pkg-badge svg{flex-shrink:0;}
+
+/* Starter — grigio neutro */
+.pkg-starter{background:#f1f1f3;color:#4a4a55;border-color:#d8d8e0;}
+/* Essential — blu */
+.pkg-essential{background:var(--blue-lt);color:var(--blue-dk);border-color:var(--blue);}
+/* Professional — ambra/gold */
+.pkg-professional{background:var(--amber-lt);color:var(--amber-dk);border-color:var(--amber);}
+/* Full / Custom — verde brand */
+.pkg-full{background:var(--green-lt);color:#1a5c14;border-color:var(--green-dk);}
 .status-dot{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-sm);}
 .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .dot.green{background:var(--dot-active);}.dot.amber{background:var(--amber-dk);}.dot.red{background:var(--red);}.dot.blue{background:var(--blue-dk);}
