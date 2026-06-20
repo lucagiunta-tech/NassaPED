@@ -1074,8 +1074,12 @@ function renderStoriesGrid(){
       const cell=document.createElement('div');cell.className='story-cell';
       if(i<arr.length){
         const st=arr[i],idx=i;
-        if(st.isStoryboard){const coverUrl=st.slides?.[0]?.url||'';if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';cell.appendChild(img);}else{const ph=document.createElement('div');ph.style.cssText='position:absolute;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;';ph.innerHTML='<span style="font-size:22px;">🎬</span><span style="font-size:9px;color:rgba(255,255,255,.5);">'+(st.slides?.length||0)+' slide</span>';cell.appendChild(ph);}const b=document.createElement('span');b.className='story-badge storyboard';b.textContent='🎬 '+(st.slides?.length||0);cell.appendChild(b);}
-        else if(st.type==='video'){const v=makeMedia(st.url,'video');cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);const b=document.createElement('span');b.className='story-badge video';b.textContent='';cell.appendChild(b);}
+        if(st.isStoryboard){const coverUrl=st.slides?.[0]?.url||'';if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';cell.appendChild(img);}else{const ph=document.createElement('div');ph.style.cssText='position:absolute;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;';ph.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="6" x2="12" y2="6.01"/><line x1="12" y1="10" x2="12" y2="14"/></svg><span style="font-size:9px;color:rgba(255,255,255,.5);">'+(st.slides?.length||0)+' slide</span>';cell.appendChild(ph);}const b=document.createElement('span');b.className='story-badge storyboard';
+        b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="6" x2="12" y2="6.01"/><line x1="12" y1="10" x2="12" y2="14"/></svg>'+(st.slides?.length||0)+' slide';
+        cell.appendChild(b);}
+        else if(st.type==='video'){const v=makeMedia(st.url,'video');cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);const b=document.createElement('span');b.className='story-badge video';
+        b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel';
+        cell.appendChild(b);}
         else if(st.url){const img=document.createElement('img');img.src=st.url;img.alt='';cell.appendChild(img);}
         const num=document.createElement('span');num.className='story-num';num.textContent=i+1;cell.appendChild(num);
         const dh=document.createElement('div');dh.className='story-drag-h';dh.innerHTML='⠿';cell.appendChild(dh);
@@ -1769,7 +1773,9 @@ function renderPreview(){
         const v=makeMedia(item.url,'video');
         if(v){cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
         else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:24px;';ph.textContent='';cell.appendChild(ph);}
-        const b=document.createElement('span');b.className='client-badge video';b.textContent='▶ REEL';cell.appendChild(b);
+        const b=document.createElement('span');b.className='client-badge video';
+        b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel';
+        cell.appendChild(b);
       } else {
         const img=makeMedia(coverUrl,'image');
         if(img){
@@ -1780,7 +1786,9 @@ function renderPreview(){
           // Placeholder for missing image - still clickable
           const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#e2e2e4;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:24px;';ph.textContent='';cell.appendChild(ph);
         }
-        if(item.type==='carousel'){const b=document.createElement('span');b.className='client-badge carousel';b.textContent='❏❏ '+(item.slides?.length||0);cell.appendChild(b);}
+        if(item.type==='carousel'){const b=document.createElement('span');b.className='client-badge carousel';
+        b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'+(item.slides?.length||0)+' slide';
+        cell.appendChild(b);}
       }
       if(item.showDate&&item.date){const dp=document.createElement('div');dp.className='client-date-bar';dp.textContent=item.date;cell.appendChild(dp);}
       post.appendChild(cell);
@@ -1791,15 +1799,15 @@ function renderPreview(){
       const apprSt = item.apprStato || 'bozza';
       const revCount = item.apprRevisions || 0;
       const APPR_CFG = {
-        bozza:     {label:'Bozza',       dot:'#999',    bg:'rgba(120,120,120,0.12)', text:'var(--text-3)',  border:'rgba(120,120,120,0.25)'},
-        approvare: {label:'In revisione', dot:'#d4a800', bg:'rgba(212,168,0,0.14)',  text:'#7a5c00',       border:'rgba(212,168,0,0.45)'},
-        approvato: {label:'Approvato',    dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)', text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
+        bozza:     {label:'Bozza',       dot:'#aaa',    bg:'rgba(0,0,0,0.52)',       text:'#e8e8e8',       border:'rgba(255,255,255,0.15)'},
+        approvare: {label:'In revisione', dot:'#f5c800', bg:'rgba(212,168,0,0.82)',  text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
+        approvato: {label:'Approvato',    dot:'#22c97a', bg:'rgba(26,122,74,0.82)',  text:'#d6fff0',       border:'rgba(26,122,74,0.9)'},
       };
       const cfg = APPR_CFG[apprSt] || APPR_CFG.bozza;
       // Bordo card colorato per stato
       if(apprSt !== 'bozza'){
-        post.style.borderColor = apprSt==='approvare' ? '#d4a800' : '#1a7a4a';
-        post.style.borderWidth = '1.5px';
+        post.style.borderColor = apprSt==='approvare' ? '#d4a800' : '#22c97a';
+        post.style.borderWidth = '2px';
       }
       // Badge stato in basso a sinistra sulla cella immagine
       const stBadge = document.createElement('div');
