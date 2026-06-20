@@ -16,18 +16,41 @@ function getSupabase() {
   return _supabase;
 }
 
+// FIX QA: CORS ristretto — non più wildcard *
+const ALLOWED_ORIGINS = [
+  'https://nassa-ped-yp63.vercel.app',
+  'http://localhost:3000',
+];
+
+// FIX QA: sanitizza lo user ID — previene injection su query Supabase
+// Supabase usa parametri preparati quindi il rischio SQL injection è basso,
+// ma un user ID malformato può creare chiavi errate nel DB.
+function safeUser(user) {
+  return String(user || 'shared')
+    .replace(/[^a-zA-Z0-9_\-@.]/g, '_')
+    .slice(0, 100);
+}
+
+// FIX QA: validazione dimensione body — previene oversized payload
+const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5MB max per il JSON del progetto
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // FIX QA: CORS ristretto
+  const origin = req.headers.origin;
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-nassa-key');
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const key = req.headers['x-nassa-key'];
   if (!key || key !== process.env.NASSA_API_KEY)
     return res.status(401).json({ error: 'Unauthorized' });
 
-  const user = req.method === 'GET' ? req.query.user : req.body?.user;
-  if (!user) return res.status(400).json({ error: 'Missing user' });
+  const rawUser = req.method === 'GET' ? req.query.user : req.body?.user;
+  if (!rawUser) return res.status(400).json({ error: 'Missing user' });
+  const user = safeUser(rawUser);
 
   try {
     const supabase = getSupabase();
@@ -45,9 +68,19 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { data: projectData } = req.body;
       if (projectData === undefined) return res.status(400).json({ error: 'Missing data' });
+
+      // FIX QA: controlla dimensione payload prima di scrivere su DB
+      const payloadSize = JSON.stringify(projectData).length;
+      if (payloadSize > MAX_BODY_BYTES) {
+        return res.status(413).json({ error: `Payload troppo grande: ${Math.round(payloadSize/1024)}KB (max 5MB)` });
+      }
+
       const { error } = await supabase
         .from('projects')
-        .upsert({ user_id: user, data: projectData, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        .upsert(
+          { user_id: user, data: projectData, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ ok: true });
     }
