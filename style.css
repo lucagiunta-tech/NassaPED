@@ -287,7 +287,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .date-bar svg{width:14px;height:14px;stroke:rgba(255,255,255,.65);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
 /* CELL OVERLAY — bottom sheet, rises from bottom */
-.cell-overlay{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s;z-index:6;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;padding-bottom:36px;}
+.cell-overlay{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s;z-index:10;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;padding-bottom:36px;}
 .feed-cell:not(.empty-slot):hover .cell-overlay{opacity:1;pointer-events:all;}
 .ov-sheet{background:rgba(14,14,14,.96);border-radius:var(--r) var(--r) 0 0;padding:5px 6px 10px;backdrop-filter:blur(10px);}
 .ov-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;border-radius:var(--rs);background:none;font-size:var(--fs-base);font-family:var(--font);font-weight:500;cursor:pointer;text-align:left;transition:background .1s;white-space:nowrap;box-sizing:border-box;}
