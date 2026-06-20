@@ -1072,8 +1072,8 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* deploy 20260620113301 */
 
 /* ══ TAB ANNO — Calendario Editoriale Annuale ══ */
-.anno-page{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
-.anno-toprow{display:flex;align-items:center;gap:16px;padding:10px 16px 10px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;flex-wrap:wrap;min-height:0;}
+#page-anno{display:flex;flex-direction:column;overflow:hidden;}
+.anno-toprow{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
 .anno-year-nav{display:flex;align-items:center;gap:6px;}
 .anno-year-lbl{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text);min-width:52px;text-align:center;}
 .anno-tag-filters{display:flex;gap:5px;flex-wrap:wrap;}
@@ -1086,7 +1086,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .anno-col-hdr{font-size:9px;font-family:var(--font);letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;border-left:.5px solid var(--border);padding:5px 12px;}
 
 /* Scrollable bands area */
-.anno-bands{flex:1;overflow-y:auto;min-height:0;align-content:flex-start;}
+.anno-bands{flex:1;overflow-y:auto;min-height:0;}
 .anno-band{border-top:2px solid var(--text);}
 .anno-band-row{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);cursor:pointer;user-select:none;min-height:48px;padding-left:16px;}
 .anno-month-cell{padding:10px 0;display:flex;align-items:flex-start;}
