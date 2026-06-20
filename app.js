@@ -1,4 +1,40 @@
 /* ══════════════════════════════════════════
+   UTILITIES — helpers globali usati in tutto il file
+══════════════════════════════════════════ */
+
+/**
+ * safeLocalJSON — parse sicuro da localStorage.
+ * Se il valore è corrotto o mancante, restituisce il fallback
+ * senza crashare l'app. Logga in console per debug.
+ */
+function safeLocalJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('[safeLocalJSON] Chiave corrotta in localStorage:', key, e.message);
+    // Rimuove il valore corrotto per evitare loop di crash
+    try { localStorage.removeItem(key); } catch(_) {}
+    return fallback;
+  }
+}
+
+/**
+ * esc — escape HTML per prevenire XSS in innerHTML.
+ * Usare SEMPRE quando si interpolano dati utente in innerHTML.
+ * Esempio: el.innerHTML = `<td>${esc(client.name)}</td>`
+ */
+function esc(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/* ══════════════════════════════════════════
    NASSA CLOUD — Supabase sync via /api/project
    All Supabase credentials stay server-side.
    Browser only knows NASSA_SECRET_2026 (shared API key).
@@ -432,7 +468,8 @@ function renderStudio(){
   const countTxt=clients.length+' client'+(clients.length===1?'e':'i');if(el('studio-count'))el('studio-count').textContent=countTxt;
   const tbody=document.getElementById('clients-tbody');if(!tbody)return;tbody.innerHTML='';
   if(!clients.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-3);padding:24px;font-size:12px;">Nessun cliente. Aggiungine uno dal pannello.</td></tr>';return;}
-  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${a.platform}">${a.name} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${c.name}</td><td style="font-size:11px;">${accsHtml}</td><td><span class="pkg-badge">${c.pkg}</span></td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${c.status}</span></td><td class="muted">€ ${c.revenue.toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})">✎ Modifica</button><button class="btn sm danger" onclick="removeClient(${i})">🗑 Elimina</button></div></td>`;tbody.appendChild(tr);});
+  // FIX QA: tutti i dati utente (name, pkg, status) passano per esc() — previene XSS
+  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${esc(a.platform)}">${esc(a.name)} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td><span class="pkg-badge">${esc(c.pkg)}</span></td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})">✎ Modifica</button><button class="btn sm danger" onclick="removeClient(${i})">🗑 Elimina</button></div></td>`;tbody.appendChild(tr);});
 }
 
 /* SELECTS */
@@ -573,7 +610,7 @@ function renderFeedGrid(){
             :item.editorialTitle||'';
           const cardInner=document.createElement('div');
           cardInner.style.cssText='position:absolute;inset:0;padding:12px 11px 44px;display:flex;flex-direction:column;font-family:var(--font);';
-          cardInner.innerHTML=`<div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${item.editorialEyebrow||''}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${titleHtml}</div><div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div><div style="font-size:11px;opacity:.55;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div>`;
+          cardInner.innerHTML=`<div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${esc(item.editorialEyebrow||''  )}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${titleHtml}</div><div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div><div style="font-size:11px;opacity:.55;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div>`;
           cell.appendChild(cardInner);
           badge.className='cell-badge editorial';
           badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card';
@@ -1127,7 +1164,7 @@ function sbFillParserExample(){
 }
 
 /* ══ CASSETTO (bozze storyboard) ══ */
-let sbCassetto=JSON.parse(localStorage.getItem('sb_cassetto')||'[]');
+let sbCassetto=safeLocalJSON('sb_cassetto',[]);
 
 function sbSaveToCassetto(){
   if(!sbTmpSlides.length){showToast('Nessuna slide da salvare','warn');return;}
@@ -1942,6 +1979,8 @@ function loadProjectFile(input){
       pedPlans={};Object.keys(data.pedPlans||{}).forEach(k=>{pedPlans[k]=data.pedPlans[k]||[];});
       notesData=data.notesData||{};
       pilastri=data.pilastri||{};
+      // FIX QA: ripristina campagne Ads (aggiunto dopo il codice di import originale)
+      adsCampaigns=data.adsCampaigns||{};
       // FIX 1: restore brand palette per client (was missing from import)
       clients.forEach(c=>{ if(!c.brand) c.brand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'}; });
       if(data.meta){showAllDates=data.meta.showAllDates!==false;showAllCopy=data.meta.showAllCopy!==false;if(Array.isArray(data.meta.pedFreqDays))pedFreqDays=new Set(data.meta.pedFreqDays);}
@@ -2488,8 +2527,9 @@ function renderAdsGantt(){
     // Label
     const lbl=document.createElement('div');
     lbl.className='ads-gantt-lbl';
-    lbl.innerHTML=`<div class="ads-gantt-lbl-name">${camp.name}</div>
-      <div class="ads-gantt-lbl-sub">${{active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status}</div>`;
+    // FIX QA: esc() su camp.name e camp.status — previene XSS da nomi campagna
+    lbl.innerHTML=`<div class="ads-gantt-lbl-name">${esc(camp.name)}</div>
+      <div class="ads-gantt-lbl-sub">${esc({active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status)}</div>`;
     row.appendChild(lbl);
 
     // Timeline
@@ -2659,7 +2699,7 @@ function renderAdsCampList(camps){
     return `<div class="ads-camp">
       ${thumb?`<div style="flex-shrink:0;">${thumb}<div class="ads-creative-badge">${camp.creativeType==='video'?'Reel':'Foto'}</div></div>`:''}
       <div style="flex:1;min-width:0;">
-        <div class="ads-camp-name">${camp.name}</div>
+        <div class="ads-camp-name">${esc(camp.name)}</div>
         <div class="ads-camp-meta">
           <span class="ads-plat ${platCls}">${ADS_PLATFORM_LABELS[camp.platform]||camp.platform}</span>
           <span class="ads-status ${camp.status}">${{active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status}</span>
