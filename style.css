@@ -136,7 +136,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* Feed selector */
 
-#feed-month-pills,#stories-month-pills{display:flex;flex-direction:column;gap:4px;}
+#feed-month-pills,#stories-month-pills,#ads-month-pills{display:flex;flex-direction:column;gap:4px;}
 .month-pill{font-size:var(--fs-xs);padding:3px 8px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .12s;}
 .month-pill:hover{border-color:var(--green);color:var(--green);}
 .month-pill.active{background:var(--green);border-color:var(--green);color:var(--green-text);font-weight:700;}
@@ -1007,8 +1007,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* ══ ADS GANTT ══ */
 .ads-gantt-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;}
 .ads-gantt-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.ads-month-nav{display:flex;align-items:center;gap:6px;}
-.ads-month-lbl{font-size:var(--fs-sm);font-weight:600;min-width:110px;text-align:center;color:var(--text);}
+
 .ads-gantt-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
 .ads-leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-2);}
 .ads-leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
