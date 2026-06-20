@@ -545,7 +545,7 @@ function switchTab(tab){
   const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');const sFeed=document.getElementById('sidebar-feed');const sSt=document.getElementById('sidebar-stories');
   if(sStudio)sStudio.style.display='none';if(sAdd)sAdd.style.display='none';if(sFeed)sFeed.style.display='none';if(sSt)sSt.style.display='none';
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
-  if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesEditor();}
+  if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesMonthPills();renderNotesEditor();}
   if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
   if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();renderAccSwitcher();}
   if(tab==='ped'){
@@ -1795,13 +1795,52 @@ function renderPEDCal(){
 }
 
 /* PIANO TESTO */
+function renderNotesMonthPills(){
+  const container=document.getElementById('notes-month-pills');
+  if(!container)return;
+  container.innerHTML='';
+  if(notesClientIdx<0)return;
+  let pillYear=CUR_YEAR;
+  if(notesMonth){const y=parseInt(notesMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}
+  // Year nav
+  const ynav=document.createElement('div');ynav.className='year-nav';
+  const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';
+  prev.onclick=()=>{pillYear--;renderNotesMonthPillsForYear(pillYear);};
+  const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;
+  const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';
+  next.onclick=()=>{pillYear++;renderNotesMonthPillsForYear(pillYear);};
+  ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);
+  container.appendChild(ynav);
+  // Month pills
+  const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';
+  monthsForYear(pillYear).forEach(m=>{
+    const p=document.createElement('button');
+    p.className='month-pill'+(m===notesMonth?' active':'');
+    p.textContent=m.slice(0,3);
+    p.onclick=()=>{
+      notesMonth=m;
+      const sel=document.getElementById('notes-month-sel');
+      if(sel)sel.value=m;
+      renderNotesMonthPills();
+      renderNotesEditor();
+    };
+    pillsWrap.appendChild(p);
+  });
+  container.appendChild(pillsWrap);
+}
+
+function renderNotesMonthPillsForYear(yr){
+  CUR_YEAR=yr;MONTH_OPTIONS=monthsForYear(yr);
+  renderNotesMonthPills();
+}
+
 function rebuildNotesSelects(){
   // Sync notesClientIdx from globalClientIdx if not set
   if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;
   // Hidden select for JS compat only
   const csel=document.getElementById('notes-client-sel');
   if(csel){csel.innerHTML='<option value="">—</option>';clients.forEach((cl,i)=>{const o=document.createElement('option');o.value=i;o.textContent=cl.name;csel.appendChild(o);});if(notesClientIdx>=0)csel.value=notesClientIdx;}
-  const msel=document.getElementById('notes-month-sel');if(!msel)return;if(notesClientIdx<0){msel.style.display='none';return;}
+  const msel=document.getElementById('notes-month-sel');if(!msel)return;if(notesClientIdx<0){msel.style.display='none';renderNotesMonthPills();return;}
   msel.style.display='';const prevM=msel.value;msel.innerHTML='';
   // Build month list from actual notesData keys + current MONTH_OPTIONS
   const cl=clients[notesClientIdx];
@@ -1809,6 +1848,8 @@ function rebuildNotesSelects(){
   const allMonths=[...new Set([...notesMonths,...MONTH_OPTIONS])].sort((a,b)=>{const pa=a.split(' '),pb=b.split(' ');const ya=parseInt(pa[1])||0,yb=parseInt(pb[1])||0;if(ya!==yb)return ya-yb;return MONTHS.indexOf(pa[0])-MONTHS.indexOf(pb[0]);});
   allMonths.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;msel.appendChild(o);});
   if(prevM&&allMonths.includes(prevM))msel.value=prevM;else if(notesMonth&&allMonths.includes(notesMonth))msel.value=notesMonth;else{msel.value=MONTH_OPTIONS[new Date().getMonth()];notesMonth=msel.value;}
+  // Aggiorna le pill mese visive
+  renderNotesMonthPills();
 }
 function onNotesClientChange(){const v=document.getElementById('notes-client-sel').value;notesClientIdx=v===''?-1:parseInt(v);notesMonth=MONTH_OPTIONS[new Date().getMonth()];rebuildNotesSelects();renderNotesEditor();}
 
