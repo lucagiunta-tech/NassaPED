@@ -696,12 +696,16 @@ function onPreviewClientChange(){const v=document.getElementById('preview-client
 function onPreviewAccountChange(){const v=document.getElementById('preview-account-sel').value;previewAccountIdx=v===''?-1:parseInt(v);previewMonth=MONTH_OPTIONS[new Date().getMonth()];rebuildPreviewSelects();renderPreview();}
 
 /* FEED GRID */
-function refreshFeed(){renderFeedGrid();updateFeedStats();updateFeedHeader();autoSave();}
+function refreshFeed(){
+  try{ renderFeedGrid(); } catch(e){ console.error('renderFeedGrid error:', e); }
+  updateFeedStats();updateFeedHeader();autoSave();
+}
 
 /* ══ CAROSELLO PLAYER INLINE — Feed (Gruppo D) ══ */
 function buildCaroselloPlayer(item, itemIdx, items, stArr){
-  const slides = item.slides || [];
+  const slides = (item.slides || []).filter(s => s && typeof s === 'object');
   const total = slides.length;
+  if(!total) return document.createElement('div'); // guard
   const state = { cur: 0, touchStart: null };
 
   // Wrapper — overflow:hidden, position:relative
@@ -853,8 +857,16 @@ function renderFeedGrid(){
         else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
         else if(item.type==='carousel'&&item.slides?.length>1){
           // Carosello navigabile inline (Gruppo D)
-          cell.appendChild(buildCaroselloPlayer(item, idx, items, stArr));
-          cell.style.overflow='hidden';
+          try{
+            const player = buildCaroselloPlayer(item, idx, items, []);
+            cell.appendChild(player);
+            cell.style.overflow='hidden';
+          } catch(e){
+            // Fallback: mostra prima slide statica
+            console.warn('Carousel player error:', e);
+            const img=makeMedia(coverUrl,'image');
+            if(img) cell.appendChild(img);
+          }
         }
         else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('img',item.name));}}
         // drag via event delegation — mark the cell
