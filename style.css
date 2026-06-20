@@ -1122,3 +1122,12 @@ tbody tr:hover .tr-actions{opacity:1;}
 .anno-modal-eyebrow{font-size:9px;font-family:var(--font);letter-spacing:.12em;color:var(--text-3);text-transform:uppercase;margin-bottom:8px;}
 .anno-modal-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.2;}
 .anno-modal-sub{font-size:12px;color:var(--text-2);margin-bottom:10px;}
+
+/* ══ ANNO EMPTY STATE ══ */
+.anno-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 24px;text-align:center;}
+.anno-empty-title{font-size:var(--fs-base);font-weight:600;color:var(--text);margin-bottom:8px;}
+.anno-empty-sub{font-size:var(--fs-sm);color:var(--text-2);line-height:1.6;max-width:380px;}
+.anno-empty-sub strong{color:var(--text);}
+.anno-empty-tips{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;justify-content:center;}
+.anno-empty-tip{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);font-weight:600;color:var(--text-2);padding:6px 14px;border:.5px solid var(--border);border-radius:var(--r-pill);cursor:pointer;transition:all .1s;}
+.anno-empty-tip:hover{border-color:var(--green);color:var(--green);background:var(--green-lt);}
