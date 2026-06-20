@@ -330,7 +330,7 @@ let notesClientIdx = -1, notesMonth = '';
 let globalClientIdx = -1;
 let previewActiveAcc = 0;
 
-let showAllDates = true, showAllCopy = true;
+let showAllDates = true, showAllCopy = true, feedViewMode = 'grid';
 let currentTab = 'studio';
 
 let feedDragSrc = null, stDragSrc = null;
@@ -822,6 +822,8 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
 
 function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';updateFeedFormat();
+  // Vista: grid | list
+  grid.classList.toggle('feed-view-list', feedViewMode==='list');
   // FIX 5: drag delegation — listeners attached once to grid, not per-cell
   // (removed at innerHTML='' above, re-added here)
   const items=currentFeedItems();
@@ -1064,6 +1066,18 @@ function removeFeedItem(i){
 }
 function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;}
 function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();}
+function toggleFeedView(){
+  feedViewMode = feedViewMode==='grid' ? 'list' : 'grid';
+  const btn = document.getElementById('toggle-view');
+  const icon = document.getElementById('toggle-view-icon');
+  if(btn) btn.classList.toggle('off', feedViewMode==='grid');
+  if(icon) icon.innerHTML = feedViewMode==='list'
+    ? '<rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>'  // lista
+    : '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'; // griglia
+  renderFeedGrid();
+}
+
+
 function toggleAllDates(){showAllDates=!showAllDates;const b=document.getElementById('toggle-dates'),c=document.getElementById('toggle-dates-chip');if(b)b.classList.toggle('off',!showAllDates);if(c){c.textContent=showAllDates?'ON':'OFF';c.classList.toggle('off',!showAllDates);}renderFeedGrid();}
 function toggleAllCopy(){showAllCopy=!showAllCopy;const b=document.getElementById('toggle-copy'),c=document.getElementById('toggle-copy-chip');if(b)b.classList.toggle('off',!showAllCopy);if(c){c.textContent=showAllCopy?'ON':'OFF';c.classList.toggle('off',!showAllCopy);}renderFeedGrid();}
 
