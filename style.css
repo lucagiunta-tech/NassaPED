@@ -1073,7 +1073,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* ══ TAB ANNO — Calendario Editoriale Annuale ══ */
 .anno-page{display:flex;flex-direction:column;height:100%;overflow:hidden;}
-.anno-toprow{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.anno-toprow{display:flex;align-items:center;gap:16px;padding:10px 16px 10px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;flex-wrap:wrap;min-height:0;}
 .anno-year-nav{display:flex;align-items:center;gap:6px;}
 .anno-year-lbl{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text);min-width:52px;text-align:center;}
 .anno-tag-filters{display:flex;gap:5px;flex-wrap:wrap;}
@@ -1081,14 +1081,14 @@ tbody tr:hover .tr-actions{opacity:1;}
 .anno-tag-btn.active{border:1.5px solid var(--text);background:var(--text);color:var(--surface);}
 
 /* Column headers */
-.anno-col-headers{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);border-bottom:.5px solid var(--border);background:var(--bg);flex-shrink:0;}
+.anno-col-headers{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);border-bottom:.5px solid var(--border);background:var(--bg);flex-shrink:0;padding-left:16px;}
 .anno-col-hdr-month{padding:5px 0;}
 .anno-col-hdr{font-size:9px;font-family:var(--font);letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;border-left:.5px solid var(--border);padding:5px 12px;}
 
 /* Scrollable bands area */
-.anno-bands{flex:1;overflow-y:auto;}
+.anno-bands{flex:1;overflow-y:auto;min-height:0;align-content:flex-start;}
 .anno-band{border-top:2px solid var(--text);}
-.anno-band-row{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);cursor:pointer;user-select:none;min-height:48px;}
+.anno-band-row{display:grid;grid-template-columns:80px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);cursor:pointer;user-select:none;min-height:48px;padding-left:16px;}
 .anno-month-cell{padding:10px 0;display:flex;align-items:flex-start;}
 .anno-month-name{font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1;opacity:.85;}
 .anno-channel{border-left:.5px solid var(--border);padding:10px 10px;}
@@ -1107,7 +1107,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .anno-ev-label{font-size:11px;color:var(--text-2);font-style:italic;}
 
 /* Footer */
-.anno-footer{border-top:2px solid var(--text);display:flex;justify-content:space-between;padding:6px 0;flex-shrink:0;}
+.anno-footer{border-top:2px solid var(--text);display:flex;justify-content:space-between;padding:6px 16px;flex-shrink:0;}
 .anno-footer-txt{font-size:9px;font-family:var(--font);color:var(--text-3);letter-spacing:.1em;}
 
 /* Detail modal */
