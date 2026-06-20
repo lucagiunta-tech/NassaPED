@@ -2372,7 +2372,8 @@ function autoSave(){if(CLOUD._booting)return;CLOUD.scheduleSave(()=>CLOUD.snapsh
 
 
 /* ════ ADS TAB ════ */
-let adsCampaigns = {}; // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status}]
+let adsCampaigns = {}; // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status,creativeUrl,creativeType}]
+let _adsCreativeFile = null; // temp file object for upload
 let adsEditId = null;
 let adsFilter = 'all';
 
@@ -2482,8 +2483,14 @@ function renderAdsCampList(camps){
     const roasCls=camp.roas>=4?'good':camp.roas>0&&camp.roas<3?'warn':'';
     const cpcCls=camp.cpc>0&&camp.cpc>1?'warn':'';
     const platCls=ADS_PLATFORM_COLORS[camp.platform]||'ig';
+    const thumb=camp.creativeUrl?`
+      ${camp.creativeType==='video'
+        ?`<video src="${camp.creativeUrl}" class="ads-creative-thumb-vid" muted playsinline preload="metadata"></video>`
+        :`<img src="${camp.creativeUrl}" class="ads-creative-thumb" alt="creativo"/>`
+      }` : '';
     return `<div class="ads-camp">
-      <div>
+      ${thumb?`<div style="flex-shrink:0;">${thumb}<div class="ads-creative-badge">${camp.creativeType==='video'?'Reel':'Foto'}</div></div>`:''}
+      <div style="flex:1;min-width:0;">
         <div class="ads-camp-name">${camp.name}</div>
         <div class="ads-camp-meta">
           <span class="ads-plat ${platCls}">${ADS_PLATFORM_LABELS[camp.platform]||camp.platform}</span>
@@ -2509,6 +2516,41 @@ function renderAdsCampList(camps){
   }).join('');
 }
 
+function adsPreviewCreative(inp){
+  const file=inp.files[0];if(!file)return;
+  _adsCreativeFile=file;
+  const url=URL.createObjectURL(file);
+  const isVideo=file.type.startsWith('video');
+  const ph=document.getElementById('adm-creative-placeholder');
+  const prev=document.getElementById('adm-creative-preview');
+  const img=document.getElementById('adm-creative-img');
+  const vid=document.getElementById('adm-creative-vid');
+  if(ph)ph.style.display='none';
+  if(prev)prev.style.display='block';
+  if(isVideo){
+    if(vid){vid.src=url;vid.style.display='block';}
+    if(img)img.style.display='none';
+  } else {
+    if(img){img.src=url;img.style.display='block';}
+    if(vid)vid.style.display='none';
+  }
+}
+
+function adsClearCreative(){
+  _adsCreativeFile=null;
+  const inp=document.getElementById('adm-creative-inp');
+  if(inp)inp.value='';
+  const ph=document.getElementById('adm-creative-placeholder');
+  const prev=document.getElementById('adm-creative-preview');
+  const img=document.getElementById('adm-creative-img');
+  const vid=document.getElementById('adm-creative-vid');
+  if(ph)ph.style.display='flex';
+  if(prev)prev.style.display='none';
+  if(img){img.src='';img.style.display='none';}
+  if(vid){vid.src='';vid.style.display='none';}
+  document.getElementById('adm-creative-url').value='';
+}
+
 function adsSetFilter(f,el){
   adsFilter=f;
   document.querySelectorAll('.ads-filt').forEach(b=>b.classList.remove('active'));
@@ -2518,6 +2560,7 @@ function adsSetFilter(f,el){
 
 function openAddAdsCampaignModal(){
   adsEditId=null;
+  _adsCreativeFile=null;
   const el=id=>document.getElementById(id);
   el('ads-modal-title').textContent='Nuova campagna Ads';
   el('adm-name').value='';
@@ -2529,6 +2572,8 @@ function openAddAdsCampaignModal(){
   el('adm-imp').value='';
   el('adm-status').value='active';
   el('adm-roas-target').value='';
+  el('adm-creative-url').value='';
+  adsClearCreative();
   openModal('ads-camp-modal');
 }
 
@@ -2547,18 +2592,66 @@ function openEditAdsCampaign(id){
   el('adm-imp').value=camp.impressions||'';
   el('adm-status').value=camp.status||'active';
   el('adm-roas-target').value=camp.roasTarget||'';
+  // Load creative
+  adsClearCreative();
+  if(camp.creativeUrl){
+    const urlInp=el('adm-creative-url');
+    if(urlInp)urlInp.value=camp.creativeUrl;
+    // Show preview if it's a stored URL
+    const prev=el('adm-creative-preview');
+    const ph=el('adm-creative-placeholder');
+    const img=el('adm-creative-img');
+    const vid=el('adm-creative-vid');
+    if(camp.creativeType==='video'){
+      if(vid){vid.src=camp.creativeUrl;vid.style.display='block';}
+    } else if(camp.creativeUrl){
+      if(img){img.src=camp.creativeUrl;img.style.display='block';}
+    }
+    if(prev)prev.style.display='block';
+    if(ph)ph.style.display='none';
+  }
   openModal('ads-camp-modal');
 }
 
-function saveAdsCampaign(){
+async function saveAdsCampaign(){
   const g=id=>document.getElementById(id)?.value.trim()||'';
   const name=g('adm-name');
   if(!name){showToast('Inserisci il nome','warn');return;}
   const k=currentAdsKey();
   if(!k){showToast('Nessun cliente selezionato','warn');return;}
   if(!adsCampaigns[k])adsCampaigns[k]=[];
+
+  const campId=adsEditId||('ads_'+Date.now());
+  let creativeUrl=g('adm-creative-url');
+  let creativeType='image';
+
+  // Upload file to Dropbox if a new file was selected
+  if(_adsCreativeFile){
+    showToast('⟳ Caricamento creativo…');
+    try{
+      const file=_adsCreativeFile;
+      creativeType=file.type.startsWith('video')?'video':'image';
+      const ext=file.name.split('.').pop();
+      const destPath='/nassa/'+(CLOUD.user||'shared')+'/ads/'+campId+'.'+ext;
+      const formData=new FormData();
+      formData.append('file',file);
+      formData.append('path',destPath);
+      const res=await fetch('/api/dropbox-upload',{
+        method:'POST',
+        headers:{'x-nassa-key':CLOUD.apiKey},
+        body:formData
+      });
+      if(res.ok){
+        const data=await res.json();
+        creativeUrl=data.url||data.link||creativeUrl;
+        URL.revokeObjectURL(_adsCreativeFile._blobUrl||'');
+      }
+    }catch(e){console.warn('Creative upload failed',e);}
+    _adsCreativeFile=null;
+  }
+
   const entry={
-    id:adsEditId||('ads_'+Date.now()),
+    id:campId,
     name, platform:g('adm-platform'),
     budget:parseFloat(g('adm-budget'))||0,
     spent:parseFloat(g('adm-spent'))||0,
@@ -2567,6 +2660,7 @@ function saveAdsCampaign(){
     cpc:parseFloat(g('adm-cpc'))||0,
     impressions:parseInt(g('adm-imp'))||0,
     status:g('adm-status')||'active',
+    creativeUrl, creativeType,
     updatedAt:new Date().toISOString()
   };
   if(adsEditId){
