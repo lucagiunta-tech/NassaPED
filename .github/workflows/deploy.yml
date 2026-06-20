@@ -6,11 +6,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Deploy to Vercel Production  
-        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --scope=nassastudiografico
+      - name: Link to Vercel project
+        run: vercel link --yes --token=$VERCEL_TOKEN --project=nassa-ped-yp63
+
+      - name: Deploy to production
+        run: vercel --prod --yes --token=$VERCEL_TOKEN
