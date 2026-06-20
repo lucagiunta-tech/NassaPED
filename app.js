@@ -419,6 +419,7 @@ function queueFeedFiles(files){
     type:detectType(f)==='video'?'video':'pending',
     url:URL.createObjectURL(f),name:f.name,
     date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type,
+    coverUrl:'', // cover poster per reel
     _uploadId: f.name+'_'+Date.now() // unique id to track this specific upload
   }));
   setFeedItems([...newItems,...items]);refreshFeed();
@@ -854,7 +855,7 @@ function renderFeedGrid(){
           delOnly.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};
           cell.appendChild(delOnly);
         }
-        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
+        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){if(item.coverUrl)v.setAttribute('poster',item.coverUrl);v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>{v.removeAttribute('poster');v.play().catch(()=>{});});cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;if(item.coverUrl)v.setAttribute('poster',item.coverUrl);});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
         else if(item.type==='carousel'&&item.slides?.length>1){
           // Carosello navigabile inline (Gruppo D)
           try{
@@ -953,6 +954,11 @@ function renderFeedGrid(){
         const mkDiv=()=>{const d=document.createElement('div');d.className='ov-divider';return d;};
         if(item.type==='carousel'){
           sheet.appendChild(mkBtn('ob-slide','<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>','Modifica slide',()=>openCarouselModal(idx)));
+          sheet.appendChild(mkDiv());
+        }
+        if(item.type==='video'){
+          const coverLbl = item.coverUrl ? 'Cover · cambia' : '+ Cover reel';
+          sheet.appendChild(mkBtn('ob-cover','<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',coverLbl,()=>openVideoCoverModal(idx)));
           sheet.appendChild(mkDiv());
         }
         sheet.appendChild(mkBtn('ob-stories','<rect x="7" y="2" width="10" height="20" rx="2"/>',((item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories'),()=>openLinkStoriesModal(idx)));
@@ -1816,9 +1822,19 @@ function renderPreview(){
       cell.onclick=()=>openLb(i,ready,stArr);
       const coverUrl=item.type==='carousel'&&item.slides?.length?item.slides[0].url:item.url;
       if(item.type==='video'){
-        const v=makeMedia(item.url,'video');
-        if(v){cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
-        else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:24px;';ph.textContent='';cell.appendChild(ph);}
+        if(item.coverUrl){
+          // Mostra cover statica in Preview + play icon overlay
+          const img=makeMedia(item.coverUrl,'image');
+          if(img){ img.style.pointerEvents='none'; cell.appendChild(img); }
+          const playIcon=document.createElement('div');
+          playIcon.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+          playIcon.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#fff\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg></div>';
+          cell.appendChild(playIcon);
+        } else {
+          const v=makeMedia(item.url,'video');
+          if(v){cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
+          else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:24px;';ph.textContent='';cell.appendChild(ph);}
+        }
         const b=document.createElement('span');b.className='client-badge video';
         b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel';
         cell.appendChild(b);
@@ -4650,6 +4666,77 @@ function archiviaTemplate(sbId){
   autoSave();
   renderSbCassetto();
   showToast('✓ Template archiviato come realizzato');
+}
+
+
+/* ══ VIDEO COVER MODAL ══ */
+let videoCoverEditIdx = null;
+
+function openVideoCoverModal(idx){
+  videoCoverEditIdx = idx;
+  const modal = document.getElementById('video-cover-modal');
+  if(!modal) return;
+  const item = currentFeedItems()[idx];
+  // Mostra preview cover attuale se esiste
+  const prev = document.getElementById('vcm-preview');
+  if(prev){
+    if(item.coverUrl){
+      prev.innerHTML = '<img src="'+item.coverUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rs);display:block;"/>';
+      prev.style.display = 'block';
+    } else {
+      prev.innerHTML = '';
+      prev.style.display = 'none';
+    }
+  }
+  const inp = document.getElementById('vcm-file-inp');
+  if(inp) inp.value = '';
+  modal.style.display = 'flex';
+}
+
+function closeVideoCoverModal(){
+  const modal = document.getElementById('video-cover-modal');
+  if(modal) modal.style.display = 'none';
+  videoCoverEditIdx = null;
+}
+
+async function setVideoCover(file){
+  if(!file || videoCoverEditIdx === null) return;
+  const items = currentFeedItems();
+  const item = items[videoCoverEditIdx];
+  if(!item) return;
+
+  showToast('⟳ Caricamento cover…');
+  // Upload su Dropbox
+  const destPath = '/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/covers/'+file.name;
+  const url = await DROPBOX.upload(file, destPath);
+  if(url){
+    items[videoCoverEditIdx].coverUrl = url;
+    setFeedItems(items);
+    autoSave();
+    refreshFeed();
+    showToast('✓ Cover reel impostata');
+  } else {
+    // Fallback: blob URL locale
+    if(item.coverUrl && item.coverUrl.startsWith('blob:')) URL.revokeObjectURL(item.coverUrl);
+    items[videoCoverEditIdx].coverUrl = URL.createObjectURL(file);
+    setFeedItems(items);
+    refreshFeed();
+    showToast('Cover impostata (locale)', 'warn');
+  }
+  closeVideoCoverModal();
+}
+
+function removeVideoCover(){
+  if(videoCoverEditIdx === null) return;
+  const items = currentFeedItems();
+  if(items[videoCoverEditIdx]?.coverUrl?.startsWith('blob:'))
+    URL.revokeObjectURL(items[videoCoverEditIdx].coverUrl);
+  items[videoCoverEditIdx].coverUrl = '';
+  setFeedItems(items);
+  autoSave();
+  refreshFeed();
+  closeVideoCoverModal();
+  showToast('Cover rimossa');
 }
 
 
