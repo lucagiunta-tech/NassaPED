@@ -197,7 +197,10 @@
       <div class="notes-editor-col">
         <!-- Selectors row — client comes from global context -->
         <div class="notes-sel-row">
-          <select class="ctx-select" id="notes-month-sel" onchange="renderNotesEditor()"></select>
+          <!-- Month pills — stesso pattern Feed/Stories -->
+          <div id="notes-month-pills" class="feed-month-pills-inline"></div>
+          <!-- Hidden selects mantenuti per compat JS -->
+          <select id="notes-month-sel" onchange="renderNotesEditor()" style="display:none;"></select>
           <select id="notes-client-sel" onchange="onNotesClientChange()" style="display:none;"><option value="">—</option></select>
           <div style="flex:1;"></div>
           <span class="notes-wc" id="notes-wc">0 parole</span>
