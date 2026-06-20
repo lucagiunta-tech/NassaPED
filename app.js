@@ -858,7 +858,16 @@ function renderFeedGrid(){
           delOnly.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};
           cell.appendChild(delOnly);
         }
-        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){if(item.coverUrl)v.setAttribute('poster',item.coverUrl);v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>{v.removeAttribute('poster');v.play().catch(()=>{});});cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;if(item.coverUrl)v.setAttribute('poster',item.coverUrl);});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}}
+        else if(item.type==='video'){const v=makeMedia(item.url,'video');if(v){if(item.coverUrl)v.setAttribute('poster',item.coverUrl);v.onerror=()=>{cell.appendChild(needsReloadPh('vid',item.name));};cell.addEventListener('mouseenter',()=>{v.removeAttribute('poster');v.play().catch(()=>{});});cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;if(item.coverUrl)v.setAttribute('poster',item.coverUrl);});cell.appendChild(v);}else{cell.appendChild(needsReloadPh('vid',item.name));}
+          // Bottone cover sempre visibile sulla card video
+          const cvBtn=document.createElement('button');
+          cvBtn.className='video-cover-pill';
+          cvBtn.innerHTML=item.coverUrl
+            ?'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Cover ✓'
+            :'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> + Cover';
+          cvBtn.title = item.coverUrl ? 'Cambia cover' : 'Aggiungi cover reel';
+          cvBtn.onclick=e=>{e.stopPropagation();openVideoCoverModal(idx);};
+          cell.appendChild(cvBtn);}
         else if(item.type==='carousel'&&item.slides?.length>1){
           // Carosello navigabile inline (Gruppo D)
           // Controlla se le slide hanno URL valide (non blob: revocate)
