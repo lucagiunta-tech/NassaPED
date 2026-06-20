@@ -861,9 +861,7 @@ function renderFeedGrid(){
           try{
             const player = buildCaroselloPlayer(item, idx, items, []);
             cell.appendChild(player);
-            cell.style.overflow='hidden';
           } catch(e){
-            // Fallback: mostra prima slide statica
             console.warn('Carousel player error:', e);
             const img=makeMedia(coverUrl,'image');
             if(img) cell.appendChild(img);
