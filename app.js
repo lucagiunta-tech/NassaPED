@@ -1369,6 +1369,7 @@ function sbFillParserExample(){
 
 /* ══ CASSETTO (bozze storyboard) ══ */
 let sbCassetto=safeLocalJSON('sb_cassetto',[]);
+let cassettoRealizzati=safeLocalJSON('sb_realizzati',[]);
 
 function sbSaveToCassetto(){
   if(!sbTmpSlides.length){showToast('Nessuna slide da salvare','warn');return;}
@@ -1413,19 +1414,70 @@ function sbDeleteFromCassetto(id){
   }
 }
 
+let sbCasTab = 'bozze'; // 'bozze' | 'realizzati'
+
+function sbSwitchCasTab(tab){
+  sbCasTab = tab;
+  renderSbCassetto();
+}
+
 function renderSbCassetto(){
   const c=document.getElementById('sb-cassetto-list');if(!c)return;
-  if(!sbCassetto.length){
-    c.innerHTML='<div class="sb-cass-empty">Nessuna bozza salvata.<br>Clicca "+ Salva corrente" per iniziare.</div>';return;
+
+  // Tab header
+  const tabHtml = `<div class="sb-cas-tabs">
+    <button class="sb-cas-tab${sbCasTab==='bozze'?' active':''}" onclick="sbSwitchCasTab('bozze')">Bozze</button>
+    <button class="sb-cas-tab${sbCasTab==='realizzati'?' active':''}" onclick="sbSwitchCasTab('realizzati')">Realizzati</button>
+  </div>`;
+
+  if(sbCasTab === 'bozze'){
+    if(!sbCassetto.length){
+      c.innerHTML=tabHtml+'<div class="sb-cass-empty">Nessuna bozza salvata.<br>Clicca "+ Salva corrente" per iniziare.</div>';return;
+    }
+    c.innerHTML=tabHtml;
+    sbCassetto.forEach(entry=>{
+      const d=document.createElement('div');d.className='sb-cassetto-item';
+      const dt=new Date(entry.savedAt);
+      const dateStr=dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' '+dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+      d.innerHTML=`<div><div class="sb-cass-name">${entry.name}</div><div class="sb-cass-meta">${entry.slides.length} slide · ${dateStr}</div></div><div class="sb-cass-actions"><button class="sb-cass-btn" onclick="sbLoadFromCassetto(${entry.id})">Carica</button><button class="sb-cass-btn" style="color:var(--red);" onclick="sbDeleteFromCassetto(${entry.id})">✕</button></div>`;
+      c.appendChild(d);
+    });
+  } else {
+    // Tab Idee realizzate
+    if(!cassettoRealizzati.length){
+      c.innerHTML=tabHtml+'<div class="sb-cass-empty">Nessun template realizzato.<br>Appariranno qui quando il creator carica il video.</div>';return;
+    }
+    c.innerHTML=tabHtml;
+    cassettoRealizzati.forEach((entry,ri)=>{
+      const d=document.createElement('div');d.className='sb-cassetto-item';
+      const dt=entry.archiviatoAt ? new Date(entry.archiviatoAt) : null;
+      const dateStr=dt ? dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'}) : '—';
+      const nSlide = (entry.slides||[]).length;
+
+      // Miniatura con checkmark verde
+      const thumb=document.createElement('div');
+      thumb.className='sb-real-thumb';
+      thumb.innerHTML='<span class="sb-real-check">✓</span>';
+
+      const info=document.createElement('div');
+      info.style.cssText='flex:1;min-width:0;';
+      info.innerHTML=`<div class="sb-cass-name">${entry.name||'Template'}</div>`
+        +`<div class="sb-cass-meta">${nSlide} slide · ${dateStr}</div>`
+        +`<span class="sb-ugc-tag">UGC</span>`;
+
+      const riusaBtn=document.createElement('button');
+      riusaBtn.className='sb-riusa-btn';
+      riusaBtn.textContent='Riusa';
+      riusaBtn.onclick=()=>{
+        alert('Template duplicato come nuova bozza — funzione completa nella fase 2.');
+      };
+
+      d.appendChild(thumb);
+      d.appendChild(info);
+      d.appendChild(riusaBtn);
+      c.appendChild(d);
+    });
   }
-  c.innerHTML='';
-  sbCassetto.forEach(entry=>{
-    const d=document.createElement('div');d.className='sb-cassetto-item';
-    const dt=new Date(entry.savedAt);
-    const dateStr=dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' '+dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-    d.innerHTML=`<div><div class="sb-cass-name">${entry.name}</div><div class="sb-cass-meta">${entry.slides.length} slide · ${dateStr}</div></div><div class="sb-cass-actions"><button class="sb-cass-btn" onclick="sbLoadFromCassetto(${entry.id})">Carica</button><button class="sb-cass-btn" style="color:var(--red);" onclick="sbDeleteFromCassetto(${entry.id})">✕</button></div>`;
-    c.appendChild(d);
-  });
 }
 
 /* HIGHLIGHT MODAL */
@@ -1693,6 +1745,22 @@ function renderPreview(){
       info.className = 'sb-player-info';
       info.innerHTML = `<span class="sb-player-name">${sb.name||'Storyboard'}</span>`
         + (sb.note ? `<span class="sb-player-note">${sb.note}</span>` : '');
+
+      // Bottone brief (solo se isUGC)
+      if(sb.isUGC){
+        const briefBtn = document.createElement('button');
+        briefBtn.className = 'sb-brief-btn';
+        if(sb.briefInviato){
+          briefBtn.textContent = 'Brief inviato · in attesa UGC';
+          briefBtn.disabled = true;
+          briefBtn.classList.add('sent');
+        } else {
+          briefBtn.textContent = '→ Invia brief';
+          briefBtn.onclick = (e)=>{ e.stopPropagation(); openBriefModal(sb); };
+        }
+        info.appendChild(briefBtn);
+      }
+
       sbPost.appendChild(info);
 
       // ── Funzione render stato ──
@@ -1707,6 +1775,14 @@ function renderPreview(){
         // Sfondo dalla palette
         const sfCfg = (typeof SFONDI !== 'undefined' && sl.sfondo) ? SFONDI[sl.sfondo] : null;
         playerWrap.style.background = sfCfg ? sfCfg.bg : 'var(--cell-bg-dark)';
+
+        // Badge UGC viola (Gruppo C)
+        if(sb.isUGC){
+          const ugcBadge = document.createElement('div');
+          ugcBadge.className = 'sb-ugc-badge';
+          ugcBadge.textContent = 'UGC';
+          playerWrap.appendChild(ugcBadge);
+        }
 
         // Stato badge
         const STATO_S = {
@@ -4135,6 +4211,149 @@ function sbLivePreview(){
   set('sb-live-tit', tit || '—');
   set('sb-live-cop', cop || '—');
   preview.style.display = 'block';
+}
+
+
+/* ══ BRIEF CREATOR MODAL (Gruppo C) ══ */
+let briefTargetSb = null;
+
+function openBriefModal(sb){
+  briefTargetSb = sb;
+  const modal = document.getElementById('brief-modal');
+  if(!modal) return;
+
+  // Titolo
+  const titleEl = document.getElementById('brief-modal-title');
+  if(titleEl) titleEl.textContent = sb.name || 'Storyboard';
+
+  // Link
+  const linkEl = document.getElementById('brief-modal-link');
+  if(linkEl) linkEl.textContent = 'nassa.studio/brief/' + (sb.id || 'preview');
+
+  // Preview slide list
+  const listEl = document.getElementById('brief-modal-list');
+  if(listEl){
+    listEl.innerHTML = '';
+    (sb.slides || []).forEach((sl, i) => {
+      const row = document.createElement('div');
+      row.className = 'brief-slide-row';
+
+      // Miniatura
+      const thumb = document.createElement('div');
+      thumb.className = 'brief-slide-thumb';
+      if(sl.url){
+        const img = document.createElement('img');
+        img.src = sl.url; img.alt = '';
+        thumb.appendChild(img);
+      }
+      if(sl.isPlaceholder){
+        const ph = document.createElement('div');
+        ph.className = 'brief-slide-ph';
+        thumb.appendChild(ph);
+      }
+
+      // Info
+      const info = document.createElement('div');
+      info.className = 'brief-slide-info';
+
+      const num = document.createElement('div');
+      num.className = 'brief-slide-num';
+      num.textContent = sl.num ? '#'+sl.num : '#'+(i+1);
+
+      const tit = document.createElement('div');
+      tit.className = 'brief-slide-tit';
+      tit.textContent = sl.title || sl.eye || '—';
+
+      info.appendChild(num);
+      info.appendChild(tit);
+
+      // Nota regia
+      if(sl.noteRegia){
+        const nr = document.createElement('div');
+        nr.className = 'brief-slide-regia';
+        nr.textContent = sl.noteRegia;
+        info.appendChild(nr);
+      }
+
+      // Placeholder label
+      if(sl.isPlaceholder){
+        const ph = document.createElement('div');
+        ph.className = 'brief-slide-ph-lbl';
+        ph.textContent = '↑ questa slide richiede il tuo video';
+        info.appendChild(ph);
+      }
+
+      row.appendChild(thumb);
+      row.appendChild(info);
+      listEl.appendChild(row);
+    });
+  }
+
+  // Stato bottone invia
+  const inviaBtn = document.getElementById('brief-modal-invia');
+  if(inviaBtn){
+    if(sb.briefInviato){
+      inviaBtn.textContent = 'Brief già inviato';
+      inviaBtn.disabled = true;
+      inviaBtn.style.opacity = '.5';
+    } else {
+      inviaBtn.textContent = 'Invia brief al creator';
+      inviaBtn.disabled = false;
+      inviaBtn.style.opacity = '1';
+    }
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeBriefModal(){
+  const modal = document.getElementById('brief-modal');
+  if(modal) modal.style.display = 'none';
+  briefTargetSb = null;
+}
+
+function copyBriefLink(){
+  const linkEl = document.getElementById('brief-modal-link');
+  if(!linkEl) return;
+  navigator.clipboard?.writeText(linkEl.textContent).then(()=>{
+    showToast('✓ Link copiato');
+  }).catch(()=>{
+    showToast('Link: ' + linkEl.textContent);
+  });
+}
+
+function inviaBreifCreator(){
+  if(!briefTargetSb) return;
+  briefTargetSb.briefInviato = true;
+  autoSave();
+  showToast('✓ Brief inviato al creator');
+  closeBriefModal();
+  renderPreview(); // aggiorna badge
+}
+
+
+function archiviaTemplate(sbId){
+  // Trova lo storyboard nelle Stories del cliente corrente
+  const key = currentFeedKey ? currentFeedKey() : null;
+  // Cerca in tutte le stories
+  let found = null;
+  Object.values(stories||{}).forEach(arr=>{
+    const s = arr.find(x=>x.id===sbId);
+    if(s) found=s;
+  });
+  if(!found) return;
+  found.fileCaricato = true;
+  // Archivia nel cassetto realizzati
+  const entry = {
+    ...found,
+    archiviatoAt: new Date().toISOString(),
+    nomeCreator: '',
+  };
+  cassettoRealizzati.unshift(entry);
+  try{ localStorage.setItem('sb_realizzati', JSON.stringify(cassettoRealizzati)); }catch(e){}
+  autoSave();
+  renderSbCassetto();
+  showToast('✓ Template archiviato come realizzato');
 }
 
 
