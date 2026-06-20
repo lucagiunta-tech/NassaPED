@@ -1030,3 +1030,10 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ads-gantt-spend-dot{position:absolute;width:6px;height:6px;border-radius:50%;top:28px;transform:translateX(-50%);background:#E24B4A;}
 .ads-gantt-today{position:absolute;top:0;bottom:0;width:1px;background:var(--green);z-index:2;}
 .ads-gantt-empty{padding:24px;text-align:center;font-size:var(--fs-xs);color:var(--text-3);}
+
+/* ══ STUDIO EMPTY STATE ══ */
+.studio-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;}
+
+/* ══ FONT SERIF TOKEN (Slide Builder) ══ */
+/* Aggiunto come variabile CSS per essere governato dal design system */
+/* già definito come Georgia inline nel CSS del builder — questo è il riferimento */
