@@ -2,6 +2,24 @@
 // Required Vercel env vars: DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, NASSA_API_KEY
 import formidable from 'formidable';
 import { readFileSync, unlinkSync } from 'fs';
+import { basename } from 'path';
+
+// FIX QA: whitelist MIME types — previene upload di file eseguibili o phishing HTML
+const ALLOWED_MIME = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+  'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/mpeg',
+]);
+
+// FIX QA: sanitizza il path — previene path traversal
+// Forza il file dentro /nassa/{user}/uploads/ e rimuove caratteri pericolosi
+function safePath(rawPath, user) {
+  // Prendi solo il basename (ultima parte), ignora eventuali /../ nel path
+  const name = basename(String(rawPath || 'file'))
+    .replace(/[^a-zA-Z0-9._\-]/g, '_') // solo caratteri sicuri
+    .slice(0, 200);                      // lunghezza massima
+  const safeUser = String(user || 'shared').replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 50);
+  return `/nassa/${safeUser}/uploads/${Date.now()}_${name}`;
+}
 
 async function getAccessToken() {
   const resp = await fetch('https://api.dropbox.com/oauth2/token', {
@@ -24,8 +42,6 @@ async function getAccessToken() {
 
 function toDirectUrl(url) {
   if (!url) return '';
-  // Convert Dropbox share link to direct embeddable URL
-  // www.dropbox.com/s/xxx/file.jpg?dl=0 → dl.dropboxusercontent.com/s/xxx/file.jpg
   return url
     .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
     .replace('?dl=0', '')
@@ -46,7 +62,6 @@ async function uploadToDropbox(token, buffer, destPath) {
   const uploadData = await uploadResp.json();
   if (!uploadData.id) throw new Error('Upload failed: ' + JSON.stringify(uploadData));
 
-  // Try to create shared link; if it already exists, fetch existing one
   const linkResp = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -54,7 +69,6 @@ async function uploadToDropbox(token, buffer, destPath) {
   });
   const linkData = await linkResp.json();
 
-  // Handle "already exists" error from Dropbox
   if (linkData?.error?.['.tag'] === 'shared_link_already_exists') {
     const existingUrl = linkData.error?.shared_link_already_exists?.metadata?.url;
     if (existingUrl) return toDirectUrl(existingUrl);
@@ -65,34 +79,58 @@ async function uploadToDropbox(token, buffer, destPath) {
 
 export const config = { api: { bodyParser: false } };
 
+// FIX QA: CORS whitelist — non più wildcard *
+const ALLOWED_ORIGINS = [
+  'https://nassa-ped-yp63.vercel.app',
+  'http://localhost:3000', // dev locale
+];
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // FIX QA: CORS ristretto al dominio dell'app
+  const origin = req.headers.origin;
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-nassa-key');
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const key = req.headers['x-nassa-key'];
   if (!key || key !== process.env.NASSA_API_KEY) return res.status(401).json({ error: 'Unauthorized' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  let file = null;
   try {
     const form = formidable({ maxFileSize: 200 * 1024 * 1024 }); // 200MB
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => { if (err) reject(err); else resolve([fields, files]); });
     });
 
-    const file = Array.isArray(files.file) ? files.file[0] : files.file;
+    file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (!file) return res.status(400).json({ error: 'No file provided' });
 
-    const destPath = (Array.isArray(fields.path) ? fields.path[0] : fields.path) || '/nassa/' + file.originalFilename;
+    // FIX QA: validazione MIME type — blocca file pericolosi
+    const mime = file.mimetype || '';
+    if (!ALLOWED_MIME.has(mime)) {
+      try { unlinkSync(file.filepath); } catch(_) {}
+      return res.status(400).json({ error: `Tipo file non consentito: ${mime}` });
+    }
+
+    // FIX QA: path sicuro — ignora il path inviato dal client, costruiamo il nostro
+    const user = (Array.isArray(fields.user) ? fields.user[0] : fields.user) || 'shared';
+    const rawName = file.originalFilename || 'upload';
+    const destPath = safePath(rawName, user);
+
     const buffer = readFileSync(file.filepath);
     const token = await getAccessToken();
     const sharedUrl = await uploadToDropbox(token, buffer, destPath);
 
-    try { unlinkSync(file.filepath); } catch(e) { /* ignore cleanup errors */ }
+    try { unlinkSync(file.filepath); } catch(_) { /* ignore cleanup */ }
 
     return res.status(200).json({ url: sharedUrl, shared_link: sharedUrl });
   } catch (err) {
+    // Cleanup file temporaneo anche in caso di errore
+    if (file?.filepath) { try { unlinkSync(file.filepath); } catch(_) {} }
     console.error('[dropbox-upload]', err.message);
     return res.status(500).json({ error: err.message });
   }
