@@ -1607,3 +1607,26 @@ tbody tr:hover .tr-actions{opacity:1;}
 .sb-ph-cop{
   font-size:8px;line-height:1.5;opacity:.6;margin-top:6px;
 }
+
+/* ══ PREVIEW — Barra filtri unificata tipo+approvazione ══ */
+.appr-filter-sep{
+  width:1px;height:16px;background:var(--border);
+  margin:0 4px;flex-shrink:0;align-self:center;
+}
+.afc-count{
+  font-size:10px;opacity:.6;font-family:var(--font);
+  font-weight:400;margin-left:2px;
+}
+.afc-dot{
+  width:5px;height:5px;border-radius:50%;
+  display:inline-block;flex-shrink:0;margin-right:2px;
+}
+
+/* Chip attivo — aggiorna stile esistente per includere tipo */
+.appr-filter-chip.active .afc-dot{background:#fff !important;}
+.appr-filter-chip.active .afc-count{opacity:.75;}
+
+/* Stats bar sempre visibile */
+.appr-stats-bar{
+  display:flex !important;
+}
