@@ -45,6 +45,7 @@
     <div class="sub-tab" id="sub-tab-stories" onclick="switchTab('stories')">Stories</div>
     <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">UGC</div>
     <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
+    <div class="sub-tab" id="sub-tab-anno"   onclick="switchTab('anno')">Anno</div>
     <div class="sub-tab" id="sub-tab-preview" onclick="switchTab('preview')">Preview</div>
     <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
   </div>
@@ -96,6 +97,10 @@
       <div class="sb-nav-item" id="si-cal" onclick="switchTab('cal')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span class="sb-nav-label">Calendario</span>
+      </div>
+      <div class="sb-nav-item" id="si-anno" onclick="switchTab('anno')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+        <span class="sb-nav-label">Anno</span>
       </div>
       <div class="sb-nav-item" id="si-ped" onclick="switchTab('ped')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -573,6 +578,33 @@
   </div>
 >
 </div><!-- /app -->
+
+  <!-- PAGE ANNO — Calendario Editoriale Annuale -->
+  <div class="tab-page" id="page-anno">
+    <div class="anno-page">
+      <div class="anno-toprow">
+        <div class="anno-year-nav">
+          <button class="btn sm icon" onclick="annoPrevYear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="anno-year-lbl" id="anno-year-lbl">2026</span>
+          <button class="btn sm icon" onclick="annoNextYear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="anno-tag-filters" id="anno-tag-filters"></div>
+      </div>
+      <div class="anno-col-headers">
+        <div class="anno-col-hdr-month"></div>
+        <div class="anno-col-hdr">Feed principale</div>
+        <div class="anno-col-hdr">Note · Deadline</div>
+        <div class="anno-col-hdr">Stories · UGC</div>
+      </div>
+      <div class="anno-bands" id="anno-bands"></div>
+      <div class="anno-footer" id="anno-footer"></div>
+    </div>
+  </div>
+
 <!-- ADS CAMPAIGN MODAL -->
 <div class="modal-bg" id="ads-camp-modal">
   <div class="modal" style="width:480px;">
