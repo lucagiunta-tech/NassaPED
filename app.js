@@ -1554,7 +1554,7 @@ function renderPreview(){
       stBadge.className = 'feed-appr-badge';
       stBadge.style.cssText = `background:${cfg.bg};color:${cfg.text};border:1px solid ${cfg.border};`;
       stBadge.innerHTML = `<span class="feed-appr-dot" style="background:${cfg.dot};"></span>${cfg.label}`;
-      stBadge.onclick = (e)=>{ e.stopPropagation(); cycleApprStato(idx, items); };
+      stBadge.onclick = (e)=>{ e.stopPropagation(); openApprModal(i, ready); };
       cell.appendChild(stBadge);
       // Badge revisioni (solo se > 0)
       if(revCount > 0){
@@ -1572,8 +1572,8 @@ function renderPreview(){
     body.appendChild(grid);
   }
   const footer=document.createElement('div');footer.className='preview-footer';footer.innerHTML='<p>Anteprima preparata da</p><div class="nassa-sig">Nassa Studio · nassastudio.it</div>';body.appendChild(footer);
-  // Inietta overlay approvazione se attivo
-  if(apprMode){const _items=ready;setTimeout(()=>apprInjectGrid(_items),0);}
+  // Aggiorna statistiche approvazione
+  if(apprMode) apprUpdateStats(ready);
 }
 
 /* LIGHTBOX */
@@ -1592,11 +1592,10 @@ function renderLb(){
     if(slideUrl){const img=document.createElement('img');img.src=slideUrl;img.alt='';inner.appendChild(img);}
     else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='';inner.appendChild(ph);}
     if(item.slides.length>1){
-      const wrap=inner.parentElement;
-      // Rimuovi frecce precedenti se esistono
-      wrap.querySelectorAll('.lb-slide-nav').forEach(el=>el.remove());
-      const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};wrap.appendChild(sp);
-      const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};wrap.appendChild(sn);
+      // Frecce dentro lb-inner — position:absolute rispetto al container immagine
+      inner.querySelectorAll('.lb-slide-nav').forEach(el=>el.remove());
+      const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};inner.appendChild(sp);
+      const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
     }
   } else if(item.type==='video'){
     const v=makeMedia(item.url,'video',{controls:true,autoplay:true});
