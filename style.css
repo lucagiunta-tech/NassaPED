@@ -1902,3 +1902,89 @@ tbody tr:hover .tr-actions{opacity:1;}
   /* Bottone vista sempre visibile */
   #toggle-view { display: flex !important; }
 }
+
+/* ══ MOBILE FIX 2 — Problemi screenshot 22:04 ══ */
+@media (max-width: 768px) {
+
+  /* 1. Avatar — rimane nel topbar, dimensione ok */
+  .avatar { width: 28px; height: 28px; font-size: 11px; }
+
+  /* 2. Subtopbar client — più compatta, no border-right */
+  .subtopbar-client {
+    min-width: 0;
+    padding: 6px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .subtopbar-name { font-size: 14px; }
+  .subtopbar-pkg { font-size: 10px; }
+  .subtopbar-back { font-size: 18px; margin-right: 4px; }
+
+  /* 3. Save-bar Importa/Esporta — più piccola e meno invadente */
+  .save-bar {
+    bottom: 8px;
+    right: 8px;
+    padding: 4px 8px 4px 10px;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .save-bar .btn { font-size: 11px; padding: 3px 8px; }
+  .save-bar-label { display: none; } /* Nasconde emoji 💾 */
+
+  /* 4. Overlay bottoni — più piccoli e sovrapposti all'immagine */
+  .cell-overlay { padding-bottom: 0; }
+  .ov-sheet { padding: 4px 6px 8px; }
+  .ov-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-height: 36px; /* touch target ok anche più piccolo */
+  }
+  .ov-btn svg { width: 13px; height: 13px; }
+  .ov-divider { margin: 1px 0; }
+
+  /* 5. Badge tipo (Foto/Reel/Carosello) — più piccolo */
+  .cell-badge {
+    padding: 2px 6px;
+    font-size: 9px;
+    gap: 3px;
+  }
+  .cell-badge svg { width: 9px; height: 9px; }
+
+  /* 6. Caption — chiusa di default su mobile, apri solo su tap */
+  .copy-panel { display: none !important; }
+  /* In vista lista la caption torna visibile */
+  .feed-view-list .copy-panel { display: flex !important; }
+
+  /* 7. Anno tab — nascondi su mobile (troppo complessa) */
+  #sub-tab-anno { display: none; }
+
+  /* 8. Mesi — row compatta */
+  .feed-ctx-bar { padding: 4px 8px; }
+
+  /* 9. Cell num — più piccolo */
+  .cell-num { font-size: 9px; padding: 1px 4px; }
+
+  /* 10. Top bar drag handle — più piccolo */
+  .drag-handle { display: none; } /* non serve su mobile */
+  .cell-top-bar { padding: 4px 6px; gap: 4px; }
+
+  /* 11. Date bar — testo più piccolo */
+  .date-bar { padding: 16px 6px 6px; }
+  .date-input { font-size: 11px; }
+
+  /* 12. Feed-appr-badge — più compatto */
+  .feed-appr-badge { font-size: 9px; padding: 2px 6px 2px 5px; }
+  .feed-appr-dot { width: 4px; height: 4px; }
+
+  /* 13. Cover pill — più piccola */
+  .video-cover-pill { font-size: 8px; padding: 2px 6px; }
+
+  /* 14. Acc-switcher — compatto */
+  .acc-switcher { padding: 3px 12px; }
+}
+
+/* ── iPhone SE / molto stretti ── */
+@media (max-width: 390px) {
+  .feed-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 2px; }
+  .ov-btn { font-size: 10px; padding: 7px 8px; }
+}
