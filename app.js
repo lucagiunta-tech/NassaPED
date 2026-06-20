@@ -1187,15 +1187,23 @@ async function saveStoryboard(){
   const arr=currentStoryItems();
   if(sbEditIdx!==null&&sbEditIdx>=0&&sbEditIdx<arr.length){
     arr[sbEditIdx].slides=cleanSlides;
-    arr[sbEditIdx].url=cleanSlides[0]?.url||'';arr[sbEditIdx].isStoryboard=true;
+    arr[sbEditIdx].url=cleanSlides[0]?.url||'';arr[sbEditIdx].isStoryboard=true;if(arr[sbEditIdx].isUGC===undefined)arr[sbEditIdx].isUGC=false;if(arr[sbEditIdx].briefInviato===undefined)arr[sbEditIdx].briefInviato=false;if(arr[sbEditIdx].fileCaricato===undefined)arr[sbEditIdx].fileCaricato=false;
   }else{
-    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides});
+    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides,isUGC:false,briefInviato:false,fileCaricato:false});
   }
   setStoryItems(arr);closeModal('storyboard-modal');refreshStories()
   showToast('✓ Storyboard salvato');
 }
 
 /* ════ SLIDE BUILDER ════ */
+// Sfondi storyboard — token Gruppo A
+const SFONDI = {
+  'Avorio': { bg:'#F5F2EB', text:'#2a2a2a', acc:'#888' },
+  'Righe':  { bg:'#eeeeee', text:'#1a1a1a', acc:'#666' },
+  'Quadr.': { bg:'#e8e8e8', text:'#1a1a1a', acc:'#666' },
+  'Dark':   { bg:'#1a1a1a', text:'#f0f0f0', acc:'#aaa' },
+};
+const SFONDI_DEFAULT = 'Avorio';
 let sbCurSlide=0,sbBg='lined',sbColor='#2563eb',sbFmt='feed';
 
 function renderSbBuilder(){renderSbThumbs();loadSbSlide(sbCurSlide);updateSbCount();}
@@ -1223,6 +1231,13 @@ function loadSbSlide(i){
     const el=document.getElementById(id);
     if(el)el.value=[sl.num,sl.eye,sl.title,sl.note][j]||'';
   });
+  // Gruppo A: campi aggiuntivi
+  const sfEl=document.getElementById('sb-f-sfondo');
+  if(sfEl)sfEl.value=sl.sfondo||SFONDI_DEFAULT;
+  const nrEl=document.getElementById('sb-f-nota-regia');
+  if(nrEl)nrEl.value=sl.noteRegia||'';
+  const phEl=document.getElementById('sb-f-placeholder');
+  if(phEl)phEl.checked=!!sl.isPlaceholder;
   const zone=document.getElementById('sb-img-preview');
   const img=document.getElementById('sb-img-el');
   if(zone&&img){const src=sl.blobUrl||sl.url||'';if(src){img.src=src;zone.style.display='block';}else{zone.style.display='none';}}
@@ -1234,6 +1249,11 @@ function sbSync(){
   const sl=sbTmpSlides[sbCurSlide];
   const g=id=>document.getElementById(id)?.value||'';
   sl.num=g('sb-f-num');sl.eye=g('sb-f-eye');sl.title=g('sb-f-tit');sl.note=g('sb-f-cop');
+  // Gruppo A: salva campi aggiuntivi
+  sl.sfondo = g('sb-f-sfondo') || SFONDI_DEFAULT;
+  sl.noteRegia = g('sb-f-nota-regia') || '';
+  const phEl = document.getElementById('sb-f-placeholder');
+  sl.isPlaceholder = phEl ? phEl.checked : false;
   updateSbPreview();renderSbThumbs();
 }
 
@@ -1287,7 +1307,7 @@ function sbSetFmt(fmt,el){
 function sbDownloadPNG(){showToast('Usa screenshot del browser per esportare la slide','warn');}
 
 
-function addSbSlide(){sbTmpSlides.push({url:'',blobUrl:'',num:(sbTmpSlides.length+1)+'.',eye:'',title:'',note:'',_file:null});sbCurSlide=sbTmpSlides.length-1;renderSbBuilder();}
+function addSbSlide(){sbTmpSlides.push({url:'',blobUrl:'',num:(sbTmpSlides.length+1)+'.',eye:'',title:'',note:'',_file:null,sfondo:SFONDI_DEFAULT,noteRegia:'',isPlaceholder:false});sbCurSlide=sbTmpSlides.length-1;renderSbBuilder();}
 function removeSbSlide(i){sbTmpSlides.splice(i,1);renderSbSlides();}
 function renderSbSlides(){
   const c=document.getElementById('sb-slides');if(!c)return;c.innerHTML='';
@@ -1355,7 +1375,7 @@ function sbSaveToCassetto(){
   const name=prompt('Nome bozza:','Bozza '+(sbCassetto.length+1));
   if(!name)return;
   const entry={id:Date.now(),name,savedAt:new Date().toISOString(),
-    slides:sbTmpSlides.map(s=>({num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',url:s.url||''}))};
+    slides:sbTmpSlides.map(s=>({num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',url:s.url||'',sfondo:s.sfondo||SFONDI_DEFAULT,noteRegia:s.noteRegia||'',isPlaceholder:!!s.isPlaceholder}))};
   sbCassetto.unshift(entry);
   try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
   renderSbCassetto();
