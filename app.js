@@ -956,6 +956,7 @@ function renderFeedGrid(){
         const calWrap=document.createElement('span');calWrap.innerHTML=SVG_CAL;calWrap.style.cssText='display:flex;align-items:center;flex-shrink:0;';
         const di=document.createElement('input');di.className='date-input';di.type='text';di.value=item.date||'';di.placeholder='data…';
         di.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};
+        di.onfocus=e=>{e.target.blur();openDatePicker(idx,cell);}; // mobile: apre picker al tap
         di.oninput=e=>{currentFeedItems()[idx].date=e.target.value;};
         const dt=document.createElement('button');dt.className='date-toggle';dt.textContent=item.showDate?'✓':'✕';
         dt.onclick=e=>{e.stopPropagation();currentFeedItems()[idx].showDate=!currentFeedItems()[idx].showDate;renderFeedGrid();};
@@ -965,7 +966,8 @@ function renderFeedGrid(){
         const dpTrigger=document.createElement('button');dpTrigger.className='date-add-btn dp-trigger-btn';
         const calWrap2=document.createElement('span');calWrap2.innerHTML=SVG_CAL;calWrap2.style.cssText='display:flex;align-items:center;';
         dpTrigger.appendChild(calWrap2);dpTrigger.appendChild(document.createTextNode(item.date?' '+item.date.split(' ').slice(1).join(' '):'+ data'));
-        dpTrigger.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};cell.appendChild(dpTrigger);
+        dpTrigger.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};
+        dpTrigger.ontouchstart=e=>{e.stopPropagation();e.preventDefault();openDatePicker(idx,cell);};cell.appendChild(dpTrigger);
 
         // ── OVERLAY: bottom sheet inside the cell ──
         const ov=document.createElement('div');ov.className='cell-overlay';
