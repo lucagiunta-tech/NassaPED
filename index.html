@@ -548,32 +548,6 @@
   </div>
 
 
-  <!-- MODAL APPROVAZIONE -->
-  <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
-    <div class="appr-modal" onclick="event.stopPropagation()">
-      <div class="appr-modal-head">
-        <div>
-          <div class="appr-modal-title" id="appr-modal-title">Dettaglio Post</div>
-        </div>
-        <button onclick="closeApprModal()" class="appr-modal-close">✕</button>
-      </div>
-      <div class="appr-modal-body">
-        <div class="appr-modal-thumb" id="appr-modal-thumb"></div>
-        <div class="appr-modal-controls">
-          <div class="appr-modal-section-lbl">Stato</div>
-          <div class="appr-stato-pills" id="appr-stato-pills"></div>
-          <div class="appr-modal-section-lbl" style="margin-top:12px;">Note revisione</div>
-          <textarea class="appr-note-area" id="appr-note-area" rows="3" placeholder="Aggiungi note per l'agenzia..."></textarea>
-        </div>
-      </div>
-      <div class="appr-modal-foot">
-        <button class="btn sm" onclick="closeApprModal()">Annulla</button>
-        <button class="btn sm" id="appr-approva-btn" onclick="apprModalApprova()" style="background:#1a7a4a;color:#fff;border-color:#1a7a4a;">✓ Approva</button>
-        <button class="btn" onclick="apprModalSalva()" style="margin-left:auto;">Salva</button>
-      </div>
-    </div>
-  </div>
-
 
   <!-- PAGE ANNO — Calendario Editoriale Annuale -->
   <div class="tab-page" id="page-anno">
@@ -650,6 +624,34 @@
 
 >
 </div><!-- /app -->
+
+  <!-- MODAL APPROVAZIONE -->
+  <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
+    <div class="appr-modal" onclick="event.stopPropagation()">
+      <div class="appr-modal-head">
+        <div>
+          <div class="appr-modal-title" id="appr-modal-title">Dettaglio Post</div>
+        </div>
+        <button onclick="closeApprModal()" class="appr-modal-close">✕</button>
+      </div>
+      <div class="appr-modal-body">
+        <div class="appr-modal-thumb" id="appr-modal-thumb"></div>
+        <div class="appr-modal-controls">
+          <div class="appr-modal-section-lbl">Stato</div>
+          <div class="appr-stato-pills" id="appr-stato-pills"></div>
+          <div class="appr-modal-section-lbl" style="margin-top:12px;">Note revisione</div>
+          <textarea class="appr-note-area" id="appr-note-area" rows="3" placeholder="Aggiungi note per l'agenzia..."></textarea>
+        </div>
+      </div>
+      <div class="appr-modal-foot">
+        <button class="btn sm" onclick="closeApprModal()">Annulla</button>
+        <button class="btn sm" id="appr-approva-btn" onclick="apprModalApprova()" style="background:#1a7a4a;color:#fff;border-color:#1a7a4a;">✓ Approva</button>
+        <button class="btn" onclick="apprModalSalva()" style="margin-left:auto;">Salva</button>
+      </div>
+    </div>
+  </div>
+
+
 
 
 
