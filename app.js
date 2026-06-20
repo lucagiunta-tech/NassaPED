@@ -1611,6 +1611,18 @@ function calGetAllEvents(){
       const mo=pkey.split('|||')[1];
       (pedPlans[pkey]||[]).forEach((st)=>{if(!st.date)return;const lbl=(st.type==='autonoma'?'👤 ':'🎨 ')+(st.brief?st.brief.slice(0,18):'Story pianificata');addEv(st.date,{type:'ped',label:lbl,thumb:null,item:st,clientIdx:ci,clientName:cl.name,month:mo,pedType:st.type});});
     });
+    // Campagne Paid → aggiungi evento al giorno di inizio nel mese del calendario
+    const adsKey=cl.id||null;
+    if(adsKey&&adsCampaigns[adsKey]){
+      const yr=calDate.getFullYear(),mo2=calDate.getMonth();
+      (adsCampaigns[adsKey]||[]).forEach(camp=>{
+        if(!camp.startDay)return;
+        const days=new Date(yr,mo2+1,0).getDate();
+        if(camp.startDay>days)return;
+        const ds=`${yr}-${String(mo2+1).padStart(2,'0')}-${String(camp.startDay).padStart(2,'0')}`;
+        addEv(ds,{type:'ads',label:camp.name||'Campagna',camp,clientIdx:ci,clientName:cl.name,platform:camp.platform||''});
+      });
+    }
   });
   return events;
 }
@@ -1652,7 +1664,7 @@ function renderCalendar(){
             else if(ev.item?.type==='carousel'){badgeCls='cal-badge-car';badgeTxt='Caros.';}
             else{badgeCls='cal-badge-foto';badgeTxt='Foto';}
           } else if(isStory){badgeCls='cal-badge-story';badgeTxt='Story';}
-          else if(isPed){badgeCls='cal-badge-ugc';badgeTxt='UGC';}
+          else if(isPed){badgeCls='cal-badge-ugc';badgeTxt='UGC';}else if(ev.type==='ads'){badgeCls='cal-badge-ads';badgeTxt='PAID';}
           const thumbSrc=ev.thumb||'';
           const thumbInner=thumbSrc
             ?`<img src="${thumbSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`
@@ -2811,7 +2823,7 @@ function renderAdsGantt(){
       // Label: spent/budget
       const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
       bar.textContent=`€${(camp.spent||0).toLocaleString('it')} (${pct}%)`;
-      bar.title=`${camp.name} — ${s}→${e} ${ADS_MONTHS[adsGanttMonth]}
+      bar.title=`${camp.name} — ${s}→${e} ${MONTHS[adsGanttMonth]}
 Budget: €${camp.budget} | Speso: €${camp.spent||0} | ROAS: ${camp.roas||'—'}×`;
       tl.appendChild(bar);
     }
@@ -3226,6 +3238,22 @@ function buildAnnoData(year) {
     MONTHS.forEach((mName, mi) => {
       const monthKey = accountKey(acc.id, mName + ' ' + yr);
       if(!result[mi]) result[mi] = [];
+
+      // Campagne Paid → Canale 0 (primo giorno della campagna nel mese)
+      (adsCampaigns[cl.id||''] || []).forEach(camp => {
+        if(!camp.startDay) return;
+        const daysInMo = new Date(parseInt(yr), mi+1, 0).getDate();
+        if(camp.startDay > daysInMo) return;
+        if(!result[mi]) result[mi] = [];
+        result[mi].push({
+          day: camp.startDay,
+          ch: 0,
+          title: camp.name || 'Campagna Paid',
+          sub: (camp.platform||'ADS').toUpperCase() + (camp.budget ? ' · €'+camp.budget : ''),
+          tag: 'Paid',
+          raw: camp
+        });
+      });
 
       // Feed items → Canale 0
       (feeds[monthKey] || []).forEach(item => {
