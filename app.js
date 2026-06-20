@@ -1769,60 +1769,20 @@ function renderPreview(){
   const header=document.createElement('div');header.className='preview-header';header.innerHTML=`<div class="preview-logo">N</div><div class="preview-htext"><h2>${cl.name}</h2><p>${month}</p></div><div class="preview-hmeta"><span class="preview-chip" id="preview-chip"></span></div>`;body.appendChild(header);
   if(accs.length>1){const tabRow=document.createElement('div');tabRow.className='preview-acc-tabs';accs.forEach((acc,ai)=>{const tab=document.createElement('div');tab.className='preview-acc-tab'+(ai===previewActiveAcc?' active':'');tab.textContent=acc.name;tab.onclick=()=>{previewActiveAcc=ai;renderPreview();};tabRow.appendChild(tab);});body.appendChild(tabRow);}
   const acc=accs[previewActiveAcc]||accs[0];if(!acc){body.appendChild(Object.assign(document.createElement('div'),{className:'preview-empty',innerHTML:'<p>Nessun account.</p>'}));return;}
-  const key=accountKey(acc.id,month);const ready=(feeds[key]||[]).filter(i=>i.type!=='pending');const stArr=stories[key]||[];
+  const key=accountKey(acc.id,month);const _allReady=(feeds[key]||[]).filter(i=>i.type!=='pending');
+  const stArr=stories[key]||[];
+  // Applica filtri tipologia + approvazione
+  const ready=_allReady.filter(item=>{
+    const typeOk = previewTypeFilter==='tutti' ||
+      (previewTypeFilter==='image' && (item.type==='image'||item.type==='editorial')) ||
+      (previewTypeFilter==='video' && item.type==='video') ||
+      (previewTypeFilter==='carousel' && item.type==='carousel');
+    const apprOk = apprFilter==='tutti' || (item.apprStato||'bozza')===apprFilter;
+    return typeOk && apprOk;
+  });
   const chip=document.getElementById('preview-chip');if(chip)chip.textContent=ready.length+' contenut'+(ready.length===1?'o':'i')+(accs.length>1?' · '+acc.name:'');
   if(!ready.length){const em=document.createElement('div');em.className='preview-empty';em.innerHTML='<p>Nessun contenuto per '+acc.name+' — '+month+'.</p>';body.appendChild(em);}
   else{
-    // ── STATS BAR: riepilogo per tipologia ──
-    const nFoto     = ready.filter(x=>x.type==='image'||x.type==='editorial').length;
-    const nReel     = ready.filter(x=>x.type==='video').length;
-    const nCarousel = ready.filter(x=>x.type==='carousel').length;
-    const nBozza    = ready.filter(x=>(x.apprStato||'bozza')==='bozza').length;
-    const nRevisione= ready.filter(x=>x.apprStato==='approvare').length;
-    const nApprovato= ready.filter(x=>x.apprStato==='approvato').length;
-
-    const statsBar = document.createElement('div');
-    statsBar.className = 'preview-stats-bar';
-    statsBar.innerHTML = `
-      <div class="preview-stats-group">
-        <div class="preview-stat-item">
-          <span class="psi-val">${ready.length}</span>
-          <span class="psi-lbl">Post</span>
-        </div>
-        ${nFoto ? `<div class="preview-stat-item">
-          <span class="psi-val">${nFoto}</span>
-          <span class="psi-lbl">Foto</span>
-        </div>` : ''}
-        ${nReel ? `<div class="preview-stat-item">
-          <span class="psi-val">${nReel}</span>
-          <span class="psi-lbl">Reel</span>
-        </div>` : ''}
-        ${nCarousel ? `<div class="preview-stat-item">
-          <span class="psi-val">${nCarousel}</span>
-          <span class="psi-lbl">Carosello</span>
-        </div>` : ''}
-      </div>
-      <div class="preview-stats-divider"></div>
-      <div class="preview-stats-group">
-        <div class="preview-stat-item">
-          <span class="psi-dot" style="background:#aaa;"></span>
-          <span class="psi-val">${nBozza}</span>
-          <span class="psi-lbl">Bozza</span>
-        </div>
-        <div class="preview-stat-item">
-          <span class="psi-dot" style="background:#f5c800;"></span>
-          <span class="psi-val">${nRevisione}</span>
-          <span class="psi-lbl">In revisione</span>
-        </div>
-        <div class="preview-stat-item">
-          <span class="psi-dot" style="background:#22c97a;"></span>
-          <span class="psi-val">${nApprovato}</span>
-          <span class="psi-lbl">Approvati</span>
-        </div>
-      </div>
-    `;
-    body.appendChild(statsBar);
-
     const grid=document.createElement('div');grid.className='client-grid';
     ready.forEach((item,i)=>{
       const post=document.createElement('div');post.className='client-post';
@@ -2125,7 +2085,7 @@ function renderPreview(){
 
   const footer=document.createElement('div');footer.className='preview-footer';footer.innerHTML='<p>Anteprima preparata da</p><div class="nassa-sig">Nassa Studio · nassastudio.it</div>';body.appendChild(footer);
   // Aggiorna statistiche approvazione
-  if(apprMode) apprUpdateStats(ready);
+  apprUpdateStats(_allReady); // sempre aggiorna barra — usa _allReady per totali non filtrati
 }
 
 /* LIGHTBOX */
@@ -4176,7 +4136,8 @@ const APPR_STATI = [
 function apprGetStato(key){ return APPR_STATI.find(s=>s.key===key)||APPR_STATI[0]; }
 
 let apprMode = false;          // toggle on/off
-let apprFilter = 'tutti';      // filtro attivo
+let apprFilter = 'tutti';      // filtro stato approvazione
+let previewTypeFilter = 'tutti'; // filtro tipologia
 let apprOpenMenu = null;       // id post con menu aperto
 let apprModalIdx = null;       // index post nel modal
 let apprModalItems = [];       // array corrente di feed items
@@ -4208,13 +4169,22 @@ function apprGetItems(){
 
 function apprUpdateStats(items){
   const bar = document.getElementById('appr-stats-bar');
-  if(!bar || !apprMode) return;
+  if(!bar) return;
+  // Sempre visibile — non più condizionato a apprMode
+  bar.style.display = 'flex';
+
+  // Conteggi per stato approvazione (su tutto il feed, non filtered)
+  const allItems = apprGetItems ? apprGetItems() : items;
   const counts = {bozza:0, approvare:0, approvato:0};
-  items.forEach(it => {
-    const st = it.apprStato || 'bozza';
-    counts[st] = (counts[st]||0) + 1;
-  });
-  const total = items.length;
+  allItems.forEach(it => { const st=it.apprStato||'bozza'; counts[st]=(counts[st]||0)+1; });
+  const total = allItems.length;
+
+  // Conteggi per tipologia
+  const nFoto     = allItems.filter(x=>x.type==='image'||x.type==='editorial').length;
+  const nReel     = allItems.filter(x=>x.type==='video').length;
+  const nCarousel = allItems.filter(x=>x.type==='carousel').length;
+
+  // Aggiorna celle numeriche vecchie (retrocompat)
   ['bozza','approvare','approvato'].forEach(k => {
     const cell = document.getElementById('appr-stat-'+k);
     if(!cell) return;
@@ -4226,21 +4196,40 @@ function apprUpdateStats(items){
   const tot = document.getElementById('appr-stat-totale');
   if(tot) tot.textContent = total;
 
-  // Filtri
+  // Barra chip unica: Tipo | Approvazione
   const filterRow = document.getElementById('appr-filter-row');
   if(filterRow){
-    const opts = [{k:'tutti',label:'Tutti',dot:null},...APPR_STATI.map(s=>({k:s.key,label:s.label,dot:s.dot}))];
-    filterRow.innerHTML = opts.map(o=>`
-      <button class="appr-filter-chip${apprFilter===o.k?' active':''}" onclick="apprSetFilter('${o.k}')">
-        ${o.dot?`<span style="width:5px;height:5px;border-radius:50%;background:${apprFilter===o.k?'#fff':o.dot};display:inline-block;"></span>`:''}
-        ${o.label}
-        <span style="opacity:.5;font-size:10px;">${o.k==='tutti'?total:counts[o.k]||0}</span>
-      </button>`).join('');
+    const typeOpts = [
+      {k:'tutti', label:'Tutti', n:total, dot:null},
+      ...(nFoto     ? [{k:'image',    label:'Foto',      n:nFoto,     dot:null}] : []),
+      ...(nReel     ? [{k:'video',    label:'Reel',      n:nReel,     dot:null}] : []),
+      ...(nCarousel ? [{k:'carousel', label:'Carosello', n:nCarousel, dot:null}] : []),
+    ];
+    const apprOpts = APPR_STATI.map(s=>({k:s.key, label:s.label, n:counts[s.key]||0, dot:s.dot}));
+
+    filterRow.innerHTML =
+      typeOpts.map(o=>`
+        <button class="appr-filter-chip${previewTypeFilter===o.k&&apprFilter==='tutti'?' active':''}"
+          onclick="previewTypeFilter='${o.k}';apprFilter='tutti';apprUpdateStats(apprGetItems());renderPreview();">
+          ${o.label} <span class="afc-count">${o.n}</span>
+        </button>`).join('')
+      + '<span class="appr-filter-sep"></span>'
+      + apprOpts.map(o=>`
+        <button class="appr-filter-chip${apprFilter===o.k&&previewTypeFilter==='tutti'?' active':''}"
+          onclick="apprFilter='${o.k}';previewTypeFilter='tutti';apprUpdateStats(apprGetItems());renderPreview();">
+          <span class="afc-dot" style="background:${o.dot};"></span>
+          ${o.label} <span class="afc-count">${o.n}</span>
+        </button>`).join('');
   }
 }
 
 function apprSetFilter(f){
   apprFilter = f;
+  apprUpdateStats(apprGetItems());
+  renderPreview();
+}
+function setPreviewTypeFilter(f){
+  previewTypeFilter = f;
   apprUpdateStats(apprGetItems());
   renderPreview();
 }
