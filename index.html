@@ -574,8 +574,31 @@
     </div>
   </div>
 
-</div><!-- /main -->
-</div><!-- /body --
+
+  <!-- PAGE ANNO — Calendario Editoriale Annuale -->
+  <div class="tab-page" id="page-anno">
+      <div class="anno-toprow">
+        <div class="anno-year-nav">
+          <button class="btn sm icon" onclick="annoPrevYear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="anno-year-lbl" id="anno-year-lbl">2026</span>
+          <button class="btn sm icon" onclick="annoNextYear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="anno-tag-filters" id="anno-tag-filters"></div>
+      </div>
+      <div class="anno-col-headers">
+        <div class="anno-col-hdr-month"></div>
+        <div class="anno-col-hdr">Feed principale</div>
+        <div class="anno-col-hdr">Note · Deadline</div>
+        <div class="anno-col-hdr">Stories · UGC</div>
+      </div>
+      <div class="anno-bands" id="anno-bands"></div>
+      <div class="anno-footer" id="anno-footer"></div>
+  </div>
+
   <!-- PAGE ADS -->
   <div class="tab-page" id="page-ads">
     <div class="ads-page">
@@ -622,32 +645,13 @@
       </div>
     </div>
   </div>
+</div><!-- /main -->
+</div><!-- /body --
+
 >
 </div><!-- /app -->
 
-  <!-- PAGE ANNO — Calendario Editoriale Annuale -->
-  <div class="tab-page" id="page-anno">
-      <div class="anno-toprow">
-        <div class="anno-year-nav">
-          <button class="btn sm icon" onclick="annoPrevYear()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <span class="anno-year-lbl" id="anno-year-lbl">2026</span>
-          <button class="btn sm icon" onclick="annoNextYear()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-        <div class="anno-tag-filters" id="anno-tag-filters"></div>
-      </div>
-      <div class="anno-col-headers">
-        <div class="anno-col-hdr-month"></div>
-        <div class="anno-col-hdr">Feed principale</div>
-        <div class="anno-col-hdr">Note · Deadline</div>
-        <div class="anno-col-hdr">Stories · UGC</div>
-      </div>
-      <div class="anno-bands" id="anno-bands"></div>
-      <div class="anno-footer" id="anno-footer"></div>
-  </div>
+
 
 <!-- ADS CAMPAIGN MODAL -->
 <div class="modal-bg" id="ads-camp-modal">
