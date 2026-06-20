@@ -967,7 +967,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* Campaign list */
 .ads-camp-list{display:flex;flex-direction:column;gap:8px;}
-.ads-camp{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;transition:border-color .1s;}
+.ads-camp{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;transition:border-color .1s;}
 .ads-camp:hover{border-color:var(--green);}
 .ads-camp-name{font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;}
 .ads-camp-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
@@ -992,3 +992,14 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ads-camp-del{background:none;border:none;cursor:pointer;color:var(--text-3);padding:3px;border-radius:var(--rs);display:flex;align-items:center;}
 .ads-camp-del:hover{color:var(--red);}
 .ads-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:var(--fs-sm);}
+
+/* ══ ADS CREATIVE ZONE ══ */
+.ads-creative-zone{border:1.5px dashed var(--border);border-radius:var(--r);padding:14px;cursor:pointer;text-align:center;transition:border-color .15s;min-height:80px;display:flex;align-items:center;justify-content:center;position:relative;}
+.ads-creative-zone:hover{border-color:var(--green);background:var(--green-lt);}
+#adm-creative-preview{width:100%;text-align:center;}
+.ads-creative-clear{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:var(--r-xs);width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;}
+
+/* Creative thumb in campaign card */
+.ads-creative-thumb{width:52px;height:52px;border-radius:var(--rs);object-fit:cover;border:.5px solid var(--border);flex-shrink:0;}
+.ads-creative-thumb-vid{width:52px;height:52px;border-radius:var(--rs);object-fit:cover;border:.5px solid var(--border);flex-shrink:0;}
+.ads-creative-badge{font-size:9px;font-weight:600;padding:1px 6px;border-radius:var(--r-pill);background:var(--blue-lt);color:var(--blue-dk);margin-top:2px;display:inline-block;}
