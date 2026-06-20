@@ -1592,9 +1592,12 @@ function renderPreview(){
     body.appendChild(grid);
   }
 
-  // ── STORYBOARD SECTION ──
+  // ── STORYBOARD SECTION — Gruppo B: player inline con autoplay, puntini, strip ──
   const storyboards = stArr.filter(st => st.isStoryboard && st.slides?.length);
   if(storyboards.length){
+    // Stato player per ogni storyboard: {curSlide, playing, interval}
+    const sbPlayerState = {};
+
     const sbSec = document.createElement('div');
     sbSec.style.cssText = 'margin-top:24px;';
     const sbHead = document.createElement('div');
@@ -1606,53 +1609,154 @@ function renderPreview(){
     sbGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
 
     storyboards.forEach((sb, si) => {
+      const sbId = sb.id || si;
+      sbPlayerState[sbId] = { cur: 0, playing: false, interval: null };
+      const state = sbPlayerState[sbId];
+
+      // Funzione aggiorna slide attiva
+      function sbGoTo(idx){
+        if(state.interval){ clearInterval(state.interval); state.interval=null; state.playing=false; }
+        state.cur = (idx + sb.slides.length) % sb.slides.length;
+        sbRefresh();
+      }
+      function sbTogglePlay(){
+        if(state.playing){
+          clearInterval(state.interval); state.interval=null; state.playing=false;
+        } else {
+          state.playing=true;
+          state.interval = setInterval(()=>{
+            state.cur = (state.cur+1) % sb.slides.length;
+            sbRefresh();
+          }, 1800);
+        }
+        sbRefresh();
+      }
+
+      // ── Card wrapper ──
       const sbPost = document.createElement('div');
-      sbPost.style.cssText = 'display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;background:var(--surface);border:1px solid var(--border);';
+      sbPost.className = 'sb-player-card';
 
-      const sbCell = document.createElement('div');
-      sbCell.style.cssText = 'position:relative;aspect-ratio:9/16;background:var(--cell-bg-dark);cursor:pointer;overflow:hidden;';
-      sbCell.onclick = () => {
-        const sbItems = sb.slides.map(sl=>({
-          type: (sl.url||'').match(/\.mp4|\.mov/i) ? 'video' : 'image',
-          url: sl.url||'', copy: sl.note||sl.title||'', slides:null
-        }));
-        openLb(0, sbItems, []);
-      };
+      // ── Player area 9:16 ──
+      const playerWrap = document.createElement('div');
+      playerWrap.className = 'sb-player-wrap';
 
-      // Cover — prima slide
-      const coverUrl = sb.slides[0]?.url || '';
-      if(coverUrl){
-        const img = document.createElement('img');
-        img.src = coverUrl;
-        img.alt = '';
-        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-        sbCell.appendChild(img);
-      } else {
-        sbCell.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-3);font-size:12px;">Nessuna slide</div>';
+      // Immagine slide
+      const slideImg = document.createElement('img');
+      slideImg.className = 'sb-player-img';
+
+      // Badge stato (bozza/approvare/approvato)
+      const statoBadge = document.createElement('div');
+      statoBadge.className = 'sb-stato-badge';
+
+      // Badge contatore slide (es. 2/5)
+      const counterBadge = document.createElement('div');
+      counterBadge.className = 'sb-counter-badge';
+
+      // Frecce navigazione
+      const btnPrev = document.createElement('button');
+      btnPrev.className = 'sb-player-nav sb-player-prev';
+      btnPrev.innerHTML = '‹';
+      btnPrev.onclick = (e)=>{ e.stopPropagation(); sbGoTo(state.cur-1); };
+
+      const btnNext = document.createElement('button');
+      btnNext.className = 'sb-player-nav sb-player-next';
+      btnNext.innerHTML = '›';
+      btnNext.onclick = (e)=>{ e.stopPropagation(); sbGoTo(state.cur+1); };
+
+      // Bottone autoplay
+      const btnPlay = document.createElement('button');
+      btnPlay.className = 'sb-player-play';
+      btnPlay.onclick = (e)=>{ e.stopPropagation(); sbTogglePlay(); };
+
+      // Puntini indicatori
+      const dotsWrap = document.createElement('div');
+      dotsWrap.className = 'sb-player-dots';
+
+      playerWrap.appendChild(slideImg);
+      playerWrap.appendChild(statoBadge);
+      playerWrap.appendChild(counterBadge);
+      if(sb.slides.length > 1){
+        playerWrap.appendChild(btnPrev);
+        playerWrap.appendChild(btnNext);
+        playerWrap.appendChild(btnPlay);
+        playerWrap.appendChild(dotsWrap);
+      }
+      sbPost.appendChild(playerWrap);
+
+      // ── Strip miniature ──
+      const strip = document.createElement('div');
+      strip.className = 'sb-player-strip';
+      sbPost.appendChild(strip);
+
+      // ── Info footer ──
+      const info = document.createElement('div');
+      info.className = 'sb-player-info';
+      info.innerHTML = `<span class="sb-player-name">${sb.name||'Storyboard'}</span>`
+        + (sb.note ? `<span class="sb-player-note">${sb.note}</span>` : '');
+      sbPost.appendChild(info);
+
+      // ── Funzione render stato ──
+      function sbRefresh(){
+        const sl = sb.slides[state.cur] || {};
+        const url = sl.url || '';
+
+        // Immagine
+        if(url){ slideImg.src=url; slideImg.style.display='block'; }
+        else { slideImg.style.display='none'; }
+
+        // Sfondo dalla palette
+        const sfCfg = (typeof SFONDI !== 'undefined' && sl.sfondo) ? SFONDI[sl.sfondo] : null;
+        playerWrap.style.background = sfCfg ? sfCfg.bg : 'var(--cell-bg-dark)';
+
+        // Stato badge
+        const STATO_S = {
+          bozza:     {dot:'#999',   label:'Bozza',       bg:'rgba(0,0,0,0.55)',       text:'#e0e0e0'},
+          approvare: {dot:'#d4a800',label:'Da approvare',bg:'rgba(212,168,0,0.18)',   text:'#7a5c00'},
+          approvato: {dot:'#1a7a4a',label:'Approvato',   bg:'rgba(26,122,74,0.14)',   text:'#0f5230'},
+        };
+        const stKey = sb.stato||'bozza';
+        const st = STATO_S[stKey]||STATO_S.bozza;
+        statoBadge.style.cssText = `background:${st.bg};color:${st.text};`;
+        statoBadge.innerHTML = `<span class="sb-stato-dot" style="background:${st.dot};"></span>${st.label}`;
+
+        // Contatore
+        counterBadge.textContent = `${state.cur+1}/${sb.slides.length}`;
+
+        // Play button
+        btnPlay.textContent = state.playing ? '⏸' : '▶';
+        btnPlay.title = state.playing ? 'Pausa' : 'Autoplay';
+
+        // Puntini
+        dotsWrap.innerHTML = '';
+        sb.slides.forEach((_,di)=>{
+          const dot = document.createElement('span');
+          dot.className = 'sb-dot' + (di===state.cur ? ' active' : '');
+          dot.onclick = (e)=>{ e.stopPropagation(); sbGoTo(di); };
+          dotsWrap.appendChild(dot);
+        });
+
+        // Strip miniature
+        strip.innerHTML = '';
+        sb.slides.forEach((thumb,ti)=>{
+          const th = document.createElement('div');
+          th.className = 'sb-thumb' + (ti===state.cur ? ' active' : '');
+          if(thumb.url){
+            const tImg = document.createElement('img');
+            tImg.src = thumb.url; tImg.alt = '';
+            th.appendChild(tImg);
+          }
+          // Placeholder indicator
+          if(thumb.isPlaceholder){
+            const ph = document.createElement('div');
+            ph.className = 'sb-thumb-ph';
+            th.appendChild(ph);
+          }
+          th.onclick = (e)=>{ e.stopPropagation(); sbGoTo(ti); };
+          strip.appendChild(th);
+        });
       }
 
-      // Badge slide count
-      const sbBadge = document.createElement('span');
-      sbBadge.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-family:var(--font);font-weight:600;padding:2px 7px;border-radius:var(--r-pill);';
-      sbBadge.textContent = sb.slides.length + ' slide';
-      sbCell.appendChild(sbBadge);
-
-      // Indicatore 9:16
-      const fmtBadge = document.createElement('span');
-      fmtBadge.style.cssText = 'position:absolute;bottom:8px;left:8px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:9px;font-family:var(--font);padding:1px 5px;border-radius:2px;border:0.5px solid rgba(255,255,255,.2);';
-      fmtBadge.textContent = 'Storyboard';
-      sbCell.appendChild(fmtBadge);
-
-      sbPost.appendChild(sbCell);
-
-      // Nome / note
-      if(sb.note){
-        const sbNote = document.createElement('div');
-        sbNote.style.cssText = 'padding:8px 10px;font-size:11px;color:var(--text-2);line-height:1.4;';
-        sbNote.textContent = sb.note;
-        sbPost.appendChild(sbNote);
-      }
-
+      sbRefresh();
       sbGrid.appendChild(sbPost);
     });
 
