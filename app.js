@@ -749,8 +749,22 @@ function renderFeedGrid(){
         // ── Editorial card background ──
         const badge=document.createElement('div');
         if(item.type==='editorial'){
-          const cols=item.editorialColors||{bg:'#f5f0e8',text:'#111',accent:'#1a3c5e',logo:'#0dff00',logoText:'#111'};
+          const _clientBrand = feedClientIdx>=0 ? (clients[feedClientIdx]?.brand||{}) : {};
+          const cols=item.editorialColors||(Object.keys(_clientBrand).length ? {
+            bg: _clientBrand.bg||'#f5f0e8',
+            text: _clientBrand.text||'#111',
+            accent: _clientBrand.primary||'#1a3c5e',
+            logo: '#0dff00',
+            logoText: '#111'
+          } : {bg:'#f5f0e8',text:'#111',accent:'#1a3c5e',logo:'#0dff00',logoText:'#111'});
           cell.style.background=cols.bg;cell.style.color=cols.text;cell.style.aspectRatio=_fmt.cssRatio;
+          // Indicatore: "Brand" se palette viene dal cliente
+          if(!item.editorialColors && feedClientIdx>=0 && clients[feedClientIdx]?.brand){
+            const brandDot=document.createElement('div');
+            brandDot.className='cell-brand-dot';
+            brandDot.title='Palette brand cliente applicata';
+            cell.appendChild(brandDot);
+          }
           const titleHtml=item.editorialAccent&&item.editorialTitle?.includes(item.editorialAccent)
             ?item.editorialTitle.replace(item.editorialAccent,`<span style="color:${cols.accent};">${item.editorialAccent}</span>`)
             :item.editorialTitle||'';
@@ -1813,7 +1827,29 @@ function renderPEDCards(){
     const typeSel=document.createElement('select');typeSel.className='ped-story-type-sel';[['autonoma','Autonoma'],['template','Template']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===st.type)o.selected=true;typeSel.appendChild(o);});typeSel.onchange=e=>{currentPedPlan()[i].type=e.target.value;renderPEDCards();renderPEDCal();};
     const badge=document.createElement('span');badge.className='ped-type-badge';badge.innerHTML=st.type==='autonoma'?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
     const del=document.createElement('button');del.className='ped-story-del';del.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.onclick=()=>{const p=currentPedPlan();p.splice(i,1);setCurrentPedPlan(p);renderPED();};
-    head.appendChild(dateEl);head.appendChild(typeSel);head.appendChild(badge);head.appendChild(del);
+    // ── Stato UGC ──
+    const ugcStato = st.ugcStato || 'raccolto';
+    const UGC_ST = [
+      {k:'raccolto',   l:'Raccolto',    dot:'#888',    bg:'rgba(120,120,120,0.12)', text:'#555'},
+      {k:'selezionato',l:'Selezionato', dot:'#1D6FA8', bg:'rgba(29,111,168,0.12)',  text:'#0d4a73'},
+      {k:'adattato',   l:'Adattato',    dot:'#d4a800', bg:'rgba(212,168,0,0.14)',   text:'#7a5c00'},
+      {k:'approvato',  l:'Approvato',   dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230'},
+    ];
+    const stCfg = UGC_ST.find(s=>s.k===ugcStato)||UGC_ST[0];
+    const statoBtn = document.createElement('button');
+    statoBtn.className = 'ugc-stato-btn';
+    statoBtn.style.cssText = `background:${stCfg.bg};color:${stCfg.text};border:1px solid ${stCfg.dot};`;
+    statoBtn.innerHTML = `<span class="ugc-stato-dot" style="background:${stCfg.dot};"></span>${stCfg.l}`;
+    statoBtn.onclick = ()=>{
+      const cur = currentPedPlan()[i].ugcStato || 'raccolto';
+      const idx2 = UGC_ST.findIndex(s=>s.k===cur);
+      const next = UGC_ST[(idx2+1)%UGC_ST.length].k;
+      currentPedPlan()[i].ugcStato = next;
+      autoSave(); renderPEDCards();
+    };
+    // Bordo card colorato per stato
+    if(ugcStato !== 'raccolto') card.style.borderLeft = `3px solid ${stCfg.dot}`;
+    head.appendChild(dateEl);head.appendChild(statoBtn);head.appendChild(typeSel);head.appendChild(badge);head.appendChild(del);
     const body=document.createElement('div');body.className='ped-story-body';
     const brief=document.createElement('textarea');brief.className='ped-story-brief';brief.placeholder=st.type==='autonoma'?'Brief per il cliente…':'Descrizione / copy…';brief.value=st.brief||'';brief.oninput=e=>{currentPedPlan()[i].brief=e.target.value;autoSave();};body.appendChild(brief);
     if(st.type==='template'){const tmpl=document.createElement('input');tmpl.type='text';tmpl.className='ped-story-template';tmpl.placeholder='Link o nome template (Canva, Adobe Express…)';tmpl.value=st.templateRef||'';tmpl.oninput=e=>{currentPedPlan()[i].templateRef=e.target.value;};body.appendChild(tmpl);}
@@ -3883,6 +3919,30 @@ function cycleApprStato(idx, items){
   if(next === 'approvare') items[idx].apprRevisions = (items[idx].apprRevisions||0)+1;
   autoSave();
   refreshFeed();
+}
+
+
+function sbLivePreview(){
+  const raw = document.getElementById('sb-parser-input')?.value || '';
+  const preview = document.getElementById('sb-live-preview');
+  if(!preview) return;
+  if(!raw.trim()){ preview.style.display='none'; return; }
+  const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  let num='',eye='',tit='',cop='';
+  lines.forEach(l=>{
+    if(/^\[NUM\]/i.test(l))          num=l.replace(/^\[NUM\]\s*/i,'');
+    else if(/^\[OCCHIELLO\]/i.test(l)) eye=l.replace(/^\[OCCHIELLO\]\s*/i,'');
+    else if(/^\[TITOLO\]/i.test(l))    tit=l.replace(/^\[TITOLO\]\s*/i,'');
+    else if(/^\[COPY\]/i.test(l))      cop=l.replace(/^\[COPY\]\s*/i,'');
+  });
+  // Fallback no-tag
+  if(!num&&!eye&&!tit&&!cop&&lines.length>=2){eye=lines[0];tit=lines[1];cop=lines.slice(2).join(' ');}
+  const set=(id,val)=>{const el=document.getElementById(id);if(el){el.textContent=val||'';el.style.opacity=val?'1':'0.3';}};
+  set('sb-live-num', num ? `#${num}` : '—');
+  set('sb-live-eye', eye || '—');
+  set('sb-live-tit', tit || '—');
+  set('sb-live-cop', cop || '—');
+  preview.style.display = 'block';
 }
 
 
