@@ -702,7 +702,7 @@ function renderFeedGrid(){
   // FIX 5: drag delegation — listeners attached once to grid, not per-cell
   // (removed at innerHTML='' above, re-added here)
   const items=currentFeedItems();
-  if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
+  if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
   const total=Math.max(items.length+1,9);
   for(let i=0;i<total;i++){
     const wrap=document.createElement('div');wrap.className='cell-wrap';const cell=document.createElement('div');cell.className='feed-cell';
@@ -932,7 +932,7 @@ function renderStoriesGrid(){
   const grid=document.getElementById('stories-grid');const hlRow=document.getElementById('hl-row');
   if(!grid||!hlRow)return;grid.innerHTML='';hlRow.innerHTML='';
   const arr=currentStoryItems();
-  if(storiesAccountIdx<0){const em=document.createElement('div');em.style.cssText='grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-3);font-size:12px;';em.textContent='📱 Seleziona cliente e account per gestire le stories.';grid.appendChild(em);}
+  if(storiesAccountIdx<0){const em=document.createElement('div');em.style.cssText='grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-3);font-size:12px;';em.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20" style="margin-right:6px;vertical-align:-4px;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Seleziona cliente e account per gestire le stories.';grid.appendChild(em);}
   else{
     const total=Math.max(arr.length+1,8);
     for(let i=0;i<total;i++){
@@ -940,7 +940,7 @@ function renderStoriesGrid(){
       const cell=document.createElement('div');cell.className='story-cell';
       if(i<arr.length){
         const st=arr[i],idx=i;
-        if(st.isStoryboard){const coverUrl=st.slides?.[0]?.url||'';if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';cell.appendChild(img);}else{const ph=document.createElement('div');ph.style.cssText='position:absolute;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;';ph.innerHTML='<span style="font-size:22px;">🎬</span><span style="font-size:9px;color:rgba(255,255,255,.5);">'+(st.slides?.length||0)+' slide</span>';cell.appendChild(ph);}const b=document.createElement('span');b.className='story-badge storyboard';b.textContent='🎬 '+(st.slides?.length||0);cell.appendChild(b);}
+        if(st.isStoryboard){const coverUrl=st.slides?.[0]?.url||'';if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';cell.appendChild(img);}else{const ph=document.createElement('div');ph.style.cssText='position:absolute;inset:0;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;';ph.innerHTML='<span style="display:flex;align-items:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span style="font-size:9px;color:rgba(255,255,255,.5);">'+(st.slides?.length||0)+' slide</span>';cell.appendChild(ph);}const b=document.createElement('span');b.className='story-badge storyboard';b.textContent='🎬 '+(st.slides?.length||0);cell.appendChild(b);}
         else if(st.type==='video'){const v=makeMedia(st.url,'video');cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);const b=document.createElement('span');b.className='story-badge video';b.textContent='';cell.appendChild(b);}
         else if(st.url){const img=document.createElement('img');img.src=st.url;img.alt='';cell.appendChild(img);}
         const num=document.createElement('span');num.className='story-num';num.textContent=i+1;cell.appendChild(num);
@@ -1519,7 +1519,7 @@ function renderPreview(){
       post.appendChild(cell);
       if(item.copy?.trim()){const cd=document.createElement('div');cd.className='client-copy';cd.innerHTML='<div class="client-copy-lbl">Caption</div>';const ct=document.createElement('div');ct.textContent=item.copy;cd.appendChild(ct);post.appendChild(cd);}
       const linked=(item.linkedStories||[]).map(si=>stArr[si]).filter(Boolean);
-      if(linked.length){const strip=document.createElement('div');strip.className='ls-strip';strip.innerHTML='<div class="ls-strip-lbl">📱</div>';linked.forEach(st=>{const circ=document.createElement('div');circ.className='ls-circle';const cu=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;if(cu){const img=document.createElement('img');img.src=cu;img.alt='';circ.appendChild(img);}strip.appendChild(circ);});post.appendChild(strip);}
+      if(linked.length){const strip=document.createElement('div');strip.className='ls-strip';strip.innerHTML='<div class="ls-strip-lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></div>';linked.forEach(st=>{const circ=document.createElement('div');circ.className='ls-circle';const cu=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;if(cu){const img=document.createElement('img');img.src=cu;img.alt='';circ.appendChild(img);}strip.appendChild(circ);});post.appendChild(strip);}
       grid.appendChild(post);
     });
     body.appendChild(grid);
