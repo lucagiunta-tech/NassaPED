@@ -931,3 +931,64 @@ tbody tr:hover .tr-actions{opacity:1;}
 .sb-cass-btn{font-size:10px;padding:2px 7px;border-radius:var(--r-pill);border:.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text-2);}
 .sb-cass-btn:hover{background:var(--green-lt);border-color:var(--green);color:var(--text);}
 .sb-cass-empty{font-size:var(--fs-xs);color:var(--text-3);text-align:center;padding:24px 0;}
+
+/* ════ ADS TAB ════ */
+.ads-page{display:flex;flex-direction:column;height:100%;}
+.ads-toprow{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;flex-shrink:0;border-bottom:.5px solid var(--border);}
+.ads-page-title{font-size:var(--fs-md);font-weight:700;color:var(--text);}
+.ads-page-sub{font-size:var(--fs-xs);color:var(--text-3);margin-top:2px;}
+
+/* Metric cards */
+.ads-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+.ads-metric{background:var(--bg);border-radius:var(--r);padding:12px 14px;border:.5px solid var(--border);}
+.ads-metric-lbl{font-size:var(--fs-xs);color:var(--text-2);margin-bottom:4px;}
+.ads-metric-val{font-size:22px;font-weight:700;color:var(--text);line-height:1.1;}
+.ads-metric-sub{font-size:var(--fs-xs);color:var(--text-3);margin-top:3px;}
+.ads-metric-sub.up{color:#16a34a;}
+.ads-metric-sub.dn{color:var(--red);}
+
+/* Alert */
+.ads-alert{background:#fef9ee;border:.5px solid #fde68a;border-radius:var(--rs);padding:9px 12px;font-size:var(--fs-xs);color:#92400e;display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;}
+.ads-alert svg{flex-shrink:0;margin-top:1px;}
+
+/* Chart */
+.ads-chart-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;}
+.ads-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ads-chart-title{font-size:var(--fs-sm);font-weight:600;color:var(--text);}
+.ads-filter-row{display:flex;gap:4px;}
+.ads-filt{font-size:10px;padding:3px 9px;border-radius:var(--r-pill);border:.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text-2);font-weight:500;}
+.ads-filt.active{background:var(--text);color:var(--surface);border-color:var(--text);}
+.ads-bars{display:flex;flex-direction:column;gap:9px;}
+.ads-bar-row{display:grid;grid-template-columns:80px 1fr 52px;gap:8px;align-items:center;}
+.ads-bar-lbl{font-size:var(--fs-xs);color:var(--text-2);text-align:right;}
+.ads-bar-track{background:var(--bg);border-radius:99px;height:7px;overflow:hidden;}
+.ads-bar-fill{height:100%;border-radius:99px;transition:width .3s;}
+.ads-bar-val{font-size:var(--fs-xs);font-weight:600;color:var(--text);text-align:right;}
+
+/* Campaign list */
+.ads-camp-list{display:flex;flex-direction:column;gap:8px;}
+.ads-camp{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;transition:border-color .1s;}
+.ads-camp:hover{border-color:var(--green);}
+.ads-camp-name{font-size:var(--fs-sm);font-weight:600;margin-bottom:4px;}
+.ads-camp-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.ads-plat{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);}
+.ads-plat.ig{background:#dbeafe;color:#1e40af;}
+.ads-plat.fb{background:#ede9fe;color:#5b21b6;}
+.ads-plat.meta{background:#ede9fe;color:#5b21b6;}
+.ads-plat.li{background:#dcfce7;color:#166534;}
+.ads-plat.gg{background:#fef3c7;color:#92400e;}
+.ads-status{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);}
+.ads-status.active{background:var(--green-lt);color:var(--dot-active);}
+.ads-status.paused{background:#fef9ee;color:#92400e;}
+.ads-status.draft{background:var(--bg);color:var(--text-3);}
+.ads-status.ended{background:var(--bg);color:var(--text-3);}
+.ads-camp-kpis{display:flex;gap:14px;align-items:center;}
+.ads-kpi{text-align:right;}
+.ads-kpi-val{font-size:13px;font-weight:600;color:var(--text);}
+.ads-kpi-val.good{color:#16a34a;}
+.ads-kpi-val.warn{color:#d97706;}
+.ads-kpi-lbl{font-size:10px;color:var(--text-3);}
+.ads-div{width:.5px;background:var(--border);height:28px;}
+.ads-camp-del{background:none;border:none;cursor:pointer;color:var(--text-3);padding:3px;border-radius:var(--rs);display:flex;align-items:center;}
+.ads-camp-del:hover{color:var(--red);}
+.ads-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:var(--fs-sm);}
