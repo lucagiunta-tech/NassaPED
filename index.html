@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Nassa Studio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="style.css?v=1781971162"/>
+<link rel="stylesheet" href="style.css?v=1781971550"/>
 </head>
 <body>
 <div class="app">
@@ -44,10 +44,10 @@
     <div class="sub-tab" id="sub-tab-feed"    onclick="switchTab('feed')">Feed</div>
     <div class="sub-tab" id="sub-tab-stories" onclick="switchTab('stories')">Stories</div>
     <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">UGC</div>
-    <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
     <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
     <div class="sub-tab" id="sub-tab-anno"   onclick="switchTab('anno')">Anno</div>
     <div class="sub-tab" id="sub-tab-preview" onclick="switchTab('preview')">Preview</div>
+    <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
   </div>
 </div>
 
@@ -125,7 +125,13 @@
   <div id="sidebar-feed" style="display:none;"></div>
 
   <!-- Stories sidebar panel removed — moved to page-stories context bar -->
-  <div id="sidebar-stories" style="display:none;"></div>
+  <div id="sidebar-stories" style="display:none;">
+    <!-- Keep hidden IDs for JS compatibility -->
+    <select id="stories-client-sel" onchange="onStoriesClientChange()" style="display:none;"><option value="">— Cliente —</option></select>
+    <select id="stories-account-sel" onchange="onStoriesAccountChange()" style="display:none;"></select>
+    <input type="file" id="stories-file-input" accept="image/*,video/*" multiple onchange="queueStoryFiles(this.files)" style="display:none;"/>
+    <input type="text" id="stories-link-inp" style="display:none;"/>
+  </div>
 
   <!-- sidebar-studio-add moved to modal -->
   <div id="sidebar-studio-add" style="display:none;"></div>
@@ -320,7 +326,7 @@
           <div class="ctx-sec-lbl">Opzioni</div>
           <div style="display:flex;flex-direction:column;gap:5px;">
             <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
-            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-right:3px;vertical-align:-1px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
+            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
           </div>
           <div class="ctx-hint">⠿ trascina · hover → opzioni</div>
         </div>
@@ -427,7 +433,7 @@
         </div>
         <div class="ped-scroll">
           <div class="ped-empty-ped" id="ped-empty">
-            <span class="pe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+            <span class="pe-icon">📝</span>
             <p>Vai nel <strong>Feed</strong>, seleziona un cliente e un mese.<br>Poi torna qui per pianificare le stories.</p>
           </div>
           <div id="ped-freq-block" style="display:none;">
@@ -472,7 +478,6 @@
         <span><span class="cal-legend-dot" style="background:var(--amber);"></span>Evidenza</span>
         <span><span class="cal-legend-dot" style="background:#7c3aed;"></span>PED Template</span>
         <span><span class="cal-legend-dot" style="background:#1a56c4;"></span>PED Autonoma</span>
-        <span><span class="cal-legend-dot" style="background:#7c3aed;border-radius:3px;"></span>Paid</span>
       </div>
       <div class="cal-view-toggle">
         <button class="cal-view-btn active" id="cal-btn-month" onclick="setCalView('month')">Mese</button>
@@ -529,19 +534,32 @@
       <div class="preview-body" id="preview-body">
         <div id="preview-empty" class="preview-empty"><p>Nessun cliente selezionato.</p></div>
       </div>
-    </d
+    </div>
+    <div class="lightbox" id="lightbox" onclick="lbBg(event)">
+      <div class="lb-wrap">
+        <button class="lb-nav lb-prev" onclick="lbNav(-1)">‹</button>
+        <div class="lb-inner" id="lb-inner"></div>
+        <button class="lb-nav lb-next" onclick="lbNav(1)">›</button>
+        <div class="lb-counter" id="lb-counter"></div>
+        <div class="lb-copy" id="lb-copy"></div>
+        <div class="lb-stories-strip" id="lb-stories-strip"></div>
+      </div>
+    </div>
   </div>
 
 
 
   <!-- PAGE ANNO — Calendario Editoriale Annuale -->
   <div class="tab-page" id="page-anno">
-    <div class="anno-page">
       <div class="anno-toprow">
         <div class="anno-year-nav">
-          <button class="cal-nav-btn" onclick="annoPrevYear()">‹</button>
+          <button class="btn sm icon" onclick="annoPrevYear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
           <span class="anno-year-lbl" id="anno-year-lbl">2026</span>
-          <button class="cal-nav-btn" onclick="annoNextYear()">›</button>
+          <button class="btn sm icon" onclick="annoNextYear()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
         <div class="anno-tag-filters" id="anno-tag-filters"></div>
       </div>
@@ -553,7 +571,6 @@
       </div>
       <div class="anno-bands" id="anno-bands"></div>
       <div class="anno-footer" id="anno-footer"></div>
-    </div>
   </div>
 
   <!-- PAGE ADS -->
@@ -607,19 +624,6 @@
 
 >
 </div><!-- /app -->
-
-        <div class="lightbox" id="lightbox" onclick="lbBg(event)">
-      <div class="lb-wrap">
-        <button class="lb-nav lb-prev" onclick="lbNav(-1)">‹</button>
-        <div class="lb-inner" id="lb-inner"></div>
-        <button class="lb-nav lb-next" onclick="lbNav(1)">›</button>
-        <div class="lb-counter" id="lb-counter"></div>
-        <div class="lb-copy" id="lb-copy"></div>
-        <div class="lb-stories-strip" id="lb-stories-strip"></div>
-      </div>
-    </div>
-
-
 
   <!-- MODAL APPROVAZIONE -->
   <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
@@ -769,7 +773,7 @@
       </div>
     </div>
     <div class="divider" style="margin:12px -18px;"></div>
-    <div class="sec-lbl">Palette brand</div>
+    <div class="sec-lbl">🎨 Palette brand</div>
     <div class="ec-palette-grid">
       <div class="ec-pal-slot">
         <label class="ec-pal-lbl">Primario</label>
@@ -1036,6 +1040,6 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="app.js?v=1781971162"></script>
+<script src="app.js?v=1781971550"></script>
 </body>
 </html>
