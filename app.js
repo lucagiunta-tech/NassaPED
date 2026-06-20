@@ -2371,8 +2371,142 @@ function applySidebarState(){
 function autoSave(){if(CLOUD._booting)return;CLOUD.scheduleSave(()=>CLOUD.snapshot());}
 
 
+
+/* ══ ADS GANTT ══ */
+const ADS_MONTH_NAMES=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+const ADS_PLAT_COLORS={instagram:'#378ADD',facebook:'#7F77DD',meta:'#7F77DD',linkedin:'#1D9E75',google:'#BA7517'};
+
+function adsGanttPrevMonth(){
+  adsGanttMonth--;
+  if(adsGanttMonth<0){adsGanttMonth=11;adsGanttYear--;}
+  renderAdsGantt();
+}
+function adsGanttNextMonth(){
+  adsGanttMonth++;
+  if(adsGanttMonth>11){adsGanttMonth=0;adsGanttYear++;}
+  renderAdsGantt();
+}
+
+function adsAutoSpends(camp, days){
+  // Distribute spent evenly across campaign days, 3-5 milestones
+  const start=Math.max(1,camp.startDay||1);
+  const end=Math.min(days,camp.endDay||days);
+  const dur=end-start+1;
+  if(!camp.spent||dur<=0)return[];
+  const pts=Math.min(5,Math.max(2,Math.floor(dur/5)));
+  const step=Math.floor(dur/(pts+1));
+  const amtEach=Math.round(camp.spent/pts);
+  return Array.from({length:pts},(_,i)=>({
+    day:start+step*(i+1),
+    amt:i===pts-1?camp.spent-(amtEach*(pts-1)):amtEach
+  })).filter(s=>s.day>=1&&s.day<=days);
+}
+
+function renderAdsGantt(){
+  const el=id=>document.getElementById(id);
+  const ganttEl=el('ads-gantt');
+  const monthLbl=el('ads-gantt-month');
+  if(!ganttEl)return;
+
+  const days=new Date(adsGanttYear,adsGanttMonth+1,0).getDate();
+  const today=new Date();
+  const isNow=today.getFullYear()===adsGanttYear&&today.getMonth()===adsGanttMonth;
+  const todayDay=isNow?today.getDate():-1;
+
+  if(monthLbl)monthLbl.textContent=ADS_MONTH_NAMES[adsGanttMonth]+' '+adsGanttYear;
+
+  const camps=currentAdsCampaigns().filter(c=>c.startDay&&c.endDay);
+  const LABEL_W=130;
+
+  ganttEl.innerHTML='';
+
+  if(!camps.length){
+    ganttEl.innerHTML='<div class="ads-gantt-empty">Nessuna campagna con date impostate. Modifica una campagna e aggiungi giorno di inizio e fine.</div>';
+    return;
+  }
+
+  // Header
+  const hdr=document.createElement('div');
+  hdr.className='ads-gantt-hdr';
+  hdr.style.gridTemplateColumns=`${LABEL_W}px 1fr`;
+  const hdrLbl=document.createElement('div');
+  hdrLbl.className='ads-gantt-hdr-lbl';
+  hdrLbl.textContent='Campagna';
+  hdr.appendChild(hdrLbl);
+
+  const dayWrap=document.createElement('div');
+  dayWrap.className='ads-gantt-days';
+  // Show every 5th day
+  for(let d=1;d<=days;d++){
+    const dl=document.createElement('div');
+    dl.className='ads-gantt-day'+(d===todayDay?' today':'');
+    dl.textContent=(d===1||d%5===0||d===days)?d:'';
+    dayWrap.appendChild(dl);
+  }
+  hdr.appendChild(dayWrap);
+  ganttEl.appendChild(hdr);
+
+  // Rows
+  camps.forEach(camp=>{
+    const row=document.createElement('div');
+    row.className='ads-gantt-row';
+    row.style.gridTemplateColumns=`${LABEL_W}px 1fr`;
+
+    // Label
+    const lbl=document.createElement('div');
+    lbl.className='ads-gantt-lbl';
+    lbl.innerHTML=`<div class="ads-gantt-lbl-name">${camp.name}</div>
+      <div class="ads-gantt-lbl-sub">${{active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status}</div>`;
+    row.appendChild(lbl);
+
+    // Timeline
+    const tl=document.createElement('div');
+    tl.className='ads-gantt-tl';
+
+    // Today line
+    if(todayDay>0){
+      const tline=document.createElement('div');
+      tline.className='ads-gantt-today';
+      tline.style.left=((todayDay-0.5)/days*100)+'%';
+      tl.appendChild(tline);
+    }
+
+    // Bar
+    const s=Math.max(1,camp.startDay), e=Math.min(days,camp.endDay);
+    if(s<=days&&e>=1){
+      const left=((s-1)/days*100).toFixed(2)+'%';
+      const width=((e-s+1)/days*100).toFixed(2)+'%';
+      const color=ADS_PLAT_COLORS[camp.platform]||'#888';
+      const bar=document.createElement('div');
+      bar.className='ads-gantt-bar'+(camp.status!=='active'?' '+camp.status:'');
+      bar.style.cssText=`left:${left};width:${width};background:${color};`;
+      // Label: spent/budget
+      const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
+      bar.textContent=`€${(camp.spent||0).toLocaleString('it')} (${pct}%)`;
+      bar.title=`${camp.name} — ${s}→${e} ${ADS_MONTH_NAMES[adsGanttMonth]}
+Budget: €${camp.budget} | Speso: €${camp.spent||0} | ROAS: ${camp.roas||'—'}×`;
+      tl.appendChild(bar);
+    }
+
+    // Auto spend dots
+    adsAutoSpends(camp, days).forEach(sp=>{
+      const dot=document.createElement('div');
+      dot.className='ads-gantt-spend-dot';
+      dot.style.left=((sp.day-0.5)/days*100).toFixed(2)+'%';
+      dot.title=`Spesa stimata giorno ${sp.day}: €${sp.amt}`;
+      tl.appendChild(dot);
+    });
+
+    row.appendChild(tl);
+    ganttEl.appendChild(row);
+  });
+}
+
 /* ════ ADS TAB ════ */
-let adsCampaigns = {}; // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status,creativeUrl,creativeType}]
+let adsCampaigns = {};
+let adsGanttYear = new Date().getFullYear();
+let adsGanttMonth = new Date().getMonth(); // 0-indexed // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status,creativeUrl,creativeType}]
 let _adsCreativeFile = null; // temp file object for upload
 let adsEditId = null;
 let adsFilter = 'all';
@@ -2465,6 +2599,7 @@ function renderAdsTab(){
   }
 
   renderAdsCampList(camps);
+  renderAdsGantt();
 }
 
 function renderAdsCampList(camps){
@@ -2572,6 +2707,8 @@ function openAddAdsCampaignModal(){
   el('adm-imp').value='';
   el('adm-status').value='active';
   el('adm-roas-target').value='';
+  el('adm-start').value='';
+  el('adm-end').value='';
   el('adm-creative-url').value='';
   adsClearCreative();
   openModal('ads-camp-modal');
@@ -2592,6 +2729,8 @@ function openEditAdsCampaign(id){
   el('adm-imp').value=camp.impressions||'';
   el('adm-status').value=camp.status||'active';
   el('adm-roas-target').value=camp.roasTarget||'';
+  el('adm-start').value=camp.startDay||'';
+  el('adm-end').value=camp.endDay||'';
   // Load creative
   adsClearCreative();
   if(camp.creativeUrl){
@@ -2660,6 +2799,8 @@ async function saveAdsCampaign(){
     cpc:parseFloat(g('adm-cpc'))||0,
     impressions:parseInt(g('adm-imp'))||0,
     status:g('adm-status')||'active',
+    startDay:parseInt(g('adm-start'))||1,
+    endDay:parseInt(g('adm-end'))||new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate(),
     creativeUrl, creativeType,
     updatedAt:new Date().toISOString()
   };
