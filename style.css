@@ -1054,3 +1054,15 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* ══ FONT SERIF TOKEN (Slide Builder) ══ */
 /* Aggiunto come variabile CSS per essere governato dal design system */
 /* già definito come Georgia inline nel CSS del builder — questo è il riferimento */
+
+/* ══ CONFIRM MODAL ══ */
+.confirm-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.confirm-icon.danger{background:var(--danger-bg);}
+.confirm-icon.danger svg{stroke:var(--red);}
+.confirm-icon.warn{background:var(--warning-bg);}
+.confirm-icon.warn svg{stroke:#d97706;}
+.confirm-title{font-size:var(--fs-base);font-weight:700;color:var(--text);margin-bottom:6px;}
+.confirm-body{font-size:var(--fs-sm);color:var(--text-2);line-height:1.5;}
+#confirm-ok-btn.danger{background:var(--red);color:#fff;border-color:var(--red);}
+#confirm-ok-btn.danger:hover{background:var(--red-dk);border-color:var(--red-dk);}
+#confirm-ok-btn.warn{background:#d97706;color:#fff;border-color:#d97706;}
