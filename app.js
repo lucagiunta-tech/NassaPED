@@ -532,7 +532,7 @@ function needsReloadPh(icon,name,reuploadFn){
 /* TAB SWITCHING */
 function switchTab(tab){
   currentTab=tab;
-  const allTabs=['studio','notes','pilastri','feed','stories','ped','cal','preview','ads'];
+  const allTabs=['studio','notes','pilastri','feed','stories','ped','cal','anno','preview','ads'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -560,6 +560,7 @@ function switchTab(tab){
   }
   if(tab==='pilastri'){renderPilastri();}
   if(tab==='cal'){if(typeof renderCalendar==='function')renderCalendar();}
+  if(tab==='anno'){renderAnnoTab();}
   if(tab==='preview'){if(previewClientIdx<0&&globalClientIdx>=0){previewClientIdx=globalClientIdx;previewAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}syncPreviewSelectors();renderPreview();}
   // FIX QA: renderAdsTab mancava dal switchTab — tab Ads non si aggiornava mai
   if(tab==='ads'){renderAdsTab();}
@@ -2860,6 +2861,10 @@ function migrateAdsCampaignsKeys(adsData, clientList){
 
 let adsCampaigns = {};
 let adsGanttYear = new Date().getFullYear();
+let annoYear = new Date().getFullYear();
+let annoFilterTag = null;
+let annoSelectedEv = null;
+let annoExpanded = {};
 let adsGanttMonth = new Date().getMonth(); // 0-indexed // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status,creativeUrl,creativeType}]
 let _adsCreativeFile = null; // temp file object for upload
 let adsEditId = null;
@@ -3188,6 +3193,279 @@ function deleteAdsCampaign(id){
   });
   autoSave();
   }});
+}
+
+
+/* ══ TAB ANNO — Calendario Editoriale Annuale ══ */
+
+const ANNO_TAG_COLORS = {
+  'Feed':     {bg:'#b2d8d0', text:'#0a3d35', border:'#7ab8ae'},
+  'Reel':     {bg:'#d4cff5', text:'#2a1a6e', border:'#a49de0'},
+  'Stories':  {bg:'#f5d4b8', text:'#5c2a00', border:'#d4a070'},
+  'UGC':      {bg:'#d8f0d4', text:'#1a4d14', border:'#80c878'},
+  'deadline': {bg:'#f5b8b8', text:'#5c0000', border:'#d48080'},
+  'note':     {bg:'#e8e8e8', text:'#2a2a2a', border:'#b0b0b0'},
+};
+
+/**
+ * Aggrega tutti i dati Feed + Stories + PED del cliente corrente
+ * per un dato anno, organizzati per mese (0-11) e canale (0=Feed, 1=Deadline/Note, 2=Stories/UGC)
+ */
+function buildAnnoData(year) {
+  const result = {}; // { monthIdx: [{day, ch, title, sub, tag, label}] }
+  if(globalClientIdx < 0) return result;
+  const cl = clients[globalClientIdx];
+  if(!cl) return result;
+
+  const yr = String(year);
+
+  // Scorre tutti gli account del cliente
+  (cl.accounts || []).forEach(acc => {
+    MONTHS.forEach((mName, mi) => {
+      const monthKey = accountKey(acc.id, mName + ' ' + yr);
+      if(!result[mi]) result[mi] = [];
+
+      // Feed items → Canale 0
+      (feeds[monthKey] || []).forEach(item => {
+        if(!item.date && !item.copy && !item.brief) return;
+        const dayNum = parseDayFromItalianDate(item.date);
+        if(!dayNum) return;
+        const tag = item.type === 'video' ? 'Reel' : item.type === 'carousel' ? 'Feed' : 'Feed';
+        result[mi].push({
+          day: dayNum,
+          ch: 0,
+          title: item.copy || item.brief || '—',
+          sub: acc.name + (item.type ? ' · ' + (item.type==='video'?'Reel':item.type==='carousel'?'Carosello':'Foto') : ''),
+          tag,
+          raw: item
+        });
+      });
+
+      // Stories → Canale 2
+      (stories[monthKey] || []).forEach(st => {
+        if(!st.date) return;
+        const dayNum = parseDayFromItalianDate(st.date);
+        if(!dayNum) return;
+        result[mi].push({
+          day: dayNum,
+          ch: 2,
+          title: st.isStoryboard ? 'Storyboard' : (st.note || st.copy || 'Story'),
+          sub: acc.name + (st.type === 'video' ? ' · Reel' : ' · Story'),
+          tag: 'Stories',
+          raw: st
+        });
+      });
+    });
+  });
+
+  // PED plans (UGC) → Canale 2
+  const pedPrefix = cl.name + '|||';
+  Object.keys(pedPlans).forEach(k => {
+    if(!k.startsWith(pedPrefix)) return;
+    const monthStr = k.replace(pedPrefix, '');
+    const parts = monthStr.split(' ');
+    if(parts[1] !== yr) return;
+    const mi = MONTHS.indexOf(parts[0]);
+    if(mi < 0) return;
+    if(!result[mi]) result[mi] = [];
+    (pedPlans[k] || []).forEach(item => {
+      if(!item.date) return;
+      const d = new Date(item.date);
+      if(isNaN(d)) return;
+      result[mi].push({
+        day: d.getDate(),
+        ch: 2,
+        title: item.brief || 'UGC',
+        sub: item.type === 'autonoma' ? 'Autonoma' : 'Template',
+        tag: 'UGC',
+        raw: item
+      });
+    });
+  });
+
+  // Note → Canale 1 (da notesData)
+  const notesPrefix = cl.name + '|||';
+  Object.keys(notesData).forEach(k => {
+    if(!k.startsWith(notesPrefix)) return;
+    const monthStr = k.replace(notesPrefix, '');
+    const parts = monthStr.split(' ');
+    if(parts[1] !== yr) return;
+    const mi = MONTHS.indexOf(parts[0]);
+    if(mi < 0) return;
+    if(!result[mi]) result[mi] = [];
+    const content = notesData[k] || '';
+    // Estrae le deadline (righe che iniziano con ## o contengono "deadline"/"scadenza")
+    content.split('\n').forEach(line => {
+      const dl = line.match(/deadline[:\s]+(.+)/i) || line.match(/scadenza[:\s]+(.+)/i);
+      if(dl) {
+        result[mi].push({day:1, ch:1, label:dl[1].trim(), tag:'deadline'});
+      }
+    });
+  });
+
+  // Ordina ogni mese per giorno
+  Object.keys(result).forEach(mi => {
+    result[mi].sort((a,b) => a.day - b.day);
+  });
+
+  return result;
+}
+
+function parseDayFromItalianDate(dateStr) {
+  if(!dateStr) return null;
+  // Formato: "Lun 3 Giu" o "3 Giugno" o "2026-06-03"
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso) return parseInt(iso[3]);
+  const parts = dateStr.trim().split(/\s+/);
+  // "Ven 5 Giu" → giorno è il numero
+  for(const p of parts) {
+    const n = parseInt(p);
+    if(!isNaN(n) && n >= 1 && n <= 31) return n;
+  }
+  return null;
+}
+
+function annoPrevYear() { annoYear--; renderAnnoTab(); }
+function annoNextYear() { annoYear++; renderAnnoTab(); }
+
+function annoSetFilter(tag) {
+  annoFilterTag = annoFilterTag === tag ? null : tag;
+  renderAnnoTab();
+}
+
+function annoToggleMonth(mi) {
+  annoExpanded[mi] = !annoExpanded[mi];
+  renderAnnoTab();
+}
+
+function annoSelectEv(mi, evIdx) {
+  const data = buildAnnoData(annoYear);
+  const evs = data[mi] || [];
+  annoSelectedEv = evs[evIdx] ? {...evs[evIdx], month: mi} : null;
+  renderAnnoTab();
+}
+
+function renderAnnoTab() {
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  const eid = id => document.getElementById(id);
+
+  // Year label
+  if(eid('anno-year-lbl')) eid('anno-year-lbl').textContent = annoYear;
+
+  const data = buildAnnoData(annoYear);
+  const tags = Object.keys(ANNO_TAG_COLORS);
+
+  // Tag filters
+  const filterRow = eid('anno-tag-filters');
+  if(filterRow) {
+    filterRow.innerHTML = tags.map(t => {
+      const tc = ANNO_TAG_COLORS[t];
+      const isActive = annoFilterTag === t;
+      return `<button class="anno-tag-btn${isActive?' active':''}" 
+        onclick="annoSetFilter('${t}')"
+        style="${isActive?'background:'+tc.bg+';color:'+tc.text+';border:1.5px solid '+tc.border:'border-color:'+tc.border}"
+      >${t}</button>`;
+    }).join('');
+  }
+
+  // Bands
+  const bandsEl = eid('anno-bands');
+  if(!bandsEl) return;
+
+  const MONTHS_SHORT_IT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  let totalEvs = 0;
+  let html = '';
+
+  MONTHS.forEach((mName, mi) => {
+    let evs = data[mi] || [];
+    if(annoFilterTag) evs = evs.filter(e => e.tag === annoFilterTag);
+    totalEvs += evs.length;
+
+    const exp = !!annoExpanded[mi];
+    const byCh = [[],[],[]];
+    evs.forEach(e => byCh[Math.min(e.ch ?? 0, 2)].push(e));
+
+    html += `<div class="anno-band">
+      <div class="anno-band-row" onclick="annoToggleMonth(${mi})">
+        <div class="anno-month-cell">
+          <span class="anno-month-name">${MONTHS_SHORT_IT[mi]}</span>
+        </div>`;
+
+    [0,1,2].map(ch => {
+      const chEvs = byCh[ch];
+      if(!exp) {
+        html += `<div class="anno-channel"><div class="anno-ch-count">${chEvs.length ? chEvs.length + (chEvs.length===1?' evento':' eventi') : '—'}</div></div>`;
+        return;
+      }
+      html += `<div class="anno-channel">`;
+      chEvs.forEach((ev, ei) => {
+        const tc = ANNO_TAG_COLORS[ev.tag] || ANNO_TAG_COLORS.note;
+        const dayEl = ch === 0
+          ? `<span class="anno-day-pri">${ev.day}</span>`
+          : `<span class="anno-day-sec">${ev.day}</span>`;
+
+        if(ev.label) {
+          html += `<div class="anno-ev-row" onclick="event.stopPropagation();annoSelectEv(${mi},${byCh[ch].indexOf(ev)+(ch>0?byCh[0].length+(ch>1?byCh[1].length:0):0)})">
+            ${dayEl}
+            <div class="anno-ev-content">
+              <span class="anno-ev-tag" style="background:${tc.bg};color:${tc.text}">${ev.tag.toUpperCase()}</span>
+              <div class="anno-ev-label">${esc(ev.label)}</div>
+            </div>
+          </div>`;
+        } else {
+          html += `<div class="anno-ev-row" onclick="event.stopPropagation();annoSelectEv(${mi},${evs.indexOf(ev)})">
+            ${dayEl}
+            <div class="anno-ev-content">
+              <div class="anno-ev-primary" style="border-color:${tc.border}">
+                <span class="anno-ev-tag" style="background:${tc.bg};color:${tc.text}">${ev.tag}</span>
+                <div class="anno-ev-title">${esc(ev.title||'—')}</div>
+                ${ev.sub ? `<div class="anno-ev-sub">${esc(ev.sub)}</div>` : ''}
+              </div>
+            </div>
+          </div>`;
+        }
+      });
+      if(!chEvs.length) html += `<div class="anno-ch-count">—</div>`;
+      html += `</div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  bandsEl.innerHTML = html;
+
+  // Footer
+  const footer = eid('anno-footer');
+  if(footer) {
+    const cln = cl ? cl.name.toUpperCase() : 'NESSUN CLIENTE';
+    footer.innerHTML = `
+      <span class="anno-footer-txt">NASSA STUDIO · ${cln} · ${annoYear}</span>
+      <span class="anno-footer-txt">${totalEvs} EVENTI${annoFilterTag?' · '+annoFilterTag:''}</span>
+    `;
+  }
+
+  // Modal evento
+  let existingModal = document.getElementById('anno-detail-modal');
+  if(existingModal) existingModal.remove();
+
+  if(annoSelectedEv) {
+    const ev = annoSelectedEv;
+    const tc = ANNO_TAG_COLORS[ev.tag] || ANNO_TAG_COLORS.note;
+    const mNameFull = MONTHS[ev.month] || '';
+    const modal = document.createElement('div');
+    modal.id = 'anno-detail-modal';
+    modal.className = 'anno-modal-bg';
+    modal.onclick = () => { annoSelectedEv = null; renderAnnoTab(); };
+    modal.innerHTML = `<div class="anno-modal" onclick="event.stopPropagation()">
+      <div class="anno-modal-eyebrow">Dettaglio · ${ev.day} ${mNameFull} ${annoYear}</div>
+      ${ev.title ? `<div class="anno-modal-title">${esc(ev.title)}</div>` : ''}
+      ${ev.sub ? `<div class="anno-modal-sub">${esc(ev.sub)}</div>` : ''}
+      ${ev.label ? `<div class="anno-modal-sub" style="font-style:italic">${esc(ev.label)}</div>` : ''}
+      <span class="anno-ev-tag" style="background:${tc.bg};color:${tc.text};font-size:10px;padding:2px 8px;display:inline-block">${ev.tag.toUpperCase()}</span>
+      <button class="btn sm" style="margin-top:14px;" onclick="annoSelectedEv=null;renderAnnoTab()">Chiudi</button>
+    </div>`;
+    document.body.appendChild(modal);
+  }
 }
 
 /* INIT */
