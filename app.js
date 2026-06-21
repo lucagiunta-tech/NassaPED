@@ -3038,15 +3038,17 @@ function renderEcAccounts(){
     bioInp.oninput=e=>{ecTmpAccounts[i].bio=e.target.value;};
     bioWrap.appendChild(bioLbl);bioWrap.appendChild(bioInp);
     extra.appendChild(avatarWrap);extra.appendChild(bioWrap);
-    row.insertBefore(extra, del);
-    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';del.onclick=()=>{showConfirm({
+    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';
+    // Inserisci extra (foto+bio) prima del bottone delete
+    row.appendChild(main);row.appendChild(extra);row.appendChild(del);
+    del.onclick=()=>{showConfirm({
     title:'Rimuovi account',
     body:`Rimuovere l'account <strong>${esc(acc.name)}</strong>? I dati feed e stories associati saranno eliminati.`,
     okLabel:'Rimuovi',
     type:'danger',
     onOk:()=>{ecTmpAccounts.splice(i,1);renderEcAccounts();}
   });};
-    row.appendChild(main);row.appendChild(del);list.appendChild(row);
+    list.appendChild(row);
   });
 }
 function ecPalUpdate(key){
