@@ -617,8 +617,50 @@ tbody tr:hover .tr-actions{opacity:1;}
 .lb-story-th img,.lb-story-th video{width:100%;height:100%;object-fit:cover;display:block;}
 
 /* DATE PICKER */
-.date-picker-popup{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:9999;width:min(260px,calc(100vw - 24px));display:none;flex-direction:column;overflow:hidden;max-height:80vh;overflow-y:auto;}
+.date-picker-popup{
+  position:fixed;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  z-index:9999;
+  width:min(260px,calc(100vw - 24px));
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+  max-height:80vh;
+  overflow-y:auto;
+}
+/* Bottom sheet su mobile */
+.date-picker-popup.mobile-sheet{
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  top:auto !important;
+  width:100% !important;
+  max-width:100%;
+  border-radius:var(--r) var(--r) 0 0;
+  border-bottom:none;
+  max-height:70dvh;
+  transform:translateY(100%);
+  transition:transform .28s cubic-bezier(0.4,0,0.2,1);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.date-picker-popup.mobile-sheet.open{
+  transform:translateY(0);
+}
+/* Handle drag indicator */
+.date-picker-popup.mobile-sheet::before{
+  content:'';
+  display:block;
+  width:36px;height:4px;
+  background:var(--border);
+  border-radius:2px;
+  margin:10px auto 4px;
+  flex-shrink:0;
+}
 .date-picker-popup.open{display:flex;}
+.date-picker-popup.mobile-sheet.open{transform:translateY(0);}
 .dp-header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--border-lt);background:var(--bg);}
 .dp-header-label{font-size:var(--fs-sm);font-weight:600;}
 .dp-nav{background:none;border:none;cursor:pointer;color:var(--text-2);font-size:var(--fs-base);padding:2px 6px;border-radius:var(--r-xs);font-family:var(--font);}
@@ -1937,4 +1979,17 @@ tbody tr:hover .tr-actions{opacity:1;}
   .subtopbar-client { max-width: 80px; }
   .sub-tab { padding: 10px 9px; font-size: 11px; }
   .month-pill { font-size: 10px; padding: 2px 6px; }
+}
+
+/* Date picker mobile: celle giorno più grandi e cliccabili */
+@media (max-width: 744px) {
+  .date-picker-popup.mobile-sheet .dp-grid { grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 0 8px 8px; }
+  .date-picker-popup.mobile-sheet .dp-day {
+    min-width: 40px;
+    min-height: 44px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+  .date-picker-popup.mobile-sheet .dp-header { padding: 8px 16px; }
+  .date-picker-popup.mobile-sheet .dp-nav { min-width: 40px; min-height: 40px; font-size: 20px; }
 }
