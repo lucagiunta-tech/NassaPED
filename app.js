@@ -33,6 +33,11 @@ function renderEdPreview(){
     }
   }
   if(el('ed-prev-copy')) el('ed-prev-copy').textContent = copy.slice(0,100);
+  // Placeholder titolo se vuoto
+  if(el('ed-prev-title') && !title) el('ed-prev-title').textContent = 'Titolo';
+  // Aggiorna aspect-ratio wrap
+  const wr=el('ed-preview-wrap');
+  if(wr) wr.style.aspectRatio = edFmt==='story' ? '9/16' : '4/5';
 }/* ══════════════════════════════════════════
    UTILITIES — helpers globali usati in tutto il file
 ══════════════════════════════════════════ */
@@ -3308,6 +3313,13 @@ function addPendingSlot(){
 }
 
 function openEditorialModal(){
+  // Chiudi il pannello filtri se aperto
+  const ctxPanel=document.getElementById('feed-ctx-panel');
+  if(ctxPanel&&ctxPanel.classList.contains('open')){
+    ctxPanel.classList.remove('open');
+    const icon=document.getElementById('feed-expand-icon');
+    if(icon)icon.innerHTML='<polyline points="6 9 12 15 18 9"/>';
+  }
   // Pre-fill client name in eyebrow
   const cl=clients[globalClientIdx>=0?globalClientIdx:0];
   if(cl){
@@ -3319,9 +3331,18 @@ function openEditorialModal(){
   document.getElementById('ed-copy').value='';
   document.getElementById('ed-author').value='';
   edTheme='light';edFmt='feed';
-  document.querySelectorAll('.ed-theme-btn').forEach(b=>{b.classList.toggle('active',b.dataset.theme==='light'||b.dataset.fmt==='feed');});
-  renderEdPreview();
+  document.querySelectorAll('.ed-theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme==='light'));
+  document.querySelectorAll('.ed-fmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.fmt==='feed'));
+  // Badge con iniziali cliente
+  const badge=document.getElementById('ed-prev-badge');
+  if(badge){
+    const cl2=clients[globalClientIdx>=0?globalClientIdx:0];
+    const initials=cl2?cl2.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'N';
+    badge.textContent=initials;
+  }
   openModal('editorial-modal');
+  // Render DOPO che il modal è visibile nel DOM
+  setTimeout(()=>renderEdPreview(), 30);
 }
 
 function setEdTheme(t){
