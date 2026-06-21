@@ -2448,3 +2448,33 @@ tbody tr:hover .tr-actions{opacity:1;}
 @media (max-width: 744px) {
   .feed-view-toggle-btn { width: 36px; height: 36px; }
 }
+
+/* ══ TOPBAR — Dot sessione attiva ══ */
+.avatar-online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c97a;
+  border: 1.5px solid var(--surface);
+}
+
+/* ══ ACCESSIBILITÀ — prefers-reduced-motion ══ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  /* Carosello: slide senza transizione */
+  .cc-track { transition: none !important; }
+  /* Bottom sheets: appaiono senza animazione */
+  .date-picker-popup.mobile-sheet,
+  .cal-day-panel,
+  .sb-mob-nav { transition: none !important; transform: none !important; }
+}
