@@ -27,7 +27,7 @@
 
 <!-- SUBTOPBAR CLIENTE -->
 <div class="subtopbar" id="subtopbar">
-  <div class="subtopbar-client" onclick="backToClients()" title="Torna ai clienti">
+  <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
     <span class="subtopbar-back">‹</span>
     <div>
       <div class="subtopbar-name" id="subtopbar-name">—</div>
@@ -343,9 +343,9 @@
         <div class="feed-ctx-section" style="margin-left:auto;">
           <div class="ctx-sec-lbl">Opzioni</div>
           <div style="display:flex;flex-direction:column;gap:5px;">
-            <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
-            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
-            <button class="gtoggle off" id="toggle-view" onclick="toggleFeedView()" title="Cambia vista">
+            <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()" aria-label="Mostra/nascondi date">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
+            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()" aria-label="Mostra/nascondi copy">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
+            <button class="gtoggle off" id="toggle-view" onclick="toggleFeedView()" aria-label="Cambia vista griglia/lista" title="Cambia vista">
               <svg id="toggle-view-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               Vista
             </button>
@@ -511,7 +511,7 @@
     <div class="cal-day-panel" id="cal-day-panel">
       <div class="cal-day-panel-head">
         <h3 id="cal-panel-date">—</h3>
-        <button class="btn ghost sm icon" onclick="closeCalPanel()">✕</button>
+        <button class="btn ghost sm icon" onclick="closeCalPanel()" aria-label="Chiudi pannello">✕</button>
       </div>
       <div class="cal-day-panel-body" id="cal-panel-body"></div>
     </div>
@@ -526,7 +526,7 @@
         <div style="flex:1;"></div>
         <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;font-size:12px;"></select>
         <!-- Toggle modalità approvazione -->
-        <button class="appr-toggle-btn" id="appr-toggle-btn" onclick="toggleApprMode()" title="Modalità Approvazione">
+        <button class="appr-toggle-btn" id="appr-toggle-btn" onclick="toggleApprMode()" aria-label="Attiva modalità approvazione" title="Modalità Approvazione">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
           <span id="appr-toggle-lbl">Approvazione</span>
         </button>
@@ -568,11 +568,11 @@
     <div class="anno-page">
       <div class="anno-toprow">
         <div class="anno-year-nav">
-          <button class="btn sm icon" onclick="annoPrevYear()">
+          <button class="btn sm icon" onclick="annoPrevYear()" aria-label="Anno precedente">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <span class="anno-year-lbl" id="anno-year-lbl">2026</span>
-          <button class="btn sm icon" onclick="annoNextYear()">
+          <button class="btn sm icon" onclick="annoNextYear()" aria-label="Anno successivo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
@@ -646,7 +646,7 @@
   <div style="background:var(--surface);width:320px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:13px;font-weight:600;color:var(--text);">Cover reel</div>
-      <button onclick="closeVideoCoverModal()" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:2px 6px;">✕</button>
+      <button onclick="closeVideoCoverModal()" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:2px 6px;">✕</button>
     </div>
     <div id="vcm-preview" style="display:none;margin:12px 16px 0;aspect-ratio:4/5;border-radius:var(--rs);overflow:hidden;background:var(--cell-bg);"></div>
     <div style="padding:12px 16px;">
@@ -941,11 +941,11 @@
     <div class="modal-top">
       <h3>Slide Builder</h3>
       <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-        <button class="btn sm" onclick="sbDownloadPNG()" title="Esporta PNG">
+        <button class="btn sm" onclick="sbDownloadPNG()" aria-label="Esporta PNG" title="Esporta PNG">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           PNG
         </button>
-        <button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')">✕</button>
+        <button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')" aria-label="Chiudi Slide Builder">✕</button>
       </div>
     </div>
     <!-- 3-col layout -->
@@ -954,7 +954,7 @@
       <div class="sbcol-nav">
         <div class="sbcol-head">
           <span class="sec-lbl">Slide</span>
-          <button class="btn sm" onclick="addSbSlide()">+</button>
+          <button class="btn sm" onclick="addSbSlide()" aria-label="Aggiungi slide">+</button>
         </div>
         <div id="sb-thumbs"></div>
       </div>
@@ -962,9 +962,9 @@
       <div class="sb-fields">
         <!-- Tab switcher -->
         <div class="sb-tab-row">
-          <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)">Editor</button>
-          <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)">Parser note</button>
-          <button class="sb-tab" id="sb-tab-cassetto" onclick="sbSwitchTab('cassetto',this)">Cassetto</button>
+          <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)" aria-label="Tab editor">Editor</button>
+          <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)" aria-label="Tab parser note">Parser note</button>
+          <button class="sb-tab" id="sb-tab-cassetto" onclick="sbSwitchTab('cassetto',this)" aria-label="Tab cassetto">Cassetto</button>
         </div>
         <!-- TAB: Editor -->
         <div class="sb-fields-scroll" id="sb-panel-editor">
@@ -1088,6 +1088,21 @@
         </div>
         <div class="sb-slide-count" id="sb-slide-count">Slide 1 di 1</div>
       </div>
+    </div>
+    <!-- Bottom nav mobile (nascosta su desktop) -->
+    <div class="sb-mob-nav" id="sb-mob-nav">
+      <button class="sb-mob-nav-btn" id="sb-mob-slide-btn" onclick="sbMobTab('slides')" aria-label="Slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
+        Slide
+      </button>
+      <button class="sb-mob-nav-btn active" id="sb-mob-editor-btn" onclick="sbMobTab('editor')" aria-label="Campi editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Campi
+      </button>
+      <button class="sb-mob-nav-btn" id="sb-mob-preview-btn" onclick="sbMobTab('preview')" aria-label="Anteprima">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Anteprima
+      </button>
     </div>
     <!-- Footer actions -->
     <div class="modal-actions" style="border-top:.5px solid var(--border);margin-top:0;padding-top:12px;">
