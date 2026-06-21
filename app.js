@@ -971,7 +971,7 @@ function renderFeedGrid(){
         const calWrap2=document.createElement('span');calWrap2.innerHTML=SVG_CAL;calWrap2.style.cssText='display:flex;align-items:center;';
         dpTrigger.appendChild(calWrap2);dpTrigger.appendChild(document.createTextNode(item.date?' '+item.date.split(' ').slice(1).join(' '):'+ data'));
         dpTrigger.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};
-        dpTrigger.ontouchstart=e=>{e.stopPropagation();e.preventDefault();openDatePicker(idx,cell);};cell.appendChild(dpTrigger);
+        dpTrigger.ontouchstart=e=>{e.stopPropagation();openDatePicker(idx,cell);};cell.appendChild(dpTrigger);
 
         // ── OVERLAY: bottom sheet inside the cell ──
         const ov=document.createElement('div');ov.className='cell-overlay';
@@ -2738,48 +2738,53 @@ function openDatePicker(idx,anchorEl){
   if(fm){dpMonth=MONTHS.indexOf(fm[0]);dpYear=parseInt(fm[1]);if(dpMonth<0){dpMonth=new Date().getMonth();dpYear=new Date().getFullYear();}}
   else{dpMonth=new Date().getMonth();dpYear=new Date().getFullYear();}
   if(item.date){const parsed=parseItalianDate(item.date);if(parsed){dpMonth=parsed.getMonth();dpYear=parsed.getFullYear();}}
+  // Overlay mobile — crea se non esiste (indipendente dal popup)
+  if(!document.getElementById('dp-mobile-overlay')){
+    const ov=document.createElement('div');
+    ov.id='dp-mobile-overlay';
+    ov.style.cssText='display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.35);touch-action:none;';
+    ov.onclick=()=>closeDatePicker();
+    document.body.appendChild(ov);
+  }
   let popup=document.getElementById('global-date-picker');
   if(!popup){
     popup=document.createElement('div');
     popup.id='global-date-picker';
     popup.className='date-picker-popup';
     document.body.appendChild(popup);
-    // Overlay per mobile (chiude cliccando fuori)
-    let overlay=document.getElementById('dp-mobile-overlay');
-    if(!overlay){
-      overlay=document.createElement('div');
-      overlay.id='dp-mobile-overlay';
-      overlay.style.cssText='display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.35);';
-      overlay.onclick=()=>closeDatePicker();
-      document.body.appendChild(overlay);
-    }
   }
   const isMobile = window.innerWidth <= 744;
   renderDatePickerContent(idx,popup);
 
+  // Overlay — cerca sempre, non solo alla prima creazione
+  const overlay = document.getElementById('dp-mobile-overlay');
+
   if(isMobile){
-    // BOTTOM SHEET su mobile
+    // BOTTOM SHEET — resetta posizione, poi anima con rAF
     popup.classList.add('mobile-sheet');
-    popup.style.top='';popup.style.left='';popup.style.width='';
-    const overlay=document.getElementById('dp-mobile-overlay');
+    popup.classList.remove('open');
+    popup.style.top=''; popup.style.left=''; popup.style.width='';
     if(overlay) overlay.style.display='block';
+    // Forza un reflow poi aggiungi .open per triggerare la transizione
+    popup.style.display='flex';
+    popup.offsetHeight; // reflow
+    requestAnimationFrame(()=>{
+      popup.classList.add('open');
+    });
   } else {
     // POPUP normale su desktop/tablet
     popup.classList.remove('mobile-sheet');
-    const overlay=document.getElementById('dp-mobile-overlay');
     if(overlay) overlay.style.display='none';
     const rect=anchorEl.getBoundingClientRect();
     popup.style.width=Math.max(rect.width,240)+'px';
     const vw=window.innerWidth; const vh=window.innerHeight;
     const popH=popup.offsetHeight||300; const popW=popup.offsetWidth||240;
-    // Verticale
     const topAbove=rect.top-popH-6;
     const topBelow=rect.bottom+6;
     popup.style.top=(topAbove>8 ? topAbove : Math.min(topBelow, vh-popH-8))+'px';
-    // Orizzontale
     popup.style.left=Math.max(8, Math.min(rect.left, vw-popW-8))+'px';
+    popup.classList.add('open');
   }
-  popup.classList.add('open');
 }
 function closeDatePicker(){
   const p=document.getElementById('global-date-picker');
@@ -2789,6 +2794,14 @@ function closeDatePicker(){
 }
 function renderDatePickerContent(idx,popup){
   popup.innerHTML='';
+  // Header mobile: titolo + chiudi
+  if(popup.classList.contains('mobile-sheet')){
+    const mhdr=document.createElement('div');
+    mhdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px;';
+    mhdr.innerHTML='<span style="font-size:13px;font-weight:600;color:var(--text);">Seleziona data</span>'
+      +'<button onclick="closeDatePicker()" style="background:none;border:none;font-size:20px;color:var(--text-2);cursor:pointer;padding:4px 8px;min-width:36px;min-height:36px;">✕</button>';
+    popup.appendChild(mhdr);
+  }
   const hdr=document.createElement('div');hdr.className='dp-header';
   const prev=document.createElement('button');prev.className='dp-nav';prev.textContent='‹';prev.onclick=e=>{e.stopPropagation();dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}renderDatePickerContent(idx,popup);};
   const lbl=document.createElement('div');lbl.className='dp-header-label';lbl.textContent=MONTHS[dpMonth]+' '+dpYear;
