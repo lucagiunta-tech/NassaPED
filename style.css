@@ -2625,3 +2625,28 @@ tbody tr:hover .tr-actions{opacity:1;}
   .ed-ctrl-row { flex-wrap: wrap; }
   .ed-fields-col { padding: 12px; }
 }
+
+/* ══ PREVIEW — Cerchio story cliccabile ══ */
+.ls-circle {
+  transition: transform .15s, box-shadow .15s;
+}
+.ls-circle:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+
+/* ══ APPROVAZIONE — Stato Da Revisionare ══ */
+.appr-stato-pill[data-key="revisione"] {
+  /* arancione — già gestito da APPR_STATI */
+}
+
+/* ══ NOTIFICHE badge ══ */
+#notif-badge {
+  pointer-events: none;
+  animation: notif-pop .3s ease;
+}
+@keyframes notif-pop {
+  0%   { transform: scale(0); }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
