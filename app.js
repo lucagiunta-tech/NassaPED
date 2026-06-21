@@ -2739,20 +2739,54 @@ function openDatePicker(idx,anchorEl){
   else{dpMonth=new Date().getMonth();dpYear=new Date().getFullYear();}
   if(item.date){const parsed=parseItalianDate(item.date);if(parsed){dpMonth=parsed.getMonth();dpYear=parsed.getFullYear();}}
   let popup=document.getElementById('global-date-picker');
-  if(!popup){popup=document.createElement('div');popup.id='global-date-picker';popup.className='date-picker-popup';document.body.appendChild(popup);}
-  const rect=anchorEl.getBoundingClientRect();popup.style.top=(rect.top-6)+'px';popup.style.left=rect.left+'px';popup.style.width=Math.max(rect.width,220)+'px';
-  renderDatePickerContent(idx,popup);popup.classList.add('open');
-  // Smart positioning: non uscire fuori schermo
-  const popH=popup.offsetHeight; const popW=popup.offsetWidth;
-  const vw=window.innerWidth; const vh=window.innerHeight;
-  // Verticale
-  if(rect.top-popH-6<0) popup.style.top=Math.min(rect.bottom+6, vh-popH-8)+'px';
-  else popup.style.top=(rect.top-popH-6)+'px';
-  // Orizzontale — non uscire a destra
-  const leftPos = Math.min(rect.left, vw-popW-8);
-  popup.style.left = Math.max(8, leftPos)+'px';
+  if(!popup){
+    popup=document.createElement('div');
+    popup.id='global-date-picker';
+    popup.className='date-picker-popup';
+    document.body.appendChild(popup);
+    // Overlay per mobile (chiude cliccando fuori)
+    let overlay=document.getElementById('dp-mobile-overlay');
+    if(!overlay){
+      overlay=document.createElement('div');
+      overlay.id='dp-mobile-overlay';
+      overlay.style.cssText='display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.35);';
+      overlay.onclick=()=>closeDatePicker();
+      document.body.appendChild(overlay);
+    }
+  }
+  const isMobile = window.innerWidth <= 744;
+  renderDatePickerContent(idx,popup);
+
+  if(isMobile){
+    // BOTTOM SHEET su mobile
+    popup.classList.add('mobile-sheet');
+    popup.style.top='';popup.style.left='';popup.style.width='';
+    const overlay=document.getElementById('dp-mobile-overlay');
+    if(overlay) overlay.style.display='block';
+  } else {
+    // POPUP normale su desktop/tablet
+    popup.classList.remove('mobile-sheet');
+    const overlay=document.getElementById('dp-mobile-overlay');
+    if(overlay) overlay.style.display='none';
+    const rect=anchorEl.getBoundingClientRect();
+    popup.style.width=Math.max(rect.width,240)+'px';
+    const vw=window.innerWidth; const vh=window.innerHeight;
+    const popH=popup.offsetHeight||300; const popW=popup.offsetWidth||240;
+    // Verticale
+    const topAbove=rect.top-popH-6;
+    const topBelow=rect.bottom+6;
+    popup.style.top=(topAbove>8 ? topAbove : Math.min(topBelow, vh-popH-8))+'px';
+    // Orizzontale
+    popup.style.left=Math.max(8, Math.min(rect.left, vw-popW-8))+'px';
+  }
+  popup.classList.add('open');
 }
-function closeDatePicker(){const popup=document.getElementById('global-date-picker');if(popup)popup.classList.remove('open');dpOpenIdx=null;}
+function closeDatePicker(){
+  const p=document.getElementById('global-date-picker');
+  if(p){ p.classList.remove('open'); dpOpenIdx=null; }
+  const ov=document.getElementById('dp-mobile-overlay');
+  if(ov) ov.style.display='none';
+}
 function renderDatePickerContent(idx,popup){
   popup.innerHTML='';
   const hdr=document.createElement('div');hdr.className='dp-header';
