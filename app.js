@@ -2080,7 +2080,33 @@ function renderPreview(){
       post.appendChild(cell);
       if(item.copy?.trim()){const cd=document.createElement('div');cd.className='client-copy';cd.innerHTML='<div class="client-copy-lbl">Caption</div>';const ct=document.createElement('div');ct.textContent=item.copy;cd.appendChild(ct);post.appendChild(cd);}
       const linked=(item.linkedStories||[]).map(si=>stArr[si]).filter(Boolean);
-      if(linked.length){const strip=document.createElement('div');strip.className='ls-strip';strip.innerHTML='<div class="ls-strip-lbl">📱</div>';linked.forEach(st=>{const circ=document.createElement('div');circ.className='ls-circle';const cu=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;if(cu){const img=document.createElement('img');img.src=cu;img.alt='';circ.appendChild(img);}strip.appendChild(circ);});post.appendChild(strip);}
+      if(linked.length){
+        const strip=document.createElement('div');strip.className='ls-strip';
+        strip.innerHTML='<div class="ls-strip-lbl">📱</div>';
+        linked.forEach((st,si)=>{
+          const circ=document.createElement('div');circ.className='ls-circle';
+          const cu=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;
+          if(cu){const img=document.createElement('img');img.src=cu;img.alt='';circ.appendChild(img);}
+          // Click: apre anteprima storyboard/story
+          circ.title = st.name || 'Story collegata';
+          circ.style.cursor = 'pointer';
+          circ.onclick = e => {
+            e.stopPropagation();
+            if(st.isStoryboard && st.slides?.length){
+              // Apri lightbox con le slide dello storyboard
+              openLb(0, st.slides.map((sl,idx)=>({
+                type:'image', url:sl.url||sl.blobUrl||'', name:sl.title||'Slide '+(idx+1),
+                note:sl.note||sl.noteRegia||''
+              })));
+            } else {
+              // Story singola — apri lightbox
+              openLb(0,[{type:st.type||'image', url:cu, name:st.name||'Story'}]);
+            }
+          };
+          strip.appendChild(circ);
+        });
+        post.appendChild(strip);
+      }
       // ── STATUS BADGE APPROVAZIONE ──
       const apprSt = item.apprStato || 'bozza';
       const revCount = item.apprRevisions || 0;
@@ -4514,10 +4540,33 @@ function renderAnnoTab() {
 /* ══ SISTEMA APPROVAZIONE FEED ══ */
 
 const APPR_STATI = [
-  {key:'bozza',     label:'Bozza',        dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)',  border:'var(--border)'},
-  {key:'approvare', label:'Da Approvare',  dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',        border:'rgba(212,168,0,0.5)'},
-  {key:'approvato', label:'Approvato',     dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',        border:'rgba(26,122,74,0.4)'},
+  {key:'bozza',       label:'Bozza',            dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)',  border:'var(--border)'},
+  {key:'revisione',   label:'Da Revisionare',   dot:'#e05c00', bg:'rgba(224,92,0,0.13)',    text:'#7a2e00',        border:'rgba(224,92,0,0.45)'},
+  {key:'approvare',   label:'Da Approvare',     dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',        border:'rgba(212,168,0,0.5)'},
+  {key:'approvato',   label:'Approvato',        dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',        border:'rgba(26,122,74,0.4)'},
 ];
+/* ══ SISTEMA NOTIFICHE NOTE ══ */
+function updateNotifBadge(){
+  const badge = document.getElementById('notif-badge');
+  const count = apprUnreadNotes.length;
+  if(badge){
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+function markNoteRead(idx){
+  apprUnreadNotes = apprUnreadNotes.filter(i => i !== idx);
+  updateNotifBadge();
+}
+
+function markNoteUnread(idx, fromClient=false){
+  if(!apprUnreadNotes.includes(idx)) apprUnreadNotes.push(idx);
+  if(fromClient) showToast('💬 Nuova nota dal cliente sul post '+(idx+1));
+  updateNotifBadge();
+}
+
+
 function apprGetStato(key){ return APPR_STATI.find(s=>s.key===key)||APPR_STATI[0]; }
 
 let apprMode = false;          // toggle on/off
@@ -4525,7 +4574,8 @@ let apprFilter = 'tutti';      // filtro stato approvazione
 let previewTypeFilter = 'tutti'; // filtro tipologia
 let apprOpenMenu = null;       // id post con menu aperto
 let apprModalIdx = null;       // index post nel modal
-let apprModalItems = [];       // array corrente di feed items
+let apprModalItems = [];
+let apprUnreadNotes = [];      // indici post con note non lette       // array corrente di feed items
 
 function toggleApprMode(){
   apprMode = !apprMode;
@@ -4716,7 +4766,10 @@ function apprModalApprova(){
 function apprModalSalva(skipClose){
   if(apprModalIdx===null) return;
   const note = document.getElementById('appr-note-area')?.value || '';
+  const oldNote = apprModalItems[apprModalIdx].apprNote || '';
   apprModalItems[apprModalIdx].apprNote = note;
+  // Se c'è una nota nuova → notifica
+  if(note && note !== oldNote) markNoteUnread(apprModalIdx, false);
   autoSave();
   if(!skipClose){ closeApprModal(); renderPreview(); }
 }
