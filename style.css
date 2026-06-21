@@ -2402,7 +2402,7 @@ tbody tr:hover .tr-actions{opacity:1;}
   transition: border-color var(--t-base);
   position: relative;
 }
-.feed-profile-avatar:hover { border-color: var(--green); border-style: solid; }
+.feed-profile-avatar:hover, .feed-profile-avatar.drag-over { border-color: var(--green); border-style: solid; background: var(--green-lt); }
 .feed-profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .feed-profile-avatar svg { width: 18px; height: 18px; }
 .feed-profile-bio {
