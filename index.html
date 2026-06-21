@@ -347,6 +347,17 @@
           </button>
         </div>
         <!-- Toggles + hint -->
+        <!-- Profilo account -->
+        <div class="feed-ctx-section" id="feed-profile-section" style="display:none;">
+          <div class="ctx-sec-lbl">Profilo</div>
+          <div class="feed-profile-row">
+            <div class="feed-profile-avatar" id="feed-profile-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="file" id="feed-profile-img-inp" accept="image/*" style="display:none;" onchange="feedProfileImgChange(this.files)"/>
+            </div>
+            <textarea id="feed-profile-bio" class="feed-profile-bio" rows="2" placeholder="Bio del profilo…" oninput="feedProfileBioInput(this.value)"></textarea>
+          </div>
+        </div>
         <div class="feed-ctx-section" style="margin-left:auto;">
           <div class="ctx-sec-lbl">Opzioni</div>
           <div style="display:flex;flex-direction:column;gap:5px;">
@@ -416,6 +427,17 @@
           </div>
         </div>
         <!-- Copia da -->
+        <!-- Profilo account -->
+        <div class="feed-ctx-section" id="feed-profile-section" style="display:none;">
+          <div class="ctx-sec-lbl">Profilo</div>
+          <div class="feed-profile-row">
+            <div class="feed-profile-avatar" id="feed-profile-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="file" id="feed-profile-img-inp" accept="image/*" style="display:none;" onchange="feedProfileImgChange(this.files)"/>
+            </div>
+            <textarea id="feed-profile-bio" class="feed-profile-bio" rows="2" placeholder="Bio del profilo…" oninput="feedProfileBioInput(this.value)"></textarea>
+          </div>
+        </div>
         <div class="feed-ctx-section" style="margin-left:auto;">
           <div class="ctx-sec-lbl">Opzioni</div>
           <button class="btn sm" onclick="openCopyModal('stories')" style="white-space:nowrap;">
