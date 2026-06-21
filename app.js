@@ -1149,7 +1149,65 @@ function removeFeedItem(i){
   });
 }
 function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;}
-function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();}
+function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();feedProfileSync();}
+
+/* ── FEED PROFILE PANEL ── */
+function feedProfileSync(){
+  const acc=getAccount(feedClientIdx,feedAccountIdx);
+  const avatarEl=document.getElementById('feed-profile-avatar');
+  const bioEl=document.getElementById('feed-profile-bio');
+  const section=document.getElementById('feed-profile-section');
+  if(!avatarEl||!bioEl)return;
+  if(!acc){if(section)section.style.display='none';return;}
+  if(section)section.style.display='';
+  // Avatar
+  const img=avatarEl.querySelector('img');
+  const svg=avatarEl.querySelector('svg');
+  if(acc.profileImg){
+    if(!img){
+      const i=document.createElement('img');i.src=acc.profileImg;i.alt='';
+      avatarEl.insertBefore(i,avatarEl.firstChild);
+      if(svg)svg.style.display='none';
+    } else {
+      img.src=acc.profileImg;
+      if(svg)svg.style.display='none';
+    }
+  } else {
+    if(img){img.remove();}
+    if(svg)svg.style.display='';
+  }
+  // Bio
+  bioEl.value=acc.bio||'';
+}
+
+function feedProfileAvatarClick(){
+  const inp=document.getElementById('feed-profile-img-inp');
+  if(inp)inp.click();
+}
+
+async function feedProfileImgChange(files){
+  const file=files[0]; if(!file)return;
+  const acc=getAccount(feedClientIdx,feedAccountIdx);
+  if(!acc)return;
+  showToast('⟳ Caricamento foto profilo…');
+  const destPath='/nassa/'+CLOUD.user+'/profiles/'+Date.now()+'_'+file.name;
+  const url=await DROPBOX.upload(file,destPath);
+  const finalUrl=url||URL.createObjectURL(file);
+  clients[feedClientIdx].accounts[feedAccountIdx].profileImg=finalUrl;
+  autoSave();
+  feedProfileSync();
+  showToast('✓ Foto profilo aggiornata');
+  // Reset input
+  const inp=document.getElementById('feed-profile-img-inp');
+  if(inp)inp.value='';
+}
+
+function feedProfileBioInput(val){
+  const acc=getAccount(feedClientIdx,feedAccountIdx);
+  if(!acc)return;
+  clients[feedClientIdx].accounts[feedAccountIdx].bio=val;
+  autoSave();
+}
 function toggleFeedView(){
   feedViewMode = feedViewMode==='grid' ? 'list' : 'grid';
   const btn = document.getElementById('toggle-view');
