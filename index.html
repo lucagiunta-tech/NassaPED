@@ -21,7 +21,10 @@
   </nav>
   <div class="topbar-right">
     <span class="cloud-badge" id="cloud-status" title="Cloud sync">☁ Cloud</span>
-    <div class="avatar" id="user-avatar" onclick="toggleUserSwitcher()">AA</div>
+    <div style="position:relative;display:inline-block;">
+      <div class="avatar" id="user-avatar" onclick="toggleUserSwitcher()" aria-label="Cambia utente">AA</div>
+      <div class="avatar-online-dot" title="Sessione attiva"></div>
+    </div>
   </div>
 </div>
 
@@ -982,7 +985,10 @@
           </div>
           <div class="field" style="margin-top:10px;">
             <label>Numero grande</label>
-            <input type="text" id="sb-f-num" placeholder="1." oninput="sbSync()"/>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="text" id="sb-f-num" placeholder="1." oninput="sbSync()" style="flex:1;"/>
+              <div id="sb-num-color-swatch" title="Colore numero (dalla palette sfondo)" style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;background:#0dff00;"></div>
+            </div>
           </div>
           <div class="field">
             <label>Occhiello</label>
