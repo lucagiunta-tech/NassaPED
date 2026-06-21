@@ -950,7 +950,7 @@ function renderFeedGrid(){
             logo: '#0dff00',
             logoText: '#111'
           } : {bg:'#f5f0e8',text:'#111',accent:'#1a3c5e',logo:'#0dff00',logoText:'#111'});
-          cell.style.background=cols.bg;cell.style.color=cols.text;cell.style.aspectRatio=_fmt.cssRatio;
+          cell.classList.add('editorial');cell.style.background=cols.bg;cell.style.color=cols.text;cell.style.setProperty('--cell-ratio',_fmt.cssRatio);
           // Indicatore: "Brand" se palette viene dal cliente
           if(!item.editorialColors && feedClientIdx>=0 && clients[feedClientIdx]?.brand){
             const brandDot=document.createElement('div');
@@ -1111,7 +1111,7 @@ function toggleFeedView(){
   feedViewMode = feedViewMode==='grid' ? 'list' : 'grid';
   const btn = document.getElementById('toggle-view');
   const icon = document.getElementById('toggle-view-icon');
-  if(btn) btn.classList.toggle('off', feedViewMode==='grid');
+  if(btn) btn.classList.toggle('active', feedViewMode==='list');
   if(icon) icon.innerHTML = feedViewMode==='list'
     ? '<rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>'  // lista
     : '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'; // griglia
