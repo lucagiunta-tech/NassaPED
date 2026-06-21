@@ -2486,7 +2486,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'&&!e.shiftKey){if(isCarousel)lbSlideNav(1);else if(lbItems.length>1)lbNav(1);}
   if(e.key==='ArrowLeft'&&e.shiftKey&&lbItems.length>1)lbNav(-1);
   if(e.key==='ArrowRight'&&e.shiftKey&&lbItems.length>1)lbNav(1);
-  if(e.key==='Escape')lb.classList.remove('open');
+  if(e.key==='Escape'){lb.classList.remove('open');const dr=document.getElementById('ped-drawer');if(dr&&dr.style.display!=='none')pedCloseDrawer();}
 });
 
 /* MODAL HELPERS */
@@ -2669,108 +2669,381 @@ document.addEventListener('click',e=>{
 });
 
 /* ════════ PED STORIES ════════ */
+/* ════════ UGC / PED — REDESIGN ════════ */
+const UGC_STATI = {
+  raccolto:   {label:'Raccolto',   dot:'#d4a800', bg:'rgba(212,168,0,0.12)',   text:'#7a5c00',  border:'rgba(212,168,0,0.3)'},
+  selezionato:{label:'Selezionato',dot:'#1D9E75', bg:'rgba(29,158,117,0.12)', text:'#085041',  border:'rgba(29,158,117,0.3)'},
+  autonoma:   {label:'Autonoma',   dot:'#7F77DD', bg:'rgba(127,119,221,0.10)',text:'#26215C',  border:'rgba(127,119,221,0.3)'},
+};
+
+let pedCurrentTab = 'calendario';
+let pedCalYear = null;
+let pedCalMonthIdx = null;
+let pedDrawerSlotId = null;
+let pedDrawerIsNew = false;
+let pedDrawerDate = null;
+let pedDrawerTmp = {};
+
+/* ── Tab switcher ── */
+function pedSwitchTab(tab){
+  pedCurrentTab = tab;
+  ['calendario','piano','anno'].forEach(t=>{
+    const btn=document.getElementById('ped-tab-'+t);
+    const panel=document.getElementById('ped-panel-'+t);
+    if(btn)btn.classList.toggle('active',t===tab);
+    if(panel)panel.classList.toggle('active',t===tab);
+  });
+  if(tab==='calendario')renderPEDCalendario();
+  else if(tab==='piano')renderPEDPiano();
+  else if(tab==='anno')renderPEDAnno();
+}
+
+/* ── Helper mese/anno ── */
+function pedGetMeseAnno(){
+  if(pedCalMonthIdx!==null&&pedCalYear!==null)return{moIdx:pedCalMonthIdx,year:pedCalYear};
+  if(currentMonth){
+    const[moName,y]=currentMonth.split(' ');const moIdx=MONTHS.indexOf(moName);
+    if(moIdx>=0)return{moIdx,year:parseInt(y)};
+  }
+  const n=new Date();return{moIdx:n.getMonth(),year:n.getFullYear()};
+}
+function pedSetMese(moIdx,year){pedCalMonthIdx=moIdx;pedCalYear=year;}
+
+/* ── Navigazione mese ── */
+function pedCalNav(dir){
+  const{moIdx,year}=pedGetMeseAnno();
+  let nm=moIdx+dir,ny=year;
+  if(nm<0){nm=11;ny--;}else if(nm>11){nm=0;ny++;}
+  pedSetMese(nm,ny);
+  renderPEDCalendario();
+}
+
+/* ── renderPED principale ── */
 function renderPED(){
-  const hasClient=currentClientIdx>=0&&currentMonth;const cn=hasClient?clients[currentClientIdx].name:'—';const mn=currentMonth||'—';
-  const titleEl=document.getElementById('ped-title');const metaEl=document.getElementById('ped-meta');const clientLbl=document.getElementById('ped-client-label');const emptyEl=document.getElementById('ped-empty');const freqBlock=document.getElementById('ped-freq-block');const calLbl=document.getElementById('ped-cal-label');
-  if(titleEl)titleEl.textContent=hasClient?cn+' — UGC':'UGC';if(clientLbl)clientLbl.textContent=hasClient?cn+' · '+mn:'— seleziona cliente nel Feed';if(calLbl)calLbl.textContent=mn;
-  if(!hasClient){if(emptyEl)emptyEl.style.display='flex';if(freqBlock)freqBlock.style.display='none';renderPEDCal();return;}
-  if(emptyEl)emptyEl.style.display='none';if(freqBlock)freqBlock.style.display='block';
-  renderFreqDays();renderPEDCards();renderPEDCal();
-  const plan=currentPedPlan();if(metaEl)metaEl.textContent=plan.length+' stor'+(plan.length===1?'y':'ies')+' pianificat'+(plan.length===1?'a':'e');
+  const hasClient=currentClientIdx>=0&&currentMonth;
+  const cn=hasClient?clients[currentClientIdx].name:'—';
+  const mn=currentMonth||'—';
+  const titleEl=document.getElementById('ped-title');
+  const metaEl=document.getElementById('ped-meta');
+  const clientLbl=document.getElementById('ped-client-label');
+  if(titleEl)titleEl.textContent=hasClient?cn+' — UGC':'UGC';
+  if(clientLbl)clientLbl.textContent=hasClient?cn+' · '+mn:'— seleziona cliente nel Feed';
+  const plan=currentPedPlan();
+  if(metaEl)metaEl.textContent=plan.length?plan.length+' slot':'';
+  if(pedCalMonthIdx===null&&currentMonth){
+    const[moName,y]=currentMonth.split(' ');const mi=MONTHS.indexOf(moName);
+    if(mi>=0){pedCalMonthIdx=mi;pedCalYear=parseInt(y);}
+  }
+  if(pedCurrentTab==='calendario')renderPEDCalendario();
+  else if(pedCurrentTab==='piano')renderPEDPiano();
+  else if(pedCurrentTab==='anno')renderPEDAnno();
+}
+
+/* ══ TAB CALENDARIO ══ */
+function renderPEDCalendario(){
+  const{moIdx,year}=pedGetMeseAnno();
+  const lbl=document.getElementById('ped-cal-month-lbl');
+  if(lbl)lbl.textContent=MONTHS[moIdx]+' '+year;
+  renderFreqDays();
+  const hasClient=currentClientIdx>=0;
+  const emptyEl=document.getElementById('ped-empty');
+  const calBody=document.getElementById('ped-cal-body');
+  if(emptyEl)emptyEl.style.display=hasClient?'none':'flex';
+  if(calBody)calBody.style.display=hasClient?'flex':'none';
+  if(!hasClient)return;
+  renderPEDCal();
 }
 
 function renderFreqDays(){
   const wrap=document.getElementById('ped-freq-days');if(!wrap)return;
   const labels=['L','M','M','G','V','S','D'];wrap.innerHTML='';
-  labels.forEach((lbl,i)=>{const btn=document.createElement('button');btn.className='freq-day-btn'+(pedFreqDays.has(i)?' active':'');btn.textContent=lbl;btn.title=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'][i];btn.onclick=()=>{if(pedFreqDays.has(i))pedFreqDays.delete(i);else pedFreqDays.add(i);renderFreqDays();};wrap.appendChild(btn);});
-}
-
-function pedGenerate(){
-  if(currentClientIdx<0||!currentMonth)return;if(pedFreqDays.size===0){alert('Seleziona almeno un giorno.');return;}
-  const[moName,y]=currentMonth.split(' ');const moIdx=MONTHS.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);const daysInMonth=new Date(year,moIdx+1,0).getDate();
-  const existing=currentPedPlan();const existingDates=new Set(existing.map(s=>s.date));const newPlan=[...existing];
-  for(let d=1;d<=daysInMonth;d++){const dt=new Date(year,moIdx,d);let dow=dt.getDay();dow=dow===0?6:dow-1;const iso=isoDate(year,moIdx+1,d);if(pedFreqDays.has(dow)&&!existingDates.has(iso)){newPlan.push({date:iso,type:'autonoma',brief:'',templateRef:'',id:pedUID()});}}
-  newPlan.sort((a,b)=>a.date.localeCompare(b.date));setCurrentPedPlan(newPlan);
-  // BUG #3 FIX: was missing autoSave + calendar update
-  autoSave();renderPED();renderCalendar();
-  showToast('✓ Piano UGC generato — '+newPlan.filter(s=>!existingDates.has(s.date)).length+' nuove date');
-}
-function pedClear(){
-  showConfirm({
-    title:'Svuota piano UGC',
-    body:'Tutti i contenuti pianificati per questo mese verranno rimossi. Continui?',
-    okLabel:'Svuota',
-    type:'warn',
-    onOk:()=>{setCurrentPedPlan([]);autoSave();renderPED();renderCalendar();showToast('Piano UGC svuotato');}
-  });
-}
-
-function renderPEDCards(){
-  const wrap=document.getElementById('ped-cards');if(!wrap)return;wrap.innerHTML='';
-  const plan=currentPedPlan();
-  if(!plan.length){wrap.innerHTML='<p style="font-size:11px;color:var(--text-3);text-align:center;padding:16px;">Nessuna story pianificata.<br>Scegli i giorni e clicca <strong>Genera piano</strong>.</p>';return;}
-  plan.forEach((st,i)=>{
-    const card=document.createElement('div');card.className='ped-story-card';
-    const head=document.createElement('div');head.className='ped-story-card-head';
-    const dateEl=document.createElement('div');dateEl.className='ped-story-date';dateEl.textContent=fmtDate(st.date)||st.date;
-    const typeSel=document.createElement('select');typeSel.className='ped-story-type-sel';[['autonoma','Autonoma'],['template','Template']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===st.type)o.selected=true;typeSel.appendChild(o);});typeSel.onchange=e=>{currentPedPlan()[i].type=e.target.value;renderPEDCards();renderPEDCal();};
-    const badge=document.createElement('span');badge.className='ped-type-badge';badge.innerHTML=st.type==='autonoma'?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
-    const del=document.createElement('button');del.className='ped-story-del';del.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.onclick=()=>{const p=currentPedPlan();p.splice(i,1);setCurrentPedPlan(p);renderPED();};
-    // ── Stato UGC ──
-    const ugcStato = st.ugcStato || 'raccolto';
-    const UGC_ST = [
-      {k:'raccolto',   l:'Raccolto',    dot:'#888',    bg:'rgba(120,120,120,0.12)', text:'#555'},
-      {k:'selezionato',l:'Selezionato', dot:'#1D6FA8', bg:'rgba(29,111,168,0.12)',  text:'#0d4a73'},
-      {k:'adattato',   l:'Adattato',    dot:'#d4a800', bg:'rgba(212,168,0,0.14)',   text:'#7a5c00'},
-      {k:'approvato',  l:'Approvato',   dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230'},
-    ];
-    const stCfg = UGC_ST.find(s=>s.k===ugcStato)||UGC_ST[0];
-    const statoBtn = document.createElement('button');
-    statoBtn.className = 'ugc-stato-btn';
-    statoBtn.style.cssText = `background:${stCfg.bg};color:${stCfg.text};border:1px solid ${stCfg.dot};`;
-    statoBtn.innerHTML = `<span class="ugc-stato-dot" style="background:${stCfg.dot};"></span>${stCfg.l}`;
-    statoBtn.onclick = ()=>{
-      const cur = currentPedPlan()[i].ugcStato || 'raccolto';
-      const idx2 = UGC_ST.findIndex(s=>s.k===cur);
-      const next = UGC_ST[(idx2+1)%UGC_ST.length].k;
-      currentPedPlan()[i].ugcStato = next;
-      autoSave(); renderPEDCards();
-    };
-    // Bordo card colorato per stato
-    if(ugcStato !== 'raccolto') card.style.borderLeft = `3px solid ${stCfg.dot}`;
-    head.appendChild(dateEl);head.appendChild(statoBtn);head.appendChild(typeSel);head.appendChild(badge);head.appendChild(del);
-    const body=document.createElement('div');body.className='ped-story-body';
-    const brief=document.createElement('textarea');brief.className='ped-story-brief';brief.placeholder=st.type==='autonoma'?'Brief per il cliente…':'Descrizione / copy…';brief.value=st.brief||'';brief.oninput=e=>{currentPedPlan()[i].brief=e.target.value;autoSave();};body.appendChild(brief);
-    if(st.type==='template'){const tmpl=document.createElement('input');tmpl.type='text';tmpl.className='ped-story-template';tmpl.placeholder='Link o nome template (Canva, Adobe Express…)';tmpl.value=st.templateRef||'';tmpl.oninput=e=>{currentPedPlan()[i].templateRef=e.target.value;};body.appendChild(tmpl);}
-    card.appendChild(head);card.appendChild(body);wrap.appendChild(card);
+  labels.forEach((lbl,i)=>{
+    const btn=document.createElement('button');
+    btn.className='freq-day-btn'+(pedFreqDays.has(i)?' active':'');
+    btn.textContent=lbl;
+    btn.title=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'][i];
+    btn.onclick=()=>{if(pedFreqDays.has(i))pedFreqDays.delete(i);else pedFreqDays.add(i);renderFreqDays();};
+    wrap.appendChild(btn);
   });
 }
 
 function renderPEDCal(){
-  const headEl=document.getElementById('ped-cal-head');const gridEl=document.getElementById('ped-cal-grid');if(!headEl||!gridEl)return;
-  headEl.innerHTML='';['L','M','M','G','V','S','D'].forEach(g=>{const d=document.createElement('div');d.className='ped-cal-dh';d.textContent=g;headEl.appendChild(d);});
-  gridEl.innerHTML='';if(currentClientIdx<0||!currentMonth)return;
-  const[moName,y]=currentMonth.split(' ');const moIdx=MONTHS.indexOf(moName);if(moIdx<0)return;const year=parseInt(y);
+  const headEl=document.getElementById('ped-cal-head');
+  const gridEl=document.getElementById('ped-cal-grid');
+  if(!headEl||!gridEl)return;
+  headEl.innerHTML='';
+  ['L','M','M','G','V','S','D'].forEach(g=>{
+    const d=document.createElement('div');d.className='ped-cal-dh';d.textContent=g;headEl.appendChild(d);
+  });
+  gridEl.innerHTML='';
+  const{moIdx,year}=pedGetMeseAnno();
   const firstDay=new Date(year,moIdx,1);let startDow=firstDay.getDay();startDow=startDow===0?6:startDow-1;
-  const daysInMonth=new Date(year,moIdx+1,0).getDate();const daysInPrev=new Date(year,moIdx,0).getDate();const today=todayISO();
-  const pedMap={};currentPedPlan().forEach(s=>{if(!pedMap[s.date])pedMap[s.date]=[];pedMap[s.date].push(s);});
-  const feedMap={};if(feedClientIdx>=0&&feedAccountIdx>=0){const acc=getAccount(feedClientIdx,feedAccountIdx);const fkey=acc?acc.id+'|||'+(feedMonth||currentMonth):null;if(fkey)(feeds[fkey]||[]).filter(it=>it.type!=='pending'&&it.date).forEach(it=>{if(!feedMap[it.date])feedMap[it.date]=[];feedMap[it.date].push(it);});}
-  const totalCells=Math.ceil((startDow+daysInMonth)/7)*7;let day=1,nextDay=1;
+  const daysInMonth=new Date(year,moIdx+1,0).getDate();
+  const daysInPrev=new Date(year,moIdx,0).getDate();
+  const today=todayISO();
+  const plan=currentPedPlan();
+  const pedMap={};plan.forEach(s=>{if(!pedMap[s.date])pedMap[s.date]=[];pedMap[s.date].push(s);});
+  const totalCells=Math.ceil((startDow+daysInMonth)/7)*7;
+  let day=1,nextDay=1;
   for(let i=0;i<totalCells;i++){
     let cellY=year,cellM=moIdx+1,cellD,isOther=false;
     if(i<startDow){cellD=daysInPrev-startDow+i+1;cellM=moIdx===0?12:moIdx;cellY=moIdx===0?year-1:year;isOther=true;}
     else if(day>daysInMonth){cellD=nextDay++;cellM=moIdx+2>12?1:moIdx+2;cellY=moIdx+2>12?year+1:year;isOther=true;}
     else{cellD=day++;}
-    const ds=isoDate(cellY,cellM,cellD);const isToday=ds===today;
-    const cell=document.createElement('div');cell.className='ped-cal-day'+(isOther?' other':'')+(isToday?' today':'');
-    const num=document.createElement('div');num.className='ped-cal-day-num';num.textContent=cellD;cell.appendChild(num);
-    const evs=document.createElement('div');evs.className='ped-cal-events';
-    (feedMap[ds]||[]).forEach(it=>{const e=document.createElement('div');e.className='ped-cal-ev feed';e.textContent=(it.type==='video'?'Reel':'Post');evs.appendChild(e);});
-    (pedMap[ds]||[]).forEach(s=>{const e=document.createElement('div');e.className='ped-cal-ev '+s.type;e.textContent=s.type==='autonoma'?'Autonoma':'Template';evs.appendChild(e);});
-    cell.appendChild(evs);if((pedMap[ds]||[]).length){cell.title=(pedMap[ds]||[]).map(s=>s.brief||'(brief vuoto)').join(' | ');cell.style.cursor='pointer';}
+    const ds=isoDate(cellY,cellM,cellD);
+    const isToday=ds===today;
+    const slots=pedMap[ds]||[];
+    const cell=document.createElement('div');
+    cell.className='ped-cal-day'+(isOther?' other':'')+(isToday?' today':'')+(slots.length?' has-slots':'');
+    if(!isOther){
+      const num=document.createElement('div');num.className='ped-cal-day-num';num.textContent=cellD;cell.appendChild(num);
+      const evs=document.createElement('div');evs.className='ped-cal-day-events';
+      const MAX_PILLS=2;
+      slots.slice(0,MAX_PILLS).forEach(sl=>{
+        const cfg=UGC_STATI[sl.ugcStato]||UGC_STATI.autonoma;
+        const pill=document.createElement('div');
+        pill.className='ped-cal-pill';
+        pill.style.cssText='background:'+cfg.bg+';color:'+cfg.text+';';
+        pill.textContent=sl.brief||sl.type||'UGC';
+        pill.onclick=(e)=>{e.stopPropagation();pedOpenDrawer(sl.id,ds);};
+        evs.appendChild(pill);
+      });
+      if(slots.length>MAX_PILLS){
+        const more=document.createElement('div');more.className='ped-cal-more';
+        more.textContent='+'+(slots.length-MAX_PILLS)+' altri';evs.appendChild(more);
+      }
+      cell.appendChild(evs);
+      const hint=document.createElement('div');hint.className='ped-cal-add-hint';
+      hint.innerHTML='+ aggiungi';
+      cell.appendChild(hint);
+      cell.onclick=()=>pedOpenDrawerNew(ds);
+    }
     gridEl.appendChild(cell);
   }
 }
+
+/* ── Drawer: slot esistente ── */
+function pedOpenDrawer(slotId,dateStr){
+  const plan=currentPedPlan();
+  const sl=plan.find(s=>s.id===slotId);
+  if(!sl)return;
+  pedDrawerSlotId=slotId;pedDrawerIsNew=false;
+  pedDrawerDate=dateStr||sl.date;
+  pedDrawerTmp={...sl};
+  pedRenderDrawer();
+}
+
+/* ── Drawer: nuovo slot ── */
+function pedOpenDrawerNew(dateStr){
+  pedDrawerSlotId=null;pedDrawerIsNew=true;pedDrawerDate=dateStr;
+  pedDrawerTmp={date:dateStr,type:'autonoma',ugcStato:'autonoma',brief:'',templateRef:'',creator:'',noteRegia:'',id:pedUID()};
+  pedRenderDrawer();
+}
+
+function pedRenderDrawer(){
+  const drawer=document.getElementById('ped-drawer');
+  const dateEl=document.getElementById('ped-drawer-date');
+  const body=document.getElementById('ped-drawer-body');
+  const delBtn=document.getElementById('ped-drawer-del');
+  if(!drawer||!body)return;
+  if(dateEl)dateEl.textContent=fmtDate(pedDrawerDate)||pedDrawerDate||'—';
+  if(delBtn)delBtn.style.display=pedDrawerIsNew?'none':'';
+  body.innerHTML='';
+  const sl=pedDrawerTmp;
+  const mk=(tag,cls,style)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(style)el.style.cssText=style;return el;};
+  const addLabel=(text)=>{const l=mk('div','ped-field-label');l.textContent=text;body.appendChild(l);};
+  // Tipo chips
+  addLabel('Tipo');
+  const tipoWrap=mk('div','ped-tipo-chips');
+  ['autonoma','template','video','foto','reel','stories'].forEach(tipo=>{
+    const ch=mk('button','ped-tipo-chip'+(sl.type===tipo?' active':''));
+    ch.textContent=tipo.charAt(0).toUpperCase()+tipo.slice(1);
+    ch.onclick=()=>{pedDrawerTmp.type=tipo;pedRenderDrawer();};
+    tipoWrap.appendChild(ch);
+  });
+  body.appendChild(tipoWrap);
+  // Stato
+  addLabel('Stato');
+  const statoWrap=mk('div','ped-stato-pills');
+  Object.entries(UGC_STATI).forEach(([key,cfg])=>{
+    const p=mk('button','ped-stato-pill'+(sl.ugcStato===key?' active':''));
+    p.style.cssText='background:'+cfg.bg+';color:'+cfg.text+';border:1px solid '+cfg.border+';';
+    p.textContent=cfg.label;
+    p.onclick=()=>{pedDrawerTmp.ugcStato=key;pedRenderDrawer();};
+    statoWrap.appendChild(p);
+  });
+  body.appendChild(statoWrap);
+  // Brief
+  addLabel('Brief cliente');
+  const briefTA=mk('textarea','ped-field-ta');briefTA.rows=3;briefTA.placeholder='Brief per il creator…';briefTA.value=sl.brief||'';
+  briefTA.oninput=e=>{pedDrawerTmp.brief=e.target.value;};body.appendChild(briefTA);
+  // Creator
+  addLabel('Creator');
+  const creatorInp=mk('input','ped-field-inp');creatorInp.type='text';creatorInp.placeholder='Nome creator…';creatorInp.value=sl.creator||'';
+  creatorInp.oninput=e=>{pedDrawerTmp.creator=e.target.value;};body.appendChild(creatorInp);
+  // Note regia collassabile
+  const noteToggle=mk('button','ped-collapse-toggle');
+  const noteArrow=mk('span','ped-collapse-arrow'+(sl._noteOpen?' open':''));noteArrow.textContent='›';
+  noteToggle.appendChild(noteArrow);const noteLbl=mk('span');noteLbl.textContent=' Note regia';noteToggle.appendChild(noteLbl);
+  const noteBody=mk('div','ped-collapse-body '+(sl._noteOpen?'open':'closed'));
+  const noteTA=mk('textarea','ped-field-ta','margin-top:6px;');noteTA.rows=3;noteTA.placeholder='Istruzioni per il creator…';noteTA.value=sl.noteRegia||'';
+  noteTA.oninput=e=>{pedDrawerTmp.noteRegia=e.target.value;};
+  noteBody.appendChild(noteTA);
+  noteToggle.onclick=()=>{pedDrawerTmp._noteOpen=!pedDrawerTmp._noteOpen;pedRenderDrawer();};
+  body.appendChild(noteToggle);body.appendChild(noteBody);
+  // Template
+  const tmplToggle=mk('button','ped-collapse-toggle');
+  const tmplArrow=mk('span','ped-collapse-arrow'+(sl._tmplOpen?' open':''));tmplArrow.textContent='›';
+  tmplToggle.appendChild(tmplArrow);const tmplLbl=mk('span');tmplLbl.textContent=' Link template';tmplToggle.appendChild(tmplLbl);
+  const tmplBody=mk('div','ped-collapse-body '+(sl._tmplOpen?'open':'closed'));
+  const tmplInp=mk('input','ped-field-inp','margin-top:6px;');tmplInp.type='text';tmplInp.placeholder='Canva, Adobe Express…';tmplInp.value=sl.templateRef||'';
+  tmplInp.oninput=e=>{pedDrawerTmp.templateRef=e.target.value;};
+  tmplBody.appendChild(tmplInp);
+  tmplToggle.onclick=()=>{pedDrawerTmp._tmplOpen=!pedDrawerTmp._tmplOpen;pedRenderDrawer();};
+  body.appendChild(tmplToggle);body.appendChild(tmplBody);
+  drawer.style.display='flex';
+}
+
+function pedCloseDrawer(){
+  const drawer=document.getElementById('ped-drawer');
+  if(drawer)drawer.style.display='none';
+  pedDrawerSlotId=null;pedDrawerIsNew=false;pedDrawerTmp={};
+}
+
+function pedDrawerSave(){
+  const plan=currentPedPlan();
+  const sl={...pedDrawerTmp};
+  delete sl._noteOpen;delete sl._tmplOpen;
+  if(pedDrawerIsNew){
+    plan.push(sl);plan.sort((a,b)=>a.date.localeCompare(b.date));
+    setCurrentPedPlan(plan);
+  } else {
+    const idx=plan.findIndex(s=>s.id===sl.id);
+    if(idx>=0)plan[idx]=sl;setCurrentPedPlan(plan);
+  }
+  autoSave();renderPEDCal();renderCalendar();
+  showToast('✓ Slot UGC salvato');pedCloseDrawer();
+}
+
+function pedDrawerDelete(){
+  if(!pedDrawerSlotId)return;
+  showConfirm({
+    title:'Elimina slot UGC',body:'Lo slot verrà eliminato definitivamente.',okLabel:'Elimina',type:'danger',
+    onOk:()=>{
+      const plan=currentPedPlan().filter(s=>s.id!==pedDrawerSlotId);
+      setCurrentPedPlan(plan);autoSave();renderPEDCal();renderCalendar();
+      showToast('✓ Slot eliminato');pedCloseDrawer();
+    }
+  });
+}
+
+/* ── Genera piano / Svuota ── */
+function pedGenerate(){
+  if(currentClientIdx<0||!currentMonth)return;
+  if(pedFreqDays.size===0){showToast('Seleziona almeno un giorno','warn');return;}
+  const{moIdx,year}=pedGetMeseAnno();
+  const daysInMonth=new Date(year,moIdx+1,0).getDate();
+  const existing=currentPedPlan();const existingDates=new Set(existing.map(s=>s.date));const newPlan=[...existing];
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=new Date(year,moIdx,d);let dow=dt.getDay();dow=dow===0?6:dow-1;
+    const iso=isoDate(year,moIdx+1,d);
+    if(pedFreqDays.has(dow)&&!existingDates.has(iso)){
+      newPlan.push({date:iso,type:'autonoma',ugcStato:'autonoma',brief:'',templateRef:'',creator:'',noteRegia:'',id:pedUID()});
+    }
+  }
+  newPlan.sort((a,b)=>a.date.localeCompare(b.date));setCurrentPedPlan(newPlan);
+  autoSave();renderPEDCal();renderCalendar();
+  showToast('✓ Piano UGC generato — '+newPlan.filter(s=>!existingDates.has(s.date)).length+' nuove date');
+}
+function pedClear(){
+  showConfirm({
+    title:'Svuota piano UGC',
+    body:'Tutti gli slot autonoma senza contenuto verranno rimossi.',
+    okLabel:'Svuota',type:'warn',
+    onOk:()=>{
+      const keep=currentPedPlan().filter(s=>s.brief||s.creator||s.noteRegia||s.ugcStato!=='autonoma');
+      setCurrentPedPlan(keep);autoSave();renderPEDCal();renderCalendar();
+      showToast('Piano UGC svuotato');
+    }
+  });
+}
+
+/* ══ TAB PIANO ══ */
+function renderPEDPiano(){
+  const wrap=document.getElementById('ped-piano-list');if(!wrap)return;wrap.innerHTML='';
+  const plan=currentPedPlan();
+  if(!plan.length){
+    const em=document.createElement('div');em.className='ped-piano-empty';
+    em.textContent='Nessuno slot pianificato. Vai al Calendario per aggiungerne.';
+    wrap.appendChild(em);return;
+  }
+  plan.forEach((sl,i)=>{
+    const cfg=UGC_STATI[sl.ugcStato]||UGC_STATI.autonoma;
+    const item=document.createElement('div');item.className='ped-piano-item';
+    const row1=document.createElement('div');row1.className='ped-piano-row1';
+    const dateEl=document.createElement('div');dateEl.className='ped-piano-date';dateEl.textContent=fmtDate(sl.date)||sl.date;
+    const statoPill=document.createElement('span');
+    statoPill.className='ped-stato-pill active';
+    statoPill.style.cssText='background:'+cfg.bg+';color:'+cfg.text+';border:1px solid '+cfg.border+';';
+    statoPill.textContent=cfg.label;
+    statoPill.onclick=e=>{e.stopPropagation();
+      const keys=Object.keys(UGC_STATI);const cur=keys.indexOf(sl.ugcStato||'autonoma');
+      plan[i].ugcStato=keys[(cur+1)%keys.length];setCurrentPedPlan(plan);autoSave();renderPEDPiano();
+    };
+    const titleEl=document.createElement('div');titleEl.className='ped-piano-title';
+    titleEl.textContent=sl.brief||(sl.type==='autonoma'?'Autonoma':'Template');
+    const tipoBadge=document.createElement('span');tipoBadge.className='ped-piano-tipo';tipoBadge.textContent=sl.type||'—';
+    row1.appendChild(dateEl);row1.appendChild(statoPill);row1.appendChild(titleEl);row1.appendChild(tipoBadge);
+    item.appendChild(row1);
+    if(sl.creator){const cr=document.createElement('div');cr.className='ped-piano-creator';cr.textContent='Creator: '+sl.creator;item.appendChild(cr);}
+    item.onclick=()=>{pedSwitchTab('calendario');setTimeout(()=>pedOpenDrawer(sl.id,sl.date),50);};
+    wrap.appendChild(item);
+  });
+  const addBtn=document.createElement('div');addBtn.className='ped-piano-add-row';
+  const btn=document.createElement('button');btn.className='btn sm';btn.textContent='+ Aggiungi slot';
+  btn.onclick=()=>pedSwitchTab('calendario');addBtn.appendChild(btn);wrap.appendChild(addBtn);
+}
+
+/* ══ TAB ANNO ══ */
+function renderPEDAnno(){
+  const wrap=document.getElementById('ped-anno-grid');if(!wrap)return;wrap.innerHTML='';
+  if(currentClientIdx<0){
+    wrap.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);font-size:12px;">Seleziona un cliente nel Feed.</div>';return;
+  }
+  const cl=clients[currentClientIdx];
+  const now=new Date();const curMo=now.getMonth();const curYear=now.getFullYear();
+  const annoYear=pedCalYear||curYear;
+  MONTHS.forEach((moName,mi)=>{
+    const key=pedKey(cl.name,moName+' '+annoYear);
+    const slots=pedPlans[key]||[];
+    const totale=slots.length;
+    const counts={selezionato:0,raccolto:0,autonoma:0};
+    slots.forEach(s=>{const k=s.ugcStato||'autonoma';if(counts[k]!==undefined)counts[k]++;});
+    const maxSlots=20;const pct=Math.min(100,Math.round(totale/maxSlots*100));
+    const isCurrent=mi===curMo&&annoYear===curYear;
+    const isFuture=annoYear>curYear||(annoYear===curYear&&mi>curMo);
+    const cell=document.createElement('div');
+    cell.className='ped-anno-mese'+(isCurrent?' corrente':'')+(isFuture&&!totale?' futuro-vuoto':'');
+    const lbl=document.createElement('div');lbl.className='ped-anno-m-label';lbl.textContent=moName.slice(0,3).toUpperCase();
+    const barWrap=document.createElement('div');barWrap.className='ped-anno-bar-wrap';
+    const bar=document.createElement('div');bar.className='ped-anno-bar';
+    const barColor=isFuture&&!totale?'var(--border)':isCurrent?'#d4a800':'#1D9E75';
+    bar.style.cssText='width:'+pct+'%;background:'+barColor+';';
+    barWrap.appendChild(bar);
+    const pills=document.createElement('div');pills.className='ped-anno-pills';
+    if(counts.selezionato>0){const p=document.createElement('span');p.className='ped-anno-pill sel';p.textContent=counts.selezionato+' sel.';pills.appendChild(p);}
+    if(counts.raccolto>0){const p=document.createElement('span');p.className='ped-anno-pill racc';p.textContent=counts.raccolto+' racc.';pills.appendChild(p);}
+    if(counts.autonoma>0){const p=document.createElement('span');p.className='ped-anno-pill aut';p.textContent=counts.autonoma+' aut.';pills.appendChild(p);}
+    const nEl=document.createElement('div');nEl.className='ped-anno-n';nEl.textContent=totale>0?totale+' UGC':'—';
+    cell.appendChild(lbl);cell.appendChild(barWrap);cell.appendChild(pills);cell.appendChild(nEl);
+    cell.onclick=()=>{pedSetMese(mi,annoYear);pedSwitchTab('calendario');};
+    wrap.appendChild(cell);
+  });
+}
+
+/* ── Compat stub ── */
+function renderPEDCards(){}
+
 
 /* PIANO TESTO */
 function renderNotesMonthPills(){
