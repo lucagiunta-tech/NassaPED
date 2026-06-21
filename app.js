@@ -425,12 +425,28 @@ function queueFeedFiles(files){
   setFeedItems([...newItems,...items]);refreshFeed();
   // Upload each file to Dropbox sequentially to avoid race conditions
   (async()=>{
+    const total = filesArr.length;
+    let done = 0;
+    let failed = 0;
+    // Mostra upload bar con contatore
+    const uploadBar = document.getElementById('dbx-upload-bar');
+    const uploadText = document.getElementById('dbx-upload-text');
+    const updateProgress = () => {
+      if(uploadText) uploadText.textContent = total === 1
+        ? 'Caricamento su Dropbox…'
+        : `Caricamento ${done + failed + 1} di ${total}…`;
+      if(uploadBar) uploadBar.style.display = 'flex';
+    };
+    updateProgress();
+
     for(const f of filesArr){
+      updateProgress();
       const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
       const sharedUrl=await DROPBOX.upload(f,destPath);
       const arr=currentFeedItems();
       const match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
       if(sharedUrl){
+        done++;
         if(match>=0){
           if(arr[match].url&&arr[match].url.startsWith('blob:')) URL.revokeObjectURL(arr[match].url);
           arr[match].externalUrl=sharedUrl;arr[match].url=sharedUrl;
@@ -438,14 +454,20 @@ function queueFeedFiles(files){
           arr[match].needsReload=false;delete arr[match]._uploadId;
         }
         setFeedItems(arr);refreshFeed();
-        // Salva immediatamente su Supabase dopo upload Dropbox completato
         CLOUD.saveNow(CLOUD.snapshot());
       } else {
-        // Upload Dropbox fallito — segna come needsReload così l'utente lo vede subito
+        failed++;
         if(match>=0){ arr[match].needsReload=true; }
         setFeedItems(arr);refreshFeed();
-        showToast('⚠ Upload Dropbox fallito per '+f.name+' — ricarica il file','warn');
+        showToast('⚠ Upload fallito: '+f.name,'warn');
       }
+    }
+    // Upload completato
+    if(uploadBar) uploadBar.style.display = 'none';
+    if(done > 0 && failed === 0){
+      showToast(total === 1 ? '✓ File caricato su Dropbox' : `✓ ${done} file caricati su Dropbox`);
+    } else if(failed > 0){
+      showToast(`⚠ ${done} ok, ${failed} falliti — ricarica i file mancanti`, 'warn');
     }
   })();
 }
@@ -2353,6 +2375,23 @@ function renderCalendar(){
 function openCalPanel(dateStr){
   const events=calGetAllEvents();const evs=events[dateStr]||[];
   const panel=document.getElementById('cal-day-panel');if(!panel)return;
+  // Overlay
+  let overlay=document.getElementById('cal-panel-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='cal-panel-overlay';
+    overlay.className='cal-panel-overlay';
+    overlay.onclick=()=>closeCalPanel();
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.add('open');
+  // Handle mobile (già nell'HTML)
+  const handle=panel.querySelector('.cal-panel-handle');
+  if(!handle){
+    const hEl=document.createElement('div');
+    hEl.className='cal-panel-handle';
+    panel.insertBefore(hEl, panel.firstChild);
+  }
   const head=document.getElementById('cal-panel-date');const body=document.getElementById('cal-panel-body');if(!head||!body)return;
   const[y,mo,d]=dateStr.split('-');const dt=new Date(parseInt(y),parseInt(mo)-1,parseInt(d));
   const gg=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
@@ -2364,7 +2403,12 @@ function openCalPanel(dateStr){
   renderSection(feeds_,'Post feed','feed');renderSection(stories_,'Stories','story');renderSection(hl_,'In evidenza','highlight');renderSection(pedAuto_,'UGC Autonoma','feed');renderSection(pedTmpl_,'UGC Template','story');
   panel.classList.add('open');
 }
-function closeCalPanel(){const p=document.getElementById('cal-day-panel');if(p)p.classList.remove('open');}
+function closeCalPanel(){
+  const p=document.getElementById('cal-day-panel');
+  if(p) p.classList.remove('open');
+  const ov=document.getElementById('cal-panel-overlay');
+  if(ov) ov.classList.remove('open');
+}
 
 // Close cal panel when clicking outside
 document.addEventListener('click',e=>{
