@@ -2111,3 +2111,115 @@ tbody tr:hover .tr-actions{opacity:1;}
 @media (min-width: 745px){
   .cal-panel-handle{ display:none; }
 }
+
+/* ══ CRITICO 1: SLIDE BUILDER — Mobile layout ══ */
+@media (max-width: 744px) {
+
+  /* Modal full screen */
+  #storyboard-modal .modal-bg { align-items: flex-end; }
+  #storyboard-modal .sb-modal-wide {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 92dvh !important;
+    max-height: 92dvh !important;
+    border-radius: var(--r) var(--r) 0 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Header compatto */
+  #storyboard-modal .modal-top { padding: 10px 14px; }
+  #storyboard-modal .modal-top h3 { font-size: 14px; }
+
+  /* Layout: colonna singola invece di 3 colonne */
+  .sb-builder {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr !important;
+    position: relative;
+  }
+
+  /* Tutte le colonne occupano tutto lo spazio ma si nascondono */
+  .sbcol-nav,
+  .sb-fields,
+  .sb-preview-wrap {
+    position: absolute !important;
+    inset: 0 !important;
+    display: none !important;
+    border: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Colonna attiva */
+  .sbcol-nav.sb-mob-active,
+  .sb-fields.sb-mob-active,
+  .sb-preview-wrap.sb-mob-active {
+    display: flex !important;
+    flex-direction: column;
+    position: relative !important;
+  }
+
+  /* Default: mostra campi */
+  .sb-fields { display: flex !important; position: relative !important; }
+
+  /* Bottom nav mobile SB */
+  .sb-mob-nav {
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .sb-mob-nav-btn {
+    flex: 1;
+    padding: 10px 4px 12px;
+    border: none;
+    background: transparent;
+    font-size: 10px;
+    font-family: var(--font);
+    color: var(--text-2);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: color .15s;
+    min-height: 52px;
+  }
+  .sb-mob-nav-btn.active {
+    color: var(--green);
+    font-weight: 600;
+  }
+  .sb-mob-nav-btn svg { width: 18px; height: 18px; }
+
+  /* Anteprima su mobile: canvas centrato scrollabile */
+  .sb-preview-wrap { padding: 12px; justify-content: flex-start; }
+  .sb-canvas { width: 100% !important; max-width: 280px; margin: 0 auto; }
+
+  /* Slide nav: orizzontale scrollabile */
+  .sbcol-nav.sb-mob-active { padding: 8px; }
+  #sb-thumbs {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  #sb-thumbs::-webkit-scrollbar { display: none; }
+  .sb-thumb { flex-shrink: 0; width: 56px !important; height: 100px !important; }
+  .sbcol-head { margin-bottom: 8px; }
+
+  /* Azioni footer modal */
+  #storyboard-modal .modal-actions {
+    padding: 8px 14px;
+    gap: 6px;
+  }
+  #storyboard-modal .modal-actions .btn { flex: 1; justify-content: center; }
+}
+
+/* Desktop: nasconde bottom nav */
+@media (min-width: 745px) {
+  .sb-mob-nav { display: none; }
+}
