@@ -2123,6 +2123,8 @@ function renderPreview(){
         // Carosello navigabile inline in Preview
         try{
           const player = buildCaroselloPlayer(item, i, ready, []);
+          // In Preview, il wrap del carosello fa stopPropagation → aggiunge click in capture
+          player.addEventListener('click', (e)=>{ openLb(i,ready,stArr); }, true);
           cell.appendChild(player);
           cell.style.overflow='hidden';
         } catch(e){
@@ -2133,20 +2135,26 @@ function renderPreview(){
           b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'+(item.slides?.length||0)+' slide';
           cell.appendChild(b);
         }
-      } else {
-        const img=makeMedia(coverUrl,'image');
-        if(img){
-          // Prevent img from blocking click events
-          img.style.pointerEvents='none';
-          cell.appendChild(img);
-        } else {
-          // Placeholder for missing image - still clickable
-          const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#e2e2e4;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:24px;';ph.textContent='';cell.appendChild(ph);
-        }
-        if(item.type==='carousel'){const b=document.createElement('span');b.className='client-badge carousel';
-        b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'+(item.slides?.length||0)+' slide';
-        cell.appendChild(b);}
-      }
+       } else if(item.type==='editorial'){
+         // Card editoriale: render grafico inline (no URL file)
+         const _brand=feedClientIdx>=0?clients[feedClientIdx]?.brand||{}:{};
+         const cols=item.editorialColors||(Object.keys(_brand).length?{bg:_brand.bg||'#f5f0e8',text:_brand.text||'#111',accent:_brand.primary||'#1a3c5e'}:{bg:'#f5f0e8',text:'#111',accent:'#1a3c5e'});
+         cell.style.background=cols.bg;cell.style.color=cols.text;
+         const edTitleHtml=item.editorialAccent&&item.editorialTitle?.includes(item.editorialAccent)
+           ?item.editorialTitle.replace(item.editorialAccent,`<span style="color:${cols.accent};">${item.editorialAccent}</span>`)
+           :item.editorialTitle||'';
+         const cardInner=document.createElement('div');
+         cardInner.style.cssText='position:absolute;inset:0;padding:12px 11px 36px;display:flex;flex-direction:column;font-family:var(--font);pointer-events:none;';
+         cardInner.innerHTML=`<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.4;margin-bottom:6px;">${esc(item.editorialEyebrow||'')}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:16px;flex:1;">${edTitleHtml}</div><div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div><div style="font-size:10px;opacity:.5;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div>`;
+         cell.appendChild(cardInner);
+       } else {
+         const imgPrev=makeMedia(coverUrl,'image');
+         if(imgPrev){imgPrev.style.pointerEvents='none';cell.appendChild(imgPrev);}
+         else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#e2e2e4;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:24px;';ph.textContent='';cell.appendChild(ph);}
+         if(item.type==='carousel'){const b=document.createElement('span');b.className='client-badge carousel';
+         b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'+(item.slides?.length||0)+' slide';
+         cell.appendChild(b);}
+       }
       if(item.showDate&&item.date){const dp=document.createElement('div');dp.className='client-date-bar';dp.textContent=item.date;cell.appendChild(dp);}
       post.appendChild(cell);
       if(item.copy?.trim()){const cd=document.createElement('div');cd.className='client-copy';cd.innerHTML='<div class="client-copy-lbl">Caption</div>';const ct=document.createElement('div');ct.textContent=item.copy;cd.appendChild(ct);post.appendChild(cd);}
