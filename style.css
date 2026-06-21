@@ -2358,6 +2358,48 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 .ec-acc-bio:focus { border-color: var(--green); }
 
+/* ── FEED PANEL: Sezione Profilo ── */
+.feed-profile-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.feed-profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: border-color var(--t-base);
+  position: relative;
+}
+.feed-profile-avatar:hover { border-color: var(--green); border-style: solid; }
+.feed-profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.feed-profile-avatar svg { width: 18px; height: 18px; }
+.feed-profile-bio {
+  flex: 1;
+  min-width: 140px;
+  max-width: 220px;
+  resize: none;
+  border: 0.5px solid var(--border);
+  border-radius: var(--rs);
+  padding: 6px 8px;
+  font-size: var(--fs-sm);
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  line-height: 1.4;
+  transition: border-color var(--t-base);
+}
+.feed-profile-bio:focus { border-color: var(--green); }
+
 /* Mobile: avatar e highlights più piccoli */
 
 /* ══ FEED — Vista lista (colonna singola) ══ */
