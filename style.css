@@ -2346,8 +2346,105 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ec-acc-bio:focus { border-color: var(--green); }
 
 /* Mobile: avatar e highlights più piccoli */
+
+/* ══ FEED — Vista lista (colonna singola) ══ */
+
+.feed-grid.feed-view-list {
+  grid-template-columns: 1fr !important;
+  max-width: 480px;
+  margin: 0 auto;
+  gap: 0 !important;
+  padding-bottom: 60px;
+}
+
+/* Cell wrap in vista lista */
+.feed-grid.feed-view-list .cell-wrap {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* Feed cell — mantiene aspect-ratio formato */
+.feed-grid.feed-view-list .feed-cell {
+  border-radius: 0 !important;
+  width: 100% !important;
+}
+
+/* Caption sempre espansa e modificabile */
+.feed-grid.feed-view-list .copy-panel {
+  display: flex !important;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  min-height: 60px;
+}
+.feed-grid.feed-view-list .copy-body {
+  display: block !important;
+}
+.feed-grid.feed-view-list .copy-preview {
+  display: none !important;
+}
+
+/* Date bar sempre visibile */
+.feed-grid.feed-view-list .date-bar { opacity: 1 !important; }
+
+/* Badge approvazione più leggibile */
+.feed-grid.feed-view-list .feed-appr-badge {
+  font-size: 11px;
+  padding: 4px 10px 4px 8px;
+}
+
+/* Su mobile: lista 1 colonna con larghezza piena */
+@media (max-width: 744px) {
+  .feed-grid.feed-view-list {
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
 @media (max-width: 744px) {
   .preview-profile-avatar { width: 52px; height: 52px; }
   .preview-hl-circle { width: 44px; height: 44px; }
   .preview-profile-top { gap: 12px; padding: 10px 0 6px; }
+}
+
+/* ══ FEED — Card editoriale ══ */
+.feed-cell.editorial {
+  font-family: var(--font);
+  position: relative;
+}
+/* Ensure aspect-ratio is respected inside grid */
+.cell-wrap:has(.feed-cell.editorial) {
+  aspect-ratio: var(--cell-ratio, 4/5);
+}
+
+/* ══ FEED — Bottone cambio vista (sempre visibile) ══ */
+.feed-view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--rs);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text-2);
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.feed-view-toggle-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+.feed-view-toggle-btn.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
+@media (max-width: 744px) {
+  .feed-view-toggle-btn { width: 36px; height: 36px; }
 }
