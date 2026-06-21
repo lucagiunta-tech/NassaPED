@@ -467,46 +467,71 @@
   </div>
 
   <div class="tab-page" id="page-ped">
-    <div class="content-bar">
-      <span class="content-title" id="ped-title">UGC</span>
-      <span class="content-tag">Piano editoriale</span>
-      <div class="content-space"></div>
-      <span class="content-meta" id="ped-meta"></span>
+    <!-- UGC Header bar -->
+    <div class="ped-topbar">
+      <span class="ped-topbar-title" id="ped-title">UGC</span>
+      <span class="ped-topbar-client" id="ped-client-label">— seleziona cliente nel Feed</span>
+      <div class="ped-topbar-space"></div>
+      <span class="ped-topbar-meta" id="ped-meta"></span>
     </div>
-    <div class="ped-wrap">
-      <div class="ped-left">
-        <div class="ped-section-head">
-          <h3>Piano del mese</h3>
-          <span id="ped-client-label">— seleziona cliente nel Feed</span>
+    <!-- Tab switcher -->
+    <div class="ped-tabs-bar" id="ped-tabs-bar">
+      <button class="ped-tab-btn active" id="ped-tab-calendario" onclick="pedSwitchTab('calendario')">Calendario</button>
+      <button class="ped-tab-btn" id="ped-tab-piano" onclick="pedSwitchTab('piano')">Piano</button>
+      <button class="ped-tab-btn" id="ped-tab-anno" onclick="pedSwitchTab('anno')">Anno</button>
+    </div>
+    <!-- Tab Calendario -->
+    <div class="ped-tab-panel active" id="ped-panel-calendario">
+      <!-- Cal header (giorni + controlli) -->
+      <div class="ped-cal-toolbar" id="ped-cal-toolbar">
+        <div class="ped-cal-nav">
+          <button class="btn sm icon" onclick="pedCalNav(-1)" aria-label="Mese precedente">‹</button>
+          <span class="ped-cal-month-lbl" id="ped-cal-month-lbl">—</span>
+          <button class="btn sm icon" onclick="pedCalNav(1)" aria-label="Mese successivo">›</button>
         </div>
-        <div class="ped-scroll">
-          <div class="ped-empty-ped" id="ped-empty">
-            <span class="pe-icon">📝</span>
-            <p>Vai nel <strong>Feed</strong>, seleziona un cliente e un mese.<br>Poi torna qui per pianificare le stories.</p>
-          </div>
-          <div id="ped-freq-block" style="display:none;">
-            <div class="freq-config">
-              <div class="freq-config-label">Giorni di pubblicazione</div>
-              <div class="freq-days" id="ped-freq-days"></div>
-              <div class="freq-actions">
-                <button class="btn sm primary" onclick="pedGenerate()">Genera piano</button>
-                <button class="btn sm" onclick="pedClear()">Svuota</button>
-              </div>
-            </div>
-            <div id="ped-cards"></div>
-          </div>
+        <div class="ped-cal-legend">
+          <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#d4a800;"></span>Raccolto</span>
+          <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#1D9E75;"></span>Selezionato</span>
+          <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#7F77DD;"></span>Autonoma</span>
+        </div>
+        <div class="ped-cal-toolbar-right">
+          <div class="freq-days-mini" id="ped-freq-days"></div>
+          <button class="btn sm primary" onclick="pedGenerate()">Genera piano</button>
+          <button class="btn sm" onclick="pedClear()">Svuota</button>
         </div>
       </div>
-      <div class="ped-right">
-        <div class="ped-section-head">
-          <h3>Anteprima mese</h3>
-          <span id="ped-cal-label">—</span>
-        </div>
-        <div style="overflow-y:auto;flex:1;">
+      <!-- Empty state -->
+      <div class="ped-empty-ped" id="ped-empty" style="display:none;">
+        <span class="pe-icon">📝</span>
+        <p>Vai nel <strong>Feed</strong>, seleziona un cliente e un mese.<br>Poi torna qui per pianificare le UGC.</p>
+      </div>
+      <!-- Flex row: griglia + drawer -->
+      <div class="ped-cal-row">
+        <div class="ped-cal-body" id="ped-cal-body">
           <div class="ped-cal-head" id="ped-cal-head"></div>
           <div class="ped-cal-grid" id="ped-cal-grid"></div>
         </div>
-      </div>
+        <!-- Slot Drawer (pannello laterale inline) -->
+        <div class="ped-drawer" id="ped-drawer" style="display:none;">
+        <div class="ped-drawer-head">
+          <span class="ped-drawer-date" id="ped-drawer-date">—</span>
+          <button class="btn ghost sm icon" onclick="pedCloseDrawer()" aria-label="Chiudi">✕</button>
+        </div>
+        <div class="ped-drawer-body" id="ped-drawer-body"></div>
+        <div class="ped-drawer-footer">
+          <button class="btn sm danger" id="ped-drawer-del" onclick="pedDrawerDelete()">Elimina</button>
+          <button class="btn sm primary" id="ped-drawer-save" onclick="pedDrawerSave()">Salva</button>
+        </div>
+        </div><!-- /ped-drawer -->
+      </div><!-- /ped-cal-row -->
+    </div>
+    <!-- Tab Piano -->
+    <div class="ped-tab-panel" id="ped-panel-piano">
+      <div class="ped-piano-list" id="ped-piano-list"></div>
+    </div>
+    <!-- Tab Anno -->
+    <div class="ped-tab-panel" id="ped-panel-anno">
+      <div class="ped-anno-grid" id="ped-anno-grid"></div>
     </div>
   </div>
 
