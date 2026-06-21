@@ -1650,154 +1650,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* ══════════════════════════════════════════════
    MOBILE — max-width: 768px
    ══════════════════════════════════════════════ */
-@media (max-width: 768px) {
 
-  /* ── Variabili mobile ── */
-  :root {
-    --topbar: 52px;
-    --sidebar: 0px;
-    --fs-base: 14px;
-    --fs-sm: 12px;
-    --fs-xs: 10px;
-  }
-
-  /* ── Nascondi sidebar su mobile ── */
-  .sidebar { display: none !important; }
-
-  /* ── Topbar: compatta ── */
-  .topbar { height: var(--topbar); padding: 0 12px; }
-  .brand-name { display: none; }
-  .topbar-nav { display: none; } /* le tab sono nella subtopbar */
-  .topbar-right { gap: 6px; }
-  .cloud-badge { display: none; }
-
-  /* ── Subtopbar: scrollabile orizzontalmente ── */
-  .subtopbar {
-    height: auto;
-    flex-direction: column;
-    padding: 0;
-    overflow: visible;
-  }
-  .subtopbar-client {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    min-height: 40px;
-  }
-  .subtopbar-tabs {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: 0 8px;
-    gap: 0;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-  .subtopbar-tabs::-webkit-scrollbar { display: none; }
-  .sub-tab {
-    flex-shrink: 0;
-    padding: 8px 12px;
-    font-size: 13px;
-    white-space: nowrap;
-  }
-
-  /* ── Account switcher ── */
-  .acc-switcher { padding: 4px 12px; }
-
-  /* ── Feed context bar ── */
-  .feed-ctx-bar { flex-wrap: wrap; gap: 4px; padding: 6px 10px; }
-  .feed-ctx-row1 { flex-wrap: wrap; gap: 4px; width: 100%; }
-  .ctx-select { font-size: 12px; padding: 4px 6px; max-width: 140px; }
-
-  /* ── Selettore mesi: scrollabile orizzontalmente ── */
-  .month-strip, .feed-month-row, [class*="month-bar"] {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    flex-wrap: nowrap !important;
-    white-space: nowrap;
-    padding-bottom: 2px;
-  }
-  .month-strip::-webkit-scrollbar,
-  .feed-month-row::-webkit-scrollbar { display: none; }
-  .month-pill { flex-shrink: 0; }
-
-  /* ── Feed grid: 2 colonne su mobile ── */
-  .feed-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 3px;
-  }
-
-  /* ── Caption panel: più compatta ── */
-  .copy-panel { font-size: 12px; }
-  .copy-body textarea { font-size: 12px; rows: 2; }
-
-  /* ── Overlay: bottoni più grandi (touch target) ── */
-  .ov-btn { padding: 10px 12px; font-size: 12px; min-height: 44px; }
-  .ov-sheet { padding: 6px 8px 14px; }
-
-  /* ── Modal: full screen su mobile ── */
-  .modal-box, [class*="-modal"] > div {
-    width: 95vw !important;
-    max-width: 95vw !important;
-    max-height: 88vh !important;
-  }
-
-  /* ── Date picker: più largo ── */
-  .dp-popup { min-width: 280px; font-size: 13px; }
-  .dp-day { min-width: 34px; min-height: 34px; font-size: 12px; }
-
-  /* ── Anno / Calendario: scroll orizzontale ── */
-  .anno-grid, .anno-table { overflow-x: auto; }
-
-  /* ── Ads: colonna singola ── */
-  .ads-gantt { overflow-x: auto; }
-
-  /* ── Preview: griglia singola colonna ── */
-  .client-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 3px;
-  }
-
-  /* ── Storyboard sezione in Preview: 2 colonne ── */
-  #preview-body [style*="repeat(3,1fr)"] {
-    grid-template-columns: repeat(2,1fr) !important;
-  }
-
-  /* ── Feed format badge ── */
-  .feed-fmt-badge { font-size: 11px; }
-  #feed-fmt-sel-wrap { font-size: 11px; }
-
-  /* ── Topbar bottoni ── */
-  .topbar-right button, .topbar-right .avatar {
-    min-width: 36px;
-    min-height: 36px;
-  }
-
-  /* ── Sb nav (slide builder) ── */
-  .sb-main-nav { display: none; }
-
-  /* ── Stories grid: 2 colonne ── */
-  .stories-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 3px;
-  }
-
-  /* ── Cell wrap: dimensioni ok ── */
-  .cell-wrap { break-inside: avoid; }
-
-  /* ── Toggle dates/copy: nascondi label su mobile ── */
-  .toggle-lbl { display: none; }
-
-  /* ── UGC card: layout verticale ── */
-  .ped-story-card-head { flex-wrap: wrap; gap: 4px; }
-
-  /* ── Appr stats bar: scroll orizzontale ── */
-  .appr-stats-bar { overflow-x: auto; flex-wrap: nowrap; }
-  .appr-filter-chip { flex-shrink: 0; white-space: nowrap; }
-}
 
 /* ── Extra small: iPhone SE ── */
 @media (max-width: 380px) {
@@ -1806,16 +1659,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 
 /* ── Mobile: month pills scrollabili ── */
-@media (max-width: 768px) {
-  .feed-ctx-bar { padding: 4px 8px; gap: 4px; flex-direction: column; align-items: stretch; }
-  .feed-ctx-row1 { display: flex; align-items: center; gap: 6px; overflow: hidden; }
-  .feed-ctx-row2 { display: flex; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  .feed-ctx-row2::-webkit-scrollbar { display: none; }
-  .feed-month-pills-inline { display: flex; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; gap: 4px; padding: 4px 0; touch-action: pan-x; }
-  .feed-month-pills-inline::-webkit-scrollbar { display: none; }
-  .month-pill { flex-shrink: 0; }
-  .year-nav { flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
-}
+
 
 /* ══ FEED — Vista lista (colonna singola) ══ */
 
@@ -1906,81 +1750,142 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* ══ MOBILE FIX 2 — Problemi screenshot 22:04 ══ */
 @media (max-width: 768px) {
 
-  /* 1. Avatar — rimane nel topbar, dimensione ok */
-  .avatar { width: 28px; height: 28px; font-size: 11px; }
+  /* ── TOPBAR: riga singola compatta ── */
+  .topbar { height: 48px; padding: 0 10px; }
+  .brand-name { display: none; }
+  .topbar-nav { display: none; }
+  .cloud-badge { display: none; }
+  .avatar { width: 30px; height: 30px; font-size: 11px; flex-shrink: 0; }
+  .topbar-right { gap: 6px; }
 
-  /* 2. Subtopbar client — più compatta, no border-right */
-  .subtopbar-client {
-    min-width: 0;
-    padding: 6px 12px;
-    border-right: none;
+  /* ── SUBTOPBAR: riga orizzontale unica ── */
+  .subtopbar {
+    height: auto;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow: hidden;
     border-bottom: 1px solid var(--border);
   }
-  .subtopbar-name { font-size: 14px; }
-  .subtopbar-pkg { font-size: 10px; }
-  .subtopbar-back { font-size: 18px; margin-right: 4px; }
-
-  /* 3. Save-bar Importa/Esporta — più piccola e meno invadente */
-  .save-bar {
-    bottom: 8px;
-    right: 8px;
-    padding: 4px 8px 4px 10px;
-    gap: 6px;
-    font-size: 11px;
+  .subtopbar-client {
+    flex-shrink: 0;
+    max-width: 110px;
+    min-width: 0;
+    padding: 8px 8px 8px 12px;
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  .save-bar .btn { font-size: 11px; padding: 3px 8px; }
-  .save-bar-label { display: none; } /* Nasconde emoji 💾 */
+  .subtopbar-name {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .subtopbar-pkg { display: none; }
+  .subtopbar-back { font-size: 16px; flex-shrink: 0; }
 
-  /* 4. Overlay bottoni — più piccoli e sovrapposti all'immagine */
+  /* Account switcher — nascosto su mobile (troppo stretto) */
+  .acc-switcher { display: none; }
+
+  /* ── TAB STRIP: scorribile orizzontalmente ── */
+  .subtopbar-tabs {
+    flex: 1;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+    padding: 0 4px;
+  }
+  .subtopbar-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+    border-bottom: none;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── MESI: scorribili ── */
+  .feed-ctx-bar { padding: 4px 8px; gap: 4px; }
+  .feed-month-pills-inline {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 4px 0;
+    touch-action: pan-x;
+  }
+  .feed-month-pills-inline::-webkit-scrollbar { display: none; }
+  .month-pill { flex-shrink: 0; }
+  .year-nav { flex-shrink: 0; }
+
+  /* ── FEED GRID: 2 colonne ── */
+  .feed-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 3px; }
+
+  /* ── OVERLAY: più compatto, non copre immagine ── */
   .cell-overlay { padding-bottom: 0; }
   .ov-sheet { padding: 4px 6px 8px; }
-  .ov-btn {
-    padding: 8px 10px;
-    font-size: 11px;
-    min-height: 36px; /* touch target ok anche più piccolo */
-  }
+  .ov-btn { padding: 9px 10px; font-size: 11px; min-height: 40px; }
   .ov-btn svg { width: 13px; height: 13px; }
   .ov-divider { margin: 1px 0; }
 
-  /* 5. Badge tipo (Foto/Reel/Carosello) — più piccolo */
-  .cell-badge {
-    padding: 2px 6px;
-    font-size: 9px;
-    gap: 3px;
-  }
-  .cell-badge svg { width: 9px; height: 9px; }
-
-  /* 6. Caption — chiusa di default su mobile, apri solo su tap */
+  /* ── CAPTION: nascosta su mobile (usa vista lista per vederla) ── */
   .copy-panel { display: none !important; }
-  /* In vista lista la caption torna visibile */
   .feed-view-list .copy-panel { display: flex !important; }
 
-  /* 7. Anno tab — nascondi su mobile (troppo complessa) */
-  #sub-tab-anno { display: none; }
+  /* ── SAVE BAR: più piccola, non copre il feed ── */
+  .save-bar {
+    bottom: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    gap: 4px;
+    font-size: 11px;
+  }
+  .save-bar .btn { font-size: 11px; padding: 3px 8px; }
+  .save-bar-label { display: none; }
 
-  /* 8. Mesi — row compatta */
-  .feed-ctx-bar { padding: 4px 8px; }
+  /* ── PADDING INFERIORE feed: evita che save-bar copra l'ultima riga ── */
+  .feed-grid { padding-bottom: 60px; }
+  #page-feed { padding-bottom: 0; }
 
-  /* 9. Cell num — più piccolo */
+  /* ── BADGE ── */
+  .cell-badge { padding: 2px 5px; font-size: 9px; gap: 2px; }
+  .cell-badge svg { width: 9px; height: 9px; }
   .cell-num { font-size: 9px; padding: 1px 4px; }
-
-  /* 10. Top bar drag handle — più piccolo */
-  .drag-handle { display: none; } /* non serve su mobile */
-  .cell-top-bar { padding: 4px 6px; gap: 4px; }
-
-  /* 11. Date bar — testo più piccolo */
-  .date-bar { padding: 16px 6px 6px; }
-  .date-input { font-size: 11px; }
-
-  /* 12. Feed-appr-badge — più compatto */
+  .drag-handle { display: none; }
+  .cell-top-bar { padding: 3px 5px; gap: 3px; }
+  .date-bar { padding: 14px 6px 5px; }
+  .date-input { font-size: 10px; }
   .feed-appr-badge { font-size: 9px; padding: 2px 6px 2px 5px; }
-  .feed-appr-dot { width: 4px; height: 4px; }
+  .video-cover-pill { font-size: 8px; padding: 2px 5px; }
 
-  /* 13. Cover pill — più piccola */
-  .video-cover-pill { font-size: 8px; padding: 2px 6px; }
+  /* ── MODAL: full screen ── */
+  .modal-bg .modal-box { width: 96vw !important; max-width: 96vw !important; }
 
-  /* 14. Acc-switcher — compatto */
-  .acc-switcher { padding: 3px 12px; }
+  /* ── CLIENT GRID (Preview): 2 colonne ── */
+  .client-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 3px; }
+
+  /* ── STORIES GRID ── */
+  .stories-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 3px; }
+}
+
+@media (max-width: 400px) {
+  .subtopbar-client { max-width: 90px; }
+  .sub-tab { padding: 10px 10px; font-size: 12px; }
+  .feed-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
 /* ── iPhone SE / molto stretti ── */
