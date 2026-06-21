@@ -1176,5 +1176,55 @@
 <div class="toast" id="toast"></div>
 
 <script src="app.js?v=1781971550"></script>
+
+<!-- ══ MODAL CARD EDITORIALE ══ -->
+<div class="modal-bg" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
+  <div class="modal-box" style="width:min(560px,96vw);max-height:90dvh;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="modal-top">
+      <h3>Card editoriale</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('editorial-modal')" aria-label="Chiudi">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:16px;">
+      <!-- Anteprima live -->
+      <div id="ed-preview-wrap" style="width:100%;max-width:180px;margin:0 auto;aspect-ratio:4/5;background:#f5f0e8;border-radius:var(--r);overflow:hidden;position:relative;flex-shrink:0;">
+        <div id="ed-preview-inner" style="position:absolute;inset:0;padding:14px 12px 40px;display:flex;flex-direction:column;font-family:var(--font);">
+          <div id="ed-prev-eyebrow" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;"></div>
+          <div id="ed-prev-title" style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:16px;flex:1;"></div>
+          <div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div>
+          <div id="ed-prev-copy" style="font-size:10px;opacity:.55;line-height:1.4;"></div>
+        </div>
+        <div id="ed-prev-badge" style="position:absolute;bottom:8px;right:8px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;">N</div>
+      </div>
+      <!-- Tema -->
+      <div>
+        <div class="field-lbl" style="margin-bottom:6px;">Tema</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="ed-theme-btn btn sm active" data-theme="light" onclick="setEdTheme('light')">☀ Chiaro</button>
+          <button class="ed-theme-btn btn sm" data-theme="dark" onclick="setEdTheme('dark')">🌙 Scuro</button>
+          <button class="ed-theme-btn btn sm" data-theme="brand" onclick="setEdTheme('brand')">🎨 Brand</button>
+        </div>
+      </div>
+      <!-- Formato -->
+      <div>
+        <div class="field-lbl" style="margin-bottom:6px;">Formato</div>
+        <div style="display:flex;gap:6px;">
+          <button class="ed-fmt-btn btn sm active" data-fmt="feed" onclick="setEdFmt('feed')">Feed 4:5</button>
+          <button class="ed-fmt-btn btn sm" data-fmt="story" onclick="setEdFmt('story')">Story 9:16</button>
+        </div>
+      </div>
+      <!-- Campi testo -->
+      <div class="field"><label>Occhiello</label><input type="text" id="ed-eyebrow" placeholder="es. Insight · Cliente" oninput="renderEdPreview()"/></div>
+      <div class="field"><label>Titolo <span style="color:var(--red,#e03)">*</span></label><input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
+      <div class="field"><label>Parola in evidenza <span style="color:var(--text-3);font-weight:400;">(colorata)</span></label><input type="text" id="ed-accent" placeholder="Una parola del titolo da colorare" oninput="renderEdPreview()"/></div>
+      <div class="field"><label>Sottotitolo / copy</label><textarea id="ed-copy" rows="2" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
+      <div class="field"><label>Autore / firma</label><input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('editorial-modal')">Annulla</button>
+      <button class="btn primary" onclick="saveEditorialCard()">+ Aggiungi al feed</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
