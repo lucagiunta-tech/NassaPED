@@ -1736,7 +1736,7 @@ tbody tr:hover .tr-actions{opacity:1;}
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: stretch;
-    overflow: hidden;
+    overflow: visible; /* NON hidden — le tab devono scrollare */
     border-bottom: 1px solid var(--border);
   }
   .subtopbar-client {
@@ -1981,15 +1981,73 @@ tbody tr:hover .tr-actions{opacity:1;}
   .month-pill { font-size: 10px; padding: 2px 6px; }
 }
 
-/* Date picker mobile: celle giorno più grandi e cliccabili */
+/* Date picker mobile: celle grandi e touch-friendly */
 @media (max-width: 744px) {
-  .date-picker-popup.mobile-sheet .dp-grid { grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 0 8px 8px; }
-  .date-picker-popup.mobile-sheet .dp-day {
-    min-width: 40px;
-    min-height: 44px;
-    font-size: 14px;
-    border-radius: 8px;
+  .date-picker-popup.mobile-sheet .dp-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: 0 12px 16px;
   }
-  .date-picker-popup.mobile-sheet .dp-header { padding: 8px 16px; }
-  .date-picker-popup.mobile-sheet .dp-nav { min-width: 40px; min-height: 40px; font-size: 20px; }
+  .date-picker-popup.mobile-sheet .dp-day {
+    min-width: 0;
+    width: 100%;
+    height: 44px;
+    font-size: 16px; /* ≥16px: evita zoom iOS */
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .date-picker-popup.mobile-sheet .dp-header {
+    padding: 8px 16px 12px;
+    font-size: 15px;
+  }
+  .date-picker-popup.mobile-sheet .dp-nav {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 22px;
+  }
+  .date-picker-popup.mobile-sheet .dp-weekday {
+    font-size: 11px;
+    padding: 6px 0;
+    text-align: center;
+  }
+}
+
+/* ══ FIX 6: Modal e pannelli responsive mobile ══ */
+@media (max-width: 744px) {
+  /* Pannello giorno calendario */
+  .cal-day-panel {
+    width: min(320px, calc(100vw - 16px)) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  /* Anno modal */
+  .anno-modal {
+    width: min(340px, calc(100vw - 16px)) !important;
+  }
+  /* Feed ctx panel — non fisso su mobile */
+  .feed-ctx-panel {
+    position: fixed;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: var(--r) var(--r) 0 0;
+    max-height: 75dvh;
+    overflow-y: auto;
+    z-index: 800;
+  }
+  /* Overlay per feed-ctx-panel su mobile */
+  .feed-ctx-panel.open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.3);
+    z-index: -1;
+  }
 }
