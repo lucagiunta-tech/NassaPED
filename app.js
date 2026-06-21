@@ -582,7 +582,7 @@ function detectType(file_or_url){
 function makeMedia(url,type,opts={}){
   if(!url)return null;
   if(type==='video'){const v=document.createElement('video');v.src=url;v.muted=true;v.loop=true;v.playsInline=true;v.preload='metadata';v.style.cssText='pointer-events:none;background:#111;width:100%;height:100%;object-fit:cover;display:block;';if(opts.autoplay)v.autoplay=true;if(opts.controls)v.controls=true;return v;}
-  const img=document.createElement('img');img.src=url;img.alt='';return img;
+  const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';img.decoding='async';return img;
 }
 function needsReloadPh(icon,name,reuploadFn){
   const ph=document.createElement('div');ph.className='needs-reload-ph';
@@ -1832,7 +1832,20 @@ function renderSbCassetto(){
       riusaBtn.className='sb-riusa-btn';
       riusaBtn.textContent='Riusa';
       riusaBtn.onclick=()=>{
-        alert('Template duplicato come nuova bozza — funzione completa nella fase 2.');
+        // Duplica il template come nuova bozza nel cassetto
+        const clone={
+          ...entry,
+          id: Date.now(),
+          name: (entry.name||'Template')+' (copia)',
+          salvatoAt: Date.now(),
+          slides: (entry.slides||[]).map(s=>({...s}))
+        };
+        // Rimuove campi specifici del "realizzato"
+        delete clone.archiviatoAt;
+        sbCassetto.unshift(clone);
+        try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
+        showToast('✓ Template duplicato come nuova bozza');
+        sbSwitchCasTab('bozze');
       };
 
       d.appendChild(thumb);
@@ -2413,7 +2426,7 @@ document.addEventListener('keydown',e=>{
 /* MODAL HELPERS */
 function openModal(id){const m=document.getElementById(id);if(m)m.classList.add('open');}
 function closeModal(id){const m=document.getElementById(id);if(m)m.classList.remove('open');}
-document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg'))e.target.classList.remove('open');});
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg')&&!e.target.dataset.noClose)e.target.classList.remove('open');});
 
 /* ════════ CALENDARIO ════════ */
 let calView='month',calDate=new Date();
@@ -2446,7 +2459,7 @@ function calGetAllEvents(){
     // PED plans - scan all keys
     Object.keys(pedPlans).filter(k=>k.startsWith(cl.name+'|||')).forEach(pkey=>{
       const mo=pkey.split('|||')[1];
-      (pedPlans[pkey]||[]).forEach((st)=>{if(!st.date)return;const lbl=(st.type==='autonoma'?'👤 ':'🎨 ')+(st.brief?st.brief.slice(0,18):'Story pianificata');addEv(st.date,{type:'ped',label:lbl,thumb:null,item:st,clientIdx:ci,clientName:cl.name,month:mo,pedType:st.type});});
+      (pedPlans[pkey]||[]).forEach((st)=>{if(!st.date)return;const lbl=(st.type==='autonoma'?'👤 ':'🎨 ')+(st.brief?st.brief.slice(0,18):'Story pianificata');addEv(st.date,{type:'ped',label:lbl,thumb:st.storyboardThumb||null,item:st,clientIdx:ci,clientName:cl.name,month:mo,pedType:st.type,ugcStato:st.ugcStato||'raccolto'});});
     });
     // Campagne Paid → aggiungi evento al giorno di inizio nel mese del calendario
     const adsKey=cl.id||null;
@@ -2570,7 +2583,7 @@ function openCalPanel(dateStr){
   body.innerHTML='';
   if(!evs.length){body.innerHTML='<p style="font-size:12px;color:var(--text-3);text-align:center;padding:20px;">Nessun contenuto programmato.</p>';panel.classList.add('open');return;}
   const feeds_=evs.filter(e=>e.type==='feed');const stories_=evs.filter(e=>e.type==='story');const hl_=evs.filter(e=>e.type==='highlight');const pedAuto_=evs.filter(e=>e.type==='ped'&&e.pedType==='autonoma');const pedTmpl_=evs.filter(e=>e.type==='ped'&&e.pedType==='template');
-  const renderSection=(list,label,typeClass)=>{if(!list.length)return;const sec=document.createElement('div');const sl=document.createElement('div');sl.className='cal-panel-section';sl.textContent=label;sec.appendChild(sl);list.forEach(ev=>{const row=document.createElement('div');row.className='cal-panel-item';const thumb=document.createElement('div');thumb.className='cal-panel-thumb'+(typeClass==='story'?' story':'');if(ev.vidUrl){const v=document.createElement('video');v.src=ev.vidUrl;v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='width:100%;height:100%;object-fit:cover;';thumb.appendChild(v);}else if(ev.thumb){const img=document.createElement('img');img.src=ev.thumb;img.alt='';thumb.appendChild(img);}const info=document.createElement('div');info.className='cal-panel-info';const type_=document.createElement('div');type_.className=`cal-panel-type ${typeClass}`;type_.textContent=label.replace(/[📄📱⭐👤🎨] /,'');info.appendChild(type_);const cp=document.createElement('div');cp.className='cal-panel-copy';cp.textContent=ev.item.brief||ev.item.copy||ev.item.note||ev.item.name||ev.label||'—';info.appendChild(cp);if(ev.clientName){const cl_=document.createElement('div');cl_.style.cssText='font-size:10px;color:var(--text-3);margin-top:2px;';cl_.textContent=ev.clientName;info.appendChild(cl_);}if(ev.type==='feed'||ev.type==='story'||ev.type==='ped'){const tabDest=ev.type==='feed'?'feed':ev.type==='story'?'stories':'ped';const go=document.createElement('div');go.className='cal-panel-goto';go.innerHTML='→ Vai a '+(ev.type==='feed'?'Feed':ev.type==='story'?'Stories':'UGC');go.onclick=e=>{e.stopPropagation();switchTab(tabDest);closeCalPanel();};info.appendChild(go);}row.appendChild(thumb);row.appendChild(info);if(ev.type==='feed'&&ev.item)row.onclick=()=>{openLb(0,[ev.item]);};sec.appendChild(row);});body.appendChild(sec);};
+  const renderSection=(list,label,typeClass)=>{if(!list.length)return;const sec=document.createElement('div');const sl=document.createElement('div');sl.className='cal-panel-section';sl.textContent=label;sec.appendChild(sl);list.forEach(ev=>{const row=document.createElement('div');row.className='cal-panel-item';const thumb=document.createElement('div');thumb.className='cal-panel-thumb'+(typeClass==='story'?' story':'');if(ev.vidUrl){const v=document.createElement('video');v.src=ev.vidUrl;v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='width:100%;height:100%;object-fit:cover;';thumb.appendChild(v);}else if(ev.thumb){const img=document.createElement('img');img.src=ev.thumb;img.alt='';thumb.appendChild(img);}const info=document.createElement('div');info.className='cal-panel-info';const type_=document.createElement('div');type_.className=`cal-panel-type ${typeClass}`;type_.textContent=label.replace(/[📄📱⭐👤🎨] /,'');info.appendChild(type_);const cp=document.createElement('div');cp.className='cal-panel-copy';cp.textContent=ev.item.brief||ev.item.copy||ev.item.note||ev.item.name||ev.label||'—';info.appendChild(cp);if(ev.clientName){const cl_=document.createElement('div');cl_.style.cssText='font-size:10px;color:var(--text-3);margin-top:2px;';cl_.textContent=ev.clientName;info.appendChild(cl_);}if(ev.type==='feed'||ev.type==='story'||ev.type==='ped'){const tabDest=ev.type==='feed'?'feed':ev.type==='story'?'stories':'ped';const go=document.createElement('div');go.className='cal-panel-goto';go.innerHTML='→ Vai a '+(ev.type==='feed'?'Feed':ev.type==='story'?'Stories':'UGC');go.onclick=e=>{e.stopPropagation();switchTab(tabDest);closeCalPanel();};info.appendChild(go);}if(ev.type==='ped'&&ev.ugcStato){const UGC_STATI={raccolto:{l:'Raccolto',c:'#888'},selezionato:{l:'Selezionato',c:'#1D6FA8'},adattato:{l:'Adattato',c:'#d4a800'},approvato:{l:'Approvato',c:'#1a7a4a'}};const sc=UGC_STATI[ev.ugcStato]||UGC_STATI.raccolto;const sb=document.createElement('div');sb.style.cssText=`display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:600;color:${sc.c};margin-top:3px;`;sb.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${sc.c};flex-shrink:0;"></span>${sc.l}`;info.appendChild(sb);}row.appendChild(thumb);row.appendChild(info);if(ev.type==='feed'&&ev.item)row.onclick=()=>{openLb(0,[ev.item]);};sec.appendChild(row);});body.appendChild(sec);};
   renderSection(feeds_,'Post feed','feed');renderSection(stories_,'Stories','story');renderSection(hl_,'In evidenza','highlight');renderSection(pedAuto_,'UGC Autonoma','feed');renderSection(pedTmpl_,'UGC Template','story');
   panel.classList.add('open');
 }
