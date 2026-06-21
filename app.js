@@ -2742,7 +2742,15 @@ function openDatePicker(idx,anchorEl){
   if(!popup){popup=document.createElement('div');popup.id='global-date-picker';popup.className='date-picker-popup';document.body.appendChild(popup);}
   const rect=anchorEl.getBoundingClientRect();popup.style.top=(rect.top-6)+'px';popup.style.left=rect.left+'px';popup.style.width=Math.max(rect.width,220)+'px';
   renderDatePickerContent(idx,popup);popup.classList.add('open');
-  const popH=popup.offsetHeight;if(rect.top-popH-6<0)popup.style.top=(rect.bottom+6)+'px';else popup.style.top=(rect.top-popH-6)+'px';
+  // Smart positioning: non uscire fuori schermo
+  const popH=popup.offsetHeight; const popW=popup.offsetWidth;
+  const vw=window.innerWidth; const vh=window.innerHeight;
+  // Verticale
+  if(rect.top-popH-6<0) popup.style.top=Math.min(rect.bottom+6, vh-popH-8)+'px';
+  else popup.style.top=(rect.top-popH-6)+'px';
+  // Orizzontale — non uscire a destra
+  const leftPos = Math.min(rect.left, vw-popW-8);
+  popup.style.left = Math.max(8, leftPos)+'px';
 }
 function closeDatePicker(){const popup=document.getElementById('global-date-picker');if(popup)popup.classList.remove('open');dpOpenIdx=null;}
 function renderDatePickerContent(idx,popup){
