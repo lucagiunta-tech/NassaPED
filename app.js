@@ -1482,7 +1482,7 @@ async function saveStoryboard(){
     arr[sbEditIdx].slides=cleanSlides;
     arr[sbEditIdx].url=cleanSlides[0]?.url||'';arr[sbEditIdx].isStoryboard=true;if(arr[sbEditIdx].isUGC===undefined)arr[sbEditIdx].isUGC=false;if(arr[sbEditIdx].briefInviato===undefined)arr[sbEditIdx].briefInviato=false;if(arr[sbEditIdx].fileCaricato===undefined)arr[sbEditIdx].fileCaricato=false;
   }else{
-    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides,isUGC:false,briefInviato:false,fileCaricato:false});
+    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides,isUGC:false,briefInviato:false,fileCaricato:false,id:'sb_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)});
   }
   setStoryItems(arr);closeModal('storyboard-modal');refreshStories();
   CLOUD.saveNow(CLOUD.snapshot()); // salva subito dopo upload slides
@@ -1571,6 +1571,9 @@ function updateSbPreview(){
     const titEl=document.getElementById('sb-p-tit');
     const copEl=document.getElementById('sb-p-cop');
     if(numEl)numEl.style.color=sf.acc;
+    // Aggiorna swatch colore numero
+    const swatch=document.getElementById('sb-num-color-swatch');
+    if(swatch) swatch.style.background=sf.acc;
     if(titEl)titEl.style.color=sf.text;
     if(copEl)copEl.style.color=sf.text;
   } else if(canvas && !sl.sfondo){
@@ -4861,7 +4864,20 @@ function openBriefModal(sb){
 
   // Link
   const linkEl = document.getElementById('brief-modal-link');
-  if(linkEl) linkEl.textContent = 'nassa.studio/brief/' + (sb.id || 'preview');
+  if(linkEl){
+    const briefId = sb.id || 'preview';
+    const briefUrl = 'https://nassa.studio/brief/' + briefId;
+    linkEl.textContent = briefUrl;
+    linkEl.title = 'Clicca per copiare';
+    linkEl.style.cursor = 'pointer';
+    linkEl.onclick = ()=>{
+      navigator.clipboard.writeText(briefUrl).then(()=>{
+        const orig = linkEl.textContent;
+        linkEl.textContent = '✓ Link copiato!';
+        setTimeout(()=>{ linkEl.textContent = orig; }, 1800);
+      }).catch(()=>{ showToast('Copia manuale: '+briefUrl); });
+    };
+  }
 
   // Preview slide list
   const listEl = document.getElementById('brief-modal-list');
