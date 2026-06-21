@@ -1,5 +1,2 @@
 # NassaPED
-
-Nassa Studio — Content Planning App
-
-v20260620135141
+Nassa Studio content planning app
