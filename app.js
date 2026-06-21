@@ -1,4 +1,39 @@
-/* ══════════════════════════════════════════
+function renderEdPreview(){
+  const eyebrow = document.getElementById('ed-eyebrow')?.value||'';
+  const title   = document.getElementById('ed-title')?.value||'';
+  const accent  = document.getElementById('ed-accent')?.value||'';
+  const copy    = document.getElementById('ed-copy')?.value||'';
+  const cols    = getEdColors();
+
+  // Aggiorna colori sfondo
+  const wrap  = document.getElementById('ed-preview-wrap');
+  const inner = document.getElementById('ed-preview-inner');
+  const badge = document.getElementById('ed-prev-badge');
+  if(!wrap) return;
+  wrap.style.background = cols.bg;
+  if(inner){ inner.style.color = cols.text; }
+  if(badge){ badge.style.background = cols.logo; badge.style.color = cols.logoText; }
+
+  // Aspect ratio formato
+  wrap.style.aspectRatio = edFmt === 'story' ? '9/16' : '4/5';
+
+  // Testi
+  const el = id => document.getElementById(id);
+  if(el('ed-prev-eyebrow')) el('ed-prev-eyebrow').textContent = eyebrow;
+
+  // Titolo con parola colorata
+  if(el('ed-prev-title')){
+    if(accent && title.includes(accent)){
+      el('ed-prev-title').innerHTML = esc(title).replace(
+        esc(accent),
+        `<span style="color:${cols.accent};">${esc(accent)}</span>`
+      );
+    } else {
+      el('ed-prev-title').textContent = title;
+    }
+  }
+  if(el('ed-prev-copy')) el('ed-prev-copy').textContent = copy.slice(0,100);
+}/* ══════════════════════════════════════════
    UTILITIES — helpers globali usati in tutto il file
 ══════════════════════════════════════════ */
 
@@ -950,7 +985,10 @@ function renderFeedGrid(){
             logo: '#0dff00',
             logoText: '#111'
           } : {bg:'#f5f0e8',text:'#111',accent:'#1a3c5e',logo:'#0dff00',logoText:'#111'});
-          cell.classList.add('editorial');cell.style.background=cols.bg;cell.style.color=cols.text;cell.style.setProperty('--cell-ratio',_fmt.cssRatio);
+          cell.classList.add('editorial');cell.style.background=cols.bg;cell.style.color=cols.text;
+          // aspect ratio dalla piattaforma account
+          const _edFmt=getPlatformFormat();
+          if(_edFmt?.cssRatio) cell.style.aspectRatio=_edFmt.cssRatio;
           // Indicatore: "Brand" se palette viene dal cliente
           if(!item.editorialColors && feedClientIdx>=0 && clients[feedClientIdx]?.brand){
             const brandDot=document.createElement('div');
