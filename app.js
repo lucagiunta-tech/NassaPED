@@ -235,7 +235,14 @@ const CLOUD = {
 
   apply(data) {
     if (!data) return;
-    clients = data.clients || [];
+    clients = (data.clients || []).map(cl=>({
+      ...cl,
+      accounts: (cl.accounts||[]).map(acc=>({
+        profileImg: '',
+        bio: '',
+        ...acc
+      }))
+    }));
     adsCampaigns = data.adsCampaigns || {};
     // MIGRAZIONE: converte chiavi legacy clientName → client.id
     // Eseguita una sola volta, poi il dato è già in formato nuovo
@@ -604,7 +611,7 @@ function backToClients(){switchTab('studio');}
 function addClient(){
   const name=document.getElementById('nc-name').value.trim();if(!name){document.getElementById('nc-name').focus();return;}
   if(clients.find(c=>c.name.toLowerCase()===name.toLowerCase())){showToast('Cliente già presente','warn');return;}
-  const id='c_'+Date.now();const defaultAccount={id:'a_'+Date.now(),name,platform:'Instagram'};const defaultBrand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
+  const id='c_'+Date.now();const defaultAccount={id:'a_'+Date.now(),name,platform:'Instagram',profileImg:'',bio:''};const defaultBrand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
   clients.push({id,name,pkg:document.getElementById('nc-pkg').value,status:document.getElementById('nc-status').value,revenue:parseFloat(document.getElementById('nc-revenue').value)||0,accounts:[defaultAccount]});
   document.getElementById('nc-name').value='';document.getElementById('nc-revenue').value='';
   renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiunto');autoSave();
@@ -1897,6 +1904,79 @@ function renderPreview(){
   const chip=document.getElementById('preview-chip');if(chip)chip.textContent=ready.length+' contenut'+(ready.length===1?'o':'i')+(accs.length>1?' · '+acc.name:'');
   if(!ready.length){const em=document.createElement('div');em.className='preview-empty';em.innerHTML='<p>Nessun contenuto per '+acc.name+' — '+month+'.</p>';body.appendChild(em);}
   else{
+    // ── PROFILO INSTAGRAM: foto + highlights + bio ──
+    // Recupera highlights dell'account di preview
+    const accPreviewIdx = accs.indexOf(acc);
+    const accPreviewId = acc?.id || null;
+    const hlArr = accPreviewId ? (highlights[accPreviewId]||[]) : [];
+
+    const profileSec = document.createElement('div');
+    profileSec.className = 'preview-profile-sec';
+
+    // Riga superiore: avatar + highlights
+    const profileTop = document.createElement('div');
+    profileTop.className = 'preview-profile-top';
+
+    // Avatar (foto profilo)
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'preview-profile-avatar';
+    if(acc.profileImg){
+      const img = document.createElement('img');
+      img.src = acc.profileImg;
+      img.alt = 'Foto profilo';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      avatarEl.appendChild(img);
+    } else {
+      avatarEl.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
+    profileTop.appendChild(avatarEl);
+
+    // Highlights in riga
+    if(hlArr.length){
+      const hlStrip = document.createElement('div');
+      hlStrip.className = 'preview-hl-strip';
+      hlArr.forEach(hl=>{
+        const hlItem = document.createElement('div');
+        hlItem.className = 'preview-hl-item';
+        // Cerchio
+        const circle = document.createElement('div');
+        circle.className = 'preview-hl-circle';
+        if(hl.coverUrl){
+          const img = document.createElement('img');
+          img.src = hl.coverUrl;
+          img.alt = hl.name||'';
+          circle.appendChild(img);
+        } else {
+          circle.style.background = 'var(--cell-bg)';
+        }
+        // Label
+        const lbl = document.createElement('div');
+        lbl.className = 'preview-hl-lbl';
+        lbl.textContent = hl.name||'';
+        hlItem.appendChild(circle);
+        hlItem.appendChild(lbl);
+        hlStrip.appendChild(hlItem);
+      });
+      profileTop.appendChild(hlStrip);
+    }
+
+    profileSec.appendChild(profileTop);
+
+    // Bio
+    if(acc.bio){
+      const bioEl = document.createElement('div');
+      bioEl.className = 'preview-profile-bio';
+      bioEl.textContent = acc.bio;
+      profileSec.appendChild(bioEl);
+    }
+
+    // Separatore
+    const sep = document.createElement('div');
+    sep.style.cssText = 'height:1px;background:var(--border);margin:12px 0 8px;';
+    profileSec.appendChild(sep);
+
+    body.appendChild(profileSec);
+
     const grid=document.createElement('div');grid.className='client-grid';
     ready.forEach((item,i)=>{
       const post=document.createElement('div');post.className='client-post';
@@ -2920,6 +3000,45 @@ function renderEcAccounts(){
     const nameInp=document.createElement('input');nameInp.className='ec-acc-name-inp';nameInp.value=acc.name;nameInp.placeholder='Nome account';nameInp.oninput=e=>{ecTmpAccounts[i].name=e.target.value;};
     const platSel=document.createElement('select');platSel.className='ec-acc-plat-inp';['Instagram','Facebook','TikTok','LinkedIn','YouTube','Altro'].forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;if(p===acc.platform)o.selected=true;platSel.appendChild(o);});platSel.onchange=e=>{ecTmpAccounts[i].platform=e.target.value;};
     main.appendChild(nameInp);main.appendChild(platSel);
+    // ── Foto profilo + bio (riga espansa) ──
+    const extra=document.createElement('div');extra.className='ec-acc-extra';
+    // Foto profilo
+    const avatarWrap=document.createElement('div');avatarWrap.className='ec-acc-avatar-wrap';
+    const avatarImg=document.createElement('div');avatarImg.className='ec-acc-avatar';
+    avatarImg.style.cssText='width:44px;height:44px;border-radius:50%;overflow:hidden;background:var(--cell-bg);cursor:pointer;flex-shrink:0;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;';
+    if(acc.profileImg){
+      avatarImg.innerHTML=`<img src="${acc.profileImg}" style="width:100%;height:100%;object-fit:cover;" alt="Foto profilo"/>`;
+    } else {
+      avatarImg.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
+    const avatarInp=document.createElement('input');avatarInp.type='file';avatarInp.accept='image/*';avatarInp.style.display='none';
+    avatarInp.onchange=async e=>{
+      const file=e.target.files[0]; if(!file) return;
+      showToast('⟳ Caricamento foto profilo…');
+      const destPath='/nassa/'+CLOUD.user+'/profiles/'+file.name;
+      const url=await DROPBOX.upload(file,destPath);
+      if(url){
+        ecTmpAccounts[i].profileImg=url;
+        avatarImg.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;" alt="Foto profilo"/>`;
+        showToast('✓ Foto profilo aggiornata');
+      } else {
+        // fallback blob
+        const blobUrl=URL.createObjectURL(file);
+        ecTmpAccounts[i].profileImg=blobUrl;
+        avatarImg.innerHTML=`<img src="${blobUrl}" style="width:100%;height:100%;object-fit:cover;" alt="Foto profilo"/>`;
+      }
+    };
+    avatarImg.onclick=()=>avatarInp.click();
+    avatarImg.title='Clicca per cambiare foto profilo';
+    avatarWrap.appendChild(avatarImg);avatarWrap.appendChild(avatarInp);
+    // Bio
+    const bioWrap=document.createElement('div');bioWrap.style.cssText='flex:1;';
+    const bioLbl=document.createElement('div');bioLbl.style.cssText='font-size:10px;color:var(--text-3);margin-bottom:3px;font-family:var(--font);font-weight:600;letter-spacing:.04em;text-transform:uppercase;';bioLbl.textContent='Bio';
+    const bioInp=document.createElement('textarea');bioInp.className='ec-acc-bio';bioInp.rows=2;bioInp.placeholder='Scrivi la bio del profilo…';bioInp.value=acc.bio||'';
+    bioInp.oninput=e=>{ecTmpAccounts[i].bio=e.target.value;};
+    bioWrap.appendChild(bioLbl);bioWrap.appendChild(bioInp);
+    extra.appendChild(avatarWrap);extra.appendChild(bioWrap);
+    row.insertBefore(extra, del);
     const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';del.onclick=()=>{showConfirm({
     title:'Rimuovi account',
     body:`Rimuovere l'account <strong>${esc(acc.name)}</strong>? I dati feed e stories associati saranno eliminati.`,
