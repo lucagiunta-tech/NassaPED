@@ -822,6 +822,31 @@ tbody tr:hover .tr-actions{opacity:1;}
 .copy-item-type{font-size:var(--fs-xs);font-weight:700;color:var(--text-3);text-transform:uppercase;}
 .copy-item-name{font-size:var(--fs-sm);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
+/* ══ CALENDARIO — VISTA ANNO ══ */
+.cal-year-wrap{display:flex;flex-direction:column;gap:0;overflow-y:auto;height:100%;}
+.cal-year-month{border-bottom:1px solid var(--border);}
+.cal-year-month.cal-year-empty{opacity:.5;}
+.cal-year-month-head{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border-lt);}
+.cal-year-month-name{font-size:var(--fs-sm);font-weight:700;color:var(--text);min-width:110px;}
+.cal-year-month-count{font-size:var(--fs-xs);color:var(--text-3);flex:1;}
+.cal-year-days{display:flex;flex-direction:column;gap:0;}
+.cal-year-day{display:flex;align-items:flex-start;gap:12px;padding:8px 16px;border-bottom:1px solid var(--border-lt);cursor:pointer;transition:background var(--t-fast);}
+.cal-year-day:hover{background:var(--bg);}
+.cal-year-day:last-child{border-bottom:none;}
+.cal-year-today{background:var(--green-lt)!important;}
+.cal-year-today .cal-year-num{color:var(--green-dk);font-weight:800;}
+.cal-year-day-label{display:flex;flex-direction:column;align-items:center;min-width:32px;flex-shrink:0;padding-top:2px;}
+.cal-year-dow{font-size:9px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;}
+.cal-year-num{font-size:15px;font-weight:700;color:var(--text);line-height:1;}
+.cal-year-events{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;}
+.cal-year-event{display:flex;align-items:center;gap:8px;min-width:0;}
+.cal-year-thumb{width:32px;height:40px;object-fit:cover;border-radius:var(--rs);flex-shrink:0;}
+.cal-year-thumb-ph{width:32px;height:40px;border-radius:var(--rs);flex-shrink:0;opacity:.6;}
+.cal-year-event-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+.cal-year-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;color:#fff;align-self:flex-start;text-transform:uppercase;letter-spacing:.06em;}
+.cal-year-event-lbl{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;}
+.cal-year-client{font-size:10px;color:var(--text-3);}
+
 /* PREVIEW */
 .preview-wrap{flex:1;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;}
 .preview-topbar{flex-shrink:0 !important;}

@@ -3237,8 +3237,15 @@ document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg')
 /* ════════ CALENDARIO ════════ */
 let calView='month',calDate=new Date();
 const GIORNIW=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
-function setCalView(v){calView=v;document.getElementById('cal-btn-month').classList.toggle('active',v==='month');document.getElementById('cal-btn-week').classList.toggle('active',v==='week');renderCalendar();}
-function calNav(dir){if(calView==='month')calDate.setMonth(calDate.getMonth()+dir);else calDate.setDate(calDate.getDate()+dir*7);calDate=new Date(calDate);renderCalendar();}
+function setCalView(v){
+  calView=v;
+  document.getElementById('cal-btn-month').classList.toggle('active',v==='month');
+  document.getElementById('cal-btn-week').classList.toggle('active',v==='week');
+  const yrBtn=document.getElementById('cal-btn-year');
+  if(yrBtn)yrBtn.classList.toggle('active',v==='year');
+  renderCalendar();
+}
+function calNav(dir){if(calView==='month')calDate.setMonth(calDate.getMonth()+dir);else if(calView==='year')calDate.setFullYear(calDate.getFullYear()+dir);else calDate.setDate(calDate.getDate()+dir*7);calDate=new Date(calDate);renderCalendar();}
 function calGoToday(){calDate=new Date();renderCalendar();}
 function isoDate(y,m,d){return y+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d;}
 function todayISO(){const n=new Date();return isoDate(n.getFullYear(),n.getMonth()+1,n.getDate());}
@@ -3342,6 +3349,61 @@ function renderCalendar(){
       html+='</div>';
     }
     html+='</div>';body.innerHTML=html;
+  } else if(calView==='year'){
+    const y=calDate.getFullYear();
+    if(lbl)lbl.textContent=''+y;
+    const today=todayISO();
+    // Build full year view — all 12 months as vertical list
+    let html='<div class="cal-year-wrap">';
+    for(let mi=0;mi<12;mi++){
+      const daysInMonth=new Date(y,mi+1,0).getDate();
+      // Collect all events for this month
+      const monthEvents=[];
+      for(let d=1;d<=daysInMonth;d++){
+        const ds=isoDate(y,mi+1,d);
+        const evs=events[ds]||[];
+        if(evs.length) monthEvents.push({ds,d,evs});
+      }
+      const hasEvents=monthEvents.length>0;
+      html+=`<div class="cal-year-month${hasEvents?'':' cal-year-empty'}">`;
+      html+=`<div class="cal-year-month-head">
+        <span class="cal-year-month-name">${MONTHS[mi]} ${y}</span>
+        <span class="cal-year-month-count">${hasEvents?monthEvents.reduce((s,r)=>s+r.evs.length,0)+' contenut'+(monthEvents.reduce((s,r)=>s+r.evs.length,0)===1?'o':'i'):'Nessun contenuto'}</span>
+        <button class="btn ghost sm" onclick="calDate=new Date(${y},${mi},1);setCalView('month')" style="font-size:10px;padding:2px 8px;">Apri mese</button>
+      </div>`;
+      if(hasEvents){
+        html+='<div class="cal-year-days">';
+        monthEvents.forEach(({ds,d,evs})=>{
+          const isToday=ds===today;
+          const dow=new Date(y,mi,d).getDay();
+          const dowName=GIORNIW[(dow+6)%7];
+          html+=`<div class="cal-year-day${isToday?' cal-year-today':''}" onclick="openCalPanel('${ds}')">`;
+          html+=`<div class="cal-year-day-label"><span class="cal-year-dow">${dowName}</span><span class="cal-year-num">${d}</span></div>`;
+          html+='<div class="cal-year-events">';
+          evs.forEach(ev=>{
+            const typeColors={feed:'var(--green)',story:'var(--blue-dk)',ped:'#7c3aed',ads:'#e05c00'};
+            const typeLabels={feed:'Feed',story:'Story',ped:'UGC',ads:'Paid'};
+            const col=typeColors[ev.type]||'var(--text-3)';
+            const typeLbl=typeLabels[ev.type]||ev.type;
+            const contentLbl=ev.item?.copy?ev.item.copy.slice(0,35):(ev.item?.brief?ev.item.brief.slice(0,35):ev.label||'—');
+            const thumb=ev.thumb||'';
+            html+=`<div class="cal-year-event">`;
+            if(thumb) html+=`<img src="${thumb}" class="cal-year-thumb" onerror="this.style.display='none'" />`;
+            else html+=`<div class="cal-year-thumb-ph" style="background:${col}"></div>`;
+            html+=`<div class="cal-year-event-info">
+              <span class="cal-year-badge" style="background:${col}">${typeLbl}</span>
+              <span class="cal-year-event-lbl">${contentLbl}</span>
+              <span class="cal-year-client">${ev.clientName.split(' — ')[0]}</span>
+            </div></div>`;
+          });
+          html+='</div></div>';
+        });
+        html+='</div>';
+      }
+      html+='</div>';
+    }
+    html+='</div>';
+    body.innerHTML=html;
   } else {
     const curr=new Date(calDate);const dow=curr.getDay();const diff=dow===0?-6:1-dow;curr.setDate(curr.getDate()+diff);
     if(lbl)lbl.textContent='Settimana del '+curr.getDate()+' '+MONTHS[curr.getMonth()];
