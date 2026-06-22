@@ -417,9 +417,12 @@ function updateFeedFormat(){
   // Update grid columns and cell aspect ratio
   const grid=document.getElementById('feed-grid');
   if(grid){
-    grid.style.gridTemplateColumns='repeat('+fmt.cols+',1fr)';
-    // Update CSS variable for cell aspect ratio
+    // NON settiamo gridTemplateColumns inline — i media query CSS gestiscono le colonne
+    // Salviamo solo le colonne della piattaforma come variabile CSS (usata dai breakpoint)
+    grid.style.removeProperty('gridTemplateColumns');
     grid.style.setProperty('--cell-ratio',fmt.cssRatio);
+    // Colonne piattaforma come var CSS per riferimento
+    grid.style.setProperty('--platform-cols', fmt.cols);
   }
   // Update cell-wrap aspect ratio via CSS var
   document.documentElement.style.setProperty('--feed-cell-ratio',fmt.cssRatio);
