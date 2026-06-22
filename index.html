@@ -153,7 +153,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span class="sb-nav-label">Utente</span>
       </div>
-      <button class="sb-toggle-btn" id="sb-toggle-btn" onclick="toggleSidebar()" title="Espandi/comprimi">
+      <button class="sb-toggle-btn" id="sb-toggle-btn" onclick="toggleSidebar()" title="Espandi/comprimi" aria-label="Espandi/comprimi">
         <svg id="sb-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
@@ -238,39 +238,39 @@
         </div>
         <!-- Toolbar -->
         <div class="notes-toolbar">
-          <button class="ntb" title="Titolo H1" onclick="notesInsert('h1')">H1</button>
-          <button class="ntb" title="Titolo H2" onclick="notesInsert('h2')">H2</button>
-          <button class="ntb" title="Titolo H3" onclick="notesInsert('h3')">H3</button>
+          <button class="ntb" title="Titolo H1" onclick="notesInsert('h1')" aria-label="Titolo H1">H1</button>
+          <button class="ntb" title="Titolo H2" onclick="notesInsert('h2')" aria-label="Titolo H2">H2</button>
+          <button class="ntb" title="Titolo H3" onclick="notesInsert('h3')" aria-label="Titolo H3">H3</button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Grassetto" onclick="notesInsert('bold')">
+          <button class="ntb" title="Grassetto" onclick="notesInsert('bold')" aria-label="Grassetto">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
           </button>
-          <button class="ntb" title="Corsivo" onclick="notesInsert('italic')">
+          <button class="ntb" title="Corsivo" onclick="notesInsert('italic')" aria-label="Corsivo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
           </button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Lista puntata" onclick="notesInsert('ul')">
+          <button class="ntb" title="Lista puntata" onclick="notesInsert('ul')" aria-label="Lista puntata">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
           </button>
-          <button class="ntb" title="Lista numerata" onclick="notesInsert('ol')">
+          <button class="ntb" title="Lista numerata" onclick="notesInsert('ol')" aria-label="Lista numerata">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
           </button>
-          <button class="ntb" title="Citazione" onclick="notesInsert('quote')">
+          <button class="ntb" title="Citazione" onclick="notesInsert('quote')" aria-label="Citazione">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
           </button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Inserisci link" onclick="notesInsert('link')">
+          <button class="ntb" title="Inserisci link" onclick="notesInsert('link')" aria-label="Inserisci link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>
-          <button class="ntb" title="Inserisci immagine/media" onclick="notesInsert('media')">
+          <button class="ntb" title="Inserisci immagine/media" onclick="notesInsert('media')" aria-label="Inserisci immagine/media">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Separatore" onclick="notesInsert('hr')">
+          <button class="ntb" title="Separatore" onclick="notesInsert('hr')" aria-label="Separatore">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
           <div style="flex:1;"></div>
-          <button class="ntb ntb-toggle" id="notes-preview-btn" title="Anteprima" onclick="toggleNotesPreview()">
+          <button class="ntb ntb-toggle" id="notes-preview-btn" title="Anteprima" onclick="toggleNotesPreview()" aria-label="Anteprima">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Preview
           </button>
@@ -308,7 +308,7 @@
         <div class="ctx-divider"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
         <div class="ctx-fmt-badge" id="feed-fmt-badge">Instagram · 4:5</div>
-        <button class="ctx-expand-btn" id="feed-expand-btn" onclick="toggleFeedPanel()" title="Carica e opzioni">
+        <button class="ctx-expand-btn" id="feed-expand-btn" onclick="toggleFeedPanel()" title="Carica e opzioni" aria-label="Carica e opzioni">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="feed-expand-icon"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
       </div>
@@ -398,7 +398,7 @@
         <select id="stories-client-sel" onchange="onStoriesClientChange()" style="display:none;"><option value="">—</option></select>
         <div class="ctx-divider"></div>
         <div id="stories-month-pills" class="feed-month-pills-inline"></div>
-        <button class="ctx-expand-btn" id="stories-expand-btn" onclick="toggleStoriesPanel()" title="Carica e opzioni">
+        <button class="ctx-expand-btn" id="stories-expand-btn" onclick="toggleStoriesPanel()" title="Carica e opzioni" aria-label="Carica e opzioni">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="stories-expand-icon"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
       </div>
@@ -575,9 +575,9 @@
   <div class="tab-page" id="page-cal">
     <div class="cal-toolbar">
       <div class="cal-nav">
-        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Mese precedente">‹</button>
         <div class="cal-month-label" id="cal-month-label">—</div>
-        <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Mese successivo">›</button>
         <button class="cal-nav-btn" onclick="calGoToday()">Oggi</button>
       </div>
       <div class="cal-space"></div>
@@ -772,7 +772,7 @@
         <div style="font-size:9px;font-family:var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:3px;">Brief UGC</div>
         <div id="brief-modal-title" style="font-size:13px;font-weight:600;color:var(--text);">—</div>
       </div>
-      <button onclick="closeBriefModal()" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:4px 8px;">✕</button>
+      <button onclick="closeBriefModal()" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:4px 8px;">✕</button>
     </div>
     <!-- Nota info -->
     <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;color:var(--text-2);flex-shrink:0;">
@@ -799,9 +799,9 @@
 
     <div class="lightbox" id="lightbox" onclick="lbBg(event)">
       <div class="lb-wrap">
-        <button class="lb-nav lb-prev" id="lb-prev" onclick="lbNav(-1)">‹</button>
+        <button class="lb-nav lb-prev" id="lb-prev" onclick="lbNav(-1)" aria-label="Post precedente">‹</button>
         <div class="lb-inner" id="lb-inner"></div>
-        <button class="lb-nav lb-next" id="lb-next" onclick="lbNav(1)">›</button>
+        <button class="lb-nav lb-next" id="lb-next" onclick="lbNav(1)" aria-label="Post successivo">›</button>
         <div class="lb-counter" id="lb-counter"></div>
         <div class="lb-copy" id="lb-copy"></div>
         <div class="lb-stories-strip" id="lb-stories-strip"></div>
@@ -816,7 +816,7 @@
         <div>
           <div class="appr-modal-title" id="appr-modal-title">Dettaglio Post</div>
         </div>
-        <button onclick="closeApprModal()" class="appr-modal-close">✕</button>
+        <button onclick="closeApprModal()" class="appr-modal-close" aria-label="Chiudi">✕</button>
       </div>
       <div class="appr-modal-body">
         <div class="appr-modal-thumb" id="appr-modal-thumb"></div>
@@ -842,7 +842,7 @@
 <!-- ADS CAMPAIGN MODAL -->
 <div class="modal-bg" id="ads-camp-modal">
   <div class="modal" style="width:480px;">
-    <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" onclick="closeModal('ads-camp-modal')">✕</button></div>
+    <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" onclick="closeModal('ads-camp-modal')" aria-label="Chiudi">✕</button></div>
     <div class="field"><label>Nome campagna</label><input type="text" id="adm-name" placeholder="es. Estate 2026 — Awareness"/></div>
     <div class="field"><label>Piattaforma</label>
       <select id="adm-platform">
@@ -886,7 +886,7 @@
         <div id="adm-creative-preview" style="display:none;position:relative;">
           <img id="adm-creative-img" style="max-width:100%;max-height:140px;border-radius:var(--rs);display:none;"/>
           <video id="adm-creative-vid" muted playsinline preload="metadata" style="max-width:100%;max-height:140px;border-radius:var(--rs);display:none;"></video>
-          <button class="ads-creative-clear" onclick="event.stopPropagation();adsClearCreative()">✕</button>
+          <button class="ads-creative-clear" onclick="event.stopPropagation();adsClearCreative()" aria-label="Rimuovi immagine">✕</button>
         </div>
         <div id="adm-creative-placeholder">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -911,7 +911,7 @@
   <div class="modal" style="width:380px;gap:12px;">
     <div class="modal-top" style="border-bottom:none;padding-bottom:0;">
       <div class="confirm-icon" id="confirm-icon"></div>
-      <button class="btn ghost sm icon" onclick="confirmCancel()">✕</button>
+      <button class="btn ghost sm icon" onclick="confirmCancel()" aria-label="Annulla">✕</button>
     </div>
     <div style="padding:0 18px 4px;">
       <div class="confirm-title" id="confirm-title"></div>
@@ -929,7 +929,7 @@
   <div class="modal" style="width:480px;">
     <div class="modal-top">
       <h3 id="edit-client-title">Modifica cliente</h3>
-      <button class="btn ghost sm icon" onclick="closeModal('edit-client-modal')">✕</button>
+      <button class="btn ghost sm icon" onclick="closeModal('edit-client-modal')" aria-label="Chiudi">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="ec-name" placeholder="Nome"/></div>
@@ -1010,7 +1010,7 @@
 <!-- CAROUSEL MODAL -->
 <div class="modal-bg" id="carousel-modal">
   <div class="modal">
-    <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')">✕</button></div>
+    <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">La prima slide appare nella griglia.</p>
     <div class="c-upload-zone" id="c-upload-zone">
       <input type="file" id="c-file-input" accept="image/*" multiple onchange="addCarouselFiles(this.files)"/>
@@ -1064,7 +1064,7 @@
             <input type="file" id="sb-file-inp" accept="image/*" onchange="sbSetImage(this.files[0])"/>
             <div id="sb-img-preview" style="display:none;position:absolute;inset:0;">
               <img id="sb-img-el" style="width:100%;height:100%;object-fit:cover;"/>
-              <button class="sb-img-clear" onclick="sbClearImage()">✕</button>
+              <button class="sb-img-clear" onclick="sbClearImage()" aria-label="Rimuovi immagine">✕</button>
             </div>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span class="sb-img-lbl">Foto slide (opzionale)</span>
@@ -1211,7 +1211,7 @@
 <!-- HIGHLIGHT MODAL -->
 <div class="modal-bg" id="highlight-modal">
   <div class="modal" style="width:360px;">
-    <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')">✕</button></div>
+    <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')" aria-label="Chiudi">✕</button></div>
     <div class="field"><label>Nome</label><input type="text" id="hl-name" placeholder="Es: Menu · Estate · Team"/></div>
     <div class="c-upload-zone" id="hl-upload-zone">
       <input type="file" id="hl-file-input" accept="image/*" onchange="setHlCover(this.files)"/>
@@ -1227,7 +1227,7 @@
 <!-- LINK STORIES MODAL -->
 <div class="modal-bg" id="link-stories-modal">
   <div class="modal">
-    <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')">✕</button></div>
+    <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare a questo post.</p>
     <div class="link-modal-grid" id="link-modal-grid"></div>
     <div class="modal-actions">
@@ -1240,7 +1240,7 @@
 <!-- COPY CONTENT MODAL -->
 <div class="modal-bg" id="copy-content-modal">
   <div class="modal">
-    <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')">✕</button></div>
+    <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">Copia da un altro account o mese.</p>
     <div class="field"><label>Account sorgente</label><select id="copy-src-account" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Mese</label><select id="copy-src-month" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
