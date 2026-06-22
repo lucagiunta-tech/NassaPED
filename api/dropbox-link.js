@@ -1,7 +1,4 @@
 // Creates a Dropbox shared link server-side (avoids browser CSP restrictions)
-// The file is already uploaded directly from the browser to Dropbox.
-// This endpoint just creates the public link for the already-uploaded file.
-
 const ALLOWED_ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
   'http://localhost:3000',
@@ -15,6 +12,16 @@ function toDirectUrl(url) {
   if (u.includes('dl.dropboxusercontent.com') && !u.includes('dl='))
     u += (u.includes('?') ? '&dl=1' : '?dl=1');
   return u;
+}
+
+// Read raw body from request stream
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
 }
 
 export default async function handler(req, res) {
@@ -34,10 +41,15 @@ export default async function handler(req, res) {
   const token = process.env.DROPBOX_ACCESS_TOKEN;
   if (!token) return res.status(500).json({ error: 'DROPBOX_ACCESS_TOKEN not configured' });
 
-  const { path } = req.body || {};
-  if (!path) return res.status(400).json({ error: 'Missing path' });
-
   try {
+    // Parse body manually (Vercel plain functions don't auto-parse JSON)
+    const rawBody = await readBody(req);
+    const body = JSON.parse(rawBody || '{}');
+    const { path } = body;
+    if (!path) return res.status(400).json({ error: 'Missing path' });
+
+    console.log('[dropbox-link] Creating link for:', path);
+
     const linkRes = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
       method: 'POST',
       headers: {
@@ -47,6 +59,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({ path, settings: { requested_visibility: 'public' } })
     });
     const linkData = await linkRes.json();
+    console.log('[dropbox-link] Response status:', linkRes.status, 'error tag:', linkData?.error?.['.tag'] || 'none');
 
     let sharedUrl = '';
     if (linkData?.error?.['.tag'] === 'shared_link_already_exists') {
@@ -56,13 +69,16 @@ export default async function handler(req, res) {
     }
 
     if (!sharedUrl) {
-      console.error('[dropbox-link] No URL in response:', JSON.stringify(linkData));
+      console.error('[dropbox-link] No URL:', JSON.stringify(linkData));
       return res.status(500).json({ error: 'No shared link returned', detail: linkData });
     }
 
-    return res.status(200).json({ url: toDirectUrl(sharedUrl) });
+    const finalUrl = toDirectUrl(sharedUrl);
+    console.log('[dropbox-link] ✅ URL:', finalUrl.slice(0, 80));
+    return res.status(200).json({ url: finalUrl });
+
   } catch (err) {
-    console.error('[dropbox-link]', err.message);
+    console.error('[dropbox-link] Error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
