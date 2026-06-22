@@ -42,11 +42,19 @@ async function getAccessToken() {
 
 function toDirectUrl(url) {
   if (!url) return '';
-  return url
+  // Convert shared link to direct download URL using dl=1 — no rlkey expiry
+  // Pattern: https://www.dropbox.com/s/xxx/file.jpg?dl=0 → https://dl.dropboxusercontent.com/s/xxx/file.jpg
+  // For newer scl/fi/ URLs: keep rlkey but add dl=1 for direct access
+  const u = url
     .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
     .replace('?dl=0', '')
     .replace('?dl=1', '')
     .replace('?raw=1', '');
+  // If it's the new scl/fi/ format, ensure dl=1 is appended for direct access
+  if (u.includes('dl.dropboxusercontent.com') && !u.includes('dl=')) {
+    return u + (u.includes('?') ? '&dl=1' : '?dl=1');
+  }
+  return u;
 }
 
 async function uploadToDropbox(token, buffer, destPath) {

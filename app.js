@@ -289,28 +289,45 @@ const CLOUD = {
     adsCampaigns = migrateAdsCampaignsKeys(adsCampaigns, clients);
     clients.forEach(c => { if(!c.accounts) c.accounts=[]; if(!c.id) c.id='c_'+Date.now(); });
     feeds = {};
+    // Fix Dropbox URLs: ensure dl=1 is present (prevents rlkey expiry issues)
+    function fixDbxUrl(u) {
+      if(!u || !u.startsWith('http')) return u;
+      if(!u.includes('dropbox')) return u;
+      let f = u.replace('www.dropbox.com','dl.dropboxusercontent.com')
+               .replace('?dl=0','').replace('?dl=1','');
+      if(!f.includes('dl=')) f += (f.includes('?') ? '&dl=1' : '?dl=1');
+      return f;
+    }
     Object.keys(data.feeds||{}).forEach(k => {
       feeds[k] = (data.feeds[k]||[]).map(item => {
-        const hasUrl = item.externalUrl&&item.externalUrl.startsWith('http');
+        const fixedExtUrl = fixDbxUrl(item.externalUrl);
+        const hasUrl = fixedExtUrl&&fixedExtUrl.startsWith('http');
         return {
           ...item,
+          externalUrl: fixedExtUrl || item.externalUrl,
           // Fix type: if pending but has a valid URL, restore as image
           type: (item.type==='pending' && hasUrl) ? 'image' : item.type,
-          url: hasUrl ? item.externalUrl : '',
+          url: hasUrl ? fixedExtUrl : '',
           needsReload: !hasUrl && !!item.name,
           // Restore slide URLs from externalUrl
-          slides: (item.slides||[]).map(s=>({...s, url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:s.url||''}))
+          slides: (item.slides||[]).map(s=>{
+            const su=fixDbxUrl(s.externalUrl);
+            return {...s, externalUrl:su||s.externalUrl, url:(su&&su.startsWith('http'))?su:s.url||''};
+          })
         };
       });
     });
     stories = {};
     Object.keys(data.stories||{}).forEach(k => {
-      stories[k] = (data.stories[k]||[]).map(st => ({
-        ...st,
-        url: (st.externalUrl&&st.externalUrl.startsWith('http')) ? st.externalUrl : '',
-        // Restore storyboard slide URLs
-        slides: (st.slides||[]).map(s=>({...s, url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:s.url||''}))
-      }));
+      stories[k] = (data.stories[k]||[]).map(st => {
+        const su=fixDbxUrl(st.externalUrl);
+        return {
+          ...st,
+          externalUrl: su||st.externalUrl,
+          url: (su&&su.startsWith('http')) ? su : '',
+          slides: (st.slides||[]).map(s=>{const ss=fixDbxUrl(s.externalUrl);return{...s,externalUrl:ss||s.externalUrl,url:(ss&&ss.startsWith('http'))?ss:s.url||''}; })
+        };
+      });
     });
     highlights = data.highlights || {};
     pedPlans   = data.pedPlans   || {};
@@ -743,10 +760,18 @@ function detectType(file_or_url){
   if(file_or_url.includes?.('frame.io')||file_or_url.includes?.('f.io'))return 'video';
   return 'image';
 }
+function fixDbxUrl(u){
+  if(!u||!u.startsWith('http'))return u;
+  if(!u.includes('dropbox'))return u;
+  let f=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','').replace('?raw=1','');
+  if(f.includes('dl.dropboxusercontent.com')&&!f.includes('dl='))f+=f.includes('?')?'&dl=1':'?dl=1';
+  return f;
+}
 function makeMedia(url,type,opts={}){
   if(!url)return null;
-  if(type==='video'){const v=document.createElement('video');v.src=url;v.muted=opts.muted!==false;v.loop=opts.loop!==false;v.playsInline=true;v.preload='metadata';v.style.cssText='pointer-events:none;background:#111;width:100%;height:100%;object-fit:cover;display:block;';if(opts.autoplay)v.autoplay=true;if(opts.controls){v.controls=true;v.style.pointerEvents='auto';}return v;}
-  const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';img.decoding='async';img.onerror=()=>{img.style.display='none';};return img;
+  const src=fixDbxUrl(url);
+  if(type==='video'){const v=document.createElement('video');v.src=src;v.muted=opts.muted!==false;v.loop=opts.loop!==false;v.playsInline=true;v.preload='metadata';v.style.cssText='pointer-events:none;background:#111;width:100%;height:100%;object-fit:cover;display:block;';if(opts.autoplay)v.autoplay=true;if(opts.controls){v.controls=true;v.style.pointerEvents='auto';}return v;}
+  const img=document.createElement('img');img.src=src;img.alt='';img.loading='lazy';img.decoding='async';img.onerror=()=>{img.style.display='none';};return img;
 }
 function needsReloadPh(icon,name,reuploadFn){
   const ph=document.createElement('div');ph.className='needs-reload-ph';
