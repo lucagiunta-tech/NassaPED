@@ -3982,15 +3982,159 @@ function notesInsert(type){
     ins='['+label+']('+url+')';cur=start+ins.length;
   }
   else if(type==='media'){
-    const url=prompt('URL immagine/video:','https://');
-    if(!url)return;
-    const alt=sel||prompt('Descrizione (alt):','')||'';
-    ins='\n!['+alt+']('+url+')\n';cur=start+ins.length;
+    // Open image input modal (file picker + URL + dropbox)
+    openNotesImageModal();
+    return; // modal handles insertion async
   }
 
   ta.value=before+ins+after;
   ta.focus();ta.setSelectionRange(cur,cur);
   saveNotesText();updateNotesToc();updateNotesWc();
+}
+
+
+/* ══════════════════════════════════════════
+   NOTES EDITOR — IMAGE INSERTION SYSTEM
+   Supports: file picker, paste, drag&drop, URL
+══════════════════════════════════════════ */
+
+// Insert image markdown at cursor in notes editor
+function notesInsertImage(url, alt) {
+  const ta = document.getElementById('notes-editor');
+  if(!ta || !url) return;
+  const start = ta.selectionStart;
+  const before = ta.value.substring(0, start);
+  const after  = ta.value.substring(start);
+  const ins = '\n![' + (alt||'') + '](' + url + ')\n';
+  ta.value = before + ins + after;
+  ta.focus();
+  ta.setSelectionRange(start + ins.length, start + ins.length);
+  saveNotesText(); updateNotesToc(); updateNotesWc();
+}
+
+// Upload image file to Dropbox then insert into notes
+async function notesUploadAndInsert(file) {
+  if(!file || !file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+    showToast('Solo immagini o video', 'warn'); return;
+  }
+  showToast('⬆ Caricamento immagine…');
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = '/nassa/notes/' + Date.now() + '.' + ext;
+  const url = await DROPBOX.upload(file, path);
+  if(url) {
+    notesInsertImage(url, file.name.replace(/\.[^.]+$/, ''));
+    showToast('✓ Immagine inserita');
+  } else {
+    showToast('Errore caricamento', 'warn');
+  }
+}
+
+// Open the notes image modal
+function openNotesImageModal() {
+  let modal = document.getElementById('notes-img-modal');
+  if(!modal) {
+    modal = document.createElement('div');
+    modal.id = 'notes-img-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;display:flex;align-items:center;justify-content:center;';
+    modal.onclick = e => { if(e.target===modal) modal.remove(); };
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.15);padding:20px;width:min(420px,92vw);display:flex;flex-direction:column;gap:14px;';
+
+    // Title
+    const title = document.createElement('div');
+    title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+    title.innerHTML = '<span style="font-size:15px;font-weight:700;color:var(--text);">Inserisci immagine</span>';
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕'; closeBtn.style.cssText = 'background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-2);padding:4px;';
+    closeBtn.onclick = () => modal.remove();
+    title.appendChild(closeBtn);
+    box.appendChild(title);
+
+    // Drop zone
+    const dropZone = document.createElement('div');
+    dropZone.id = 'notes-img-drop';
+    dropZone.style.cssText = 'border:2px dashed var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg);';
+    dropZone.innerHTML = '<div style="font-size:24px;margin-bottom:8px;">🖼</div><div style="font-size:13px;font-weight:600;color:var(--text);">Trascina un\'immagine qui</div><div style="font-size:11px;color:var(--text-3);margin-top:4px;">oppure clicca per scegliere un file</div>';
+    dropZone.onclick = () => { document.getElementById('notes-img-file-inp').click(); };
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--green)'; dropZone.style.background='var(--green-lt)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor='var(--border)'; dropZone.style.background='var(--bg)'; });
+    dropZone.addEventListener('drop', async e => {
+      e.preventDefault(); dropZone.style.borderColor='var(--border)'; dropZone.style.background='var(--bg)';
+      const file = e.dataTransfer.files[0];
+      if(file) { modal.remove(); await notesUploadAndInsert(file); }
+    });
+
+    // Hidden file input
+    const fileInp = document.createElement('input');
+    fileInp.type = 'file'; fileInp.id = 'notes-img-file-inp';
+    fileInp.accept = 'image/*,video/*'; fileInp.style.display = 'none';
+    fileInp.onchange = async () => {
+      const file = fileInp.files[0];
+      if(file) { modal.remove(); await notesUploadAndInsert(file); }
+    };
+    box.appendChild(fileInp);
+
+    // Separator
+    const sep = document.createElement('div');
+    sep.style.cssText = 'display:flex;align-items:center;gap:8px;color:var(--text-3);font-size:11px;';
+    sep.innerHTML = '<div style="flex:1;height:1px;background:var(--border);"></div>oppure incolla un URL<div style="flex:1;height:1px;background:var(--border);"></div>';
+
+    // URL input
+    const urlRow = document.createElement('div');
+    urlRow.style.cssText = 'display:flex;gap:8px;';
+    const urlInp = document.createElement('input');
+    urlInp.type = 'text'; urlInp.placeholder = 'https://dl.dropboxusercontent.com/…';
+    urlInp.style.cssText = 'flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;';
+    urlInp.onfocus = () => urlInp.style.borderColor = 'var(--green)';
+    urlInp.onblur  = () => urlInp.style.borderColor = 'var(--border)';
+    urlInp.onkeydown = e => { if(e.key==='Enter') insertUrlBtn.click(); };
+    const insertUrlBtn = document.createElement('button');
+    insertUrlBtn.textContent = 'Inserisci';
+    insertUrlBtn.style.cssText = 'padding:8px 14px;background:var(--green);border:none;border-radius:var(--rs);font-size:13px;font-family:var(--font);font-weight:600;cursor:pointer;color:#111;white-space:nowrap;';
+    insertUrlBtn.onclick = () => {
+      const url = urlInp.value.trim();
+      if(!url) { urlInp.focus(); return; }
+      modal.remove();
+      notesInsertImage(url, '');
+    };
+    urlRow.appendChild(urlInp);
+    urlRow.appendChild(insertUrlBtn);
+
+    box.appendChild(dropZone);
+    box.appendChild(sep);
+    box.appendChild(urlRow);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+    setTimeout(() => urlInp.focus(), 50);
+  } else {
+    modal.style.display = 'flex';
+  }
+}
+
+// PASTE handler — intercept paste on notes editor
+function notesHandlePaste(e) {
+  const items = e.clipboardData?.items;
+  if(!items) return;
+  for(const item of items) {
+    if(item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if(file) notesUploadAndInsert(file);
+      return;
+    }
+  }
+  // No image in clipboard — let default text paste happen
+}
+
+// DRAG & DROP handler on the textarea itself
+function notesHandleDrop(e) {
+  const file = e.dataTransfer?.files?.[0];
+  if(file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
+    e.preventDefault();
+    notesUploadAndInsert(file);
+  }
+  // else: let default text drop happen
 }
 
 /* DATE FORMAT */
