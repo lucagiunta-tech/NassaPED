@@ -1390,7 +1390,7 @@ function renderFeedGrid(){
   let items=currentFeedItems();
   if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
 
-  // All months mode: show all posts across all months grouped by month
+  // All months mode — render directly into main grid with month separator divs
   if(feedAllMonthsMode){
     const groups = getAllMonthsItems();
     if(!groups.length){
@@ -1398,23 +1398,13 @@ function renderFeedGrid(){
       em.innerHTML='<span class="fe-icon">📭</span><p>Nessun contenuto in nessun mese.</p>';
       grid.appendChild(em);return;
     }
-    // Hide main grid, show all-months wrapper (already in HTML)
-    grid.style.display='none';
-    const wrapper = document.getElementById('feed-all-months-wrap');
-    if(!wrapper) return;
-    wrapper.style.display='flex';
-    wrapper.innerHTML='';
     groups.forEach(({month, items})=>{
-      // Month section
-      const section=document.createElement('div');section.style.cssText='display:flex;flex-direction:column;';
-      // Month header
-      const sep=document.createElement('div');sep.className='feed-month-sep';
+      // Month separator — spans full grid width
+      const sep=document.createElement('div');
+      sep.className='feed-month-sep';
       sep.innerHTML=`<span class="feed-month-sep-label">${month}</span><span class="feed-month-sep-count">${items.length} post</span>
-        <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=false;document.getElementById('feed-all-months-wrap').style.display='none';document.getElementById('feed-grid').style.display='';document.getElementById('feed-all-months-btn').classList.remove('active');renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
-      section.appendChild(sep);
-      // Sub-grid for this month's items
-      const subGrid=document.createElement('div');subGrid.className='feed-grid';
-      subGrid.style.cssText='padding:0 4px 8px;';
+        <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=false;document.getElementById('feed-all-months-btn').classList.remove('active');renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
+      grid.appendChild(sep);
       // Render items for this month (read-only view — no add slot)
       const monthKey = accountId(feedClientIdx,feedAccountIdx)+'|||'+month;
       const allMonthItems = feeds[monthKey]||[];
@@ -1466,10 +1456,8 @@ function renderFeedGrid(){
         cph.appendChild(cl2);cp.appendChild(cph);
         const prev=document.createElement('div');prev.className='copy-preview'+(item.copy?'':' empty');prev.textContent=item.copy||'Caption…';
         cp.appendChild(prev);wrap.appendChild(cp);
-        subGrid.appendChild(wrap);
+        grid.appendChild(wrap);
       });
-      section.appendChild(subGrid);
-      wrapper.appendChild(section);
     });
     return;
   }
@@ -1485,17 +1473,10 @@ function renderFeedGrid(){
       grid.appendChild(em);return;
     }
     // Hide main grid, show backlog in wrapper
-    grid.style.display='none';
-    const _amw2=document.getElementById('feed-all-months-wrap');if(_amw2){_amw2.innerHTML='';_amw2.style.display='none';}
-    const backlogWrap=document.getElementById('feed-backlog-wrap');
-    if(!backlogWrap) return;
-    backlogWrap.style.display='flex';
-    backlogWrap.innerHTML='';
+    // Render backlog directly into main grid
     const hdr2=document.createElement('div');hdr2.className='feed-backlog-banner';
     hdr2.innerHTML=`<strong>${backlog.length} post senza data</strong> <span>— assegna una data per rimuoverli dal backlog</span>`;
-    backlogWrap.appendChild(hdr2);
-    const backlogGrid=document.createElement('div');backlogGrid.className='feed-grid';backlogGrid.style.cssText='padding:4px;';
-    backlogWrap.appendChild(backlogGrid);
+    grid.parentElement.insertBefore(hdr2, grid);
 
     const allItems=currentFeedItems();
     backlog.forEach((item)=>{
@@ -1535,7 +1516,7 @@ function renderFeedGrid(){
       ct.oninput=e=>{allItems[realIdx].copy=e.target.value;};
       cpb.appendChild(ct);cp.appendChild(cpb);
       wrap.appendChild(cp);
-      backlogGrid.appendChild(wrap);
+      grid.appendChild(wrap);
     });
     return;
   }

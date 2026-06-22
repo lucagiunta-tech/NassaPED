@@ -2822,7 +2822,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 
 /* ══ FEED — Bottone cambio vista (sempre visibile) ══ */
-.feed-month-sep{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 4px 6px;border-top:1px solid var(--border);margin-top:4px;}
+.feed-month-sep{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 4px 6px;border-top:1px solid var(--border);margin-top:8px;}
 .feed-month-sep:first-child{border-top:none;margin-top:0;}
 .feed-month-sep-label{font-size:var(--fs-sm);font-weight:700;color:var(--text);}
 .feed-month-sep-count{font-size:var(--fs-xs);color:var(--text-3);}
