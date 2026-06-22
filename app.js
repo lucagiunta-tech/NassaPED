@@ -1378,6 +1378,8 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
 
 function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';updateFeedFormat();
+  // Remove any existing backlog banner
+  document.querySelector('.feed-backlog-banner')?.remove();
   // Vista: grid | list
   grid.classList.toggle('feed-view-list', feedViewMode==='list');
   // FIX 5: drag delegation — listeners attached once to grid, not per-cell
@@ -1393,42 +1395,50 @@ function renderFeedGrid(){
       em.innerHTML='<span class="fe-icon">✅</span><p>Nessun post in backlog.<br><small style="color:var(--text-3);">Tutti i post di questo mese hanno una data.</small></p>';
       grid.appendChild(em);return;
     }
-    // Show backlog header
+    // Show backlog banner above grid
     const hdr=document.createElement('div');
-    hdr.style.cssText='grid-column:1/-1;padding:8px 4px 4px;display:flex;align-items:center;gap:8px;';
-    hdr.innerHTML=`<span style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;">Backlog — ${backlog.length} post senza data</span>
-      <span style="font-size:10px;color:var(--text-3);">Assegna una data per rimuoverli dal backlog</span>`;
-    grid.appendChild(hdr);
-    // Render only backlog items (no empty slots, no add button in this mode)
-    backlog.forEach((item,i)=>{
-      const realIdx=items.indexOf(item);
+    hdr.className='feed-backlog-banner';
+    hdr.innerHTML=`<strong>${backlog.length} post senza data</strong> <span>— assegna una data per rimuoverli dal backlog</span>`;
+    grid.parentElement.insertBefore(hdr, grid);
+
+    // Render backlog items using normal feed cell structure
+    const allItems=currentFeedItems();
+    backlog.forEach((item)=>{
+      const realIdx=allItems.indexOf(item);
       const wrap=document.createElement('div');wrap.className='cell-wrap';
-      const cell=document.createElement('div');cell.className='feed-cell';
-      // Reuse same render logic by temporarily setting i to realIdx
-      items=[...currentFeedItems()]; // refresh
-      // Just render a simplified version inline
+      const cell=document.createElement('div');cell.className='feed-cell';cell.style.position='relative';
       const _url=item.url||item.externalUrl||'';
       const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_url;
-      if(item.type==='video'){const v=makeMedia(_url,'video');if(v)cell.appendChild(v);}
-      else if(item.type==='carousel'&&item.slides?.length>1){try{cell.appendChild(buildCaroselloPlayer(item,realIdx,currentFeedItems(),[]));}catch(e){const img=makeMedia(coverUrl,'image');if(img)cell.appendChild(img);}}
-      else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else if(item.needsReload){cell.appendChild(needsReloadPh('img',item.name));}}
+      if(item.needsReload&&!item.url){
+        cell.appendChild(needsReloadPh('img',item.name));
+      } else if(item.type==='video'){
+        const v=makeMedia(_url,'video');if(v)cell.appendChild(v);
+      } else if(item.type==='carousel'&&item.slides?.length>1){
+        try{cell.appendChild(buildCaroselloPlayer(item,realIdx,allItems,[]));}
+        catch(e){const img=makeMedia(coverUrl,'image');if(img)cell.appendChild(img);}
+      } else {
+        const img=makeMedia(coverUrl,'image');
+        if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}
+        else cell.appendChild(needsReloadPh('img',item.name));
+      }
       // Number badge
-      const num=document.createElement('span');num.className='cell-num';num.style.cssText='position:absolute;top:6px;left:6px;z-index:20;';num.textContent=realIdx+1;cell.appendChild(num);
-      // Date picker trigger — prominent in backlog mode
+      const num=document.createElement('span');num.className='cell-num';num.textContent=realIdx+1;cell.appendChild(num);
+      // Prominent date button
       const dateBtn=document.createElement('button');
-      dateBtn.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--green);color:#111;border:none;border-radius:99px;font-size:11px;font-weight:700;padding:4px 12px;cursor:pointer;font-family:var(--font);white-space:nowrap;';
-      dateBtn.textContent='+ Assegna data';
+      dateBtn.className='backlog-date-btn';
+      dateBtn.textContent='📅 Assegna data';
       dateBtn.onclick=e=>{e.stopPropagation();openDatePicker(realIdx,cell);};
       cell.appendChild(dateBtn);
-      cell.style.position='relative';
       wrap.appendChild(cell);
-      // Caption
+      // Caption row
       const cp=document.createElement('div');cp.className='copy-panel';
       const cph=document.createElement('div');cph.className='copy-panel-header';
       const cl2=document.createElement('div');cl2.className='copy-label';cl2.textContent='Caption';
       cph.appendChild(cl2);cp.appendChild(cph);
-      const ct=document.createElement('div');ct.style.cssText='font-size:11px;color:var(--text-2);padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-      ct.textContent=item.copy||'—';cp.appendChild(ct);
+      const cpb=document.createElement('div');cpb.className='copy-body open';
+      const ct=document.createElement('textarea');ct.placeholder='Scrivi la caption…';ct.value=item.copy||'';ct.rows=3;
+      ct.oninput=e=>{allItems[realIdx].copy=e.target.value;};
+      cpb.appendChild(ct);cp.appendChild(cpb);
       wrap.appendChild(cp);
       grid.appendChild(wrap);
     });

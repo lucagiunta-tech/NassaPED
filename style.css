@@ -2821,6 +2821,10 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 
 /* ══ FEED — Bottone cambio vista (sempre visibile) ══ */
+.feed-backlog-banner{grid-column:1/-1;padding:8px 12px;background:var(--green-lt);border:1px solid var(--green-mid);border-radius:var(--r);font-size:var(--fs-xs);color:var(--text-2);margin-bottom:8px;}
+.feed-backlog-banner strong{color:var(--text);font-weight:700;}
+.backlog-date-btn{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--green);color:#111;border:none;border-radius:99px;font-size:11px;font-weight:700;padding:5px 14px;cursor:pointer;font-family:var(--font);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.backlog-date-btn:hover{background:var(--green-dk);}
 .feed-backlog-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r-pill);border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-size:var(--fs-xs);font-weight:600;cursor:pointer;font-family:var(--font);transition:all var(--t-fast);white-space:nowrap;height:32px;}
 .feed-backlog-btn:hover{border-color:var(--green);color:var(--text);}
 .feed-backlog-btn.active{background:var(--green);border-color:var(--green);color:#111;}
