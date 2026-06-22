@@ -514,6 +514,14 @@ function queueFeedFiles(files){
     }
     // Upload completato
     if(uploadBar) uploadBar.style.display = 'none';
+    if(done===total){
+      showToast('✓ '+total+(total===1?' file caricato':' file caricati')+' su Dropbox');
+    } else if(failed>0&&done>0){
+      showToast('✓ '+done+' caricati, '+failed+' falliti — riprova con bottone ↑','warn');
+    } else if(failed===total){
+      showToast('⚠ Upload fallito. Connessione Dropbox assente o file troppo grande.','warn');
+    }
+    if(uploadBar) uploadBar.style.display = 'none';
     if(done > 0 && failed === 0){
       showToast(total === 1 ? '✓ File caricato su Dropbox' : `✓ ${done} file caricati su Dropbox`);
     } else if(failed > 0){
@@ -1486,20 +1494,96 @@ function toggleStoriesPanel(){
     :'<polyline points="6 9 12 15 18 9"/>';
 }
 
-function openStoryboardModal(idx){
+
+/* ══ STORYBOARD FORMAT DIALOG ══ */
+function openSbFmtDialog(){
+  // Rimuovi dialog esistente se c'è
+  const existing = document.getElementById('sb-fmt-dialog');
+  if(existing) existing.remove();
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'sb-fmt-dialog';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:var(--r);padding:28px 24px;min-width:320px;max-width:90vw;display:flex;flex-direction:column;gap:20px;box-shadow:0 8px 40px rgba(0,0,0,.25);';
+  
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:var(--fs-md);font-weight:700;color:var(--text);text-align:center;';
+  title.textContent = 'Scegli il formato';
+  
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:var(--fs-sm);color:var(--text-3);text-align:center;margin-top:-12px;';
+  sub.textContent = 'Determina dove andrà il contenuto finale';
+  
+  const opts = document.createElement('div');
+  opts.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;';
+  
+  const formats = [
+    {fmt:'stories', label:'Stories', ratio:'9:16', ar:'9/16', icon:'📱', dest:'Tab Stories'},
+    {fmt:'feed',    label:'Feed',    ratio:'4:5',  ar:'4/5', icon:'🖼', dest:'Tab Feed'},
+    {fmt:'square',  label:'Square',  ratio:'1:1',  ar:'1/1', icon:'⬜', dest:'Tab Feed'},
+  ];
+  
+  formats.forEach(({fmt,label,ratio,ar,icon,dest})=>{
+    const btn = document.createElement('button');
+    btn.style.cssText = 'border:1.5px solid var(--border);border-radius:var(--r);background:var(--bg);padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .15s;font-family:var(--font);';
+    btn.onmouseover = ()=>{ btn.style.borderColor='var(--green)'; btn.style.background='var(--green-lt)'; };
+    btn.onmouseout  = ()=>{ btn.style.borderColor='var(--border)'; btn.style.background='var(--bg)'; };
+    
+    const preview = document.createElement('div');
+    preview.style.cssText = `width:48px;aspect-ratio:${ar};background:var(--cell-bg);border-radius:var(--rs);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;`;
+    preview.textContent = icon;
+    
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:var(--fs-sm);font-weight:700;color:var(--text);';
+    lbl.textContent = label;
+    
+    const ratioLbl = document.createElement('div');
+    ratioLbl.style.cssText = 'font-size:10px;font-weight:600;color:var(--green);';
+    ratioLbl.textContent = ratio;
+    
+    const destLbl = document.createElement('div');
+    destLbl.style.cssText = 'font-size:9px;color:var(--text-3);';
+    destLbl.textContent = dest;
+    
+    btn.appendChild(preview);btn.appendChild(lbl);btn.appendChild(ratioLbl);btn.appendChild(destLbl);
+    btn.onclick = ()=>{ overlay.remove(); openStoryboardModal(-1, fmt); };
+    opts.appendChild(btn);
+  });
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn ghost sm';
+  cancelBtn.style.cssText = 'align-self:center;';
+  cancelBtn.textContent = 'Annulla';
+  cancelBtn.onclick = ()=>overlay.remove();
+  
+  box.appendChild(title);box.appendChild(sub);box.appendChild(opts);box.appendChild(cancelBtn);
+  overlay.appendChild(box);
+  // Click fuori chiude
+  overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+function openStoryboardModal(idx,presetFmt){
   if(storiesClientIdx<0&&globalClientIdx>=0){
     storiesClientIdx=globalClientIdx;
     storiesAccountIdx=clients[globalClientIdx]?.accounts?.length>0?0:-1;
   }
   if(!storiesMonth)storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
+  // Se è nuovo storyboard e non c'è un formato preset → mostra dialog selezione formato
+  if((idx===null||idx<0)&&!presetFmt){
+    openSbFmtDialog();
+    return;
+  }
   sbEditIdx=idx;
   const st=idx!==null&&idx>=0?currentStoryItems()[idx]:null;
-  // Init slides — preserve existing or start fresh
   sbTmpSlides=st?.isStoryboard&&st.slides?.length
     ?(st.slides||[]).map(s=>({...s,blobUrl:'',_file:null}))
-    // Story singola: pre-popola prima slide con l'immagine esistente
     :[{url:st?.url||st?.externalUrl||'',blobUrl:'',externalUrl:st?.externalUrl||st?.url||'',num:'1.',eye:'',title:st?.name||'',note:st?.note||'',name:st?.name||'',_file:null,sfondo:'',noteRegia:'',isPlaceholder:false}];
-  sbCurSlide=0;sbBg='lined';sbColor='#2563eb';sbFmt='feed';
+  sbCurSlide=0;sbBg='lined';sbColor='#2563eb';
+  // Formato: da storyboard esistente, o preset passato, o default feed
+  sbFmt=st?.sbFmt||presetFmt||'feed';
   openModal('storyboard-modal');
   // Reset to editor tab
   ['editor','parser','cassetto'].forEach(t=>{
@@ -2868,6 +2952,17 @@ function renderPEDCal(){
     if(!isOther){
       const num=document.createElement('div');num.className='ped-cal-day-num';num.textContent=cellD;cell.appendChild(num);
       const evs=document.createElement('div');evs.className='ped-cal-day-events';
+      // Badge storyboard collegato per questo giorno
+      const storyboardKey=accountKey(accountId(feedClientIdx,feedAccountIdx),feedMonth||MONTH_OPTIONS[0]);
+      const dayStoryboards=(stories[storyboardKey]||[]).filter(st=>st.isStoryboard&&st.date===ds);
+      if(dayStoryboards.length>0){
+        const sbBadge=document.createElement('div');
+        sbBadge.style.cssText='font-size:8px;background:rgba(29,158,117,.15);color:var(--green);border-radius:var(--r-xs);padding:1px 4px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;';
+        sbBadge.textContent='🎬 '+( dayStoryboards[0].name||'Storyboard');
+        sbBadge.title='Apri Storyboard';
+        sbBadge.onclick=e=>{e.stopPropagation();switchTab('storyboard');};
+        evs.appendChild(sbBadge);
+      }
       const MAX_PILLS=2;
       slots.slice(0,MAX_PILLS).forEach(sl=>{
         const cfg=UGC_STATI[sl.ugcStato]||UGC_STATI.autonoma;
@@ -3193,11 +3288,20 @@ function renderSbTabGrid(){
     // Card header: anteprima
     const prev=document.createElement('div');prev.className='sb-tab-prev';
     prev.style.aspectRatio=sb.sbFmt==='stories'?'9/16':sb.sbFmt==='square'?'1/1':'4/5';
-    if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';prev.appendChild(img);}
-    else{
-      // Placeholder con numero slide
-      prev.style.background='var(--cell-bg)';
-      prev.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"var(--text-3)\" stroke-width=\"1.5\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M8 21h8M12 17v4\"/></svg><div style=\"font-size:10px;color:var(--text-3);\">'+(sb.slides?.length||0)+' slide</div></div>';
+    if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';img.onerror=()=>{img.style.display='none';sbPlaceholder();};prev.appendChild(img);}
+    else{ sbPlaceholder(); }
+    function sbPlaceholder(){
+      const firstSlide=sb.slides?.[0]||{};
+      const sfKey=firstSlide.sfondo||'Avorio';
+      const SCFG={'Avorio':{bg:'#F5F2EB',text:'#2a2a2a'},'Righe':{bg:'#eeeeee',text:'#1a1a1a'},'Quadr.':{bg:'#e8e8e8',text:'#1a1a1a'},'Dark':{bg:'#1a1a1a',text:'#fff'}};
+      const sc=SCFG[sfKey]||SCFG['Avorio'];
+      prev.style.background=sc.bg;
+      const ph=document.createElement('div');
+      ph.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:12px;gap:5px;text-align:center;pointer-events:none;';
+      if(firstSlide.num){const n=document.createElement('div');n.style.cssText='font-size:20px;font-weight:800;color:'+sc.text+';opacity:.4;font-family:var(--font);';n.textContent=firstSlide.num;ph.appendChild(n);}
+      if(firstSlide.title){const t=document.createElement('div');t.style.cssText='font-size:9px;font-weight:600;color:'+sc.text+';opacity:.6;font-family:var(--font);line-height:1.3;max-width:90%;';t.textContent=firstSlide.title.slice(0,40);ph.appendChild(t);}
+      const cnt=document.createElement('div');cnt.style.cssText='font-size:8px;color:'+sc.text+';opacity:.35;font-family:var(--font);margin-top:2px;';cnt.textContent=(sb.slides?.length||0)+' slide';ph.appendChild(cnt);
+      prev.appendChild(ph);
     }
     // Badge formato
     const fmtBadge=document.createElement('div');fmtBadge.className='sb-tab-fmt-badge';fmtBadge.textContent=fmtLabel;
