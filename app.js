@@ -1313,7 +1313,7 @@ function renderStoriesGrid(){
         cell.draggable=true;
         cell.dataset.stDragIdx=idx;
         const ov=document.createElement('div');ov.className='story-overlay';
-        if(st.isStoryboard){const eb=document.createElement('button');eb.className='ov-btn ob-edit';eb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Modifica';eb.onclick=e=>{e.stopPropagation();openStoryboardModal(idx);};ov.appendChild(eb);}
+        {const eb=document.createElement('button');eb.className='ov-btn ob-edit';eb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> '+(st.isStoryboard?'Modifica':'Apri nel Builder');eb.onclick=e=>{e.stopPropagation();openStoryboardModal(idx);};ov.appendChild(eb);}
         const cpb=document.createElement('button');cpb.className='ov-btn ob-copy';cpb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia da…';cpb.onclick=e=>{e.stopPropagation();openCopyModal('stories');};ov.appendChild(cpb);
         const del=document.createElement('button');del.className='ov-btn ob-delete';del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg> Rimuovi';del.onclick=e=>{e.stopPropagation();showConfirm({
               title:'Rimuovi story',
@@ -1493,7 +1493,8 @@ function openStoryboardModal(idx){
   // Init slides — preserve existing or start fresh
   sbTmpSlides=st?.isStoryboard&&st.slides?.length
     ?(st.slides||[]).map(s=>({...s,blobUrl:'',_file:null}))
-    :[{url:'',blobUrl:'',num:'1.',eye:'',title:'',note:'',_file:null}];
+    // Story singola: pre-popola prima slide con l'immagine esistente
+    :[{url:st?.url||st?.externalUrl||'',blobUrl:'',externalUrl:st?.externalUrl||st?.url||'',num:'1.',eye:'',title:st?.name||'',note:st?.note||'',name:st?.name||'',_file:null,sfondo:'',noteRegia:'',isPlaceholder:false}];
   sbCurSlide=0;sbBg='lined';sbColor='#2563eb';sbFmt='feed';
   openModal('storyboard-modal');
   // Reset to editor tab
