@@ -581,7 +581,7 @@ function detectType(file_or_url){
 }
 function makeMedia(url,type,opts={}){
   if(!url)return null;
-  if(type==='video'){const v=document.createElement('video');v.src=url;v.muted=true;v.loop=true;v.playsInline=true;v.preload='metadata';v.style.cssText='pointer-events:none;background:#111;width:100%;height:100%;object-fit:cover;display:block;';if(opts.autoplay)v.autoplay=true;if(opts.controls)v.controls=true;return v;}
+  if(type==='video'){const v=document.createElement('video');v.src=url;v.muted=opts.muted!==false;v.loop=opts.loop!==false;v.playsInline=true;v.preload='metadata';v.style.cssText='pointer-events:none;background:#111;width:100%;height:100%;object-fit:cover;display:block;';if(opts.autoplay)v.autoplay=true;if(opts.controls){v.controls=true;v.style.pointerEvents='auto';}return v;}
   const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';img.decoding='async';return img;
 }
 function needsReloadPh(icon,name,reuploadFn){
@@ -2112,9 +2112,10 @@ function renderPreview(){
           playIcon.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"#fff\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg></div>';
           cell.appendChild(playIcon);
         } else {
-          const v=makeMedia(item.url,'video');
-          if(v){cell.addEventListener('mouseenter',()=>v.play().catch(()=>{}));cell.addEventListener('mouseleave',()=>{v.pause();v.currentTime=0;});cell.appendChild(v);}
-          else{const ph=document.createElement('div');ph.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:24px;';ph.textContent='';cell.appendChild(ph);}
+          // Reel senza cover: placeholder cliccabile (URL Dropbox non streamabili inline)
+          const ph3=document.createElement('div');ph3.style.cssText='width:100%;height:100%;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;';
+          ph3.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"rgba(255,255,255,.6)\"><polygon points=\"5 3 19 12 5 21 5 3\"/></svg></div><div style=\"font-size:9px;color:rgba(255,255,255,.4);font-family:var(--font);\">Reel</div>';
+          cell.appendChild(ph3);
         }
         const b=document.createElement('span');b.className='client-badge video';
         b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel';
@@ -2466,7 +2467,7 @@ function renderLb(){
       const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
     }
   } else if(item.type==='video'){
-    const v=makeMedia(item.url,'video',{controls:true,autoplay:true});
+    const v=makeMedia(item.url,'video',{controls:true,autoplay:true,muted:false,loop:false});
     if(v)inner.appendChild(v);
   } else {
     const url=item.url||item.externalUrl||'';
