@@ -14,7 +14,7 @@
   <!-- Sicurezza: disabilita detection automatica numeri/email -->
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="/style.css?v=1782169281"/>
+<link rel="stylesheet" href="/style.css?v=1782169504"/>
 </head>
 <body>
 <div class="app">
@@ -303,6 +303,10 @@
         <!-- Bottone cambio vista sempre visibile -->
         <button class="feed-view-toggle-btn" id="toggle-view" onclick="toggleFeedView()" aria-label="Cambia vista" title="Cambia vista griglia/lista">
           <svg id="toggle-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <button class="feed-backlog-btn" id="feed-all-months-btn" onclick="toggleAllMonthsMode()" title="Mostra tutti i post di tutti i mesi" aria-label="Vista tutti i mesi">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><line x1="10" y1="6" x2="14" y2="6" stroke-width="1.5" opacity=".4"/><line x1="10" y1="17" x2="14" y2="17" stroke-width="1.5" opacity=".4"/></svg>
+          Tutti
         </button>
         <button class="feed-backlog-btn" id="feed-backlog-btn" onclick="toggleBacklogFilter()" title="Mostra solo post senza data (backlog)" aria-label="Filtro backlog">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14" stroke-linecap="round" stroke-width="2.5"/><path d="M12 14l2 2 4-4" stroke-width="2"/></svg>
@@ -1324,7 +1328,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782169281"></script>
+<script src="/app.js?v=1782169504"></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">

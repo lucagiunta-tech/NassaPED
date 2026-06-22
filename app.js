@@ -1387,6 +1387,76 @@ function renderFeedGrid(){
   let items=currentFeedItems();
   if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
 
+  // All months mode: show all posts across all months grouped by month
+  if(feedAllMonthsMode){
+    const groups = getAllMonthsItems();
+    if(!groups.length){
+      const em=document.createElement('div');em.className='feed-empty';
+      em.innerHTML='<span class="fe-icon">📭</span><p>Nessun contenuto in nessun mese.</p>';
+      grid.appendChild(em);return;
+    }
+    groups.forEach(({month, items})=>{
+      // Month separator header
+      const sep=document.createElement('div');sep.className='feed-month-sep';
+      sep.innerHTML=`<span class="feed-month-sep-label">${month}</span><span class="feed-month-sep-count">${items.length} post</span>
+        <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=false;document.getElementById('feed-all-months-btn').classList.remove('active');renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
+      grid.appendChild(sep);
+      // Render items for this month (read-only view — no add slot)
+      const monthKey = accountId(feedClientIdx,feedAccountIdx)+'|||'+month;
+      const allMonthItems = feeds[monthKey]||[];
+      items.forEach(item=>{
+        const realIdx = allMonthItems.indexOf(item);
+        const wrap=document.createElement('div');wrap.className='cell-wrap';
+        const cell=document.createElement('div');cell.className='feed-cell';cell.style.position='relative';
+        const _url=item.url||item.externalUrl||'';
+        const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_url;
+        if(item.needsReload&&!item.url){
+          cell.appendChild(needsReloadPh('img',item.name));
+        } else if(item.type==='video'){
+          const v=makeMedia(_url,'video');if(v){if(item.coverUrl)v.setAttribute('poster',item.coverUrl);cell.appendChild(v);}
+        } else if(item.type==='carousel'&&item.slides?.length>1){
+          try{cell.appendChild(buildCaroselloPlayer(item,realIdx,allMonthItems,[]));}
+          catch(e){const img=makeMedia(coverUrl,'image');if(img)cell.appendChild(img);}
+        } else if(item.type==='editorial'){
+          // Editorial card
+          const cols=item.editorialColors||{bg:'#f5f0e8',text:'#111',accent:'#1a3c5e'};
+          cell.style.background=cols.bg;cell.style.color=cols.text;
+          const inner=document.createElement('div');inner.style.cssText='position:absolute;inset:0;padding:12px 11px 36px;display:flex;flex-direction:column;font-family:var(--font);';
+          inner.innerHTML=`<div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${esc(item.editorialEyebrow||'')}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${item.editorialTitle||''}</div>`;
+          cell.appendChild(inner);
+        } else {
+          const img=makeMedia(coverUrl,'image');
+          if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}
+          else cell.appendChild(needsReloadPh('img',item.name));
+        }
+        // Number + date badge
+        const num=document.createElement('span');num.className='cell-num';num.textContent=realIdx+1;cell.appendChild(num);
+        if(item.date){
+          const db=document.createElement('div');db.className='date-bar';
+          db.innerHTML=`<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${item.date}`;
+          cell.appendChild(db);
+        }
+        // Status badge
+        const _fst=item.apprStato||'bozza';
+        const _fc={bozza:{dot:'#888',label:'Bozza'},revisione:{dot:'#e05c00',label:'Da Revisionare'},approvare:{dot:'#d4a800',label:'Da Approvare'},approvato:{dot:'#22c97a',label:'Approvato'},pubblicato:{dot:'#2563eb',label:'Pubblicato'}}[_fst]||{dot:'#888',label:'Bozza'};
+        const sb=document.createElement('button');sb.className='feed-cell-stato-btn';
+        sb.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}`;
+        sb.onclick=e=>{e.stopPropagation();feedMonth=month;feedAllMonthsMode=false;document.getElementById('feed-all-months-btn')?.classList.remove('active');renderFeedMonthPills();setTimeout(()=>openApprModal(realIdx,allMonthItems),50);};
+        cell.appendChild(sb);
+        wrap.appendChild(cell);
+        // Caption
+        const cp=document.createElement('div');cp.className='copy-panel';cp.style.display='';
+        const cph=document.createElement('div');cph.className='copy-panel-header';
+        const cl2=document.createElement('div');cl2.className='copy-label';cl2.textContent='Caption';
+        cph.appendChild(cl2);cp.appendChild(cph);
+        const prev=document.createElement('div');prev.className='copy-preview'+(item.copy?'':' empty');prev.textContent=item.copy||'Caption…';
+        cp.appendChild(prev);wrap.appendChild(cp);
+        grid.appendChild(wrap);
+      });
+    });
+    return;
+  }
+
   // Backlog filter: show only posts without a date
   if(feedBacklogMode){
     const backlog = items.filter(it=>it.type!=='pending'&&!it.date?.trim());
@@ -1788,9 +1858,47 @@ let feedBacklogMode = false;
 
 function toggleBacklogFilter(){
   feedBacklogMode = !feedBacklogMode;
+  if(feedBacklogMode) feedAllMonthsMode = false; // mutually exclusive
   const btn = document.getElementById('feed-backlog-btn');
   if(btn) btn.classList.toggle('active', feedBacklogMode);
+  const allBtn = document.getElementById('feed-all-months-btn');
+  if(allBtn) allBtn.classList.remove('active');
   refreshFeed(true);
+}
+
+/* ── ALL MONTHS MODE ── */
+let feedAllMonthsMode = false;
+
+function toggleAllMonthsMode(){
+  feedAllMonthsMode = !feedAllMonthsMode;
+  if(feedAllMonthsMode) feedBacklogMode = false; // mutually exclusive
+  const btn = document.getElementById('feed-all-months-btn');
+  if(btn) btn.classList.toggle('active', feedAllMonthsMode);
+  const backlogBtn = document.getElementById('feed-backlog-btn');
+  if(backlogBtn) backlogBtn.classList.remove('active');
+  refreshFeed(true);
+}
+
+function getAllMonthsItems(){
+  // Get all items across all months for current account, sorted by month then position
+  const aid = accountId(feedClientIdx, feedAccountIdx);
+  if(!aid) return [];
+  const allKeys = Object.keys(feeds).filter(k => k.startsWith(aid+'|||'));
+  // Sort keys by year then month
+  allKeys.sort((a,b)=>{
+    const ma = a.split('|||')[1]; const mb = b.split('|||')[1];
+    const pa = ma.split(' '); const pb = mb.split(' ');
+    const ya = parseInt(pa[1])||0; const yb = parseInt(pb[1])||0;
+    if(ya!==yb) return ya-yb;
+    return MONTHS.indexOf(pa[0]) - MONTHS.indexOf(pb[0]);
+  });
+  const result = [];
+  allKeys.forEach(k => {
+    const month = k.split('|||')[1];
+    const items = (feeds[k]||[]).filter(it=>it.type!=='pending');
+    if(items.length) result.push({ month, items });
+  });
+  return result;
 }
 
 function toggleAllDates(){showAllDates=!showAllDates;const b=document.getElementById('toggle-dates'),c=document.getElementById('toggle-dates-chip');if(b)b.classList.toggle('off',!showAllDates);if(c){c.textContent=showAllDates?'ON':'OFF';c.classList.toggle('off',!showAllDates);}renderFeedGrid();}
