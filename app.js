@@ -3861,58 +3861,25 @@ function saveNotesText(){
   },1500);
 }
 
-/* Notes view mode: 'edit' | 'split' | 'preview' */
-let notesViewMode = 'edit';
-
-function setNotesViewMode(mode) {
-  notesViewMode = mode;
-  const ta  = document.getElementById('notes-editor');
-  const pv  = document.getElementById('notes-preview');
-  const body= document.getElementById('notes-body');
-  const btn = document.getElementById('notes-preview-btn');
-  if(!ta||!pv||!body) return;
-
-  if(mode === 'edit') {
-    body.classList.remove('split-mode');
-    ta.style.display = '';
-    pv.style.display = 'none';
-    if(btn) { btn.textContent=''; btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Split'; btn.classList.remove('active'); }
-  } else if(mode === 'split') {
-    body.classList.add('split-mode');
-    ta.style.display = '';
-    pv.style.display = 'block';
-    pv.innerHTML = '<div class="notes-preview-inner">' + renderMarkdown(ta.value) + '</div>';
-    if(btn) { btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Modifica'; btn.classList.add('active'); }
-  } else if(mode === 'preview') {
-    body.classList.remove('split-mode');
-    ta.style.display = 'none';
-    pv.style.display = 'block';
-    pv.innerHTML = '<div class="notes-preview-inner">' + renderMarkdown(ta.value) + '</div>';
-    if(btn) { btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg> Modifica'; btn.classList.add('active'); }
-  }
-  // Update live preview on every keystroke in split mode
-  if(mode === 'split') {
-    ta.oninput = function(){ saveNotesText(); updateNotesToc(); updateNotesWc(); updateNotesLivePreview(); };
-  } else {
-    ta.oninput = function(){ saveNotesText(); updateNotesToc(); updateNotesWc(); };
-  }
-}
-
-function updateNotesLivePreview() {
-  const ta = document.getElementById('notes-editor');
-  const pv = document.getElementById('notes-preview');
-  if(!ta||!pv||notesViewMode!=='split') return;
-  pv.innerHTML = '<div class="notes-preview-inner">' + renderMarkdown(ta.value) + '</div>';
-}
-
-// Toggle cycles: edit → split → edit
+let notesPreviewMode=false;
+let notesViewMode='edit';
+function setNotesViewMode(){}
+function updateNotesLivePreview(){}
 function toggleNotesPreview(){
-  if(notesViewMode === 'edit') setNotesViewMode('split');
-  else setNotesViewMode('edit');
+  notesPreviewMode=!notesPreviewMode;
+  const ta=document.getElementById('notes-editor');
+  const pv=document.getElementById('notes-preview');
+  const btn=document.getElementById('notes-preview-btn');
+  if(!ta||!pv)return;
+  if(notesPreviewMode){
+    pv.innerHTML='<div class="notes-preview-inner">'+renderMarkdown(ta.value)+'</div>';
+    pv.style.display='block';ta.style.display='none';
+    if(btn)btn.classList.add('active');
+  } else {
+    pv.style.display='none';ta.style.display='';
+    if(btn)btn.classList.remove('active');
+  }
 }
-
-// Keep notesPreviewMode for backward compat
-Object.defineProperty(window,'notesPreviewMode',{get:()=>notesViewMode!=='edit',set:v=>{if(!v)setNotesViewMode('edit');}});
 
 function renderMarkdown(md){
   if(!md)return'';
@@ -4046,9 +4013,6 @@ function notesInsertImage(url, alt) {
   ta.focus();
   ta.setSelectionRange(start + ins.length, start + ins.length);
   saveNotesText(); updateNotesToc(); updateNotesWc();
-  // Auto-enter split view so the image is immediately visible
-  if(notesViewMode === 'edit') setNotesViewMode('split');
-  else updateNotesLivePreview();
 }
 
 // Upload image file to Dropbox then insert into notes
