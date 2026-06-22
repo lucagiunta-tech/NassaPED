@@ -1382,8 +1382,60 @@ function renderFeedGrid(){
   grid.classList.toggle('feed-view-list', feedViewMode==='list');
   // FIX 5: drag delegation — listeners attached once to grid, not per-cell
   // (removed at innerHTML='' above, re-added here)
-  const items=currentFeedItems();
+  let items=currentFeedItems();
   if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
+
+  // Backlog filter: show only posts without a date
+  if(feedBacklogMode){
+    const backlog = items.filter(it=>it.type!=='pending'&&!it.date?.trim());
+    if(!backlog.length){
+      const em=document.createElement('div');em.className='feed-empty';
+      em.innerHTML='<span class="fe-icon">✅</span><p>Nessun post in backlog.<br><small style="color:var(--text-3);">Tutti i post di questo mese hanno una data.</small></p>';
+      grid.appendChild(em);return;
+    }
+    // Show backlog header
+    const hdr=document.createElement('div');
+    hdr.style.cssText='grid-column:1/-1;padding:8px 4px 4px;display:flex;align-items:center;gap:8px;';
+    hdr.innerHTML=`<span style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;">Backlog — ${backlog.length} post senza data</span>
+      <span style="font-size:10px;color:var(--text-3);">Assegna una data per rimuoverli dal backlog</span>`;
+    grid.appendChild(hdr);
+    // Render only backlog items (no empty slots, no add button in this mode)
+    backlog.forEach((item,i)=>{
+      const realIdx=items.indexOf(item);
+      const wrap=document.createElement('div');wrap.className='cell-wrap';
+      const cell=document.createElement('div');cell.className='feed-cell';
+      // Reuse same render logic by temporarily setting i to realIdx
+      items=[...currentFeedItems()]; // refresh
+      // Just render a simplified version inline
+      const _url=item.url||item.externalUrl||'';
+      const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_url;
+      if(item.type==='video'){const v=makeMedia(_url,'video');if(v)cell.appendChild(v);}
+      else if(item.type==='carousel'&&item.slides?.length>1){try{cell.appendChild(buildCaroselloPlayer(item,realIdx,currentFeedItems(),[]));}catch(e){const img=makeMedia(coverUrl,'image');if(img)cell.appendChild(img);}}
+      else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else if(item.needsReload){cell.appendChild(needsReloadPh('img',item.name));}}
+      // Number badge
+      const num=document.createElement('span');num.className='cell-num';num.style.cssText='position:absolute;top:6px;left:6px;z-index:20;';num.textContent=realIdx+1;cell.appendChild(num);
+      // Date picker trigger — prominent in backlog mode
+      const dateBtn=document.createElement('button');
+      dateBtn.style.cssText='position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--green);color:#111;border:none;border-radius:99px;font-size:11px;font-weight:700;padding:4px 12px;cursor:pointer;font-family:var(--font);white-space:nowrap;';
+      dateBtn.textContent='+ Assegna data';
+      dateBtn.onclick=e=>{e.stopPropagation();openDatePicker(realIdx,cell);};
+      cell.appendChild(dateBtn);
+      cell.style.position='relative';
+      wrap.appendChild(cell);
+      // Caption
+      const cp=document.createElement('div');cp.className='copy-panel';
+      const cph=document.createElement('div');cph.className='copy-panel-header';
+      const cl2=document.createElement('div');cl2.className='copy-label';cl2.textContent='Caption';
+      cph.appendChild(cl2);cp.appendChild(cph);
+      const ct=document.createElement('div');ct.style.cssText='font-size:11px;color:var(--text-2);padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      ct.textContent=item.copy||'—';cp.appendChild(ct);
+      wrap.appendChild(cp);
+      grid.appendChild(wrap);
+    });
+    return;
+  }
+
+  items=currentFeedItems();
   const total=Math.max(items.length+1,9);
   for(let i=0;i<total;i++){
     const wrap=document.createElement('div');wrap.className='cell-wrap';const cell=document.createElement('div');cell.className='feed-cell';
@@ -1720,6 +1772,16 @@ function toggleFeedView(){
   renderFeedGrid();
 }
 
+
+/* ── BACKLOG FILTER ── */
+let feedBacklogMode = false;
+
+function toggleBacklogFilter(){
+  feedBacklogMode = !feedBacklogMode;
+  const btn = document.getElementById('feed-backlog-btn');
+  if(btn) btn.classList.toggle('active', feedBacklogMode);
+  refreshFeed(true);
+}
 
 function toggleAllDates(){showAllDates=!showAllDates;const b=document.getElementById('toggle-dates'),c=document.getElementById('toggle-dates-chip');if(b)b.classList.toggle('off',!showAllDates);if(c){c.textContent=showAllDates?'ON':'OFF';c.classList.toggle('off',!showAllDates);}renderFeedGrid();}
 function toggleAllCopy(){showAllCopy=!showAllCopy;const b=document.getElementById('toggle-copy'),c=document.getElementById('toggle-copy-chip');if(b)b.classList.toggle('off',!showAllCopy);if(c){c.textContent=showAllCopy?'ON':'OFF';c.classList.toggle('off',!showAllCopy);}renderFeedGrid();}

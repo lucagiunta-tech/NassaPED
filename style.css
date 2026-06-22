@@ -2821,6 +2821,9 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 
 /* ══ FEED — Bottone cambio vista (sempre visibile) ══ */
+.feed-backlog-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r-pill);border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-size:var(--fs-xs);font-weight:600;cursor:pointer;font-family:var(--font);transition:all var(--t-fast);white-space:nowrap;height:32px;}
+.feed-backlog-btn:hover{border-color:var(--green);color:var(--text);}
+.feed-backlog-btn.active{background:var(--green);border-color:var(--green);color:#111;}
 .feed-view-toggle-btn {
   display: inline-flex;
   align-items: center;
