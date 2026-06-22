@@ -387,7 +387,7 @@ let hlEditIdx = null, hlTmpCover = null;
 let linkModalPostIdx = null, linkModalSelected = new Set();
 let copySelectedItems = new Set();
 let feedLinkTab = 'frame', storiesLinkTab = 'frame';
-let lbItems = [], lbIdx = 0, lbSlide = 0, lbStArr = [];
+let lbItems = [], lbIdx = 0, lbSlide = 0, lbStArr = [], lbOpts = {};
 let ecEditIdx = -1, ecTmpAccounts = [];
 
 const MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -2174,15 +2174,17 @@ function renderPreview(){
           circ.style.cursor = 'pointer';
           circ.onclick = e => {
             e.stopPropagation();
+            const storyOpts={aspectRatio:'9/16'};
             if(st.isStoryboard && st.slides?.length){
-              // Apri lightbox con le slide dello storyboard
+              // Apri lightbox con le slide dello storyboard in formato 9/16
               openLb(0, st.slides.map((sl,idx)=>({
-                type:'image', url:sl.url||sl.blobUrl||'', name:sl.title||'Slide '+(idx+1),
+                type:'image', url:sl.url||sl.externalUrl||sl.blobUrl||'', name:sl.title||'Slide '+(idx+1),
                 note:sl.note||sl.noteRegia||''
-              })));
+              })), [], storyOpts);
             } else {
-              // Story singola — apri lightbox
-              openLb(0,[{type:st.type||'image', url:cu, name:st.name||'Story'}]);
+              // Story singola — apri lightbox 9/16
+              const stUrl=cu||st.url||st.externalUrl||'';
+              openLb(0,[{type:st.type||'image', url:stUrl, name:st.name||'Story'}], [], storyOpts);
             }
           };
           strip.appendChild(circ);
@@ -2448,12 +2450,15 @@ function renderPreview(){
 }
 
 /* LIGHTBOX */
-function openLb(i,ready,stArr){lbItems=ready;lbIdx=i;lbSlide=0;lbStArr=stArr||[];renderLb();document.getElementById('lightbox').classList.add('open');}
+function openLb(i,ready,stArr,opts){lbItems=ready;lbIdx=i;lbSlide=0;lbStArr=stArr||[];lbOpts=opts||{};renderLb();document.getElementById('lightbox').classList.add('open');}
 function lbBg(e){if(e.target===document.getElementById('lightbox'))document.getElementById('lightbox').classList.remove('open');}
 function lbNav(d){lbIdx=(lbIdx+d+lbItems.length)%lbItems.length;lbSlide=0;renderLb();}
 function lbSlideNav(d){const item=lbItems[lbIdx];if(!item?.slides?.length)return;lbSlide=(lbSlide+d+item.slides.length)%item.slides.length;renderLb();}
 function renderLb(){
   const inner=document.getElementById('lb-inner');if(!inner)return;inner.innerHTML='';
+  // Applica aspect-ratio dal contesto (feed=4/5, stories=9/16)
+  inner.style.aspectRatio=lbOpts.aspectRatio||'4/5';
+  const lbWrap=inner.closest('.lb-wrap');if(lbWrap)lbWrap.style.width=lbOpts.aspectRatio==='9/16'?'min(260px,50vw)':'min(390px,85vw)';
   const item=lbItems[lbIdx];const isMulti=lbItems.length>1;const isCarousel=item.type==='carousel'&&item.slides?.length>1;
   const showPostNav=isMulti&&!isCarousel;
   document.getElementById('lb-prev').style.display=showPostNav?'flex':'none';document.getElementById('lb-next').style.display=showPostNav?'flex':'none';
