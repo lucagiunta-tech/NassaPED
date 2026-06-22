@@ -809,12 +809,42 @@ function routerUpdate() {
 function routerRestore() {
   const path = window.location.pathname;
   if(path === '/' || path === '') return;
-  const clientTabMatch = path.match(/^\/client\/([^/]+)\/([^/]+)$/);
+  // Match /client/{id}/{tab} OR /client/{id}/{tab}/{month} OR /client/{id}/{tab}/{month}/{accIdx}
+  const clientTabMatch = path.match(/^\/client\/([^/]+)\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
   if(clientTabMatch) {
     const clientId = decodeURIComponent(clientTabMatch[1]);
     const tab = clientTabMatch[2];
+    const monthSlug = clientTabMatch[3] || ''; // e.g. "giugno-2026"
+    const accIdxStr = clientTabMatch[4] || '';
     const ci = clients.findIndex(c => c.id === clientId || encodeURIComponent(c.name) === clientId);
-    if(ci >= 0) { _routerSilent=true; openClientFeed(ci); if(tab!=='feed')switchTab(tab); _routerSilent=false; }
+    if(ci >= 0) {
+      _routerSilent = true;
+      openClientFeed(ci);
+      // Restore month from URL slug
+      if(monthSlug) {
+        const parts = monthSlug.split('-');
+        if(parts.length >= 2) {
+          const yearStr = parts[parts.length - 1];
+          const monthPart = parts.slice(0, -1).join(' ');
+          const MONTH_IT = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
+                            'luglio','agosto','settembre','ottobre','novembre','dicembre'];
+          const mi = MONTH_IT.indexOf(monthPart.toLowerCase());
+          if(mi >= 0) {
+            feedMonth = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                         'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][mi] + ' ' + yearStr;
+            storiesMonth = feedMonth;
+          }
+        }
+      }
+      // Restore account index
+      if(accIdxStr) {
+        const ai = parseInt(accIdxStr);
+        if(!isNaN(ai) && ai >= 0) { feedAccountIdx = ai; storiesAccountIdx = ai; }
+      }
+      if(tab !== 'feed') switchTab(tab);
+      else { renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge(); }
+      _routerSilent = false;
+    }
     return;
   }
   const tabMatch = path.match(/^\/([a-z]+)$/);
@@ -5596,9 +5626,10 @@ function renderAnnoTab() {
 /* ══ SISTEMA APPROVAZIONE FEED ══ */
 
 const APPR_STATI = [
-  {key:'bozza',     label:'Bozza',         dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)', border:'var(--border)'},
-  {key:'approvare', label:'In revisione',  dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',       border:'rgba(212,168,0,0.5)'},
-  {key:'approvato', label:'Approvato',     dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
+  {key:'bozza',     label:'Bozza',            dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)', border:'var(--border)'},
+  {key:'revisione', label:'Da Revisionare',   dot:'#e05c00', bg:'rgba(224,92,0,0.13)',    text:'#7a2e00',       border:'rgba(224,92,0,0.45)'},
+  {key:'approvare', label:'Da Approvare',     dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',       border:'rgba(212,168,0,0.5)'},
+  {key:'approvato', label:'Approvato',        dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
 ];
 /* ══ SISTEMA NOTIFICHE NOTE ══ */
 function updateNotifBadge(){
@@ -5665,8 +5696,8 @@ function apprUpdateStats(items){
 
   // Conteggi per stato approvazione (su tutto il feed, non filtered)
   const allItems = apprGetItems ? apprGetItems() : items;
-  const counts = {bozza:0, approvare:0, approvato:0};
-  allItems.forEach(it => { let st=it.apprStato||'bozza'; if(st==='revisione')st='approvare'; counts[st]=(counts[st]||0)+1; });
+  const counts = {bozza:0, revisione:0, approvare:0, approvato:0};
+  allItems.forEach(it => { const st=it.apprStato||'bozza'; counts[st]=(counts[st]||0)+1; });
   const total = allItems.length;
 
   // Conteggi per tipologia
@@ -5675,13 +5706,15 @@ function apprUpdateStats(items){
   const nCarousel = allItems.filter(x=>x.type==='carousel').length;
 
   // Aggiorna celle numeriche vecchie (retrocompat)
+  // revisione+approvare both map to the 'approvare' stat cell
   ['bozza','approvare','approvato'].forEach(k => {
     const cell = document.getElementById('appr-stat-'+k);
     if(!cell) return;
     const num = cell.querySelector('.appr-stat-num');
     const barEl = cell.querySelector('.appr-stat-bar');
-    if(num) num.textContent = counts[k];
-    if(barEl) barEl.style.width = total ? Math.round(counts[k]/total*100)+'%' : '0%';
+    const displayCount = k==='approvare' ? (counts.approvare||0)+(counts.revisione||0) : (counts[k]||0);
+    if(num) num.textContent = displayCount;
+    if(barEl) barEl.style.width = total ? Math.round(displayCount/total*100)+'%' : '0%';
   });
   const tot = document.getElementById('appr-stat-totale');
   if(tot) tot.textContent = total;
@@ -5795,8 +5828,6 @@ function apprModalSetStato(stato){
   if(!post) return;
   const old = post.apprStato || 'bozza';
   post.apprStato = stato;
-  // migrate legacy 'revisione' key
-  if(post.apprStato==='revisione') post.apprStato='approvare';
   if(stato==='approvare'&&old==='bozza') post.apprRevisions=(post.apprRevisions||0)+1;
   // Aggiorna pills
   const pillsEl = document.getElementById('appr-stato-pills');

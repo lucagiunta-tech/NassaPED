@@ -392,7 +392,7 @@ async function cvSubmitRevision() {
   const note = document.getElementById('cv-revision-note')?.value?.trim();
   if(!note) { document.getElementById('cv-revision-note')?.focus(); return; }
   const { idx, items, accId, month } = cvRevisionIdx;
-  items[idx].apprStato = 'approvare';
+  items[idx].apprStato = 'revisione';
   items[idx].apprNote = note;
   items[idx].apprRevisions = (items[idx].apprRevisions || 0) + 1;
   // Save back to cloud
