@@ -470,10 +470,12 @@ const DROPBOX = {
         },
         body: JSON.stringify({ path: uploadData.path_display })
       });
-      if(!linkRes.ok) throw new Error('Link creation failed: HTTP ' + linkRes.status);
-      const linkData = await linkRes.json();
+      const linkText = await linkRes.text();
+      console.log('[DROPBOX] dropbox-link response:', linkRes.status, linkText.slice(0,300));
+      if(!linkRes.ok) throw new Error('Link creation failed: HTTP ' + linkRes.status + ' — ' + linkText.slice(0,200));
+      const linkData = JSON.parse(linkText);
       const finalUrl = linkData.url;
-      if(!finalUrl) throw new Error('No shared link URL returned');
+      if(!finalUrl) throw new Error('No shared link URL returned: ' + linkText.slice(0,200));
       console.log('%c[DROPBOX] ✅ Shared URL: '+finalUrl.slice(0,80), 'color:#22c97a;font-weight:700');
 
       DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
