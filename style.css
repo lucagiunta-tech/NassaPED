@@ -2825,6 +2825,28 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-month-sep:first-child{border-top:none;margin-top:0;}
 .feed-month-sep-label{font-size:var(--fs-sm);font-weight:700;color:var(--text);}
 .feed-month-sep-count{font-size:var(--fs-xs);color:var(--text-3);}
+/* ── DRAG & DROP INSERT INDICATOR ── */
+.drag-insert-indicator{
+  width: 3px;
+  align-self: stretch;
+  background: var(--green);
+  border-radius: 99px;
+  margin: 0 -1px;
+  box-shadow: 0 0 6px var(--green);
+  pointer-events: none;
+  animation: indicator-pulse .6s ease infinite alternate;
+  flex-shrink: 0;
+  min-height: 60px;
+}
+@keyframes indicator-pulse{
+  from{ opacity:.7; box-shadow:0 0 4px var(--green); }
+  to{ opacity:1; box-shadow:0 0 10px var(--green); }
+}
+.cell-wrap.dragging,.story-wrap.dragging{
+  opacity:.35;
+  transform:scale(.97);
+  transition:opacity .15s,transform .15s;
+}
 .feed-backlog-banner{grid-column:1/-1;padding:8px 12px;background:var(--green-lt);border:1px solid var(--green-mid);border-radius:var(--r);font-size:var(--fs-xs);color:var(--text-2);margin-bottom:8px;}
 .feed-backlog-banner strong{color:var(--text);font-weight:700;}
 .backlog-date-btn{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:20;background:var(--green);color:#111;border:none;border-radius:99px;font-size:11px;font-weight:700;padding:5px 14px;cursor:pointer;font-family:var(--font);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);}

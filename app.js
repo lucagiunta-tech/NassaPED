@@ -1768,36 +1768,78 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
-  // FIX 5: Attach drag events ONCE on grid via delegation (not per-cell)
-  // This replaces N*4 listeners with just 4 total
+  // Drag & drop — insert fluido con indicatore di posizione
+  let feedDragIndicator = null;
+
+  function feedGetIndicator(){
+    if(!feedDragIndicator){
+      feedDragIndicator = document.createElement('div');
+      feedDragIndicator.className = 'drag-insert-indicator';
+    }
+    return feedDragIndicator;
+  }
+  function feedRemoveIndicator(){
+    feedDragIndicator?.remove();
+  }
+
   grid.addEventListener('dragstart',e=>{
     const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
     feedDragSrc=parseInt(cell.dataset.dragIdx);
     e.dataTransfer.effectAllowed='move';
-    setTimeout(()=>cell.classList.add('dragging'),0);
+    e.dataTransfer.setData('text/plain', feedDragSrc);
+    setTimeout(()=>cell.closest('.cell-wrap')?.classList.add('dragging'),0);
   });
+
   grid.addEventListener('dragover',e=>{
     e.preventDefault();
-    const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
-    const idx=parseInt(cell.dataset.dragIdx);
-    if(feedDragSrc!==null&&feedDragSrc!==idx){
-      grid.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('drag-over-cell'));
-      cell.classList.add('drag-over-cell');
-    }
+    if(feedDragSrc===null) return;
+    const wrap=e.target.closest('.cell-wrap');
+    if(!wrap||!wrap.querySelector('[data-drag-idx]')) return;
+    const idx=parseInt(wrap.querySelector('[data-drag-idx]').dataset.dragIdx);
+    if(idx===feedDragSrc) return;
+    const rect=wrap.getBoundingClientRect();
+    const insertBefore=(e.clientX-rect.left)<rect.width/2;
+    const indicator=feedGetIndicator();
+    if(insertBefore) grid.insertBefore(indicator, wrap);
+    else grid.insertBefore(indicator, wrap.nextSibling);
   });
+
+  grid.addEventListener('dragleave',e=>{
+    if(!grid.contains(e.relatedTarget)) feedRemoveIndicator();
+  });
+
   grid.addEventListener('drop',e=>{
     e.preventDefault();
-    const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
-    const idx=parseInt(cell.dataset.dragIdx);
-    if(feedDragSrc!==null&&feedDragSrc!==idx){
-      const arr=currentFeedItems();const tmp=arr[feedDragSrc];arr[feedDragSrc]=arr[idx];arr[idx]=tmp;
+    if(feedDragSrc===null) return;
+    const ind=feedDragIndicator;
+    let insertIdx=feedDragSrc;
+    if(ind&&ind.parentElement===grid){
+      // Count cell-wraps before the indicator
+      let count=0;
+      for(const ch of grid.children){
+        if(ch===ind) break;
+        if(ch.classList.contains('cell-wrap')&&ch.querySelector('[data-drag-idx]')) count++;
+      }
+      insertIdx=count;
+    } else {
+      const cell=e.target.closest('[data-drag-idx]');
+      if(cell) insertIdx=parseInt(cell.dataset.dragIdx);
+    }
+    feedRemoveIndicator();
+    if(insertIdx!==feedDragSrc){
+      const arr=currentFeedItems();
+      const [moved]=arr.splice(feedDragSrc,1);
+      const fi=insertIdx>feedDragSrc?insertIdx-1:insertIdx;
+      arr.splice(fi,0,moved);
       setFeedItems(arr);autoSave();
     }
     feedDragSrc=null;renderFeedGrid();
   });
+
   grid.addEventListener('dragend',()=>{
+    feedRemoveIndicator();
     feedDragSrc=null;
-    grid.querySelectorAll('.feed-cell').forEach(c=>c.classList.remove('dragging','drag-over-cell'));
+    grid.querySelectorAll('.cell-wrap').forEach(c=>c.classList.remove('dragging'));
   });
 }
 
@@ -2097,34 +2139,69 @@ function renderStoriesGrid(){
       else{cell.classList.add('empty-story');addEmptyStoryListeners(cell);wrap.appendChild(cell);}
       grid.appendChild(wrap);
     }
-    // FIX 5: Stories drag delegation — 4 listeners on grid instead of N*4 on cells
+    // Stories drag — insert fluido
+    let stDragIndicator=null;
+    function stGetIndicator(){
+      if(!stDragIndicator){stDragIndicator=document.createElement('div');stDragIndicator.className='drag-insert-indicator';}
+      return stDragIndicator;
+    }
+    function stRemoveIndicator(){stDragIndicator?.remove();}
+
     grid.addEventListener('dragstart',e=>{
       const cell=e.target.closest('[data-st-drag-idx]');if(!cell)return;
       stDragSrc=parseInt(cell.dataset.stDragIdx);e.dataTransfer.effectAllowed='move';
-      setTimeout(()=>cell.classList.add('dragging'),0);
+      e.dataTransfer.setData('text/plain',stDragSrc);
+      setTimeout(()=>cell.closest('.story-wrap')?.classList.add('dragging'),0);
     });
+
     grid.addEventListener('dragover',e=>{
       e.preventDefault();
-      const cell=e.target.closest('[data-st-drag-idx]');if(!cell)return;
-      const idx=parseInt(cell.dataset.stDragIdx);
-      if(stDragSrc!==null&&stDragSrc!==idx){
-        grid.querySelectorAll('.story-cell').forEach(c=>c.classList.remove('drag-over-st'));
-        cell.classList.add('drag-over-st');
-      }
+      if(stDragSrc===null)return;
+      const wrap=e.target.closest('.story-wrap');
+      if(!wrap||!wrap.querySelector('[data-st-drag-idx]'))return;
+      const idx=parseInt(wrap.querySelector('[data-st-drag-idx]').dataset.stDragIdx);
+      if(idx===stDragSrc)return;
+      const rect=wrap.getBoundingClientRect();
+      const insertBefore=(e.clientX-rect.left)<rect.width/2;
+      const ind=stGetIndicator();
+      if(insertBefore)grid.insertBefore(ind,wrap);
+      else grid.insertBefore(ind,wrap.nextSibling);
     });
+
+    grid.addEventListener('dragleave',e=>{
+      if(!grid.contains(e.relatedTarget))stRemoveIndicator();
+    });
+
     grid.addEventListener('drop',e=>{
       e.preventDefault();
-      const cell=e.target.closest('[data-st-drag-idx]');if(!cell)return;
-      const idx=parseInt(cell.dataset.stDragIdx);
-      if(stDragSrc!==null&&stDragSrc!==idx){
-        const a=currentStoryItems();const tmp=a[stDragSrc];a[stDragSrc]=a[idx];a[idx]=tmp;
+      if(stDragSrc===null)return;
+      const ind=stDragIndicator;
+      let insertIdx=stDragSrc;
+      if(ind&&ind.parentElement===grid){
+        let count=0;
+        for(const ch of grid.children){
+          if(ch===ind)break;
+          if(ch.classList.contains('story-wrap')&&ch.querySelector('[data-st-drag-idx]'))count++;
+        }
+        insertIdx=count;
+      } else {
+        const cell=e.target.closest('[data-st-drag-idx]');
+        if(cell)insertIdx=parseInt(cell.dataset.stDragIdx);
+      }
+      stRemoveIndicator();
+      if(insertIdx!==stDragSrc){
+        const a=currentStoryItems();
+        const [moved]=a.splice(stDragSrc,1);
+        const fi=insertIdx>stDragSrc?insertIdx-1:insertIdx;
+        a.splice(fi,0,moved);
         setStoryItems(a);autoSave();
       }
       stDragSrc=null;renderStoriesGrid();
     });
+
     grid.addEventListener('dragend',()=>{
-      stDragSrc=null;
-      grid.querySelectorAll('.story-cell').forEach(c=>c.classList.remove('dragging','drag-over-st'));
+      stRemoveIndicator();stDragSrc=null;
+      grid.querySelectorAll('.story-wrap').forEach(c=>c.classList.remove('dragging'));
     });
     // PED stories section
     const pedMonth=storiesMonth||feedMonth||MONTH_OPTIONS[new Date().getMonth()];
