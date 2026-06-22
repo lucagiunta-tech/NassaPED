@@ -241,6 +241,7 @@ const CLOUD = {
       CLOUD.setStatus('saving');
       const body = JSON.stringify({ user: CLOUD.user, data: projectData });
       const sizeKB = Math.round(body.length / 1024);
+      console.log('%c[NassaPED] saveNow → '+sizeKB+'KB', 'color:#f59e0b;font-weight:700');
       const res = await fetch(CLOUD.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
@@ -255,6 +256,7 @@ const CLOUD = {
       }
       if (!res.ok) throw new Error('HTTP ' + res.status);
       CLOUD.setStatus('saved');
+      console.log('%c[NassaPED] saveNow ✅ saved ('+sizeKB+'KB)', 'color:#22c97a;font-weight:700');
     } catch(e) {
       console.warn('[CLOUD] Save failed:', e.message);
       CLOUD.setStatus('error');
@@ -338,6 +340,19 @@ const CLOUD = {
       if(!f.includes('dl=')) f += (f.includes('?') ? '&dl=1' : '?dl=1');
       return f;
     }
+    // ── DIAGNOSTICA LOAD ─────────────────────────────────────────────────
+    console.group('%c[NassaPED] apply() — loading from DB', 'color:#60a5fa;font-weight:700');
+    const _feedKeys = Object.keys(data.feeds||{});
+    console.log('Feed keys in DB:', _feedKeys.length);
+    _feedKeys.forEach(k => {
+      const items = data.feeds[k]||[];
+      const withUrl = items.filter(i=>i.externalUrl&&i.externalUrl.startsWith('http')).length;
+      const noUrl   = items.filter(i=>!i.externalUrl && i.name).length;
+      if(items.length) console.log('  '+k+': '+items.length+' items, '+withUrl+' con externalUrl, '+noUrl+' senza (needsReload)');
+    });
+    console.groupEnd();
+    // ─────────────────────────────────────────────────────────────────────
+
     Object.keys(data.feeds||{}).forEach(k => {
       feeds[k] = (data.feeds[k]||[]).map(item => {
         const fixedExtUrl = fixDbxUrl(item.externalUrl);
@@ -719,6 +734,19 @@ function queueFeedFiles(files){
       const uploadId = f.name+'_'+uploadStartTimes.get(f);
       let match = arr.findIndex(it=>it._uploadId===uploadId);
       if(match<0) match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
+
+      // ── DIAGNOSTICA ──────────────────────────────────────────────────────
+      console.group('%c[NassaPED] Upload callback: '+f.name, 'color:#0dff00;font-weight:700');
+      console.log('uploadFeedKey (captured at start):', uploadFeedKey);
+      console.log('currentFeedKey() (now, at callback):', currentFeedKey());
+      console.log('Keys match?', uploadFeedKey === currentFeedKey());
+      console.log('uploadId:', uploadId);
+      console.log('match index:', match, match>=0 ? '✅' : '❌ MISS');
+      console.log('sharedUrl from Dropbox:', sharedUrl ? sharedUrl.slice(0,80)+'…' : '❌ NULL');
+      console.log('arr length:', arr.length);
+      if(match>=0) console.log('Matched item:', JSON.stringify({name:arr[match].name, _uploadId:arr[match]._uploadId, externalUrl:arr[match].externalUrl?.slice(0,50)}));
+      // ─────────────────────────────────────────────────────────────────────
+
       if(sharedUrl){
         done++;
         if(match>=0){
@@ -726,13 +754,28 @@ function queueFeedFiles(files){
           arr[match].externalUrl=sharedUrl;arr[match].url=sharedUrl;
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
+          console.log('✅ externalUrl written to item['+match+']:', sharedUrl.slice(0,80)+'…');
+        } else {
+          console.warn('❌ match=-1: externalUrl NOT written! Item will be needsReload on refresh.');
         }
         if(uploadFeedKey) feeds[uploadFeedKey]=arr;
         // Refresh UI only if still on same feed
-        if(currentFeedKey()===uploadFeedKey) refreshFeed(true); // skip autoSave — saveNow called below
+        if(currentFeedKey()===uploadFeedKey) refreshFeed(true);
         if(currentTab==='preview') renderPreview();
-        CLOUD.saveNow(CLOUD.snapshot());
+
+        // Verify snapshot before saving
+        const snap = CLOUD.snapshot();
+        const snapArr = snap.feeds[uploadFeedKey]||[];
+        const snapItem = snapArr[match>=0?match:0];
+        console.log('Snapshot item['+Math.max(0,match)+'] externalUrl:', snapItem?.externalUrl?.slice(0,80)||'❌ MISSING');
+        const snapSize = JSON.stringify(snap).length;
+        console.log('Snapshot size:', Math.round(snapSize/1024)+'KB', snapSize > 15*1024*1024 ? '❌ TOO LARGE' : '✅ OK');
+        console.groupEnd();
+        await CLOUD.saveNow(snap);
+        console.log('✅ saveNow completed');
       } else {
+        console.warn('❌ Dropbox upload returned null — network error or auth failure');
+        console.groupEnd();
         failed++;
         if(match>=0){ arr[match].needsReload=true; }
         if(uploadFeedKey) feeds[uploadFeedKey]=arr;
