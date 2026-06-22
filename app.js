@@ -607,7 +607,7 @@ function needsReloadPh(icon,name,reuploadFn){
 /* TAB SWITCHING */
 function switchTab(tab){
   currentTab=tab;
-  const allTabs=['studio','notes','pilastri','feed','stories','ped','cal','anno','preview','ads'];
+  const allTabs=['studio','notes','pilastri','feed','stories','storyboard','ped','cal','anno','preview','ads'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -643,6 +643,7 @@ function switchTab(tab){
   if(tab==='preview'){if(previewClientIdx<0&&globalClientIdx>=0){previewClientIdx=globalClientIdx;previewAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}syncPreviewSelectors();renderPreview();}
   // FIX QA: renderAdsTab mancava dal switchTab — tab Ads non si aggiornava mai
   if(tab==='ads'){renderAdsTab();}
+  if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');rebuildStudioAccountSelect();}
 function backToClients(){switchTab('studio');}
@@ -1546,9 +1547,9 @@ async function saveStoryboard(){
   const arr=currentStoryItems();
   if(sbEditIdx!==null&&sbEditIdx>=0&&sbEditIdx<arr.length){
     arr[sbEditIdx].slides=cleanSlides;
-    arr[sbEditIdx].url=cleanSlides[0]?.url||'';arr[sbEditIdx].isStoryboard=true;if(arr[sbEditIdx].isUGC===undefined)arr[sbEditIdx].isUGC=false;if(arr[sbEditIdx].briefInviato===undefined)arr[sbEditIdx].briefInviato=false;if(arr[sbEditIdx].fileCaricato===undefined)arr[sbEditIdx].fileCaricato=false;
+    arr[sbEditIdx].url=cleanSlides[0]?.url||'';arr[sbEditIdx].isStoryboard=true;arr[sbEditIdx].sbFmt=sbFmt||'feed';if(arr[sbEditIdx].isUGC===undefined)arr[sbEditIdx].isUGC=false;if(arr[sbEditIdx].briefInviato===undefined)arr[sbEditIdx].briefInviato=false;if(arr[sbEditIdx].fileCaricato===undefined)arr[sbEditIdx].fileCaricato=false;
   }else{
-    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,slides:cleanSlides,isUGC:false,briefInviato:false,fileCaricato:false,id:'sb_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)});
+    arr.push({type:'image',url:cleanSlides[0]?.url||'',name:'Storyboard',date:'',note:'',isStoryboard:true,sbFmt:sbFmt||'feed',slides:cleanSlides,isUGC:false,briefInviato:false,fileCaricato:false,id:'sb_'+Date.now()+'_'+Math.random().toString(36).slice(2,7)});
   }
   setStoryItems(arr);closeModal('storyboard-modal');refreshStories();
   CLOUD.saveNow(CLOUD.snapshot()); // salva subito dopo upload slides
@@ -3111,6 +3112,168 @@ function renderPEDAnno(){
 /* ── Compat stub ── */
 function renderPEDCards(){}
 
+/* ════════════════════════════════════════════════════
+   TAB STORYBOARD — griglia brief creator
+════════════════════════════════════════════════════ */
+let sbTabClientIdx=-1, sbTabAccountIdx=-1, sbTabMonth=null;
+
+function onSbTabAccountChange(){
+  const sel=document.getElementById('sb-tab-account-sel');
+  if(!sel)return;
+  sbTabAccountIdx=sel.value===''?-1:parseInt(sel.value);
+  renderSbTabMonthPills();
+  renderSbTabGrid();
+}
+
+function renderSbTab(){
+  // Sync cliente da globale
+  if(sbTabClientIdx<0&&globalClientIdx>=0){
+    sbTabClientIdx=globalClientIdx;
+    sbTabAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;
+    sbTabMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
+  }
+  // Rebuild selettore account
+  const sel=document.getElementById('sb-tab-account-sel');
+  if(sel&&sbTabClientIdx>=0){
+    const cl=clients[sbTabClientIdx];const accs=cl?.accounts||[];
+    sel.innerHTML='';accs.forEach((a,i)=>{const o=document.createElement('option');o.value=i;o.textContent=a.name;sel.appendChild(o);});
+    sel.value=sbTabAccountIdx>=0?sbTabAccountIdx:0;
+  }
+  const titleEl=document.getElementById('sb-tab-title');
+  if(titleEl&&sbTabClientIdx>=0)titleEl.textContent=clients[sbTabClientIdx].name+' — Storyboard';
+  renderSbTabMonthPills();
+  renderSbTabGrid();
+}
+
+function renderSbTabMonthPills(){
+  const c=document.getElementById('sb-tab-month-pills');if(!c)return;c.innerHTML='';
+  if(sbTabAccountIdx<0)return;
+  MONTH_OPTIONS.forEach(m=>{
+    const p=document.createElement('button');p.className='month-pill'+(m===sbTabMonth?' active':'');
+    p.textContent=m.slice(0,3);
+    p.onclick=()=>{sbTabMonth=m;renderSbTabMonthPills();renderSbTabGrid();};
+    c.appendChild(p);
+  });
+}
+
+function renderSbTabGrid(){
+  const grid=document.getElementById('sb-tab-grid');if(!grid)return;grid.innerHTML='';
+  if(sbTabClientIdx<0||sbTabAccountIdx<0){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);font-size:13px;">Seleziona un cliente per vedere gli storyboard.</div>';return;
+  }
+  const acc=getAccount(sbTabClientIdx,sbTabAccountIdx);if(!acc)return;
+  const key=accountKey(acc.id,sbTabMonth||feedMonth||MONTH_OPTIONS[0]);
+  const items=(stories[key]||[]).filter(st=>st.isStoryboard);
+  const metaEl=document.getElementById('sb-tab-meta');
+  if(metaEl)metaEl.textContent=items.length+' storyboard';
+
+  if(!items.length){
+    const em=document.createElement('div');em.className='sb-tab-empty';
+    em.innerHTML='<div style="font-size:32px;margin-bottom:8px;">🎬</div><div style="font-size:13px;color:var(--text-2);margin-bottom:16px;">Nessuno storyboard per questo mese.</div>';
+    const btn=document.createElement('button');btn.className='btn sm primary';btn.textContent='+ Crea storyboard';
+    btn.onclick=()=>openStoryboardModal(-1);em.appendChild(btn);
+    grid.appendChild(em);return;
+  }
+
+  // Trova indice originale negli stories per edit/delete
+  const allStories=stories[key]||[];
+
+  items.forEach(sb=>{
+    const origIdx=allStories.indexOf(sb);
+    const card=document.createElement('div');card.className='sb-tab-card';
+    // Formato badge
+    const fmtLabel=sb.sbFmt==='stories'?'9:16':sb.sbFmt==='square'?'1:1':'4:5';
+    const fmtDest=sb.sbFmt==='stories'?'Stories':'Feed';
+    // Cover (prima slide con url)
+    const coverSl=(sb.slides||[]).find(s=>s.url&&s.url.startsWith('http'));
+    const coverUrl=coverSl?.url||'';
+    // Card header: anteprima
+    const prev=document.createElement('div');prev.className='sb-tab-prev';
+    prev.style.aspectRatio=sb.sbFmt==='stories'?'9/16':sb.sbFmt==='square'?'1/1':'4/5';
+    if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';prev.appendChild(img);}
+    else{
+      // Placeholder con numero slide
+      prev.style.background='var(--cell-bg)';
+      prev.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"var(--text-3)\" stroke-width=\"1.5\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M8 21h8M12 17v4\"/></svg><div style=\"font-size:10px;color:var(--text-3);\">'+(sb.slides?.length||0)+' slide</div></div>';
+    }
+    // Badge formato
+    const fmtBadge=document.createElement('div');fmtBadge.className='sb-tab-fmt-badge';fmtBadge.textContent=fmtLabel;
+    prev.appendChild(fmtBadge);
+    // Badge slide count
+    if(sb.slides?.length>1){const sc=document.createElement('div');sc.className='cc-counter';sc.style.cssText='position:absolute;top:6px;right:6px;';sc.textContent=(sb.slides?.length||0)+' slide';prev.appendChild(sc);}
+    card.appendChild(prev);
+    // Info row
+    const info=document.createElement('div');info.className='sb-tab-info';
+    const name=document.createElement('div');name.className='sb-tab-name';name.textContent=sb.name||'Storyboard';
+    const meta=document.createElement('div');meta.className='sb-tab-meta-row';
+    const dateStr=sb.date?fmtDate(sb.date):'—';
+    meta.textContent=dateStr+(sb.briefInviato?' · Brief inviato':'');
+    info.appendChild(name);info.appendChild(meta);
+    // Azioni
+    const actions=document.createElement('div');actions.className='sb-tab-actions';
+    // Modifica
+    const editBtn=document.createElement('button');editBtn.className='btn sm';editBtn.textContent='✎ Modifica';
+    editBtn.onclick=()=>openStoryboardModal(origIdx);
+    // Passa a Feed/Stories
+    const moveBtn=document.createElement('button');moveBtn.className='btn sm primary';
+    moveBtn.innerHTML=(sb.sbFmt==='stories'?'→ Stories':'→ Feed');
+    moveBtn.title='Carica il file finale e sposta in '+(sb.sbFmt==='stories'?'Stories':'Feed');
+    moveBtn.onclick=()=>sbTabMoveToFeed(sb,origIdx,key);
+    // Brief
+    const briefBtn=document.createElement('button');briefBtn.className='btn sm'+(sb.briefInviato?' active':'');
+    briefBtn.textContent=sb.briefInviato?'✓ Brief inviato':'→ Invia brief';
+    briefBtn.onclick=()=>{if(sb.briefInviato){showToast('Brief già inviato');return;}openBriefModal(sb);};
+    actions.appendChild(editBtn);
+    if(!sb.fileCaricato)actions.appendChild(moveBtn);
+    else{const doneLbl=document.createElement('span');doneLbl.style.cssText='font-size:11px;color:var(--green);';doneLbl.textContent='✓ File caricato';actions.appendChild(doneLbl);}
+    actions.appendChild(briefBtn);
+    info.appendChild(actions);
+    card.appendChild(info);
+    // Click card apre lightbox slide
+    prev.style.cursor='pointer';prev.onclick=()=>{
+      const slideItems=(sb.slides||[]).filter(s=>s.url&&s.url.startsWith('http')).map((sl,i)=>({type:'image',url:sl.url,name:sl.title||'Slide '+(i+1)}));
+      if(slideItems.length)openLb(0,slideItems,[],{aspectRatio:sb.sbFmt==='stories'?'9/16':sb.sbFmt==='square'?'1/1':'4/5'});
+      else showToast('Nessuna immagine caricata su Dropbox. Clicca Modifica e poi Salva.','warn');
+    };
+    grid.appendChild(card);
+  });
+}
+
+function sbTabMoveToFeed(sb,origIdx,key){
+  // Apre file picker → carica il file finito → lo sposta in Feed o Stories
+  const inp=document.createElement('input');inp.type='file';
+  const isStory=sb.sbFmt==='stories';
+  inp.accept=isStory?'image/*,video/*':'image/*,video/*';
+  inp.onchange=async()=>{
+    const file=inp.files[0];if(!file)return;
+    showToast('⟳ Caricamento file su Dropbox…');
+    const destPath='/nassa/'+CLOUD.user+'/'+(isStory?'stories':'feed')+'/'+Date.now()+'_'+file.name;
+    const url=await DROPBOX.upload(file,destPath);
+    const finalUrl=url||URL.createObjectURL(file);
+    const type=file.type.startsWith('video/')?'video':'image';
+    const acc=getAccount(sbTabClientIdx,sbTabAccountIdx);if(!acc)return;
+    if(isStory){
+      // Aggiunge in Stories
+      const arr=stories[key]||[];
+      arr.unshift({type,url:finalUrl,externalUrl:url||'',isExternalLink:!!url,linkSource:'dropbox',name:sb.name||file.name,date:'',note:'',isStoryboard:false,slides:[]});
+      stories[key]=arr;
+    } else {
+      // Aggiunge in Feed
+      const fkey=accountKey(acc.id,sbTabMonth||feedMonth||MONTH_OPTIONS[0]);
+      const arr=feeds[fkey]||[];
+      arr.unshift({type,url:finalUrl,externalUrl:url||'',isExternalLink:!!url,linkSource:'dropbox',name:sb.name||file.name,date:'',showDate:false,copy:'',linkedStories:[],slides:[]});
+      feeds[fkey]=arr;
+    }
+    // Marca come caricato nello storyboard originale
+    const allSt=stories[key]||[];
+    if(allSt[origIdx])allSt[origIdx].fileCaricato=true;
+    autoSave();renderSbTabGrid();
+    showToast('✓ File caricato in '+(isStory?'Stories':'Feed'));
+  };
+  inp.click();
+}
+
+
 
 /* PIANO TESTO */
 function renderNotesMonthPills(){
@@ -3663,6 +3826,7 @@ function setGlobalClient(val){
   const defaultAccIdx=cl.accounts?.length>=1?0:-1;
   feedClientIdx=globalClientIdx;feedAccountIdx=defaultAccIdx;if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];
   storiesClientIdx=globalClientIdx;storiesAccountIdx=defaultAccIdx;if(!storiesMonth)storiesMonth=feedMonth;
+  sbTabClientIdx=globalClientIdx;sbTabAccountIdx=defaultAccIdx;if(!sbTabMonth)sbTabMonth=feedMonth;
   notesClientIdx=globalClientIdx;if(!notesMonth)notesMonth=feedMonth;
   updateGlobalClientUI();
   if(currentTab==='feed'){rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
