@@ -4357,10 +4357,9 @@ function updateGlobalClientUI(){
 }
 
 function renderAccSwitcher(){
-  const sw=document.getElementById('acc-switcher');const btns=document.getElementById('acc-btns');if(!sw||!btns)return;
-  const cl=globalClientIdx>=0?clients[globalClientIdx]:null;const accs=cl?.accounts||[];
-  if(accs.length<2){sw.style.display='none';return;}sw.style.display='flex';btns.innerHTML='';
-  accs.forEach((acc,ai)=>{const btn=document.createElement('button');btn.className='acc-btn'+(ai===feedAccountIdx?' active':'');btn.innerHTML='<span class="acc-dot"></span>'+acc.name;btn.title=acc.platform;btn.onclick=()=>switchAccount(ai);btns.appendChild(btn);});
+  // Account switching is handled by the format badge dropdown — hide the subtopbar buttons
+  const sw=document.getElementById('acc-switcher');
+  if(sw) sw.style.display='none';
 }
 
 function switchAccount(accountIdx){
