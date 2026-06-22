@@ -1682,24 +1682,50 @@ function openCarouselModal(idx){carouselEditIdx=idx;const item=currentFeedItems(
 async function saveCarousel(){
   if(!carouselTmp.length){showToast('Aggiungi almeno una slide','warn');return;}
   showToast('⟳ Caricamento slide su Dropbox…');
-  // Upload any blob URLs to Dropbox
+
+  // Capture feed key NOW — same fix as queueFeedFiles
+  const uploadFeedKey = currentFeedKey();
+
   for(let i=0;i<carouselTmp.length;i++){
     const s=carouselTmp[i];
+    console.log('[Carousel] Slide '+i+': url='+s.url?.slice(0,60)+' externalUrl='+s.externalUrl?.slice(0,60));
     if(s.url&&s.url.startsWith('blob:')){
       try{
-        const resp=await fetch(s.url);const blob=await resp.blob();
-        const file=new File([blob],s.name||('slide_'+i+'.jpg'),{type:blob.type});
+        console.log('[Carousel] Uploading slide '+i+' (blob)…');
+        const resp=await fetch(s.url);
+        if(!resp.ok) throw new Error('blob fetch failed: '+resp.status);
+        const blob=await resp.blob();
+        console.log('[Carousel] blob size: '+blob.size+' type: '+blob.type);
+        const ext = blob.type.includes('png')?'.png':blob.type.includes('gif')?'.gif':'.jpg';
+        const file=new File([blob],s.name||('slide_'+i+ext),{type:blob.type});
         const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/carousel/'+file.name;
         const url=await DROPBOX.upload(file,destPath);
+        console.log('[Carousel] slide '+i+' upload result:', url?'✅ '+url.slice(0,60):'❌ null');
         if(url){carouselTmp[i].url=url;carouselTmp[i].externalUrl=url;}
-      }catch(e){console.warn('Carousel slide upload failed',e);}
+        else { showToast('⚠ Slide '+(i+1)+' non caricata','warn'); }
+      }catch(e){
+        console.error('[Carousel] slide '+i+' upload exception:', e.message);
+        showToast('⚠ Errore slide '+(i+1)+': '+e.message,'warn');
+      }
+    } else {
+      console.log('[Carousel] Slide '+i+' already has external URL, skipping upload');
     }
   }
-  const items=currentFeedItems();
-  items[carouselEditIdx].slides=carouselTmp.map(s=>({...s}));
-  items[carouselEditIdx].url=carouselTmp[0].url||'';
-  setFeedItems(items);closeModal('carousel-modal');refreshFeed();
-  CLOUD.saveNow(CLOUD.snapshot()); // salva subito dopo upload slide
+
+  // Verify all slides have URLs before saving
+  const missing = carouselTmp.filter(s=>!s.url&&!s.externalUrl).length;
+  if(missing>0) console.warn('[Carousel] ⚠ '+missing+' slide(s) senza URL dopo upload');
+
+  const items = uploadFeedKey ? (feeds[uploadFeedKey]||[]) : currentFeedItems();
+  if(carouselEditIdx>=0 && carouselEditIdx<items.length){
+    items[carouselEditIdx].slides=carouselTmp.map(s=>({...s}));
+    items[carouselEditIdx].url=carouselTmp[0].url||carouselTmp[0].externalUrl||'';
+    items[carouselEditIdx].externalUrl=carouselTmp[0].url||carouselTmp[0].externalUrl||'';
+    if(uploadFeedKey) feeds[uploadFeedKey]=items;
+  }
+  closeModal('carousel-modal');
+  if(currentFeedKey()===uploadFeedKey) refreshFeed(true);
+  CLOUD.saveNow(CLOUD.snapshot());
   showToast('✓ Carosello salvato');
 }
 function addCarouselFiles(files){Array.from(files).forEach(f=>{if(f.type.startsWith('image'))carouselTmp.push({url:URL.createObjectURL(f),name:f.name});});renderCThumbs();}
