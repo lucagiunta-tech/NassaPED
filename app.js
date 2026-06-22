@@ -769,14 +769,14 @@ function rebuildStudioAccountSelect(){const sel=document.getElementById('na-clie
 /* FEED SELECTORS */
 function onFeedClientChange(){const v=document.getElementById('feed-client-sel').value;feedClientIdx=v===''?-1:parseInt(v);feedAccountIdx=-1;populateAccountSelect('feed-account-sel',feedClientIdx,-1);if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
 function onFeedAccountChange(){const v=document.getElementById('feed-account-sel').value;feedAccountIdx=v===''?-1:parseInt(v);if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
-function renderFeedMonthPills(){const c=document.getElementById('feed-month-pills')||document.querySelector('.feed-month-pills-inline');if(!c)return;c.innerHTML='';if(feedAccountIdx<0)return;let pillYear=CUR_YEAR;if(feedMonth){const y=parseInt(feedMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';
-  prev.setAttribute('aria-label','Mese precedente');prev.onclick=()=>{pillYear--;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';
+function renderFeedMonthPills(){const c=document.getElementById('feed-month-pills')||document.querySelector('.feed-month-pills-inline');if(!c)return;c.innerHTML='';if(feedAccountIdx<0)return;let pillYear=CUR_YEAR;if(feedMonth){const y=parseInt(feedMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');prev.setAttribute('aria-label','Anno precedente');
+  prev.setAttribute('aria-label','Mese precedente');prev.onclick=()=>{pillYear--;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');next.setAttribute('aria-label','Anno successivo');
   next.setAttribute('aria-label','Mese successivo');next.onclick=()=>{pillYear++;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===feedMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{feedMonth=m;renderFeedMonthPills();renderFeedGrid();updateFeedHeader();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
 
 /* STORIES SELECTORS */
 function onStoriesClientChange(){const v=document.getElementById('stories-client-sel').value;storiesClientIdx=v===''?-1:parseInt(v);storiesAccountIdx=-1;populateAccountSelect('stories-account-sel',storiesClientIdx,-1);if(!storiesMonth)storiesMonth=MONTH_OPTIONS[new Date().getMonth()];renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
 function onStoriesAccountChange(){const v=document.getElementById('stories-account-sel').value;storiesAccountIdx=v===''?-1:parseInt(v);if(!storiesMonth)storiesMonth=MONTH_OPTIONS[new Date().getMonth()];renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
-function renderStoriesMonthPills(){const c=document.getElementById('stories-month-pills');if(!c)return;c.innerHTML='';if(storiesAccountIdx<0)return;let pillYear=CUR_YEAR;if(storiesMonth){const y=parseInt(storiesMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.onclick=()=>{pillYear--;renderStoriesMonthPillsForYear(pillYear);};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.onclick=()=>{pillYear++;renderStoriesMonthPillsForYear(pillYear);};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===storiesMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{storiesMonth=m;renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
+function renderStoriesMonthPills(){const c=document.getElementById('stories-month-pills');if(!c)return;c.innerHTML='';if(storiesAccountIdx<0)return;let pillYear=CUR_YEAR;if(storiesMonth){const y=parseInt(storiesMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');prev.setAttribute('aria-label','Anno precedente');prev.onclick=()=>{pillYear--;renderStoriesMonthPillsForYear(pillYear);};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');next.setAttribute('aria-label','Anno successivo');next.onclick=()=>{pillYear++;renderStoriesMonthPillsForYear(pillYear);};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===storiesMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{storiesMonth=m;renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
 function renderStoriesMonthPillsForYear(year){if(storiesMonth){const oldMonth=storiesMonth.split(' ')[0];storiesMonth=oldMonth+' '+year;}renderStoriesMonthPills();}
 
 /* PREVIEW SELECTORS */
@@ -835,14 +835,14 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
   const btnPrev = document.createElement('button');
   btnPrev.className = 'cc-arrow cc-prev';
   btnPrev.setAttribute('aria-label','Slide precedente');
-  btnPrev.innerHTML = '‹';
+  btnPrev.innerHTML = '‹'; btnPrev.setAttribute('aria-label','Slide precedente');
       btnPrev.setAttribute('aria-label', 'Slide precedente');
   btnPrev.onclick = e => { e.stopPropagation(); goTo(state.cur - 1); };
 
   const btnNext = document.createElement('button');
   btnNext.className = 'cc-arrow cc-next';
   btnNext.setAttribute('aria-label','Slide successiva');
-  btnNext.innerHTML = '›';
+  btnNext.innerHTML = '›'; btnNext.setAttribute('aria-label','Slide successiva');
       btnNext.setAttribute('aria-label', 'Slide successiva');
   btnNext.onclick = e => { e.stopPropagation(); goTo(state.cur + 1); };
 
@@ -969,7 +969,7 @@ function renderFeedGrid(){
               +'<div style="font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font);text-align:center;line-height:1.4;">Media non<br>disponibile</div>';
             const delBtn=document.createElement('button');
             delBtn.style.cssText='position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(220,50,50,.85);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:20;';
-            delBtn.innerHTML='✕';delBtn.title='Rimuovi carosello';
+            delBtn.innerHTML='✕';delBtn.title='Rimuovi carosello';delBtn.setAttribute('aria-label','Rimuovi carosello');
             delBtn.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};
             cell.appendChild(ph);cell.appendChild(delBtn);
           } else {
@@ -2421,12 +2421,12 @@ function renderPreview(){
       // Frecce navigazione
       const btnPrev = document.createElement('button');
       btnPrev.className = 'sb-player-nav sb-player-prev';
-      btnPrev.innerHTML = '‹';
+      btnPrev.innerHTML = '‹'; btnPrev.setAttribute('aria-label','Slide precedente');
       btnPrev.onclick = (e)=>{ e.stopPropagation(); sbGoTo(state.cur-1); };
 
       const btnNext = document.createElement('button');
       btnNext.className = 'sb-player-nav sb-player-next';
-      btnNext.innerHTML = '›';
+      btnNext.innerHTML = '›'; btnNext.setAttribute('aria-label','Slide successiva');
       btnNext.onclick = (e)=>{ e.stopPropagation(); sbGoTo(state.cur+1); };
 
       // Bottone autoplay
@@ -2599,8 +2599,8 @@ function renderLb(){
   const x=document.createElement('button');x.className='lb-close';x.innerHTML='×';x.setAttribute('aria-label','Chiudi lightbox');x.onclick=()=>document.getElementById('lightbox').classList.remove('open');inner.appendChild(x);
   // Frecce navigazione DENTRO inner (funzionano su tutti i viewport)
   if(showPostNav){
-    const np=document.createElement('button');np.className='lb-slide-nav lb-slide-prev';np.innerHTML='‹';np.setAttribute('aria-label','Precedente');np.onclick=e=>{e.stopPropagation();lbNav(-1);};inner.appendChild(np);
-    const nn=document.createElement('button');nn.className='lb-slide-nav lb-slide-next';nn.innerHTML='›';nn.setAttribute('aria-label','Successivo');nn.onclick=e=>{e.stopPropagation();lbNav(1);};inner.appendChild(nn);
+    const np=document.createElement('button');np.className='lb-slide-nav lb-slide-prev';np.innerHTML='‹';np.setAttribute('aria-label','Post precedente');np.onclick=e=>{e.stopPropagation();lbNav(-1);};inner.appendChild(np);
+    const nn=document.createElement('button');nn.className='lb-slide-nav lb-slide-next';nn.innerHTML='›';nn.setAttribute('aria-label','Post successivo');nn.onclick=e=>{e.stopPropagation();lbNav(1);};inner.appendChild(nn);
     // Counter post
     const pc=document.createElement('div');pc.className='cc-counter';pc.style.cssText='position:absolute;bottom:8px;right:8px;';pc.textContent=(lbIdx+1)+' / '+lbItems.length;inner.appendChild(pc);
   }
@@ -2611,8 +2611,8 @@ function renderLb(){
     if(item.slides.length>1){
       // Frecce dentro lb-inner — position:absolute rispetto al container immagine
       inner.querySelectorAll('.lb-slide-nav').forEach(el=>el.remove());
-      const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};inner.appendChild(sp);
-      const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
+      const sp=document.createElement('button');sp.className='lb-slide-nav lb-slide-prev';sp.innerHTML='‹';sp.setAttribute('aria-label','Slide precedente');sp.onclick=e=>{e.stopPropagation();lbSlideNav(-1);};inner.appendChild(sp);
+      const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.setAttribute('aria-label','Slide successiva');sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
     }
   } else if(item.type==='video'){
     const videoUrl=item.url||item.externalUrl||'';
@@ -3440,10 +3440,10 @@ function renderNotesMonthPills(){
   if(notesMonth){const y=parseInt(notesMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}
   // Year nav
   const ynav=document.createElement('div');ynav.className='year-nav';
-  const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';
+  const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');prev.setAttribute('aria-label','Anno precedente');
   prev.onclick=()=>{pillYear--;renderNotesMonthPillsForYear(pillYear);};
   const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;
-  const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';
+  const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');next.setAttribute('aria-label','Anno successivo');
   next.onclick=()=>{pillYear++;renderNotesMonthPillsForYear(pillYear);};
   ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);
   container.appendChild(ynav);
@@ -3755,9 +3755,9 @@ function renderDatePickerContent(idx,popup){
     popup.appendChild(mhdr);
   }
   const hdr=document.createElement('div');hdr.className='dp-header';
-  const prev=document.createElement('button');prev.className='dp-nav';prev.textContent='‹';prev.onclick=e=>{e.stopPropagation();dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}renderDatePickerContent(idx,popup);};
+  const prev=document.createElement('button');prev.className='dp-nav';prev.textContent='‹';prev.setAttribute('aria-label','Mese precedente');prev.onclick=e=>{e.stopPropagation();dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}renderDatePickerContent(idx,popup);};
   const lbl=document.createElement('div');lbl.className='dp-header-label';lbl.textContent=MONTHS[dpMonth]+' '+dpYear;
-  const next=document.createElement('button');next.className='dp-nav';next.textContent='›';next.onclick=e=>{e.stopPropagation();dpMonth++;if(dpMonth>11){dpMonth=0;dpYear++;}renderDatePickerContent(idx,popup);};
+  const next=document.createElement('button');next.className='dp-nav';next.textContent='›';next.setAttribute('aria-label','Mese successivo');next.onclick=e=>{e.stopPropagation();dpMonth++;if(dpMonth>11){dpMonth=0;dpYear++;}renderDatePickerContent(idx,popup);};
   hdr.appendChild(prev);hdr.appendChild(lbl);hdr.appendChild(next);popup.appendChild(hdr);
   const wds=document.createElement('div');wds.className='dp-weekdays';WEEKDAYS.forEach(d=>{const wd=document.createElement('div');wd.className='dp-wd';wd.textContent=d;wds.appendChild(wd);});popup.appendChild(wds);
   const grid=document.createElement('div');grid.className='dp-days';
@@ -4306,7 +4306,7 @@ function renderPilastriContent(body,ci){
     nameInp.oninput=e=>{pils[pi].name=e.target.value;autoSave();};
     const colorSel=document.createElement('div');colorSel.className='p-color-sel';
     PILASTRI_COLORS.forEach(col=>{const dot=document.createElement('div');dot.className='p-color-opt'+(col===p.color?' active':'');dot.style.background=col;dot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');dot.onclick=()=>{pils[pi].color=col;card.style.borderTopColor=col;colorDot.style.background=col;colorDot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');colorSel.querySelectorAll('.p-color-opt').forEach(d=>d.classList.remove('active'));dot.classList.add('active');autoSave();};colorSel.appendChild(dot);});
-    const delBtn=document.createElement('button');delBtn.className='p-del-btn';delBtn.textContent='✕';delBtn.title='Elimina pilastro';
+    const delBtn=document.createElement('button');delBtn.className='p-del-btn';delBtn.setAttribute('aria-label','Elimina pilastro');delBtn.textContent='✕';delBtn.title='Elimina pilastro';
     delBtn.onclick=()=>{showConfirm({
     title:'Elimina pilastro',
     body:`Eliminare il pilastro <strong>${esc(p.name)}</strong>? I post associati non saranno eliminati.`,
@@ -4435,12 +4435,12 @@ function renderAdsMonthPills(){
   ynav.className='year-nav';
   ynav.style.marginBottom='0';
   const prev=document.createElement('button');
-  prev.className='year-nav-btn';prev.textContent='‹';
+  prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');
   prev.onclick=()=>{adsGanttYear--;renderAdsMonthPills();renderAdsGantt();};
   const lbl=document.createElement('span');
   lbl.className='year-label';lbl.textContent=adsGanttYear;
   const next=document.createElement('button');
-  next.className='year-nav-btn';next.textContent='›';
+  next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');
   next.onclick=()=>{adsGanttYear++;renderAdsMonthPills();renderAdsGantt();};
   ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);
   c.appendChild(ynav);
