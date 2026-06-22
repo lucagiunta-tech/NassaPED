@@ -1390,8 +1390,8 @@ function renderFeedGrid(){
   let items=currentFeedItems();
   if(feedAccountIdx<0){const em=document.createElement('div');em.className='feed-empty';em.innerHTML='<span class="fe-icon">👆</span><p>Seleziona <strong>cliente</strong> → <strong>account</strong> → <strong>mese</strong><br>per costruire il feed.</p>';grid.appendChild(em);return;}
 
-  // All months mode — render directly into main grid with month separator divs
-  if(feedAllMonthsMode){
+  // All months mode — render directly into main grid
+  if(feedAllMonthsMode > 0){
     const groups = getAllMonthsItems();
     if(!groups.length){
       const em=document.createElement('div');em.className='feed-empty';
@@ -1399,12 +1399,14 @@ function renderFeedGrid(){
       grid.appendChild(em);return;
     }
     groups.forEach(({month, items})=>{
-      // Month separator — spans full grid width
-      const sep=document.createElement('div');
-      sep.className='feed-month-sep';
-      sep.innerHTML=`<span class="feed-month-sep-label">${month}</span><span class="feed-month-sep-count">${items.length} post</span>
-        <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=false;document.getElementById('feed-all-months-btn').classList.remove('active');renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
-      grid.appendChild(sep);
+      // Mode 1: separatori per mese | Mode 2: flusso continuo senza separatori
+      if(feedAllMonthsMode === 1){
+        const sep=document.createElement('div');
+        sep.className='feed-month-sep';
+        sep.innerHTML=`<span class="feed-month-sep-label">${month}</span><span class="feed-month-sep-count">${items.length} post</span>
+          <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=0;const b=document.getElementById('feed-all-months-btn');if(b){b.classList.remove('active');const l=b.querySelector('.all-months-lbl');if(l)l.textContent='Tutti';}renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
+        grid.appendChild(sep);
+      }
       // Render items for this month (read-only view — no add slot)
       const monthKey = accountId(feedClientIdx,feedAccountIdx)+'|||'+month;
       const allMonthItems = feeds[monthKey]||[];
@@ -1907,7 +1909,7 @@ let feedBacklogMode = false;
 
 function toggleBacklogFilter(){
   feedBacklogMode = !feedBacklogMode;
-  if(feedBacklogMode) feedAllMonthsMode = false; // mutually exclusive
+  if(feedBacklogMode) feedAllMonthsMode = 0; // mutually exclusive
   const btn = document.getElementById('feed-backlog-btn');
   if(btn) btn.classList.toggle('active', feedBacklogMode);
   const allBtn = document.getElementById('feed-all-months-btn');
@@ -1916,13 +1918,19 @@ function toggleBacklogFilter(){
 }
 
 /* ── ALL MONTHS MODE ── */
-let feedAllMonthsMode = false;
+// 0 = off | 1 = per mese con separatori | 2 = flusso continuo senza separatori
+let feedAllMonthsMode = 0;
 
 function toggleAllMonthsMode(){
-  feedAllMonthsMode = !feedAllMonthsMode;
-  if(feedAllMonthsMode) feedBacklogMode = false; // mutually exclusive
+  feedAllMonthsMode = (feedAllMonthsMode + 1) % 3;
+  if(feedAllMonthsMode > 0) feedBacklogMode = false;
   const btn = document.getElementById('feed-all-months-btn');
-  if(btn) btn.classList.toggle('active', feedAllMonthsMode);
+  if(btn){
+    btn.classList.toggle('active', feedAllMonthsMode > 0);
+    // Update label based on mode
+    const lbl = btn.querySelector('.all-months-lbl');
+    if(lbl) lbl.textContent = feedAllMonthsMode === 2 ? 'Flusso' : 'Tutti';
+  }
   const backlogBtn = document.getElementById('feed-backlog-btn');
   if(backlogBtn) backlogBtn.classList.remove('active');
   refreshFeed(true);
