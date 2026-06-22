@@ -1,0 +1,12 @@
+# NassaPED — applicazione interna Nassa Studio
+# Non indicizzare: dati sensibili dei clienti
+User-agent: *
+Disallow: /
+
+# Blocca specificamente i principali bot AI
+User-agent: GPTBot
+Disallow: /
+User-agent: Claude-Web
+Disallow: /
+User-agent: CCBot
+Disallow: /
