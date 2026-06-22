@@ -2230,7 +2230,9 @@ tbody tr:hover .tr-actions{opacity:1;}
   .anno-grid, .anno-table, .ads-gantt-wrap { overflow-x: auto; }
   /* Anno: wrapper scrollabile orizzontalmente */
   .anno-page { overflow-x: auto; }
+  .anno-page { overflow-x: auto; }
   .anno-col-headers { min-width: 560px; }
+  .anno-bands { overflow-x: auto; }
   .anno-band-row { min-width: 560px; }
   /* Ads: tabella con min-width */
   .ads-page { overflow-x: auto; }
