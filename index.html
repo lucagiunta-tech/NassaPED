@@ -46,6 +46,7 @@
     <div class="sub-tab" id="sub-tab-pilastri" onclick="switchTab('pilastri')">Pilastri</div>
     <div class="sub-tab" id="sub-tab-feed"    onclick="switchTab('feed')">Feed</div>
     <div class="sub-tab" id="sub-tab-stories" onclick="switchTab('stories')">Stories</div>
+    <div class="sub-tab" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
     <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">UGC</div>
     <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
     <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
@@ -100,6 +101,10 @@
       <div class="sb-nav-item" id="si-stories" onclick="switchTab('stories')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
         <span class="sb-nav-label">Stories</span>
+      </div>
+      <div class="sb-nav-item" id="si-storyboard" onclick="switchTab('storyboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <span class="sb-nav-label">Storyboard</span>
       </div>
       <div class="sb-nav-item" id="si-ped" onclick="switchTab('ped')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -409,14 +414,7 @@
             <button onclick="addStoryLink()">+</button>
           </div>
         </div>
-        <!-- Storyboard -->
-        <div class="feed-ctx-section">
-          <div class="ctx-sec-lbl">Storyboard</div>
-          <button class="btn sm" onclick="openStoryboardModal(-1)" style="white-space:nowrap;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            + Storyboard
-          </button>
-        </div>
+
         <!-- Stats -->
         <div class="feed-ctx-section">
           <div class="ctx-sec-lbl">Riepilogo</div>
@@ -532,6 +530,33 @@
     <!-- Tab Anno -->
     <div class="ped-tab-panel" id="ped-panel-anno">
       <div class="ped-anno-grid" id="ped-anno-grid"></div>
+    </div>
+  </div>
+
+  <!-- STORYBOARD TAB -->
+  <div class="tab-page" id="page-storyboard">
+    <!-- Topbar -->
+    <div class="content-bar">
+      <span class="content-title" id="sb-tab-title">Storyboard</span>
+      <span class="content-tag">Brief creator</span>
+      <div class="content-space"></div>
+      <span class="content-meta" id="sb-tab-meta"></span>
+    </div>
+    <!-- Context bar -->
+    <div class="feed-ctx-bar">
+      <div class="feed-ctx-row1">
+        <select id="sb-tab-account-sel" class="ctx-select" onchange="onSbTabAccountChange()"></select>
+        <div class="ctx-divider"></div>
+        <div id="sb-tab-month-pills" class="feed-month-pills-inline"></div>
+        <button class="btn sm primary" onclick="openStoryboardModal(-1)" style="margin-left:auto;white-space:nowrap;gap:5px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          + Nuovo storyboard
+        </button>
+      </div>
+    </div>
+    <!-- Griglia storyboard -->
+    <div class="content-area" style="overflow-y:auto;flex:1;">
+      <div id="sb-tab-grid" class="sb-tab-grid"></div>
     </div>
   </div>
 
