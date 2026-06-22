@@ -5849,6 +5849,7 @@ function apprModalSetStato(stato){
 function apprModalApprova(){
   if(apprModalIdx===null) return;
   apprModalSalva(true);
+  refreshFeed();
   apprModalSetStato('approvato');
   apprModalItems[apprModalIdx].apprStato = 'approvato';
   closeApprModal();
@@ -5864,7 +5865,9 @@ function apprModalSalva(skipClose){
   // Se c'è una nota nuova → notifica
   if(note && note !== oldNote) markNoteUnread(apprModalIdx, false);
   autoSave();
-  if(!skipClose){ closeApprModal(); renderPreview(); }
+  // Refresh both feed grid (updates status badge) and preview
+  refreshFeed();
+  if(!skipClose){ closeApprModal(); if(currentTab==='preview') renderPreview(); }
 }
 
 /** Inietta l'overlay approvazione su ogni client-post nella griglia */

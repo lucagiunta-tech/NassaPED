@@ -360,17 +360,66 @@ function cvRenderPreview() {
 
     post.appendChild(cell);
 
-    // Revision button (only for non-approved items)
-    if(apprSt !== 'approvato') {
+    // Action row: Approva + Invia in revisione (only for non-published items)
+    if(apprSt !== 'approvato' && apprSt !== 'pubblicato') {
       const revRow = document.createElement('div');
       revRow.style.cssText = 'display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--border-lt);';
+
+      // Approva button
+      const apprBtn = document.createElement('button');
+      apprBtn.className = 'cv-btn primary';
+      apprBtn.style.cssText = 'font-size:11px;padding:4px 10px;flex:1;justify-content:center;background:var(--green);border-color:var(--green);color:#111;font-weight:700;';
+      apprBtn.textContent = '✓ Approva';
+      apprBtn.onclick = async (e) => {
+        e.stopPropagation();
+        items[i].apprStato = 'approvato';
+        items[i].apprNote = items[i].apprNote || '';
+        // Save back to cloud
+        const k = accountKey(acc.id, cvMonth !== 'tutti' ? cvMonth : '');
+        if(cvData.feeds[k]) {
+          cvData.feeds[k] = cvData.feeds[k].map(it => items.find(vi=>vi===it) || it);
+        }
+        try {
+          await fetch('/api/project', {
+            method:'POST',
+            headers:{'Content-Type':'application/json','x-nassa-key':'NASSA_SECRET_2026'},
+            body: JSON.stringify({ user:'shared', data: cvData })
+          });
+          cvShowToast('✓ Contenuto approvato');
+          cvRenderPreview();
+        } catch(err) { cvShowToast('Errore — riprova'); }
+      };
+
+      // Invia in revisione button
       const revBtn = document.createElement('button');
       revBtn.className = 'cv-btn danger';
       revBtn.style.cssText = 'font-size:11px;padding:4px 10px;flex:1;justify-content:center;';
-      revBtn.textContent = '✏ Invia in revisione';
+      revBtn.textContent = '✏ Revisione';
       revBtn.onclick = (e) => { e.stopPropagation(); cvOpenRevisionModal(i, items, acc.id, cvMonth); };
+
+      revRow.appendChild(apprBtn);
       revRow.appendChild(revBtn);
       post.appendChild(revRow);
+    } else if(apprSt === 'approvato') {
+      // Show approved confirmation + option to un-approve
+      const approvedRow = document.createElement('div');
+      approvedRow.style.cssText = 'display:flex;gap:6px;padding:8px 10px;border-top:1px solid rgba(26,122,74,0.2);background:rgba(26,122,74,0.06);align-items:center;';
+      approvedRow.innerHTML = '<span style="font-size:11px;font-weight:700;color:#0f5230;flex:1;">✓ Approvato da te</span>';
+      const undoBtn = document.createElement('button');
+      undoBtn.style.cssText = 'font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:var(--rs);background:none;color:var(--text-3);cursor:pointer;font-family:var(--font);';
+      undoBtn.textContent = 'Annulla';
+      undoBtn.onclick = async (e) => {
+        e.stopPropagation();
+        items[i].apprStato = 'approvare';
+        const k = accountKey(acc.id, cvMonth !== 'tutti' ? cvMonth : '');
+        if(cvData.feeds[k]) cvData.feeds[k] = cvData.feeds[k].map(it => items.find(vi=>vi===it) || it);
+        try {
+          await fetch('/api/project', {method:'POST',headers:{'Content-Type':'application/json','x-nassa-key':'NASSA_SECRET_2026'},body:JSON.stringify({user:'shared',data:cvData})});
+          cvRenderPreview();
+        } catch(err) {}
+      };
+      approvedRow.appendChild(undoBtn);
+      post.appendChild(approvedRow);
     }
 
     if(item.copy?.trim()) {
@@ -484,18 +533,20 @@ function cvRenderAds() {
   const totalSpent  = camps.reduce((s,c)=>s+(c.spent||0),0);
   const avgRoas     = active.length ? (active.reduce((s,c)=>s+(c.roas||0),0)/active.length).toFixed(1) : 0;
   const totalImp    = camps.reduce((s,c)=>s+(c.impressions||0),0);
-  const avgCpc      = active.length ? (active.filter(c=>c.cpc).reduce((s,c)=>s+(c.cpc||0),0)/(active.filter(c=>c.cpc).length||1)).toFixed(2) : 0;
+  const cpcArr      = active.filter(c=>c.cpc);
+  const avgCpc      = cpcArr.length ? (cpcArr.reduce((s,c)=>s+(c.cpc||0),0)/cpcArr.length).toFixed(2) : 0;
 
   const PLATFORM_COLORS = {
-    instagram:{bg:'#f0e6ff',text:'#6b21a8',dot:'#a855f7'},
-    facebook: {bg:'#dbeafe',text:'#1e3a8a',dot:'#3b82f6'},
-    tiktok:   {bg:'#ffe4f0',text:'#9d174d',dot:'#ec4899'},
-    google:   {bg:'#fef9c3',text:'#713f12',dot:'#eab308'},
-    youtube:  {bg:'#fee2e2',text:'#7f1d1d',dot:'#ef4444'},
-    linkedin: {bg:'#dbeafe',text:'#1e4080',dot:'#0077b5'},
-    altro:    {bg:'#f3f4f6',text:'#4b5563',dot:'#9ca3af'},
+    instagram:{dot:'#a855f7',bar:'#a855f7'},
+    facebook: {dot:'#3b82f6',bar:'#3b82f6'},
+    meta:     {dot:'#6366f1',bar:'#6366f1'},
+    tiktok:   {dot:'#ec4899',bar:'#ec4899'},
+    google:   {dot:'#eab308',bar:'#eab308'},
+    youtube:  {dot:'#ef4444',bar:'#ef4444'},
+    linkedin: {dot:'#0077b5',bar:'#0077b5'},
+    altro:    {dot:'#9ca3af',bar:'#9ca3af'},
   };
-  const getPlatformStyle = p => PLATFORM_COLORS[(p||'').toLowerCase()] || PLATFORM_COLORS.altro;
+  const getPColor = p => PLATFORM_COLORS[(p||'').toLowerCase().replace('meta/fb','meta')] || PLATFORM_COLORS.altro;
 
   const STATUS_CFG = {
     active: {label:'Attiva',    dot:'#22c97a',bg:'rgba(34,201,122,.12)', text:'#0f5230'},
@@ -504,77 +555,91 @@ function cvRenderAds() {
     draft:  {label:'Bozza',     dot:'#aaa',   bg:'rgba(150,150,150,.12)',text:'#666'},
   };
 
+  // Spend per channel
   const byPlatform = {};
   camps.forEach(c => {
     const p = (c.platform||'Altro').toLowerCase();
-    if(!byPlatform[p]) byPlatform[p] = [];
-    byPlatform[p].push(c);
+    if(!byPlatform[p]) byPlatform[p] = {budget:0, spent:0, count:0};
+    byPlatform[p].budget += c.budget||0;
+    byPlatform[p].spent  += c.spent||0;
+    byPlatform[p].count++;
   });
+  const maxBudget = Math.max(...Object.values(byPlatform).map(v=>v.budget), 1);
 
-  const metricCards = [
+  let html = '';
+
+  // ── METRICS ──
+  html += '<div style="display:flex;gap:1px;margin-bottom:20px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">';
+  [
     {lbl:'Budget totale',   val:'€'+totalBudget.toLocaleString('it'), sub:totalSpent?'€'+totalSpent.toLocaleString('it')+' spesi':'—'},
     {lbl:'ROAS medio',      val:avgRoas+'×',                          sub:active.length+' camp. attive'},
     {lbl:'CPC medio',       val:parseFloat(avgCpc)>0?'€'+avgCpc:'—', sub:''},
-    {lbl:'Impression',      val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—', sub:''},
+    {lbl:'Impression tot.', val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—', sub:''},
     {lbl:'Campagne',        val:active.length+'/'+camps.length,       sub:'attive / totali'},
-  ];
-
-  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:24px;">';
-  metricCards.forEach(m => {
-    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
+  ].forEach(m => {
+    html += `<div style="flex:1;background:var(--surface);padding:14px 16px;min-width:0;">
       <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">${m.lbl}</div>
       <div style="font-size:20px;font-weight:700;color:var(--text);line-height:1.2;">${m.val}</div>
-      ${m.sub?`<div style="font-size:11px;color:var(--text-3);margin-top:4px;">${m.sub}</div>`:''}
+      ${m.sub?`<div style="font-size:11px;color:var(--text-3);margin-top:3px;">${m.sub}</div>`:''}
     </div>`;
   });
   html += '</div>';
 
-  Object.entries(byPlatform).forEach(([platform, pCamps]) => {
-    const ps = getPlatformStyle(platform);
-    const pLabel = platform.charAt(0).toUpperCase()+platform.slice(1);
-    const pActive = pCamps.filter(c=>c.status==='active');
-    const pBudget = pCamps.reduce((s,c)=>s+(c.budget||0),0);
-    const pRoas = pActive.length ? (pActive.reduce((s,c)=>s+(c.roas||0),0)/pActive.length).toFixed(1) : null;
-
-    html += `<div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${ps.dot}44;">
-        <span style="width:10px;height:10px;border-radius:50%;background:${ps.dot};flex-shrink:0;"></span>
-        <span style="font-size:13px;font-weight:700;color:${ps.text};">${pLabel}</span>
-        <span style="font-size:11px;color:var(--text-3);">${pCamps.length} campagn${pCamps.length===1?'a':'e'}</span>
-        ${pRoas?`<span style="margin-left:auto;font-size:12px;font-weight:700;color:var(--text);">${pRoas}× ROAS</span>`:''}
-        ${pBudget?`<span style="font-size:11px;color:var(--text-3);">€${pBudget.toLocaleString('it')} budget</span>`:''}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;">`;
-
-    pCamps.forEach(c => {
-      const sc = STATUS_CFG[c.status] || STATUS_CFG.draft;
-      const spent = (c.budget && c.spent) ? Math.round((c.spent/c.budget)*100) : 0;
-      html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
-          <div>
-            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;">${c.name||'—'}</div>
-            <div style="font-size:11px;color:var(--text-3);">${c.startDate||''} ${c.endDate?'→ '+c.endDate:''}</div>
+  // ── SPESA PER CANALE ──
+  if(Object.keys(byPlatform).length > 1) {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;">Spesa per canale</div>`;
+    Object.entries(byPlatform).sort((a,b)=>b[1].budget-a[1].budget).forEach(([p, v]) => {
+      const pc = getPColor(p);
+      const pLabel = p.charAt(0).toUpperCase()+p.slice(1);
+      const pct = Math.round((v.budget/maxBudget)*100);
+      html += `<div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:${pc.bar};flex-shrink:0;"></span>
+            <span style="font-size:12px;font-weight:600;color:var(--text);">${pLabel}</span>
           </div>
-          <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${sc.bg};color:${sc.text};flex-shrink:0;white-space:nowrap;">
-            <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};"></span>${sc.label}
-          </span>
+          <span style="font-size:12px;color:var(--text-2);font-weight:600;">€${v.budget.toLocaleString('it')}</span>
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${(c.budget&&c.spent)?'10px':'0'};">
-          ${c.budget?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">€${c.budget.toLocaleString('it')}</strong> budget</span>`:''}
-          ${c.roas?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">${c.roas}×</strong> ROAS</span>`:''}
-          ${c.cpc?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">€${c.cpc}</strong> CPC</span>`:''}
-          ${c.impressions?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">${c.impressions>=1000?(c.impressions/1000).toFixed(1)+'K':c.impressions}</strong> imp.</span>`:''}
-          ${c.clicks?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">${c.clicks.toLocaleString('it')}</strong> click</span>`:''}
+        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${pc.bar};border-radius:3px;transition:width .4s;"></div>
         </div>
-        ${(c.budget&&c.spent)?`
-          <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
-            <div style="height:100%;width:${Math.min(spent,100)}%;background:${ps.dot};border-radius:2px;"></div>
-          </div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:3px;">€${c.spent.toLocaleString('it')} spesi (${spent}%)</div>`:''}
+        ${v.spent?`<div style="font-size:10px;color:var(--text-3);margin-top:2px;">€${v.spent.toLocaleString('it')} spesi</div>`:''}
       </div>`;
     });
-    html += '</div></div>';
+    html += '</div>';
+  }
+
+  // ── CAMPAGNE (flat list matching admin style) ──
+  html += `<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Campagne</div>`;
+  html += '<div style="display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">';
+  camps.forEach(c => {
+    const pc = getPColor(c.platform||'altro');
+    const sc = STATUS_CFG[c.status] || STATUS_CFG.draft;
+    const spentPct = (c.budget&&c.spent) ? Math.round((c.spent/c.budget)*100) : 0;
+    const pLabel = (c.platform||'—');
+    html += `<div style="background:var(--surface);padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">${c.name||'—'}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:${pc.bar}18;color:${pc.bar};">
+            <span style="width:6px;height:6px;border-radius:50%;background:${pc.bar};"></span>${pLabel}
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:${sc.bg};color:${sc.text};">
+            <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};"></span>${sc.label}
+          </span>
+          ${c.budget?`<span style="font-size:11px;color:var(--text-3);">€${c.spent||0} / €${c.budget} (${spentPct}%)</span>`:''}
+        </div>
+        ${(c.budget&&c.spent)?`<div style="margin-top:6px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;max-width:400px;"><div style="height:100%;width:${Math.min(spentPct,100)}%;background:${pc.bar};border-radius:2px;"></div></div>`:''}
+      </div>
+      <div style="display:flex;gap:20px;align-items:center;flex-shrink:0;">
+        ${c.roas?`<div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:var(--text);">${c.roas}×</div><div style="font-size:10px;color:var(--text-3);font-weight:600;">ROAS</div></div>`:''}
+        ${c.cpc?`<div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:${parseFloat(c.cpc)>1.5?'#e05c00':'var(--text)'};">€${c.cpc}</div><div style="font-size:10px;color:var(--text-3);font-weight:600;">CPC</div></div>`:''}
+        ${c.impressions?`<div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:var(--text);">${c.impressions>=1000?(c.impressions/1000).toFixed(1)+'K':c.impressions}</div><div style="font-size:10px;color:var(--text-3);font-weight:600;">Impression</div></div>`:''}
+      </div>
+    </div>`;
   });
+  html += '</div>';
 
   body.innerHTML = html;
 }
