@@ -1571,7 +1571,7 @@ function openSbFmtDialog(){
     destLbl.textContent = dest;
     
     btn.appendChild(preview);btn.appendChild(lbl);btn.appendChild(ratioLbl);btn.appendChild(destLbl);
-    btn.onclick = ()=>{ overlay.remove(); openStoryboardModal(-1, fmt); };
+    btn.onclick = ()=>{ FocusTrap.deactivate(box); overlay.remove(); openStoryboardModal(-1, fmt); };
     opts.appendChild(btn);
   });
   
@@ -1579,13 +1579,14 @@ function openSbFmtDialog(){
   cancelBtn.className = 'btn ghost sm';
   cancelBtn.style.cssText = 'align-self:center;';
   cancelBtn.textContent = 'Annulla';
-  cancelBtn.onclick = ()=>overlay.remove();
+  cancelBtn.onclick = ()=>{ FocusTrap.deactivate(box); overlay.remove(); };
   
   box.appendChild(title);box.appendChild(sub);box.appendChild(opts);box.appendChild(cancelBtn);
   overlay.appendChild(box);
   // Click fuori chiude
-  overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
+  overlay.onclick = e=>{ if(e.target===overlay){ FocusTrap.deactivate(box); overlay.remove(); } };
   document.body.appendChild(overlay);
+  FocusTrap.activate(box);
 }
 
 function openStoryboardModal(idx,presetFmt){
@@ -2580,7 +2581,7 @@ function renderPreview(){
 }
 
 /* LIGHTBOX */
-function openLb(i,ready,stArr,opts){if(!ready||!ready.length)return;lbItems=ready;lbIdx=Math.max(0,Math.min(i,ready.length-1));lbSlide=0;lbStArr=stArr||[];lbOpts=opts||{};renderLb();document.getElementById('lightbox').classList.add('open');}
+function openLb(i,ready,stArr,opts){if(!ready||!ready.length)return;lbItems=ready;lbIdx=Math.max(0,Math.min(i,ready.length-1));lbSlide=0;lbStArr=stArr||[];lbOpts=opts||{};renderLb();const _lb=document.getElementById('lightbox');_lb.classList.add('open');FocusTrap.activate(_lb);}
 function lbBg(e){if(e.target===document.getElementById('lightbox'))document.getElementById('lightbox').classList.remove('open');}
 function lbNav(d){lbIdx=(lbIdx+d+lbItems.length)%lbItems.length;lbSlide=0;renderLb();}
 function lbSlideNav(d){const item=lbItems[lbIdx];if(!item?.slides?.length)return;lbSlide=(lbSlide+d+item.slides.length)%item.slides.length;renderLb();}
@@ -2667,12 +2668,121 @@ document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'&&!e.shiftKey){if(isCarousel)lbSlideNav(1);else if(lbItems.length>1)lbNav(1);}
   if(e.key==='ArrowLeft'&&e.shiftKey&&lbItems.length>1)lbNav(-1);
   if(e.key==='ArrowRight'&&e.shiftKey&&lbItems.length>1)lbNav(1);
-  if(e.key==='Escape'){lb.classList.remove('open');const dr=document.getElementById('ped-drawer');if(dr&&dr.style.display!=='none')pedCloseDrawer();}
+  if(e.key==='Escape'){lb.classList.remove('open');FocusTrap.deactivate(lb);const dr=document.getElementById('ped-drawer');if(dr&&dr.style.display!=='none')pedCloseDrawer();}
 });
 
 /* MODAL HELPERS */
-function openModal(id){const m=document.getElementById(id);if(m)m.classList.add('open');}
-function closeModal(id){const m=document.getElementById(id);if(m)m.classList.remove('open');}
+
+/* ════════════════════════════════════════════════════
+   FOCUS TRAP — accessibilità modali
+   Intrappola il Tab dentro il modal aperto e
+   ripristina il focus all'elemento che l'ha aperto.
+════════════════════════════════════════════════════ */
+const FocusTrap = {
+  _stack: [],      // stack di trap attivi (supporta modali annidati)
+  _handler: null,
+
+  // Selettori di elementi focusabili
+  FOCUSABLE: [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(','),
+
+  /**
+   * Attiva il trap su un elemento container.
+   * Salva nello stack l'elemento che aveva il focus.
+   */
+  activate(container) {
+    if (!container) return;
+    const trigger = document.activeElement;
+    this._stack.push({ container, trigger });
+    this._ensureHandler();
+    // Sposta il focus sul primo elemento focusabile dentro il modal
+    requestAnimationFrame(() => {
+      const first = container.querySelector(this.FOCUSABLE);
+      if (first) first.focus();
+    });
+  },
+
+  /**
+   * Disattiva l'ultimo trap nello stack e ripristina il focus.
+   */
+  deactivate(container) {
+    // Trova e rimuovi dallo stack
+    const idx = this._stack.findIndex(t => t.container === container);
+    if (idx < 0) return;
+    const { trigger } = this._stack.splice(idx, 1)[0];
+    // Ripristina focus sull'elemento che aveva aperto il modal
+    if (trigger && document.contains(trigger)) {
+      try { trigger.focus(); } catch(e) {}
+    }
+    if (this._stack.length === 0) {
+      document.removeEventListener('keydown', this._handler, true);
+      this._handler = null;
+    }
+  },
+
+  _ensureHandler() {
+    if (this._handler) return;
+    this._handler = (e) => {
+      if (!this._stack.length) return;
+      const { container } = this._stack[this._stack.length - 1];
+
+      // Escape: chiude il modal in cima allo stack
+      if (e.key === 'Escape') {
+        // Lasciamo che il handler Escape esistente gestisca la chiusura
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusables = Array.from(
+        container.querySelectorAll(FocusTrap.FOCUSABLE)
+      ).filter(el => !el.closest('[style*="display:none"]') && !el.closest('[hidden]'));
+
+      if (!focusables.length) { e.preventDefault(); return; }
+
+      const first = focusables[0];
+      const last  = focusables[focusables.length - 1];
+      const active = document.activeElement;
+
+      if (e.shiftKey) {
+        // Shift+Tab: se siamo sul primo, vai all'ultimo
+        if (active === first || !container.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        // Tab: se siamo sull'ultimo, vai al primo
+        if (active === last || !container.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', this._handler, true);
+  },
+};
+
+function openModal(id){
+  const m=document.getElementById(id);
+  if(!m)return;
+  m.classList.add('open');
+  // Attiva focus trap sul contenuto del modal
+  const box=m.querySelector('.modal,.modal-box,.sb-modal-wide,.sb-modal,.ads-modal-box,.confirm-box,.ec-modal-box,.hl-modal,.lm-modal,.cp-modal,.editorial-modal-box');
+  FocusTrap.activate(box||m);
+}
+function closeModal(id){
+  const m=document.getElementById(id);
+  if(!m)return;
+  const box=m.querySelector('.modal,.modal-box,.sb-modal-wide,.sb-modal,.ads-modal-box,.confirm-box,.ec-modal-box,.hl-modal,.lm-modal,.cp-modal,.editorial-modal-box');
+  FocusTrap.deactivate(box||m);
+  m.classList.remove('open');
+}
 document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg')&&!e.target.dataset.noClose)e.target.classList.remove('open');});
 
 /* ════════ CALENDARIO ════════ */
@@ -5465,10 +5575,12 @@ function openApprModal(idx, items){
   const apprBtn = document.getElementById('appr-approva-btn');
   if(apprBtn) apprBtn.style.display = post.apprStato==='approvato' ? 'none' : '';
 
-  document.getElementById('appr-modal-bg').style.display = 'flex';
+  const _apprBg=document.getElementById('appr-modal-bg');
+  _apprBg.style.display = 'flex';
+  FocusTrap.activate(_apprBg);
 }
 
-function closeApprModal(){ document.getElementById('appr-modal-bg').style.display='none'; apprModalIdx=null; }
+function closeApprModal(){ FocusTrap.deactivate(document.getElementById('appr-modal-bg')); document.getElementById('appr-modal-bg').style.display='none'; apprModalIdx=null; }
 
 function apprModalSetStato(stato){
   if(apprModalIdx === null) return;
@@ -5765,10 +5877,12 @@ function openBriefModal(sb){
   }
 
   modal.style.display = 'flex';
+  FocusTrap.activate(modal);
 }
 
 function closeBriefModal(){
   const modal = document.getElementById('brief-modal');
+  FocusTrap.deactivate(modal);
   if(modal) modal.style.display = 'none';
   briefTargetSb = null;
 }
