@@ -177,10 +177,15 @@ let cvRevisionIdx = null;
 let cvLbItems = [];
 let cvLbIdx = 0;
 
-// Parse client id from URL: /client/{id}/...
-function getClientIdFromUrl() {
+// Parse share token from URL: /client/{slug}-{token}/...
+// Token is the last 12 chars (6 bytes hex = 12 hex chars) after the last hyphen
+function getShareTokenFromUrl() {
   const m = window.location.pathname.match(/\/client\/([^/]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
+  if(!m) return null;
+  const slug = decodeURIComponent(m[1]);
+  // Token is always 12 hex chars at the end after a hyphen
+  const tokenMatch = slug.match(/([0-9a-f]{12})$/);
+  return tokenMatch ? tokenMatch[1] : slug; // fallback to full string for legacy IDs
 }
 
 function cvSwitchTab(tab) {
@@ -196,19 +201,23 @@ function cvSwitchTab(tab) {
 }
 
 async function cvInit() {
-  cvClientId = getClientIdFromUrl();
-  if(!cvClientId) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Link non valido.</div>'; return; }
+  const shareToken = getShareTokenFromUrl();
+  if(!shareToken) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Link non valido.</div>'; return; }
 
   try {
-    // Load project data — we use 'shared' user for client view (read all data)
+    // Load project data — we use 'shared' user for client view
     const res = await fetch(API_URL + '?user=shared', { headers: { 'x-nassa-key': API_KEY } });
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const { data } = await res.json();
     if(!data) throw new Error('No data');
     cvData = data;
 
-    // Find client
-    cvClient = (data.clients||[]).find(c => c.id === cvClientId || encodeURIComponent(c.name) === cvClientId || c.name === cvClientId);
+    // Find client by shareToken (new) or legacy id/name (backward compat)
+    cvClient = (data.clients||[]).find(c =>
+      c.shareToken === shareToken ||
+      c.id === shareToken ||
+      encodeURIComponent(c.name) === shareToken
+    );
     if(!cvClient) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Cliente non trovato.</div>'; return; }
 
     document.title = cvClient.name + ' — Nassa Studio';

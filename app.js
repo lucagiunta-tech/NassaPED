@@ -782,7 +782,8 @@ function routerPush(tab) {
   const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
   let path = '/';
   if(!tab || tab === 'studio') { path = '/'; }
-  else if(cl) { path = '/client/' + encodeURIComponent(cl.id || cl.name) + '/' + tab; }
+  // Admin URL uses client.id (internal, not share token)
+  else if(cl) { path = '/client/' + encodeURIComponent(cl.id) + '/' + tab; }
   else { path = '/' + tab; }
   if(window.location.pathname !== path) history.pushState({ tab, clientId: cl?.id||null }, '', path);
 }
@@ -868,18 +869,34 @@ function addClient(){
   const accName=(document.getElementById('nc-acc-name')?.value.trim())||name;
   const accPlatform=(document.getElementById('nc-acc-platform')?.value)||'Instagram';
   const id='c_'+Date.now();
+  const shareToken=Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
   const defaultAccount={id:'a_'+Date.now(),name:accName,platform:accPlatform,profileImg:'',bio:''};
-  clients.push({id,name,pkg:document.getElementById('nc-pkg').value,status:document.getElementById('nc-status').value,revenue:parseFloat(document.getElementById('nc-revenue').value)||0,accounts:[defaultAccount]});
+  clients.push({id,name,shareToken,pkg:document.getElementById('nc-pkg').value,status:document.getElementById('nc-status').value,revenue:parseFloat(document.getElementById('nc-revenue').value)||0,accounts:[defaultAccount]});
   document.getElementById('nc-name').value='';document.getElementById('nc-revenue').value='';
   if(document.getElementById('nc-acc-name'))document.getElementById('nc-acc-name').value='';
   renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiunto');autoSave();
   closeModal('add-client-modal');
 }
+function getClientShareToken(cl){
+  // Generate and persist token if not present (migrate existing clients)
+  if(!cl.shareToken){
+    cl.shareToken=Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    autoSave();
+  }
+  return cl.shareToken;
+}
+function getClientSlug(cl){
+  return cl.name.toLowerCase()
+    .replace(/[àáâãä]/g,'a').replace(/[èéêë]/g,'e').replace(/[ìíîï]/g,'i')
+    .replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,30);
+}
 function copyClientLink(i){
   const cl=clients[i];if(!cl)return;
-  const id=cl.id||encodeURIComponent(cl.name);
-  const url=window.location.origin+'/client/'+id+'/preview';
-  navigator.clipboard?.writeText(url).then(()=>showToast('✓ Link cliente copiato')).catch(()=>showToast('Link: '+url));
+  const slug=getClientSlug(cl);
+  const token=getClientShareToken(cl);
+  const url=window.location.origin+'/client/'+slug+'-'+token+'/preview';
+  navigator.clipboard?.writeText(url).then(()=>showToast('✓ Link cliente copiato')).catch(()=>prompt('Copia questo link:',url));
 }
 function addAccount(){const ci=parseInt(document.getElementById('na-client').value);if(isNaN(ci)||ci<0){showToast('Seleziona un cliente','warn');return;}const name=document.getElementById('na-name').value.trim();if(!name){document.getElementById('na-name').focus();return;}const platform=document.getElementById('na-platform').value;const id='a_'+Date.now();clients[ci].accounts.push({id,name,platform});document.getElementById('na-name').value='';renderStudio();rebuildAllSelects();showToast('✓ Account aggiunto');autoSave();}
 function removeClient(i){
@@ -913,7 +930,7 @@ function renderStudio(){
     return;
   }
   // FIX QA: tutti i dati utente (name, pkg, status) passano per esc() — previene XSS
-  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${esc(a.platform)}">${esc(a.name)} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td>${pkgBadge(c.pkg)}</td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})" title="Modifica cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg> Modifica</button><button class="btn sm" onclick="copyClientLink(${i})" title="Copia link cliente" aria-label="Copia link cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Link</button><button class="btn sm danger" onclick="removeClient(${i})" title="Elimina cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></td>`;tbody.appendChild(tr);});
+  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`;const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td>${pkgBadge(c.pkg)}</td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})" title="Modifica cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg> Modifica</button><button class="btn sm" onclick="copyClientLink(${i})" title="Copia link cliente" aria-label="Copia link cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Link</button><button class="btn sm danger" onclick="removeClient(${i})" title="Elimina cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></td>`;tbody.appendChild(tr);});
 }
 
 /* SELECTS */
@@ -1273,36 +1290,42 @@ function renderFeedGrid(){
         dpTrigger.onclick=e=>{e.stopPropagation();openDatePicker(idx,cell);};
         dpTrigger.ontouchstart=e=>{e.stopPropagation();openDatePicker(idx,cell);};cell.appendChild(dpTrigger);
 
-        // ── OVERLAY: bottom sheet inside the cell ──
-        const ov=document.createElement('div');ov.className='cell-overlay';
-        const sheet=document.createElement('div');sheet.className='ov-sheet';
-        const mkBtn=(cls,svgPath,label,fn)=>{
-          const b=document.createElement('button');b.className='ov-btn '+cls;
-          b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svgPath+'</svg>'+label;
-          b.onclick=e=>{e.stopPropagation();fn();};return b;
+        // ── CONTEXT MENU: small ⋯ button, floating popup (non-intrusive) ──
+        const menuActions = [];
+        if(item.type==='carousel') menuActions.push({cls:'ob-slide',svg:'<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>',label:'Modifica slide',fn:()=>openCarouselModal(idx)});
+        if(item.type==='video') menuActions.push({cls:'ob-cover',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',label:item.coverUrl?'Cover · cambia':'+ Cover reel',fn:()=>openVideoCoverModal(idx)});
+        menuActions.push({cls:'ob-stories',svg:'<rect x="7" y="2" width="10" height="20" rx="2"/>',label:(item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories',fn:()=>openLinkStoriesModal(idx)});
+        menuActions.push({cls:'ob-copy',svg:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',label:'Copia da…',fn:()=>openCopyModal('feed')});
+        menuActions.push({cls:'ob-delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',label:'Rimuovi',fn:()=>showConfirm({title:'Rimuovi post',body:'Il post verrà eliminato dal feed. Questa azione non può essere annullata.',okLabel:'Rimuovi',type:'danger',onOk:()=>removeFeedItem(idx)})});
+
+        // The ⋯ trigger button
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'cell-menu-btn';
+        menuBtn.setAttribute('aria-label','Opzioni post');
+        menuBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>';
+        menuBtn.onclick = e => {
+          e.stopPropagation();
+          // Remove any existing popup
+          document.querySelectorAll('.cell-ctx-popup').forEach(p=>p.remove());
+          const rect = menuBtn.getBoundingClientRect();
+          const popup = document.createElement('div');
+          popup.className = 'cell-ctx-popup';
+          // Position: below button, align right
+          popup.style.cssText = \`position:fixed;top:\${rect.bottom+4}px;right:\${window.innerWidth-rect.right}px;z-index:400;\`;
+          menuActions.forEach((action,ai) => {
+            if(ai>0){const div=document.createElement('div');div.className='ctx-popup-divider';popup.appendChild(div);}
+            const btn = document.createElement('button');
+            btn.className = 'ctx-popup-btn '+action.cls;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+action.svg+'</svg>'+action.label;
+            btn.onclick = e => { e.stopPropagation(); popup.remove(); action.fn(); };
+            popup.appendChild(btn);
+          });
+          document.body.appendChild(popup);
+          const close = e => { if(!popup.contains(e.target)&&e.target!==menuBtn){popup.remove();document.removeEventListener('click',close,true);} };
+          setTimeout(()=>document.addEventListener('click',close,true),10);
         };
-        const mkDiv=()=>{const d=document.createElement('div');d.className='ov-divider';return d;};
-        if(item.type==='carousel'){
-          sheet.appendChild(mkBtn('ob-slide','<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>','Modifica slide',()=>openCarouselModal(idx)));
-          sheet.appendChild(mkDiv());
-        }
-        if(item.type==='video'){
-          const coverLbl = item.coverUrl ? 'Cover · cambia' : '+ Cover reel';
-          sheet.appendChild(mkBtn('ob-cover','<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',coverLbl,()=>openVideoCoverModal(idx)));
-          sheet.appendChild(mkDiv());
-        }
-        sheet.appendChild(mkBtn('ob-stories','<rect x="7" y="2" width="10" height="20" rx="2"/>',((item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories'),()=>openLinkStoriesModal(idx)));
-        sheet.appendChild(mkDiv());
-        sheet.appendChild(mkBtn('ob-copy','<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>','Copia da…',()=>openCopyModal('feed')));
-        sheet.appendChild(mkDiv());
-        sheet.appendChild(mkBtn('ob-delete','<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>','Rimuovi',()=>showConfirm({
-            title:'Rimuovi post',
-            body:'Il post verrà eliminato dal feed. Questa azione non può essere annullata.',
-            okLabel:'Rimuovi',
-            type:'danger',
-            onOk:()=>removeFeedItem(idx)
-          })));
-        ov.appendChild(sheet);cell.appendChild(ov);wrap.appendChild(cell);
+        cell.appendChild(menuBtn);
+        wrap.appendChild(cell);
         const cp=document.createElement('div');cp.className='copy-panel';cp.style.display=showAllCopy?'':'none';
         const cph=document.createElement('div');cph.className='copy-panel-header';const cl=document.createElement('div');cl.className='copy-label';cl.textContent='Caption';const expBtn=document.createElement('button');expBtn.className='copy-expand-btn';expBtn.textContent='▾';cph.appendChild(cl);cph.appendChild(expBtn);
         const cpanel_body=document.createElement('div');cpanel_body.className='copy-body';const ct=document.createElement('textarea');ct.placeholder='Scrivi la caption…';ct.value=item.copy||'';ct.rows=3;ct.oninput=e=>{currentFeedItems()[idx].copy=e.target.value;const prev=cp.querySelector('.copy-preview');if(prev){prev.textContent=e.target.value||'';prev.classList.toggle('empty',!e.target.value);}};cpanel_body.appendChild(ct);
@@ -4208,7 +4231,19 @@ function ecPalLivePreview(){
   }
 }
 
-function ecAddAccount(){const name=document.getElementById('ec-new-acc-name').value.trim();const platform=document.getElementById('ec-new-acc-platform').value;if(!name){document.getElementById('ec-new-acc-name').focus();return;}ecTmpAccounts.push({id:'a_'+Date.now(),name,platform});document.getElementById('ec-new-acc-name').value='';renderEcAccounts();}
+function ecAddAccount(){
+  const name=document.getElementById('ec-new-acc-name').value.trim();
+  const platform=document.getElementById('ec-new-acc-platform').value;
+  if(!name){document.getElementById('ec-new-acc-name').focus();return;}
+  // Block duplicate platform
+  if(ecTmpAccounts.some(a=>a.platform===platform)){
+    showToast('Esiste già un account '+platform+' per questo cliente','warn');
+    return;
+  }
+  ecTmpAccounts.push({id:'a_'+Date.now(),name,platform});
+  document.getElementById('ec-new-acc-name').value='';
+  renderEcAccounts();
+}
 function ecSave(){
   if(ecEditIdx<0)return;const name=document.getElementById('ec-name').value.trim();if(!name){document.getElementById('ec-name').focus();return;}
   const cl=clients[ecEditIdx];const oldName=cl.name;cl.name=name;cl.pkg=document.getElementById('ec-pkg').value;cl.status=document.getElementById('ec-status').value;cl.revenue=parseFloat(document.getElementById('ec-revenue').value)||0;

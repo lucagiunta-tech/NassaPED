@@ -306,6 +306,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .date-bar svg{width:14px;height:14px;stroke:rgba(255,255,255,.65);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
 /* CELL OVERLAY — bottom sheet, rises from bottom */
+/* ── LEGACY: keep ov-* for stories grid (still uses old overlay) ── */
 .cell-overlay{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s;z-index:10;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;padding-bottom:36px;}
 .feed-cell:not(.empty-slot):hover .cell-overlay{opacity:1;pointer-events:all;}
 .ov-sheet{background:rgba(14,14,14,.96);border-radius:var(--r) var(--r) 0 0;padding:5px 6px 10px;backdrop-filter:blur(10px);}
@@ -321,6 +322,45 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ov-btn.ob-slide:hover{background:rgba(255,255,255,.07);}
 .ov-btn.ob-edit{color:rgba(255,255,255,.82);}
 .ov-btn.ob-edit:hover{background:rgba(255,255,255,.07);}
+
+/* ── NEW: ⋯ cell context menu button (feed grid) ── */
+.cell-menu-btn{
+  position:absolute;top:8px;right:8px;
+  width:28px;height:28px;border-radius:var(--rs);
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  border:none;color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s, background .12s;
+  z-index:15;flex-shrink:0;
+}
+.feed-cell:not(.empty-slot):hover .cell-menu-btn{ opacity:1; }
+.cell-menu-btn:hover{ background:rgba(0,0,0,.82); }
+
+/* ── Context popup (floating, dark) ── */
+.cell-ctx-popup{
+  background:#1a1a1a;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r);
+  box-shadow:0 8px 28px rgba(0,0,0,.45);
+  overflow:hidden;
+  min-width:168px;
+  animation:fadeIn .1s ease;
+}
+.ctx-popup-btn{
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:10px 14px;
+  border:none;background:none;
+  font-size:var(--fs-sm);font-family:var(--font);font-weight:500;
+  cursor:pointer;text-align:left;color:rgba(255,255,255,.85);
+  transition:background .1s;white-space:nowrap;
+}
+.ctx-popup-btn:hover{background:rgba(255,255,255,.08);}
+.ctx-popup-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;flex-shrink:0;}
+.ctx-popup-btn.ob-delete{color:#f87171;}
+.ctx-popup-btn.ob-delete:hover{background:rgba(239,68,68,.12);}
+.ctx-popup-btn.ob-stories{color:#5eead4;}
+.ctx-popup-btn.ob-stories:hover{background:rgba(94,234,212,.08);}
+.ctx-popup-divider{height:1px;background:rgba(255,255,255,.08);margin:2px 0;}
 .ov-divider{height:.5px;background:rgba(255,255,255,.07);margin:2px 0;}
  /* replaced by new cell-badge in feed redesign */
 /* old video badge - replaced by new Streamtime colors below */
