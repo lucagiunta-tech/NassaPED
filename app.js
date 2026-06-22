@@ -1395,18 +1395,34 @@ function renderFeedGrid(){
       em.innerHTML='<span class="fe-icon">📭</span><p>Nessun contenuto in nessun mese.</p>';
       grid.appendChild(em);return;
     }
+    // Hide main grid, use a wrapper outside it
+    grid.style.display='none';
+    let wrapper = document.getElementById('feed-all-months-wrap');
+    if(!wrapper){
+      wrapper=document.createElement('div');
+      wrapper.id='feed-all-months-wrap';
+      wrapper.style.cssText='display:flex;flex-direction:column;gap:0;overflow-y:auto;flex:1;';
+      grid.parentElement.appendChild(wrapper);
+    }
+    wrapper.innerHTML='';
     groups.forEach(({month, items})=>{
-      // Month separator header
+      // Month section
+      const section=document.createElement('div');section.style.cssText='display:flex;flex-direction:column;';
+      // Month header
       const sep=document.createElement('div');sep.className='feed-month-sep';
       sep.innerHTML=`<span class="feed-month-sep-label">${month}</span><span class="feed-month-sep-count">${items.length} post</span>
-        <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=false;document.getElementById('feed-all-months-btn').classList.remove('active');renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
-      grid.appendChild(sep);
+        <button class="btn ghost sm" onclick="feedMonth='${month}';feedAllMonthsMode=false;document.getElementById('feed-all-months-wrap').style.display='none';document.getElementById('feed-grid').style.display='';document.getElementById('feed-all-months-btn').classList.remove('active');renderFeedMonthPills();refreshFeed(true);" style="font-size:10px;padding:2px 8px;margin-left:auto;">Vai al mese →</button>`;
+      section.appendChild(sep);
+      // Sub-grid for this month's items
+      const subGrid=document.createElement('div');subGrid.className='feed-grid';
+      subGrid.style.cssText='padding:0 4px 8px;';
       // Render items for this month (read-only view — no add slot)
       const monthKey = accountId(feedClientIdx,feedAccountIdx)+'|||'+month;
       const allMonthItems = feeds[monthKey]||[];
       items.forEach(item=>{
         const realIdx = allMonthItems.indexOf(item);
         const wrap=document.createElement('div');wrap.className='cell-wrap';
+        wrap.style.cssText='';  // normal cell
         const cell=document.createElement('div');cell.className='feed-cell';cell.style.position='relative';
         const _url=item.url||item.externalUrl||'';
         const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_url;
@@ -1451,11 +1467,18 @@ function renderFeedGrid(){
         cph.appendChild(cl2);cp.appendChild(cph);
         const prev=document.createElement('div');prev.className='copy-preview'+(item.copy?'':' empty');prev.textContent=item.copy||'Caption…';
         cp.appendChild(prev);wrap.appendChild(cp);
-        grid.appendChild(wrap);
+        subGrid.appendChild(wrap);
       });
+      section.appendChild(subGrid);
+      wrapper.appendChild(section);
     });
     return;
   }
+
+  // Restore grid display if not in all-months mode
+  grid.style.display='';
+  const oldWrap=document.getElementById('feed-all-months-wrap');
+  if(oldWrap) oldWrap.innerHTML='';
 
   // Backlog filter: show only posts without a date
   if(feedBacklogMode){
@@ -1465,13 +1488,23 @@ function renderFeedGrid(){
       em.innerHTML='<span class="fe-icon">✅</span><p>Nessun post in backlog.<br><small style="color:var(--text-3);">Tutti i post di questo mese hanno una data.</small></p>';
       grid.appendChild(em);return;
     }
-    // Show backlog banner above grid
-    const hdr=document.createElement('div');
-    hdr.className='feed-backlog-banner';
-    hdr.innerHTML=`<strong>${backlog.length} post senza data</strong> <span>— assegna una data per rimuoverli dal backlog</span>`;
-    grid.parentElement.insertBefore(hdr, grid);
+    // Hide main grid, show backlog in wrapper
+    grid.style.display='none';
+    const oldWrap2=document.getElementById('feed-all-months-wrap');if(oldWrap2)oldWrap2.innerHTML='';
+    let backlogWrap=document.getElementById('feed-backlog-wrap');
+    if(!backlogWrap){
+      backlogWrap=document.createElement('div');
+      backlogWrap.id='feed-backlog-wrap';
+      backlogWrap.style.cssText='display:flex;flex-direction:column;flex:1;overflow-y:auto;';
+      grid.parentElement.appendChild(backlogWrap);
+    }
+    backlogWrap.innerHTML='';
+    const hdr2=document.createElement('div');hdr2.className='feed-backlog-banner';
+    hdr2.innerHTML=`<strong>${backlog.length} post senza data</strong> <span>— assegna una data per rimuoverli dal backlog</span>`;
+    backlogWrap.appendChild(hdr2);
+    const backlogGrid=document.createElement('div');backlogGrid.className='feed-grid';backlogGrid.style.cssText='padding:4px;';
+    backlogWrap.appendChild(backlogGrid);
 
-    // Render backlog items using normal feed cell structure
     const allItems=currentFeedItems();
     backlog.forEach((item)=>{
       const realIdx=allItems.indexOf(item);
@@ -1510,10 +1543,14 @@ function renderFeedGrid(){
       ct.oninput=e=>{allItems[realIdx].copy=e.target.value;};
       cpb.appendChild(ct);cp.appendChild(cpb);
       wrap.appendChild(cp);
-      grid.appendChild(wrap);
+      backlogGrid.appendChild(wrap);
     });
     return;
   }
+
+  // Restore display if leaving filtered modes
+  grid.style.display='';
+  const bw=document.getElementById('feed-backlog-wrap');if(bw){bw.innerHTML='';bw.style.display='none';}
 
   items=currentFeedItems();
   const total=Math.max(items.length+1,9);
