@@ -1280,6 +1280,29 @@ function renderStoriesGrid(){
   const grid=document.getElementById('stories-grid');const hlRow=document.getElementById('hl-row');
   if(!grid||!hlRow)return;grid.innerHTML='';hlRow.innerHTML='';
   const arr=currentStoryItems();
+  // Banner collegamento Storyboard
+  const sbBannerEl=document.getElementById('stories-sb-banner');
+  if(sbBannerEl){
+    const sbItems=arr.filter(s=>s.isStoryboard);
+    if(storiesAccountIdx>=0){
+      sbBannerEl.style.display='';
+      sbBannerEl.innerHTML='';
+      if(sbItems.length>0){
+        const sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:6px;font-size:var(--fs-sm);';
+        sp.textContent=sbItems.length+' storyboard in questo mese';
+        const btn=document.createElement('button');btn.className='btn sm';btn.textContent='→ Vai a Storyboard';btn.style.cssText='flex-shrink:0;';
+        btn.onclick=()=>switchTab('storyboard');
+        sbBannerEl.appendChild(sp);sbBannerEl.appendChild(btn);
+      } else {
+        const sp=document.createElement('span');sp.style.cssText='color:var(--text-3);font-size:var(--fs-xs);';sp.textContent='Nessuno storyboard per questo mese';
+        const btn=document.createElement('button');btn.className='btn sm';btn.textContent='+ Crea storyboard';btn.style.cssText='flex-shrink:0;';
+        btn.onclick=()=>switchTab('storyboard');
+        sbBannerEl.appendChild(sp);sbBannerEl.appendChild(btn);
+      }
+    } else {
+      sbBannerEl.style.display='none';
+    }
+  }
   if(storiesAccountIdx<0){const em=document.createElement('div');em.style.cssText='grid-column:1/-1;text-align:center;padding:40px 0;color:var(--text-3);font-size:12px;';em.textContent='📱 Seleziona cliente e account per gestire le stories.';grid.appendChild(em);}
   else{
     const total=Math.max(arr.length+1,8);
@@ -2171,12 +2194,16 @@ function renderPreview(){
     profileSec.appendChild(profileTop);
 
     // Bio
+    const bioEl = document.createElement('div');
+    bioEl.className = 'preview-profile-bio';
     if(acc.bio){
-      const bioEl = document.createElement('div');
-      bioEl.className = 'preview-profile-bio';
       bioEl.textContent = acc.bio;
-      profileSec.appendChild(bioEl);
+    } else {
+      bioEl.style.cssText='color:var(--text-3);font-style:italic;font-size:var(--fs-xs);cursor:pointer;';
+      bioEl.textContent = '+ Aggiungi bio del profilo';
+      bioEl.onclick = ()=>{ switchTab('feed'); setTimeout(()=>{ const p=document.getElementById('stories-ctx-panel')||document.getElementById('feed-ctx-panel'); if(p&&!p.classList.contains('open'))document.getElementById('stories-expand-btn')?.click(); document.getElementById('feed-profile-bio')?.focus(); },300); };
     }
+    profileSec.appendChild(bioEl);
 
     // Separatore
     const sep = document.createElement('div');
@@ -3323,8 +3350,9 @@ function renderSbTabGrid(){
     editBtn.onclick=()=>openStoryboardModal(origIdx);
     // Passa a Feed/Stories
     const moveBtn=document.createElement('button');moveBtn.className='btn sm primary';
-    moveBtn.innerHTML=(sb.sbFmt==='stories'?'→ Stories':'→ Feed');
-    moveBtn.title='Carica il file finale e sposta in '+(sb.sbFmt==='stories'?'Stories':'Feed');
+    const destName=sb.sbFmt==='stories'?'Stories':'Feed';
+    moveBtn.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Carica in '+destName;
+    moveBtn.title='Seleziona il file finale dal creator e caricalo in '+destName;
     moveBtn.onclick=()=>sbTabMoveToFeed(sb,origIdx,key);
     // Brief
     const briefBtn=document.createElement('button');briefBtn.className='btn sm'+(sb.briefInviato?' active':'');
@@ -3332,9 +3360,29 @@ function renderSbTabGrid(){
     briefBtn.onclick=()=>{if(sb.briefInviato){showToast('Brief già inviato');return;}openBriefModal(sb);};
     actions.appendChild(editBtn);
     if(!sb.fileCaricato)actions.appendChild(moveBtn);
-    else{const doneLbl=document.createElement('span');doneLbl.style.cssText='font-size:11px;color:var(--green);';doneLbl.textContent='✓ File caricato';actions.appendChild(doneLbl);}
+    else{const doneLbl=document.createElement('span');doneLbl.style.cssText='font-size:11px;color:var(--green);font-weight:600;';doneLbl.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><polyline points="20 6 9 17 4 12"/></svg>Nel Feed';actions.appendChild(doneLbl);}
     actions.appendChild(briefBtn);
     info.appendChild(actions);
+    // Mini stepper visivo: Bozza → Brief → Pubblicato
+    const stepper=document.createElement('div');
+    stepper.style.cssText='display:flex;align-items:center;gap:0;margin-top:8px;padding-top:8px;border-top:.5px solid var(--border-lt);';
+    const steps=[
+      {label:'Bozza',done:true},
+      {label:'Brief',done:!!sb.briefInviato},
+      {label:'Pubblicato',done:!!sb.fileCaricato}
+    ];
+    steps.forEach((step,si)=>{
+      if(si>0){const line=document.createElement('div');line.style.cssText='flex:1;height:1px;background:'+(step.done?'var(--green)':'var(--border)')+';';stepper.appendChild(line);}
+      const dot=document.createElement('div');
+      dot.style.cssText='display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;';
+      const circle=document.createElement('div');
+      circle.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(step.done?'var(--green)':'var(--border)')+';';
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:8px;color:'+(step.done?'var(--green)':'var(--text-3)')+';font-weight:'+(step.done?'600':'400')+';white-space:nowrap;';
+      lbl.textContent=step.label;
+      dot.appendChild(circle);dot.appendChild(lbl);stepper.appendChild(dot);
+    });
+    info.appendChild(stepper);
     card.appendChild(info);
     // Click card apre lightbox slide
     prev.style.cursor='pointer';prev.onclick=()=>{
