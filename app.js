@@ -2551,15 +2551,16 @@ function renderPreview(){
       const revCount = item.apprRevisions || 0;
       const APPR_CFG = {
         bozza:     {label:'Bozza',        dot:'#aaa',    bg:'rgba(0,0,0,0.52)',      text:'#e8e8e8',       border:'rgba(255,255,255,0.15)'},
-        approvare: {label:'In revisione',  dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
-        revisione: {label:'In revisione',  dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
+        revisione:   {label:'Da Revisionare', dot:'#e05c00', bg:'rgba(224,92,0,0.82)',   text:'#fff0e8',  border:'rgba(224,92,0,0.9)'},
+        approvare:   {label:'Da Approvare',   dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',  border:'rgba(212,168,0,0.9)'},
         approvato:   {label:'Approvato',    dot:'#22c97a', bg:'rgba(26,122,74,0.82)', text:'#d6fff0',  border:'rgba(26,122,74,0.9)'},
         pubblicato:  {label:'Pubblicato',   dot:'#60a5fa', bg:'rgba(37,99,235,0.82)',  text:'#dbeafe', border:'rgba(37,99,235,0.9)'},
       };
       const cfg = APPR_CFG[apprSt] || APPR_CFG.bozza;
       // Bordo card colorato per stato
       if(apprSt !== 'bozza'){
-        post.style.borderColor = apprSt==='approvare' ? '#d4a800' : '#22c97a';
+        const _bc = {revisione:'#e05c00', approvare:'#d4a800', approvato:'#22c97a', pubblicato:'#2563eb'};
+        post.style.borderColor = _bc[apprSt] || '#22c97a';
         post.style.borderWidth = '2px';
       }
       // Badge stato in basso a sinistra sulla cella immagine

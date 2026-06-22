@@ -248,7 +248,7 @@ function cvBuildMonthSel() {
   accs.forEach(acc => {
     Object.keys(cvData.feeds||{}).filter(k=>k.startsWith(acc.id+'|||')).forEach(k=>{
       const m = k.split('|||')[1];
-      if(m && (cvData.feeds[k]||[]).filter(i=>i.type!=='pending'&&(i.apprStato||'bozza')!=='bozza').length) months.add(m);
+      if(m && (cvData.feeds[k]||[]).filter(i=>i.type!=='pending').length) months.add(m);
     });
   });
   let arr = [...months].sort((a,b)=>{
@@ -469,66 +469,117 @@ function cvRenderUGC() {
 function cvRenderAds() {
   const body = document.getElementById('cv-ads-body');
   if(!body || !cvData) return;
+
   const adsData = cvData.adsCampaigns || {};
-  // Find campaigns for this client
-  const clientKey = Object.keys(adsData).find(k => {
-    const cl = (cvData.clients||[]).find(c=>c.id===cvClient.id||c.shareToken===cvClient.shareToken);
-    return k === (cl?.name||'') || k === cl?.id;
-  }) || cvClient.name;
+  const clientKey = Object.keys(adsData).find(k => k === cvClient.name || k === cvClient.id) || cvClient.name;
   const camps = adsData[clientKey] || [];
 
   if(!camps.length) {
-    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3);font-size:13px;">Nessun dato pubblicitario disponibile.</div>';
+    body.innerHTML = '<div style="padding:60px 20px;text-align:center;color:var(--text-3);font-size:13px;">Nessun dato pubblicitario disponibile.</div>';
     return;
   }
 
+  const active = camps.filter(c=>c.status==='active');
   const totalBudget = camps.reduce((s,c)=>s+(c.budget||0),0);
   const totalSpent  = camps.reduce((s,c)=>s+(c.spent||0),0);
-  const active      = camps.filter(c=>c.status==='active');
   const avgRoas     = active.length ? (active.reduce((s,c)=>s+(c.roas||0),0)/active.length).toFixed(1) : 0;
   const totalImp    = camps.reduce((s,c)=>s+(c.impressions||0),0);
+  const avgCpc      = active.length ? (active.filter(c=>c.cpc).reduce((s,c)=>s+(c.cpc||0),0)/(active.filter(c=>c.cpc).length||1)).toFixed(2) : 0;
 
-  const metrics = [
-    {lbl:'Budget totale',   val:'€'+totalBudget.toLocaleString('it'), sub: totalSpent?'€'+totalSpent.toLocaleString('it')+' spesi':'—'},
-    {lbl:'ROAS medio',      val:avgRoas+'×',                          sub: active.length+' campagne attive'},
-    {lbl:'Impression tot.', val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—', sub:''},
+  const PLATFORM_COLORS = {
+    instagram:{bg:'#f0e6ff',text:'#6b21a8',dot:'#a855f7'},
+    facebook: {bg:'#dbeafe',text:'#1e3a8a',dot:'#3b82f6'},
+    tiktok:   {bg:'#ffe4f0',text:'#9d174d',dot:'#ec4899'},
+    google:   {bg:'#fef9c3',text:'#713f12',dot:'#eab308'},
+    youtube:  {bg:'#fee2e2',text:'#7f1d1d',dot:'#ef4444'},
+    linkedin: {bg:'#dbeafe',text:'#1e4080',dot:'#0077b5'},
+    altro:    {bg:'#f3f4f6',text:'#4b5563',dot:'#9ca3af'},
+  };
+  const getPlatformStyle = p => PLATFORM_COLORS[(p||'').toLowerCase()] || PLATFORM_COLORS.altro;
+
+  const STATUS_CFG = {
+    active: {label:'Attiva',    dot:'#22c97a',bg:'rgba(34,201,122,.12)', text:'#0f5230'},
+    paused: {label:'In pausa',  dot:'#d4a800',bg:'rgba(212,168,0,.12)',  text:'#7a5c00'},
+    ended:  {label:'Terminata', dot:'#999',   bg:'rgba(150,150,150,.12)',text:'#555'},
+    draft:  {label:'Bozza',     dot:'#aaa',   bg:'rgba(150,150,150,.12)',text:'#666'},
+  };
+
+  const byPlatform = {};
+  camps.forEach(c => {
+    const p = (c.platform||'Altro').toLowerCase();
+    if(!byPlatform[p]) byPlatform[p] = [];
+    byPlatform[p].push(c);
+  });
+
+  const metricCards = [
+    {lbl:'Budget totale',   val:'€'+totalBudget.toLocaleString('it'), sub:totalSpent?'€'+totalSpent.toLocaleString('it')+' spesi':'—'},
+    {lbl:'ROAS medio',      val:avgRoas+'×',                          sub:active.length+' camp. attive'},
+    {lbl:'CPC medio',       val:parseFloat(avgCpc)>0?'€'+avgCpc:'—', sub:''},
+    {lbl:'Impression',      val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—', sub:''},
     {lbl:'Campagne',        val:active.length+'/'+camps.length,       sub:'attive / totali'},
   ];
 
-  body.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
-      ${metrics.map(m=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${m.lbl}</div>
-        <div style="font-size:22px;font-weight:700;color:var(--text);">${m.val}</div>
-        ${m.sub?`<div style="font-size:11px;color:var(--text-3);margin-top:4px;">${m.sub}</div>`:''}
-      </div>`).join('')}
-    </div>
-    <h3 style="font-size:13px;font-weight:700;color:var(--text-2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">Campagne</h3>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      ${camps.map(c=>{
-        const stColors = {active:'#22c97a',paused:'#d4a800',ended:'#999',draft:'#aaa'};
-        const stLabels = {active:'Attiva',paused:'In pausa',ended:'Terminata',draft:'Bozza'};
-        const dot = stColors[c.status]||'#999';
-        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;">
-          <div>
-            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">${c.name||'—'}</div>
-            <div style="font-size:11px;color:var(--text-3);">${c.platform||''} ${c.startDate?'· '+c.startDate:''} ${c.endDate?'→ '+c.endDate:''}</div>
-            <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
-              ${c.budget?`<span style="font-size:12px;"><strong>€${(c.budget||0).toLocaleString('it')}</strong> <span style="color:var(--text-3);">budget</span></span>`:''}
-              ${c.roas?`<span style="font-size:12px;"><strong>${c.roas}×</strong> <span style="color:var(--text-3);">ROAS</span></span>`:''}
-              ${c.impressions?`<span style="font-size:12px;"><strong>${c.impressions>=1000?(c.impressions/1000).toFixed(1)+'K':c.impressions}</strong> <span style="color:var(--text-3);">imp.</span></span>`:''}
-            </div>
-          </div>
-          <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${dot}22;color:${dot};">
-            <span style="width:6px;height:6px;border-radius:50%;background:${dot};flex-shrink:0;"></span>
-            ${stLabels[c.status]||c.status||'—'}
-          </span>
-        </div>`;
-      }).join('')}
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:24px;">';
+  metricCards.forEach(m => {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">${m.lbl}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--text);line-height:1.2;">${m.val}</div>
+      ${m.sub?`<div style="font-size:11px;color:var(--text-3);margin-top:4px;">${m.sub}</div>`:''}
     </div>`;
+  });
+  html += '</div>';
+
+  Object.entries(byPlatform).forEach(([platform, pCamps]) => {
+    const ps = getPlatformStyle(platform);
+    const pLabel = platform.charAt(0).toUpperCase()+platform.slice(1);
+    const pActive = pCamps.filter(c=>c.status==='active');
+    const pBudget = pCamps.reduce((s,c)=>s+(c.budget||0),0);
+    const pRoas = pActive.length ? (pActive.reduce((s,c)=>s+(c.roas||0),0)/pActive.length).toFixed(1) : null;
+
+    html += `<div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${ps.dot}44;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${ps.dot};flex-shrink:0;"></span>
+        <span style="font-size:13px;font-weight:700;color:${ps.text};">${pLabel}</span>
+        <span style="font-size:11px;color:var(--text-3);">${pCamps.length} campagn${pCamps.length===1?'a':'e'}</span>
+        ${pRoas?`<span style="margin-left:auto;font-size:12px;font-weight:700;color:var(--text);">${pRoas}× ROAS</span>`:''}
+        ${pBudget?`<span style="font-size:11px;color:var(--text-3);">€${pBudget.toLocaleString('it')} budget</span>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">`;
+
+    pCamps.forEach(c => {
+      const sc = STATUS_CFG[c.status] || STATUS_CFG.draft;
+      const spent = (c.budget && c.spent) ? Math.round((c.spent/c.budget)*100) : 0;
+      html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;">${c.name||'—'}</div>
+            <div style="font-size:11px;color:var(--text-3);">${c.startDate||''} ${c.endDate?'→ '+c.endDate:''}</div>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${sc.bg};color:${sc.text};flex-shrink:0;white-space:nowrap;">
+            <span style="width:6px;height:6px;border-radius:50%;background:${sc.dot};"></span>${sc.label}
+          </span>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${(c.budget&&c.spent)?'10px':'0'};">
+          ${c.budget?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">€${c.budget.toLocaleString('it')}</strong> budget</span>`:''}
+          ${c.roas?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">${c.roas}×</strong> ROAS</span>`:''}
+          ${c.cpc?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">€${c.cpc}</strong> CPC</span>`:''}
+          ${c.impressions?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">${c.impressions>=1000?(c.impressions/1000).toFixed(1)+'K':c.impressions}</strong> imp.</span>`:''}
+          ${c.clicks?`<span style="font-size:12px;color:var(--text-2);"><strong style="color:var(--text);">${c.clicks.toLocaleString('it')}</strong> click</span>`:''}
+        </div>
+        ${(c.budget&&c.spent)?`
+          <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${Math.min(spent,100)}%;background:${ps.dot};border-radius:2px;"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:3px;">€${c.spent.toLocaleString('it')} spesi (${spent}%)</div>`:''}
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+
+  body.innerHTML = html;
 }
 
-// LIGHTBOX
+
 function cvLbOpen(idx, items) {
   cvLbItems = items;
   cvLbIdx = idx;

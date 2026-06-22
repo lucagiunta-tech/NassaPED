@@ -3035,12 +3035,13 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* ── Feed cell: status badge (bottom-left) ── */
 .feed-cell-stato-btn{
-  position:absolute;bottom:36px;left:8px;
+  position:absolute;bottom:38px;left:8px;
   display:inline-flex;align-items:center;gap:5px;
   padding:3px 8px;border-radius:var(--r-pill);
-  background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);
+  background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);
   border:none;color:#fff;font-size:10px;font-family:var(--font);
   font-weight:600;cursor:pointer;letter-spacing:.03em;
-  z-index:5;transition:background .12s;
+  z-index:18;transition:background .12s;
+  pointer-events:all !important;
 }
-.feed-cell-stato-btn:hover{background:rgba(0,0,0,0.8);}
+.feed-cell-stato-btn:hover{background:rgba(0,0,0,0.92);}
