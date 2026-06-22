@@ -361,6 +361,21 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* PIANO TESTO */
 
 /* STORIES */
+/* ══ STORIES — Banner collegamento Storyboard ══ */
+#stories-sb-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:7px 16px;
+  background:var(--green-lt);
+  border-bottom:1px solid var(--green-mid);
+  gap:10px;
+  font-size:var(--fs-sm);
+  font-weight:500;
+  color:var(--green-text);
+  flex-shrink:0;
+}
+
 .stories-section-lbl{
   font-size:var(--fs-sm);
   font-weight:700;
