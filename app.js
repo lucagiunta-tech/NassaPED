@@ -2476,8 +2476,17 @@ function renderLb(){
   const item=lbItems[lbIdx];if(!item){return;}
   const isMulti=lbItems.length>1;const isCarousel=item.type==='carousel'&&item.slides?.length>1;
   const showPostNav=isMulti&&!isCarousel;
-  document.getElementById('lb-prev').style.display=showPostNav?'flex':'none';document.getElementById('lb-next').style.display=showPostNav?'flex':'none';
+  // Nasconde le frecce esterne (potrebbero essere fuori viewport su schermi stretti)
+  const lbPrevBtn=document.getElementById('lb-prev');const lbNextBtn=document.getElementById('lb-next');
+  if(lbPrevBtn)lbPrevBtn.style.display='none';if(lbNextBtn)lbNextBtn.style.display='none';
   const x=document.createElement('button');x.className='lb-close';x.innerHTML='×';x.setAttribute('aria-label','Chiudi lightbox');x.onclick=()=>document.getElementById('lightbox').classList.remove('open');inner.appendChild(x);
+  // Frecce navigazione DENTRO inner (funzionano su tutti i viewport)
+  if(showPostNav){
+    const np=document.createElement('button');np.className='lb-slide-nav lb-slide-prev';np.innerHTML='‹';np.setAttribute('aria-label','Precedente');np.onclick=e=>{e.stopPropagation();lbNav(-1);};inner.appendChild(np);
+    const nn=document.createElement('button');nn.className='lb-slide-nav lb-slide-next';nn.innerHTML='›';nn.setAttribute('aria-label','Successivo');nn.onclick=e=>{e.stopPropagation();lbNav(1);};inner.appendChild(nn);
+    // Counter post
+    const pc=document.createElement('div');pc.className='cc-counter';pc.style.cssText='position:absolute;bottom:8px;right:8px;';pc.textContent=(lbIdx+1)+' / '+lbItems.length;inner.appendChild(pc);
+  }
   if(item.type==='carousel'&&item.slides?.length){
     const slideUrl=item.slides[lbSlide]?.url||item.url||'';
     if(slideUrl){const img=document.createElement('img');img.src=slideUrl;img.alt='';inner.appendChild(img);}
