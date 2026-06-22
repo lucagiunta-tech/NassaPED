@@ -1311,7 +1311,7 @@ function renderFeedGrid(){
           const popup = document.createElement('div');
           popup.className = 'cell-ctx-popup';
           // Position: below button, align right
-          popup.style.cssText = \`position:fixed;top:\${rect.bottom+4}px;right:\${window.innerWidth-rect.right}px;z-index:400;\`;
+          popup.style.cssText = `position:fixed;top:${rect.bottom+4}px;right:${window.innerWidth-rect.right}px;z-index:400;`;
           menuActions.forEach((action,ai) => {
             if(ai>0){const div=document.createElement('div');div.className='ctx-popup-divider';popup.appendChild(div);}
             const btn = document.createElement('button');
