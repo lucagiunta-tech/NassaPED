@@ -2961,7 +2961,8 @@ function pedClear(){
     body:'Tutti gli slot autonoma senza contenuto verranno rimossi.',
     okLabel:'Svuota',type:'warn',
     onOk:()=>{
-      const keep=currentPedPlan().filter(s=>s.brief||s.creator||s.noteRegia||s.ugcStato!=='autonoma');
+      // Mantieni solo slot con contenuto reale o stato modificato dall'utente
+      const keep=currentPedPlan().filter(s=>(s.brief&&s.brief.trim())||(s.creator&&s.creator.trim())||(s.noteRegia&&s.noteRegia.trim())||(s.ugcStato&&s.ugcStato!=='autonoma'));
       setCurrentPedPlan(keep);autoSave();renderPEDCal();renderCalendar();
       showToast('Piano UGC svuotato');
     }
