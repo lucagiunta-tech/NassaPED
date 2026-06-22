@@ -675,13 +675,19 @@ function queueFeedFiles(files){
   const filesArr=Array.from(files);
   // Add all new items first, then upload each one
   const items=currentFeedItems();
-  const newItems=filesArr.map(f=>({
-    type:detectType(f)==='video'?'video':'pending',
-    url:URL.createObjectURL(f),name:f.name,
-    date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type,
-    coverUrl:'', // cover poster per reel
-    _uploadId: f.name+'_'+Date.now() // unique id to track this specific upload
-  }));
+  const uploadStartTimes = new Map(); // track unique ID per file for matching
+  const now = Date.now();
+  const newItems=filesArr.map((f,fi)=>{
+    const uid = f.name+'_'+(now+fi);
+    uploadStartTimes.set(f, now+fi);
+    return {
+      type:detectType(f)==='video'?'video':'pending',
+      url:URL.createObjectURL(f),name:f.name,
+      date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type,
+      coverUrl:'',
+      _uploadId: uid // unique id to track this specific upload
+    };
+  });
   setFeedItems([...newItems,...items]);refreshFeed();
   // Upload each file to Dropbox sequentially to avoid race conditions
   (async()=>{
@@ -704,7 +710,10 @@ function queueFeedFiles(files){
       const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
       const sharedUrl=await DROPBOX.upload(f,destPath);
       const arr=currentFeedItems();
-      const match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
+      // Match by _uploadId first (unique), fall back to name+no-externalUrl
+      const uploadId = f.name+'_'+uploadStartTimes.get(f);
+      let match = arr.findIndex(it=>it._uploadId===uploadId);
+      if(match<0) match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
       if(sharedUrl){
         done++;
         if(match>=0){
