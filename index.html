@@ -14,7 +14,7 @@
   <!-- Sicurezza: disabilita detection automatica numeri/email -->
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="/style.css?v=1782165036"/>
+<link rel="stylesheet" href="/style.css?v=1782166059"/>
 </head>
 <body>
 <div class="app">
@@ -749,11 +749,14 @@
       <input type="file" id="vcm-file-inp" accept="image/*"
         style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"
         onchange="setVideoCover(this.files[0])"/>
-      <!-- Bottone che triggera l input -->
+      <!-- Bottone che triggera l input — supporta anche drag & drop -->
       <button onclick="document.getElementById('vcm-file-inp').click()"
         style="width:100%;border:1.5px dashed var(--border);border-radius:var(--rs);padding:20px;text-align:center;cursor:pointer;background:transparent;transition:border-color .15s;"
         onmouseover="this.style.borderColor='var(--green)'"
-        onmouseout="this.style.borderColor='var(--border)'">
+        onmouseout="this.style.borderColor='var(--border)'"
+        ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='var(--green-lt)';"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent';"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='transparent';const f=event.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))setVideoCover(f);">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <div style="font-size:12px;font-weight:600;color:var(--text);">Seleziona immagine cover</div>
         <div style="font-size:10px;color:var(--text-3);margin-top:3px;">JPG, PNG · rapporto 4:5</div>
@@ -1316,7 +1319,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782165036"></script>
+<script src="/app.js?v=1782166059"></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
