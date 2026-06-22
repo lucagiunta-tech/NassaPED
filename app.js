@@ -1539,7 +1539,8 @@ async function saveStoryboard(){
   // Clean slides before saving (remove blob URLs and file refs)
   const cleanSlides=sbTmpSlides.map(s=>({
     url:s.externalUrl||s.url||'',externalUrl:s.externalUrl||'',
-    num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',name:s.name||''
+    num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',name:s.name||'',
+    sfondo:s.sfondo||'',noteRegia:s.noteRegia||'',isPlaceholder:s.isPlaceholder||false
   }));
   const arr=currentStoryItems();
   if(sbEditIdx!==null&&sbEditIdx>=0&&sbEditIdx<arr.length){
@@ -2184,12 +2185,12 @@ function renderPreview(){
                 type:'image', url:sl.url||sl.externalUrl||sl.blobUrl||'', name:sl.title||'Slide '+(idx+1),
                 note:sl.note||sl.noteRegia||''
               }));
-              const hasAnyUrl=slideItems.some(s=>s.url);
+              const hasAnyUrl=slideItems.some(s=>s.url&&(s.url.startsWith('http')||s.url.startsWith('data:')));
               if(hasAnyUrl){
                 openLb(0, slideItems, [], storyOpts);
               } else {
                 // Nessun URL disponibile — le immagini non sono state caricate su Dropbox
-                showToast('Le slide non sono disponibili. Apri il tab Stories per caricarle.','warn');
+                showToast('Le immagini sono solo locali. Aprile in Stories e caricale su Dropbox.','warn');
               }
             } else {
               const stUrl=cu||st.url||st.externalUrl||'';
@@ -2520,8 +2521,22 @@ function renderLb(){
     }
   } else {
     const url=item.url||item.externalUrl||'';
-    if(url){const img=document.createElement('img');img.src=url;img.alt='';img.style.cssText='max-width:100%;max-height:100%;object-fit:contain;';inner.appendChild(img);}
-    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='🖼';inner.appendChild(ph);}
+    if(url){
+      const img=document.createElement('img');img.src=url;img.alt='';img.style.cssText='max-width:100%;max-height:100%;object-fit:contain;';
+      img.onerror=()=>{
+        img.style.display='none';
+        const ph=document.createElement('div');
+        ph.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:30px;text-align:center;height:100%;color:#666;font-family:var(--font);';
+        ph.innerHTML='<div style="font-size:32px;">🖼</div>'+(item.name?'<div style="font-size:13px;font-weight:600;color:#aaa;">'+item.name+'</div>':'')+'<div style="font-size:11px;color:#555;">Immagine non disponibile<br>Carica su Dropbox dalla tab Stories</div>';
+        inner.appendChild(ph);
+      };
+      inner.appendChild(img);
+    }else{
+      const ph=document.createElement('div');
+      ph.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:30px;text-align:center;height:100%;color:#666;font-family:var(--font);';
+      ph.innerHTML='<div style="font-size:32px;">🖼</div>'+(item.name?'<div style="font-size:13px;color:#aaa;">'+item.name+'</div>':'')+'<div style="font-size:11px;color:#555;">Nessuna immagine</div>';
+      inner.appendChild(ph);
+    }
   }
   const counterEl=document.getElementById('lb-counter');if(isCarousel)counterEl.textContent=(lbSlide+1)+' / '+item.slides.length+' slide';else counterEl.textContent=isMulti?(lbIdx+1)+' / '+lbItems.length:'';
   const copyEl=document.getElementById('lb-copy');if(copyEl){if(item.copy?.trim()){copyEl.textContent=item.copy;copyEl.className='lb-copy visible';}else{copyEl.textContent='';copyEl.className='lb-copy';}}
