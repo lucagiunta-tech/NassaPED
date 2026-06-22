@@ -256,7 +256,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-chip:hover{border-color:var(--green-dk);color:var(--text);}
 
 /* FEED GRID */
-.cell-wrap{display:flex;flex-direction:column;width:100%;}
+.cell-wrap{display:flex;flex-direction:column;min-width:0;}
 .feed-cell{position:relative;aspect-ratio:4/5;border-radius:var(--r) var(--r) 0 0;overflow:hidden;background:var(--cell-bg);width:100%;} /* aspect-ratio overridden inline per platform */
 .feed-cell.empty-slot{
   border:1.5px dashed var(--border);
