@@ -2178,7 +2178,6 @@ function renderPreview(){
           circ.addEventListener('click', e => {
             e.stopPropagation();
             e.preventDefault();
-            console.log('[NassaPED] cerchio click! st=', st?.name, 'isStoryboard=', st?.isStoryboard, 'slides=', st?.slides?.length, 'cu=', cu);
             const storyOpts={aspectRatio:'9/16'};
             if(st.isStoryboard && st.slides?.length){
               const slideItems=st.slides.map((sl,idx)=>({
