@@ -404,42 +404,103 @@ const CLOUD = {
 const DROPBOX = {
   uploading: 0,
   _abortController: null,
+
+  // Direct browser→Dropbox upload — bypasses Vercel 4.5MB proxy limit
+  // Uses DROPBOX_ACCESS_TOKEN fetched from /api/dropbox-token (lightweight endpoint)
+  _token: null,
+  _tokenTs: 0,
+
+  async getToken() {
+    // Cache token for 1 hour
+    if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3600000) return DROPBOX._token;
+    const res = await fetch('/api/dropbox-token', { headers: { 'x-nassa-key': CLOUD.apiKey } });
+    if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
+    const d = await res.json();
+    DROPBOX._token = d.token;
+    DROPBOX._tokenTs = Date.now();
+    return DROPBOX._token;
+  },
+
   async upload(file, destPath) {
     DROPBOX.uploading++;
     const bar = document.getElementById('dbx-upload-bar');
     const txt = document.getElementById('dbx-upload-text');
     if (bar) bar.classList.add('visible');
-    if (txt) txt.textContent = 'Caricamento su Dropbox: ' + file.name;
+    if (txt) txt.textContent = 'Caricamento: ' + file.name;
+    DROPBOX._abortController = new AbortController();
     try {
-      DROPBOX._abortController = new AbortController();
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('path', destPath || '/nassa/' + file.name);
-      const res = await fetch('/api/dropbox-upload', {
+      const token = await DROPBOX.getToken();
+
+      // Step 1: Upload file directly from browser to Dropbox
+      // No size limit — goes directly browser→Dropbox, not through Vercel
+      const safeName = (destPath || '/nassa/' + file.name)
+        .replace(/[^a-zA-Z0-9._\-/]/g, '_');
+
+      const uploadRes = await fetch('https://content.dropboxapi.com/2/files/upload', {
         method: 'POST',
-        headers: { 'x-nassa-key': CLOUD.apiKey },
-        body: formData,
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/octet-stream',
+          'Dropbox-API-Arg': JSON.stringify({
+            path: safeName,
+            mode: 'add',
+            autorename: true,
+            mute: false
+          })
+        },
+        body: file,
         signal: DROPBOX._abortController.signal
       });
-      if (!res.ok) {
-        const errBody = await res.text().catch(()=>'');
-        console.error('%c[DROPBOX] HTTP '+res.status+' error from /api/dropbox-upload', 'color:#ef4444;font-weight:700');
-        console.error('[DROPBOX] Response body:', errBody);
-        throw new Error('HTTP ' + res.status + ' — ' + errBody.slice(0,200));
+
+      if(!uploadRes.ok) {
+        const errText = await uploadRes.text().catch(()=>'');
+        throw new Error('Upload HTTP ' + uploadRes.status + ': ' + errText.slice(0,200));
       }
-      const data = await res.json();
-      console.log('%c[DROPBOX] ✅ Upload OK', 'color:#22c97a;font-weight:700', {
-        url: data.shared_link || data.url || 'null',
-        file: destPath
+      const uploadData = await uploadRes.json();
+      if(!uploadData.id) throw new Error('Upload failed: ' + JSON.stringify(uploadData));
+
+      console.log('%c[DROPBOX] ✅ File uploaded: '+uploadData.path_display, 'color:#22c97a;font-weight:700');
+
+      // Step 2: Create shared link
+      const linkRes = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          path: uploadData.path_display,
+          settings: { requested_visibility: 'public' }
+        })
       });
-      DROPBOX.uploading=Math.max(0,DROPBOX.uploading-1);
-      if(DROPBOX.uploading===0){ const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
-      return data.shared_link || data.url || null;
+      const linkData = await linkRes.json();
+
+      let sharedUrl = '';
+      if(linkData?.error?.['.tag'] === 'shared_link_already_exists') {
+        sharedUrl = linkData.error?.shared_link_already_exists?.metadata?.url || '';
+      } else {
+        sharedUrl = linkData.url || '';
+      }
+
+      if(!sharedUrl) throw new Error('No shared link URL returned');
+
+      // Normalize to direct URL
+      const directUrl = sharedUrl
+        .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+        .replace('?dl=0', '').replace('?dl=1', '').replace('?raw=1', '');
+      const finalUrl = directUrl + (directUrl.includes('?') ? '&dl=1' : '?dl=1');
+
+      console.log('%c[DROPBOX] ✅ Shared URL: '+finalUrl.slice(0,80), 'color:#22c97a;font-weight:700');
+
+      DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
+      if(DROPBOX.uploading === 0) { const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
+      return finalUrl;
+
     } catch(e) {
-      DROPBOX.uploading=Math.max(0,DROPBOX.uploading-1);
-      if(DROPBOX.uploading===0){ const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
-      if(e.name==='AbortError'){ console.log('[DROPBOX] Upload aborted by user'); return null; }
-      console.error('%c[DROPBOX] Upload exception: '+e.message, 'color:#ef4444;font-weight:700');
+      DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
+      if(DROPBOX.uploading === 0) { const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
+      if(e.name === 'AbortError') { console.log('[DROPBOX] Upload aborted'); return null; }
+      console.error('%c[DROPBOX] Upload failed: '+e.message, 'color:#ef4444;font-weight:700');
       return null;
     }
   }
