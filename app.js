@@ -915,7 +915,8 @@ function renderFeedGrid(){
         const btns=document.createElement('div');btns.className='type-btns';[['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>','Foto','image'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>','Reel','video'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>','Caros.','carousel']].forEach(([icon,label,type])=>{const b=document.createElement('button');b.className='type-btn';b.innerHTML=`<span class="ti">${icon}</span>${label}`;b.onclick=()=>setFeedItemType(idx,type);btns.appendChild(b);});pk.appendChild(btns);
         const rm=document.createElement('button');rm.className='picker-rm';rm.textContent='✕ rimuovi';rm.onclick=()=>removeFeedItem(idx);pk.appendChild(rm);cell.appendChild(pk);wrap.appendChild(cell);
       } else {
-        const coverUrl=item.type==='carousel'&&item.slides?.length?item.slides[0].url:item.url;
+        const _itemUrl=item.url||item.externalUrl||'';
+      const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_itemUrl;
         if(item.needsReload&&!item.url){
           const _icon=item.type==='video'?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>':item.type==='carousel'?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>':'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
           const _rfn=async(file)=>{
@@ -2101,7 +2102,8 @@ function renderPreview(){
       // Use pointer cursor always so click is obvious even on empty cells
       cell.style.cursor='pointer';
       cell.onclick=()=>openLb(i,ready,stArr);
-      const coverUrl=item.type==='carousel'&&item.slides?.length?item.slides[0].url:item.url;
+      const _itemUrl=item.url||item.externalUrl||'';
+      const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_itemUrl;
       if(item.type==='video'){
         if(item.coverUrl){
           // Mostra cover statica in Preview + play icon overlay
@@ -2467,12 +2469,30 @@ function renderLb(){
       const sn=document.createElement('button');sn.className='lb-slide-nav lb-slide-next';sn.innerHTML='›';sn.onclick=e=>{e.stopPropagation();lbSlideNav(1);};inner.appendChild(sn);
     }
   } else if(item.type==='video'){
-    const v=makeMedia(item.url,'video',{controls:true,autoplay:true,muted:false,loop:false});
-    if(v)inner.appendChild(v);
+    const videoUrl=item.url||item.externalUrl||'';
+    if(videoUrl){
+      const vWrap=document.createElement('div');vWrap.style.cssText='width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111;position:relative;';
+      const v=document.createElement('video');
+      v.src=videoUrl;v.controls=true;v.autoplay=false;v.muted=false;v.loop=false;v.playsInline=true;
+      v.style.cssText='width:100%;height:100%;object-fit:contain;display:block;max-height:100%;';
+      // Fallback: se CORS blocca il video, mostra pulsante apri
+      const fallback=document.createElement('div');
+      fallback.style.cssText='display:none;flex-direction:column;align-items:center;gap:12px;padding:20px;text-align:center;';
+      fallback.innerHTML='<div style="font-size:32px;">🎬</div><div style="font-size:12px;color:#aaa;font-family:var(--font);">Il video non può essere riprodotto inline</div>';
+      const openBtn=document.createElement('a');openBtn.href=videoUrl;openBtn.target='_blank';openBtn.rel='noopener';
+      openBtn.style.cssText='background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-family:var(--font);padding:8px 18px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-top:4px;';
+      openBtn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Apri video';
+      fallback.appendChild(openBtn);
+      v.onerror=()=>{v.style.display='none';fallback.style.display='flex';};
+      v.addEventListener('loadeddata',()=>{v.play().catch(()=>{});},{ once:true });
+      vWrap.appendChild(v);vWrap.appendChild(fallback);inner.appendChild(vWrap);
+    } else {
+      const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='🎬';inner.appendChild(ph);
+    }
   } else {
     const url=item.url||item.externalUrl||'';
-    if(url){const img=document.createElement('img');img.src=url;img.alt='';inner.appendChild(img);}
-    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='';inner.appendChild(ph);}
+    if(url){const img=document.createElement('img');img.src=url;img.alt='';img.style.cssText='max-width:100%;max-height:100%;object-fit:contain;';inner.appendChild(img);}
+    else{const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='🖼';inner.appendChild(ph);}
   }
   const counterEl=document.getElementById('lb-counter');if(isCarousel)counterEl.textContent=(lbSlide+1)+' / '+item.slides.length+' slide';else counterEl.textContent=isMulti?(lbIdx+1)+' / '+lbItems.length:'';
   const copyEl=document.getElementById('lb-copy');if(copyEl){if(item.copy?.trim()){copyEl.textContent=item.copy;copyEl.className='lb-copy visible';}else{copyEl.textContent='';copyEl.className='lb-copy';}}
