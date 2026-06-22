@@ -1411,7 +1411,6 @@ function renderFeedGrid(){
       items.forEach(item=>{
         const realIdx = allMonthItems.indexOf(item);
         const wrap=document.createElement('div');wrap.className='cell-wrap';
-        wrap.style.cssText='';  // normal cell
         const cell=document.createElement('div');cell.className='feed-cell';cell.style.position='relative';
         const _url=item.url||item.externalUrl||'';
         const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_url;
