@@ -461,35 +461,19 @@ const DROPBOX = {
 
       console.log('%c[DROPBOX] ✅ File uploaded: '+uploadData.path_display, 'color:#22c97a;font-weight:700');
 
-      // Step 2: Create shared link
-      const linkRes = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+      // Step 2: Create shared link via our server (avoids CSP restrictions)
+      const linkRes = await fetch('/api/dropbox-link', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-nassa-key': CLOUD.apiKey
         },
-        body: JSON.stringify({
-          path: uploadData.path_display,
-          settings: { requested_visibility: 'public' }
-        })
+        body: JSON.stringify({ path: uploadData.path_display })
       });
+      if(!linkRes.ok) throw new Error('Link creation failed: HTTP ' + linkRes.status);
       const linkData = await linkRes.json();
-
-      let sharedUrl = '';
-      if(linkData?.error?.['.tag'] === 'shared_link_already_exists') {
-        sharedUrl = linkData.error?.shared_link_already_exists?.metadata?.url || '';
-      } else {
-        sharedUrl = linkData.url || '';
-      }
-
-      if(!sharedUrl) throw new Error('No shared link URL returned');
-
-      // Normalize to direct URL
-      const directUrl = sharedUrl
-        .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-        .replace('?dl=0', '').replace('?dl=1', '').replace('?raw=1', '');
-      const finalUrl = directUrl + (directUrl.includes('?') ? '&dl=1' : '?dl=1');
-
+      const finalUrl = linkData.url;
+      if(!finalUrl) throw new Error('No shared link URL returned');
       console.log('%c[DROPBOX] ✅ Shared URL: '+finalUrl.slice(0,80), 'color:#22c97a;font-weight:700');
 
       DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
