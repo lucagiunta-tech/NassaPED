@@ -777,15 +777,33 @@ function needsReloadPh(icon,name,reuploadFn){
 ══════════════════════════════════════════ */
 let _routerSilent = false;
 
-function routerPush(tab) {
+function routerPush(tab, replace) {
   if(_routerSilent) return;
   const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
   let path = '/';
   if(!tab || tab === 'studio') { path = '/'; }
-  // Admin URL uses client.id (internal, not share token)
-  else if(cl) { path = '/client/' + encodeURIComponent(cl.id) + '/' + tab; }
+  else if(cl) {
+    path = '/client/' + encodeURIComponent(cl.id) + '/' + tab;
+    // Encode month and account into URL for feed/stories/preview
+    const month = feedMonth || '';
+    const accIdx = feedAccountIdx >= 0 ? feedAccountIdx : 0;
+    if(month && (tab==='feed'||tab==='stories'||tab==='preview')) {
+      const monthSlug = month.toLowerCase().replace(/\s+/,'-');
+      path += '/' + monthSlug + (accIdx > 0 ? '/' + accIdx : '');
+    }
+  }
   else { path = '/' + tab; }
-  if(window.location.pathname !== path) history.pushState({ tab, clientId: cl?.id||null }, '', path);
+  const state = { tab, clientId: cl?.id||null, month: feedMonth, accIdx: feedAccountIdx };
+  if(replace || window.location.pathname === path) {
+    history.replaceState(state, '', path);
+  } else {
+    history.pushState(state, '', path);
+  }
+}
+
+function routerUpdate() {
+  // Called on month/account change — updates URL without adding history entry
+  routerPush(currentTab, true);
 }
 
 function routerRestore() {
@@ -999,7 +1017,7 @@ function onFeedClientChange(){const v=document.getElementById('feed-client-sel')
 function onFeedAccountChange(){const v=document.getElementById('feed-account-sel').value;feedAccountIdx=v===''?-1:parseInt(v);if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
 function renderFeedMonthPills(){const c=document.getElementById('feed-month-pills')||document.querySelector('.feed-month-pills-inline');if(!c)return;c.innerHTML='';if(feedAccountIdx<0)return;let pillYear=CUR_YEAR;if(feedMonth){const y=parseInt(feedMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}const ynav=document.createElement('div');ynav.className='year-nav';const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');prev.setAttribute('aria-label','Anno precedente');
   prev.setAttribute('aria-label','Mese precedente');prev.onclick=()=>{pillYear--;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');next.setAttribute('aria-label','Anno successivo');
-  next.setAttribute('aria-label','Mese successivo');next.onclick=()=>{pillYear++;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===feedMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{feedMonth=m;renderFeedMonthPills();renderFeedGrid();updateFeedHeader();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
+  next.setAttribute('aria-label','Mese successivo');next.onclick=()=>{pillYear++;CUR_YEAR=pillYear;MONTH_OPTIONS=monthsForYear(pillYear);renderFeedMonthPills();};ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);c.appendChild(ynav);const pillsWrap=document.createElement('div');pillsWrap.className='month-pills';monthsForYear(pillYear).forEach(m=>{const p=document.createElement('button');p.className='month-pill'+(m===feedMonth?' active':'');p.textContent=m.slice(0,3);p.onclick=()=>{feedMonth=m;renderFeedMonthPills();renderFeedGrid();updateFeedHeader();routerUpdate();};pillsWrap.appendChild(p);});c.appendChild(pillsWrap);}
 
 /* STORIES SELECTORS */
 function onStoriesClientChange(){const v=document.getElementById('stories-client-sel').value;storiesClientIdx=v===''?-1:parseInt(v);storiesAccountIdx=-1;populateAccountSelect('stories-account-sel',storiesClientIdx,-1);if(!storiesMonth)storiesMonth=MONTH_OPTIONS[new Date().getMonth()];renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
@@ -1284,6 +1302,17 @@ function renderFeedGrid(){
         db.appendChild(calWrap);db.appendChild(di);db.appendChild(dt);cell.appendChild(db);
 
         // Date add button (hover, no date set)
+        // Status badge on feed cell (bottom-left, unobtrusive)
+        const feedStateBadge=document.createElement('button');
+        feedStateBadge.className='feed-cell-stato-btn';
+        const _fst=item.apprStato||'bozza';
+        const _fstCfg={bozza:{dot:'#888',label:'Bozza'},approvare:{dot:'#d4a800',label:'In revisione'},revisione:{dot:'#d4a800',label:'In revisione'},approvato:{dot:'#22c97a',label:'Approvato'}};
+        const _fc=_fstCfg[_fst]||_fstCfg.bozza;
+        feedStateBadge.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}`;
+        feedStateBadge.title='Cambia stato';
+        feedStateBadge.onclick=e=>{e.stopPropagation();openApprModal(idx,currentFeedItems());};
+        cell.appendChild(feedStateBadge);
+
         const dpTrigger=document.createElement('button');dpTrigger.className='date-add-btn dp-trigger-btn';
         const calWrap2=document.createElement('span');calWrap2.innerHTML=SVG_CAL;calWrap2.style.cssText='display:flex;align-items:center;';
         dpTrigger.appendChild(calWrap2);dpTrigger.appendChild(document.createTextNode(item.date?' '+item.date.split(' ').slice(1).join(' '):'+ data'));
@@ -2376,76 +2405,7 @@ function renderPreview(){
     const accPreviewId = acc?.id || null;
     const hlArr = accPreviewId ? (highlights[accPreviewId]||[]) : [];
 
-    const profileSec = document.createElement('div');
-    profileSec.className = 'preview-profile-sec';
-
-    // Riga superiore: avatar + highlights
-    const profileTop = document.createElement('div');
-    profileTop.className = 'preview-profile-top';
-
-    // Avatar (foto profilo)
-    const avatarEl = document.createElement('div');
-    avatarEl.className = 'preview-profile-avatar';
-    if(acc.profileImg){
-      const img = document.createElement('img');
-      img.src = acc.profileImg;
-      img.alt = 'Foto profilo';
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-      avatarEl.appendChild(img);
-    } else {
-      avatarEl.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    }
-    profileTop.appendChild(avatarEl);
-
-    // Highlights in riga
-    if(hlArr.length){
-      const hlStrip = document.createElement('div');
-      hlStrip.className = 'preview-hl-strip';
-      hlArr.forEach(hl=>{
-        const hlItem = document.createElement('div');
-        hlItem.className = 'preview-hl-item';
-        // Cerchio
-        const circle = document.createElement('div');
-        circle.className = 'preview-hl-circle';
-        if(hl.coverUrl){
-          const img = document.createElement('img');
-          img.src = hl.coverUrl;
-          img.alt = hl.name||'';
-          circle.appendChild(img);
-        } else {
-          circle.style.background = 'var(--cell-bg)';
-        }
-        // Label
-        const lbl = document.createElement('div');
-        lbl.className = 'preview-hl-lbl';
-        lbl.textContent = hl.name||'';
-        hlItem.appendChild(circle);
-        hlItem.appendChild(lbl);
-        hlStrip.appendChild(hlItem);
-      });
-      profileTop.appendChild(hlStrip);
-    }
-
-    profileSec.appendChild(profileTop);
-
-    // Bio
-    const bioEl = document.createElement('div');
-    bioEl.className = 'preview-profile-bio';
-    if(acc.bio){
-      bioEl.textContent = acc.bio;
-    } else {
-      bioEl.style.cssText='color:var(--text-3);font-style:italic;font-size:var(--fs-xs);cursor:pointer;';
-      bioEl.textContent = '+ Aggiungi bio del profilo';
-      bioEl.onclick = ()=>{ switchTab('feed'); setTimeout(()=>{ const p=document.getElementById('stories-ctx-panel')||document.getElementById('feed-ctx-panel'); if(p&&!p.classList.contains('open'))document.getElementById('stories-expand-btn')?.click(); document.getElementById('feed-profile-bio')?.focus(); },300); };
-    }
-    profileSec.appendChild(bioEl);
-
-    // Separatore
-    const sep = document.createElement('div');
-    sep.style.cssText = 'height:1px;background:var(--border);margin:12px 0 8px;';
-    profileSec.appendChild(sep);
-
-    body.appendChild(profileSec);
+    // Profile section removed — dropdown in topbar is sufficient
 
     const grid=document.createElement('div');grid.className='client-grid';
     ready.forEach((item,i)=>{
@@ -2560,9 +2520,10 @@ function renderPreview(){
       const apprSt = item.apprStato || 'bozza';
       const revCount = item.apprRevisions || 0;
       const APPR_CFG = {
-        bozza:     {label:'Bozza',       dot:'#aaa',    bg:'rgba(0,0,0,0.52)',       text:'#e8e8e8',       border:'rgba(255,255,255,0.15)'},
-        approvare: {label:'In revisione', dot:'#f5c800', bg:'rgba(212,168,0,0.82)',  text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
-        approvato: {label:'Approvato',    dot:'#22c97a', bg:'rgba(26,122,74,0.82)',  text:'#d6fff0',       border:'rgba(26,122,74,0.9)'},
+        bozza:     {label:'Bozza',        dot:'#aaa',    bg:'rgba(0,0,0,0.52)',      text:'#e8e8e8',       border:'rgba(255,255,255,0.15)'},
+        approvare: {label:'In revisione',  dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
+        revisione: {label:'In revisione',  dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
+        approvato: {label:'Approvato',     dot:'#22c97a', bg:'rgba(26,122,74,0.82)', text:'#d6fff0',       border:'rgba(26,122,74,0.9)'},
       };
       const cfg = APPR_CFG[apprSt] || APPR_CFG.bozza;
       // Bordo card colorato per stato
@@ -4363,7 +4324,7 @@ function renderAccSwitcher(){
 }
 
 function switchAccount(accountIdx){
-  if(globalClientIdx<0)return;feedAccountIdx=accountIdx;storiesAccountIdx=accountIdx;renderAccSwitcher();
+  if(globalClientIdx<0)return;feedAccountIdx=accountIdx;storiesAccountIdx=accountIdx;renderAccSwitcher();routerUpdate();
   if(currentTab==='feed'){rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
   else if(currentTab==='stories'){rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
   else if(currentTab==='preview'){previewAccountIdx=accountIdx;syncPreviewSelectors();renderPreview();}
@@ -5635,10 +5596,9 @@ function renderAnnoTab() {
 /* ══ SISTEMA APPROVAZIONE FEED ══ */
 
 const APPR_STATI = [
-  {key:'bozza',       label:'Bozza',            dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)',  border:'var(--border)'},
-  {key:'revisione',   label:'Da Revisionare',   dot:'#e05c00', bg:'rgba(224,92,0,0.13)',    text:'#7a2e00',        border:'rgba(224,92,0,0.45)'},
-  {key:'approvare',   label:'Da Approvare',     dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',        border:'rgba(212,168,0,0.5)'},
-  {key:'approvato',   label:'Approvato',        dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',        border:'rgba(26,122,74,0.4)'},
+  {key:'bozza',     label:'Bozza',         dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)', border:'var(--border)'},
+  {key:'approvare', label:'In revisione',  dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',       border:'rgba(212,168,0,0.5)'},
+  {key:'approvato', label:'Approvato',     dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
 ];
 /* ══ SISTEMA NOTIFICHE NOTE ══ */
 function updateNotifBadge(){
@@ -5706,7 +5666,7 @@ function apprUpdateStats(items){
   // Conteggi per stato approvazione (su tutto il feed, non filtered)
   const allItems = apprGetItems ? apprGetItems() : items;
   const counts = {bozza:0, approvare:0, approvato:0};
-  allItems.forEach(it => { const st=it.apprStato||'bozza'; counts[st]=(counts[st]||0)+1; });
+  allItems.forEach(it => { let st=it.apprStato||'bozza'; if(st==='revisione')st='approvare'; counts[st]=(counts[st]||0)+1; });
   const total = allItems.length;
 
   // Conteggi per tipologia
@@ -5835,6 +5795,8 @@ function apprModalSetStato(stato){
   if(!post) return;
   const old = post.apprStato || 'bozza';
   post.apprStato = stato;
+  // migrate legacy 'revisione' key
+  if(post.apprStato==='revisione') post.apprStato='approvare';
   if(stato==='approvare'&&old==='bozza') post.apprRevisions=(post.apprRevisions||0)+1;
   // Aggiorna pills
   const pillsEl = document.getElementById('appr-stato-pills');

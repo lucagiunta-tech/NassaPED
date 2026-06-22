@@ -55,7 +55,7 @@
   /* Layout chrome heights (per calcolo altezza max celle) */
   --chrome-h: calc(var(--topbar) + 44px + 56px); /* topbar + subtopbar + ctx-bar */
   /* Altezza max cella: 40% dello spazio disponibile = ~2.5 righe visibili */
-  --cell-max-h: calc((100dvh - var(--chrome-h)) * 0.42);
+  --cell-max-h: calc((100dvh - var(--chrome-h)) * 0.62);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:var(--fs-base);-webkit-font-smoothing:antialiased;}
@@ -268,7 +268,7 @@ tbody tr:hover .tr-actions{opacity:1;}
   justify-content:center;
   /* Empty slot: altezza ridotta rispetto alle celle piene */
   aspect-ratio:1/1;
-  max-height:min(var(--cell-max-h), 180px);
+  max-height:var(--cell-max-h);
 }
 .feed-cell.empty-slot span{font-size:var(--fs-xs);color:var(--text-3);}
 .feed-cell.empty-slot.file-hover{border-color:var(--green);background:var(--green-lt);}
@@ -825,7 +825,6 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* PREVIEW */
 .preview-wrap{flex:1;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;}
 .preview-topbar{flex-shrink:0 !important;}
-.appr-stats-bar{flex-shrink:0 !important;}
 .preview-body{flex:1;overflow-y:auto;}
 .preview-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
 .preview-acc-tabs{display:flex;gap:6px;margin-bottom:24px;border-bottom:2px solid var(--border);padding-bottom:0;}
@@ -1509,7 +1508,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .appr-toggle-btn.active svg{stroke:#fff;}
 
 /* Stats bar */
-.appr-stats-bar{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+.appr-stats-bar{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);margin-bottom:8px;}
 .appr-stat-cell{flex:1;padding:8px 14px;border-right:.5px solid var(--border);min-width:80px;}
 .appr-stat-num{font-size:20px;font-weight:700;color:var(--text);line-height:1;}
 .appr-stat-lbl{font-size:9px;font-family:var(--font);letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;margin-top:2px;}
@@ -3033,3 +3032,15 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* ══ Platform dropdown animation ══ */
 @keyframes fadeIn { from{opacity:0;transform:translateY(-4px);} to{opacity:1;transform:translateY(0);} }
+
+/* ── Feed cell: status badge (bottom-left) ── */
+.feed-cell-stato-btn{
+  position:absolute;bottom:36px;left:8px;
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:var(--r-pill);
+  background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);
+  border:none;color:#fff;font-size:10px;font-family:var(--font);
+  font-weight:600;cursor:pointer;letter-spacing:.03em;
+  z-index:5;transition:background .12s;
+}
+.feed-cell-stato-btn:hover{background:rgba(0,0,0,0.8);}
