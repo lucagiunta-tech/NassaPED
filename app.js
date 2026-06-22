@@ -972,13 +972,11 @@ function switchTab(tab){
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
     const pe=document.getElementById('page-'+t);if(pe)pe.classList.toggle('active',t===tab);
+    // FIX: si and sn were identical — deduplicated to one call
     const si=document.getElementById('si-'+t);if(si)si.classList.toggle('active',t===tab);
-    // Update main nav icon sidebar
-    const sn=document.getElementById('si-'+t);if(sn)sn.classList.toggle('active',t===tab);
   });
   const subt=document.getElementById('subtopbar');if(subt)subt.classList.toggle('visible',tab!=='studio');
-  const _sb=document.getElementById('sidebar');if(_sb)_sb.classList.toggle('hidden',tab!=='studio');
-  // Sidebar visibile solo in Studio — usa classe .hidden per transizione CSS
+  // FIX: sidebar toggle was called twice on same element — deduplicated
   const sb=document.getElementById('sidebar');
   if(sb) sb.classList.toggle('hidden', tab!=='studio');
   const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');const sFeed=document.getElementById('sidebar-feed');const sSt=document.getElementById('sidebar-stories');
@@ -3876,10 +3874,10 @@ function renderNotesMonthPills(){
   if(notesMonth){const y=parseInt(notesMonth.split(' ').pop());if(!isNaN(y))pillYear=y;}
   // Year nav
   const ynav=document.createElement('div');ynav.className='year-nav';
-  const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');prev.setAttribute('aria-label','Anno precedente');
+  const prev=document.createElement('button');prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');
   prev.onclick=()=>{pillYear--;renderNotesMonthPillsForYear(pillYear);};
   const lbl=document.createElement('span');lbl.className='year-label';lbl.textContent=pillYear;
-  const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');next.setAttribute('aria-label','Anno successivo');
+  const next=document.createElement('button');next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');
   next.onclick=()=>{pillYear++;renderNotesMonthPillsForYear(pillYear);};
   ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);
   container.appendChild(ynav);
