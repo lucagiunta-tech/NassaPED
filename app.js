@@ -1398,6 +1398,22 @@ function renderFeedGrid(){
       em.innerHTML='<span class="fe-icon">📭</span><p>Nessun contenuto in nessun mese.</p>';
       grid.appendChild(em);return;
     }
+    // Mode 2: flusso continuo — flatten + sort by date before looping
+    if(feedAllMonthsMode === 2){
+      // Collect all items with their month reference, then sort chronologically
+      const flat = [];
+      groups.forEach(({month, items})=>{
+        items.forEach(item=>flat.push({item, month}));
+      });
+      flat.sort((a,b)=>{
+        const da = italianToISO(a.item.date)||'9999-99-99'; // no date → bottom
+        const db = italianToISO(b.item.date)||'9999-99-99';
+        return da.localeCompare(db);
+      });
+      // Override groups for rendering
+      groups = flat.map(({item, month})=>({month, items:[item]}));
+    }
+
     groups.forEach(({month, items})=>{
       // Mode 1: separatori per mese | Mode 2: flusso continuo senza separatori
       if(feedAllMonthsMode === 1){
