@@ -2172,8 +2172,12 @@ function renderPreview(){
           // Click: apre anteprima storyboard/story
           circ.title = st.name || 'Story collegata';
           circ.style.cursor = 'pointer';
-          circ.onclick = e => {
+          circ.style.pointerEvents = 'all';
+          circ.style.position = 'relative';
+          circ.style.zIndex = '50';
+          circ.addEventListener('click', e => {
             e.stopPropagation();
+            e.preventDefault();
             const storyOpts={aspectRatio:'9/16'};
             if(st.isStoryboard && st.slides?.length){
               const slideItems=st.slides.map((sl,idx)=>({
@@ -2195,7 +2199,7 @@ function renderPreview(){
                 showToast('Story non disponibile. Apri il tab Stories.','warn');
               }
             }
-          };
+          });
           strip.appendChild(circ);
         });
         post.appendChild(strip);
