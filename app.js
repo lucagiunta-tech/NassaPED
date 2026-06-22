@@ -500,7 +500,7 @@ function queueFeedFiles(files){
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
         }
-        setFeedItems(arr);refreshFeed();
+        setFeedItems(arr);refreshFeed();if(currentTab==='preview')renderPreview();
         CLOUD.saveNow(CLOUD.snapshot());
       } else {
         failed++;
@@ -550,7 +550,7 @@ function queueStoryFiles(files){
       if(sharedUrl){const a=currentStoryItems();const match=a.findIndex(it=>it.name===f.name&&!it.externalUrl);if(match>=0){
         // FIX 4: revoke blob after remote URL confirmed
         if(a[match].url&&a[match].url.startsWith('blob:'))URL.revokeObjectURL(a[match].url);
-        a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;}setStoryItems(a);refreshStories();}
+        a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;}setStoryItems(a);refreshStories();if(currentTab==='preview')renderPreview();}
     }
   })();
 }
@@ -582,7 +582,7 @@ function detectType(file_or_url){
 function makeMedia(url,type,opts={}){
   if(!url)return null;
   if(type==='video'){const v=document.createElement('video');v.src=url;v.muted=opts.muted!==false;v.loop=opts.loop!==false;v.playsInline=true;v.preload='metadata';v.style.cssText='pointer-events:none;background:#111;width:100%;height:100%;object-fit:cover;display:block;';if(opts.autoplay)v.autoplay=true;if(opts.controls){v.controls=true;v.style.pointerEvents='auto';}return v;}
-  const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';img.decoding='async';return img;
+  const img=document.createElement('img');img.src=url;img.alt='';img.loading='lazy';img.decoding='async';img.onerror=()=>{img.style.display='none';};return img;
 }
 function needsReloadPh(icon,name,reuploadFn){
   const ph=document.createElement('div');ph.className='needs-reload-ph';
@@ -2171,7 +2171,7 @@ function renderPreview(){
         linked.forEach((st,si)=>{
           const circ=document.createElement('div');circ.className='ls-circle';
           const cu=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;
-          if(cu){const img=document.createElement('img');img.src=cu;img.alt='';circ.appendChild(img);}
+          if(cu){const img=document.createElement('img');img.src=cu;img.alt='';img.onerror=()=>{img.style.display='none';};circ.appendChild(img);}
           // Click: apre anteprima storyboard/story
           circ.title = st.name || 'Story collegata';
           circ.style.cursor = 'pointer';
