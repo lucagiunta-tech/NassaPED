@@ -563,6 +563,77 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ped-anno-pill.aut{background:rgba(127,119,221,0.10);color:#26215C;}
 .ped-anno-n{font-size:var(--fs-xs);color:var(--text-3);}
 
+/* ══ TAB STORYBOARD ══ */
+.sb-tab-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px;
+  padding:16px;
+}
+.sb-tab-empty{
+  grid-column:1/-1;
+  text-align:center;
+  padding:60px 20px;
+  color:var(--text-3);
+}
+.sb-tab-card{
+  border:.5px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  background:var(--surface);
+  display:flex;
+  flex-direction:column;
+  transition:box-shadow var(--t-base);
+}
+.sb-tab-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08);}
+.sb-tab-prev{
+  position:relative;
+  width:100%;
+  background:var(--cell-bg);
+  overflow:hidden;
+  flex-shrink:0;
+}
+.sb-tab-fmt-badge{
+  position:absolute;
+  top:6px;left:6px;
+  background:rgba(0,0,0,.6);
+  color:#fff;
+  font-size:9px;
+  font-family:var(--font);
+  font-weight:700;
+  padding:2px 7px;
+  border-radius:var(--r-pill);
+  letter-spacing:.04em;
+}
+.sb-tab-info{
+  padding:10px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  flex:1;
+}
+.sb-tab-name{
+  font-size:var(--fs-sm);
+  font-weight:600;
+  color:var(--text);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.sb-tab-meta-row{
+  font-size:var(--fs-xs);
+  color:var(--text-3);
+}
+.sb-tab-actions{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-top:4px;
+}
+@media (max-width:744px){
+  .sb-tab-grid{grid-template-columns:repeat(2,1fr);padding:10px;gap:8px;}
+}
+
 /* Mobile */
 @media (max-width: 744px) {
   .ped-cal-toolbar { padding: 6px 10px; gap: 6px; }
