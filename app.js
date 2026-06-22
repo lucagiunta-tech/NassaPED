@@ -689,12 +689,16 @@ function queueFeedFiles(files){
     };
   });
   setFeedItems([...newItems,...items]);refreshFeed();
+  // Capture the feed key NOW — before user can navigate to another month/account
+  // This is the ROOT CAUSE of anteprime scompaiono: if feedMonth or feedAccountIdx
+  // changes during upload, currentFeedItems() in the callback reads the WRONG feed.
+  const uploadFeedKey = currentFeedKey();
+
   // Upload each file to Dropbox sequentially to avoid race conditions
   (async()=>{
     const total = filesArr.length;
     let done = 0;
     let failed = 0;
-    // Mostra upload bar con contatore
     const uploadBar = document.getElementById('dbx-upload-bar');
     const uploadText = document.getElementById('dbx-upload-text');
     const updateProgress = () => {
@@ -709,8 +713,9 @@ function queueFeedFiles(files){
       updateProgress();
       const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
       const sharedUrl=await DROPBOX.upload(f,destPath);
-      const arr=currentFeedItems();
-      // Match by _uploadId first (unique), fall back to name+no-externalUrl
+      // CRITICAL: use the captured key, not currentFeedItems() which depends on current state
+      const arr = uploadFeedKey ? (feeds[uploadFeedKey]||[]) : currentFeedItems();
+      // Match by _uploadId first (unique per upload session), fallback to name
       const uploadId = f.name+'_'+uploadStartTimes.get(f);
       let match = arr.findIndex(it=>it._uploadId===uploadId);
       if(match<0) match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
@@ -722,12 +727,16 @@ function queueFeedFiles(files){
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
         }
-        setFeedItems(arr);refreshFeed();if(currentTab==='preview')renderPreview();
+        if(uploadFeedKey) feeds[uploadFeedKey]=arr;
+        // Refresh UI only if still on same feed
+        if(currentFeedKey()===uploadFeedKey) refreshFeed();
+        if(currentTab==='preview') renderPreview();
         CLOUD.saveNow(CLOUD.snapshot());
       } else {
         failed++;
         if(match>=0){ arr[match].needsReload=true; }
-        setFeedItems(arr);refreshFeed();
+        if(uploadFeedKey) feeds[uploadFeedKey]=arr;
+        if(currentFeedKey()===uploadFeedKey) refreshFeed();
         showToast('⚠ Upload fallito: '+f.name,'warn');
       }
     }
