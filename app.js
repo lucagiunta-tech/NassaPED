@@ -1378,8 +1378,11 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
 
 function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;grid.innerHTML='';updateFeedFormat();
-  // Remove any existing backlog banner
+  // Always reset wrappers at start — they get re-created if needed
   document.querySelector('.feed-backlog-banner')?.remove();
+  const _amw=document.getElementById('feed-all-months-wrap');if(_amw){_amw.innerHTML='';_amw.style.display='none';}
+  const _bw=document.getElementById('feed-backlog-wrap');if(_bw){_bw.innerHTML='';_bw.style.display='none';}
+  grid.style.display='';
   // Vista: grid | list
   grid.classList.toggle('feed-view-list', feedViewMode==='list');
   // FIX 5: drag delegation — listeners attached once to grid, not per-cell
@@ -1401,9 +1404,10 @@ function renderFeedGrid(){
     if(!wrapper){
       wrapper=document.createElement('div');
       wrapper.id='feed-all-months-wrap';
-      wrapper.style.cssText='display:flex;flex-direction:column;gap:0;overflow-y:auto;flex:1;';
+      wrapper.style.cssText='display:flex;flex-direction:column;gap:0;overflow-y:auto;flex:1;min-height:0;';
       grid.parentElement.appendChild(wrapper);
     }
+    wrapper.style.display='flex';
     wrapper.innerHTML='';
     groups.forEach(({month, items})=>{
       // Month section
@@ -1475,10 +1479,7 @@ function renderFeedGrid(){
     return;
   }
 
-  // Restore grid display if not in all-months mode
-  grid.style.display='';
-  const oldWrap=document.getElementById('feed-all-months-wrap');
-  if(oldWrap) oldWrap.innerHTML='';
+  // grid.style.display already reset at top of renderFeedGrid
 
   // Backlog filter: show only posts without a date
   if(feedBacklogMode){
@@ -1490,14 +1491,15 @@ function renderFeedGrid(){
     }
     // Hide main grid, show backlog in wrapper
     grid.style.display='none';
-    const oldWrap2=document.getElementById('feed-all-months-wrap');if(oldWrap2)oldWrap2.innerHTML='';
+    const _amw2=document.getElementById('feed-all-months-wrap');if(_amw2){_amw2.innerHTML='';_amw2.style.display='none';}
     let backlogWrap=document.getElementById('feed-backlog-wrap');
     if(!backlogWrap){
       backlogWrap=document.createElement('div');
       backlogWrap.id='feed-backlog-wrap';
-      backlogWrap.style.cssText='display:flex;flex-direction:column;flex:1;overflow-y:auto;';
+      backlogWrap.style.cssText='display:flex;flex-direction:column;flex:1;overflow-y:auto;min-height:0;';
       grid.parentElement.appendChild(backlogWrap);
     }
+    backlogWrap.style.display='flex';
     backlogWrap.innerHTML='';
     const hdr2=document.createElement('div');hdr2.className='feed-backlog-banner';
     hdr2.innerHTML=`<strong>${backlog.length} post senza data</strong> <span>— assegna una data per rimuoverli dal backlog</span>`;
@@ -1548,9 +1550,7 @@ function renderFeedGrid(){
     return;
   }
 
-  // Restore display if leaving filtered modes
-  grid.style.display='';
-  const bw=document.getElementById('feed-backlog-wrap');if(bw){bw.innerHTML='';bw.style.display='none';}
+  // grid and wrappers already reset at top of renderFeedGrid
 
   items=currentFeedItems();
   const total=Math.max(items.length+1,9);
