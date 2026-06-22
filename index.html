@@ -797,7 +797,7 @@
 
 
 
-    <div class="lightbox" id="lightbox" onclick="lbBg(event)">
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Anteprima contenuto" onclick="lbBg(event)">
       <div class="lb-wrap">
         <button class="lb-nav lb-prev" id="lb-prev" onclick="lbNav(-1)" aria-label="Post precedente">‹</button>
         <div class="lb-inner" id="lb-inner"></div>
@@ -840,7 +840,7 @@
 
 
 <!-- ADS CAMPAIGN MODAL -->
-<div class="modal-bg" id="ads-camp-modal">
+<div class="modal-bg" role="dialog" aria-modal="true" id="ads-camp-modal">
   <div class="modal" style="width:480px;">
     <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" onclick="closeModal('ads-camp-modal')" aria-label="Chiudi">✕</button></div>
     <div class="field"><label>Nome campagna</label><input type="text" id="adm-name" placeholder="es. Estate 2026 — Awareness"/></div>
@@ -907,7 +907,7 @@
 
 
 <!-- CONFIRM MODAL — sostituisce tutti i confirm() nativi -->
-<div class="modal-bg" id="confirm-modal" data-no-close="1">
+<div class="modal-bg" role="dialog" aria-modal="true" id="confirm-modal" data-no-close="1">
   <div class="modal" style="width:380px;gap:12px;">
     <div class="modal-top" style="border-bottom:none;padding-bottom:0;">
       <div class="confirm-icon" id="confirm-icon"></div>
@@ -925,7 +925,7 @@
 </div>
 
 <!-- EDIT CLIENT MODAL -->
-<div class="modal-bg" id="edit-client-modal">
+<div class="modal-bg" role="dialog" aria-modal="true" id="edit-client-modal">
   <div class="modal" style="width:480px;">
     <div class="modal-top">
       <h3 id="edit-client-title">Modifica cliente</h3>
@@ -1008,7 +1008,7 @@
 </div>
 
 <!-- CAROUSEL MODAL -->
-<div class="modal-bg" id="carousel-modal">
+<div class="modal-bg" role="dialog" aria-modal="true" id="carousel-modal">
   <div class="modal">
     <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">La prima slide appare nella griglia.</p>
@@ -1025,7 +1025,7 @@
 </div>
 
 <!-- STORYBOARD MODAL -->
-<div class="modal-bg" id="storyboard-modal" data-no-close="1">
+<div class="modal-bg" role="dialog" aria-modal="true" id="storyboard-modal" data-no-close="1">
   <div class="modal sb-modal-wide">
     <!-- Header -->
     <div class="modal-top">
@@ -1209,7 +1209,7 @@
   </div>
 
 <!-- HIGHLIGHT MODAL -->
-<div class="modal-bg" id="highlight-modal">
+<div class="modal-bg" role="dialog" aria-modal="true" id="highlight-modal">
   <div class="modal" style="width:360px;">
     <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')" aria-label="Chiudi">✕</button></div>
     <div class="field"><label>Nome</label><input type="text" id="hl-name" placeholder="Es: Menu · Estate · Team"/></div>
@@ -1225,7 +1225,7 @@
 </div>
 
 <!-- LINK STORIES MODAL -->
-<div class="modal-bg" id="link-stories-modal">
+<div class="modal-bg" role="dialog" aria-modal="true" id="link-stories-modal">
   <div class="modal">
     <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare a questo post.</p>
@@ -1238,7 +1238,7 @@
 </div>
 
 <!-- COPY CONTENT MODAL -->
-<div class="modal-bg" id="copy-content-modal">
+<div class="modal-bg" role="dialog" aria-modal="true" id="copy-content-modal">
   <div class="modal">
     <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">Copia da un altro account o mese.</p>
@@ -1270,7 +1270,7 @@
 <script src="app.js?v=1781971550"></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
-<div class="modal-bg" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
+<div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
   <div class="modal-box ed-modal-box">
     <div class="modal-top">
       <h3>Card editoriale</h3>
