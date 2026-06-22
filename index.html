@@ -14,7 +14,7 @@
   <!-- Sicurezza: disabilita detection automatica numeri/email -->
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="style.css?v=1781971550"/>
+<link rel="stylesheet" href="style.css?v=1782136013"/>
 </head>
 <body>
 <div class="app">
@@ -307,7 +307,7 @@
         <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">—</option></select>
         <div class="ctx-divider"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
-        <div class="ctx-fmt-badge" id="feed-fmt-badge">Instagram · 4:5</div>
+        <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma" style="cursor:pointer;">Instagram · 4:5 ▾</button>
         <button class="ctx-expand-btn" id="feed-expand-btn" onclick="toggleFeedPanel()" title="Carica e opzioni" aria-label="Carica e opzioni">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="feed-expand-icon"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
@@ -612,6 +612,8 @@
         <span style="font-size:13px;font-weight:600;color:var(--text);" id="preview-client-name">—</span>
         <div style="flex:1;"></div>
         <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;font-size:12px;"></select>
+        <!-- Account/Platform switcher (visible only with 2+ accounts) -->
+        <button class="ctx-fmt-badge" id="preview-acc-badge" onclick="togglePreviewAccDropdown()" aria-label="Cambia piattaforma" style="display:none;cursor:pointer;font-size:12px;"></button>
         <!-- Toggle modalità approvazione -->
         <div style="position:relative;display:inline-block;">
         <button class="appr-toggle-btn" id="appr-toggle-btn" onclick="toggleApprMode()" aria-label="Attiva modalità approvazione" title="Modalità Approvazione">
@@ -1252,10 +1254,46 @@
   </div>
 </div>
 
+<!-- ADD CLIENT MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="add-client-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-top">
+      <h3>Aggiungi cliente</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('add-client-modal')" aria-label="Chiudi">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" onkeydown="if(event.key==='Enter')addClient()"/></div>
+      <div class="field"><label>Pacchetto</label>
+        <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
+      </div>
+      <div class="field"><label>Stato</label>
+        <select id="nc-status"><option selected>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
+      </div>
+      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0"/></div>
+    </div>
+    <div class="divider" style="margin:4px -18px;"></div>
+    <div>
+      <div class="sec-lbl">Account principale</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+        <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="nc-acc-name" placeholder="Es: Modica IG"/></div>
+        <div class="field" style="margin:0;"><label>Piattaforma</label>
+          <select id="nc-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Puoi aggiungere altri account dopo dalla scheda cliente.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('add-client-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="addClient()">Aggiungi cliente</button>
+    </div>
+  </div>
+</div>
+
 <!-- DROPBOX UPLOAD BAR -->
 <div class="dbx-upload-bar" id="dbx-upload-bar">
   <div class="dbx-spinner"></div>
   <span id="dbx-upload-text">Caricamento su Dropbox…</span>
+  <button id="dbx-cancel-btn" onclick="cancelDropboxUpload()" aria-label="Annulla upload" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:var(--rs);padding:2px 8px;font-size:11px;font-family:var(--font);color:var(--text-2);cursor:pointer;flex-shrink:0;">✕ Annulla</button>
 </div>
 
 <!-- SAVE BAR -->
@@ -1267,7 +1305,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="app.js?v=1781971550"></script>
+<script src="app.js?v=1782136013"></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">

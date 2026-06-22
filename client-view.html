@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Nassa Studio — Anteprima</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+:root{
+  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#111;
+  --amber:#f0f4b2;--amber-dk:#616100;
+  --red:#ef4444;--red-lt:#ffb2b2;
+  --blue:#b2ebf2;--blue-dk:#006064;
+  --teal:#b2dfdb;--teal-dk:#004d40;
+  --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#9ca3af;
+  --bg:#f5f5f7;--surface:#fff;--border:#e5e7eb;--border-lt:#f0f0f2;
+  --font:'Inter',sans-serif;
+  --r:8px;--rs:4px;--r-pill:99px;
+  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:var(--fs-base);-webkit-font-smoothing:antialiased;}
+.cv-app{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
+
+/* TOPBAR */
+.cv-topbar{height:54px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:100;}
+.cv-brand{width:32px;height:32px;background:var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#111;font-size:14px;font-weight:700;flex-shrink:0;}
+.cv-client-name{font-size:var(--fs-base);font-weight:700;color:var(--text);}
+.cv-badge{font-size:var(--fs-xs);padding:3px 10px;border-radius:var(--r-pill);background:var(--green-lt);border:1px solid var(--green-mid);color:#111;font-weight:600;white-space:nowrap;}
+.cv-space{flex:1;}
+.cv-powered{font-size:var(--fs-xs);color:var(--text-3);white-space:nowrap;}
+
+/* TABS */
+.cv-tabs{height:44px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 12px;gap:2px;}
+.cv-tab{display:flex;align-items:center;padding:0 16px;font-size:var(--fs-base);font-weight:500;color:var(--text-3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .12s;white-space:nowrap;}
+.cv-tab:hover{color:var(--text-2);}
+.cv-tab.active{color:var(--text);font-weight:700;border-bottom-color:var(--green);}
+
+/* BODY */
+.cv-body{flex:1;overflow:hidden;position:relative;}
+.cv-panel{display:none;position:absolute;inset:0;overflow-y:auto;}
+.cv-panel.active{display:block;}
+
+/* LOADING / ERROR */
+.cv-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text-2);}
+.cv-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* PREVIEW PANEL */
+.cv-preview-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+.cv-month-sel{font-size:var(--fs-sm);padding:5px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--text);font-family:var(--font);outline:none;cursor:pointer;}
+.cv-acc-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.cv-acc-tab{font-size:var(--fs-sm);padding:4px 12px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .12s;}
+.cv-acc-tab.active{background:var(--green);border-color:var(--green);color:#111;font-weight:700;}
+
+.cv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px;}
+.cv-post{display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;background:var(--surface);border:1px solid var(--border);}
+.cv-post.approved{border-color:#22c97a;border-width:2px;}
+.cv-post.revision{border-color:#d4a800;border-width:2px;}
+.cv-cell{position:relative;aspect-ratio:4/5;background:#e8e8ea;cursor:pointer;overflow:hidden;}
+.cv-cell img,.cv-cell video{width:100%;height:100%;object-fit:cover;display:block;}
+.cv-cell:hover img,.cv-cell:hover video{transform:scale(1.02);transition:transform .2s;}
+.cv-stato-badge{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:var(--r-pill);font-size:var(--fs-xs);font-weight:700;cursor:pointer;}
+.cv-stato-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.cv-date-bar{position:absolute;top:0;left:0;right:0;padding:6px 8px;background:linear-gradient(to bottom,rgba(0,0,0,.5),transparent);font-size:var(--fs-xs);color:#fff;font-weight:500;}
+.cv-copy{padding:8px 10px;font-size:var(--fs-sm);color:var(--text-2);line-height:1.5;border-top:1px solid var(--border-lt);}
+.cv-empty{text-align:center;padding:60px 20px;color:var(--text-3);font-size:var(--fs-sm);}
+
+/* REVISION MODAL */
+.cv-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:center;justify-content:center;}
+.cv-modal-bg.open{display:flex;}
+.cv-modal{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);padding:20px;width:min(420px,92vw);display:flex;flex-direction:column;gap:12px;}
+.cv-modal h3{font-size:15px;font-weight:700;}
+.cv-modal label{font-size:var(--fs-sm);color:var(--text-2);margin-bottom:4px;display:block;font-weight:500;}
+.cv-modal textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);resize:vertical;min-height:80px;outline:none;}
+.cv-modal textarea:focus{border-color:var(--green);}
+.cv-modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+.cv-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);font-size:var(--fs-sm);font-family:var(--font);font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .12s;}
+.cv-btn.primary{background:var(--green);border-color:var(--green);color:#111;}
+.cv-btn.danger{border-color:#fca5a5;color:var(--red);background:#fff5f5;}
+
+/* LIGHTBOX */
+.cv-lb{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:900;display:none;align-items:center;justify-content:center;flex-direction:column;}
+.cv-lb.open{display:flex;}
+.cv-lb-inner{position:relative;max-width:min(420px,90vw);max-height:80dvh;border-radius:var(--r);overflow:hidden;background:#000;}
+.cv-lb-inner img,.cv-lb-inner video{max-width:100%;max-height:80dvh;object-fit:contain;display:block;}
+.cv-lb-close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;}
+.cv-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cv-lb-prev{left:10px;}.cv-lb-next{right:10px;}
+
+/* ANNO PANEL */
+.cv-anno-wrap{padding:16px;}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .cv-grid{grid-template-columns:repeat(2,1fr);gap:6px;padding:10px;}
+  .cv-topbar{height:48px;padding:0 12px;}
+  .cv-tab{padding:0 10px;font-size:12px;}
+}
+@media(max-width:380px){
+  .cv-grid{grid-template-columns:repeat(2,1fr);gap:3px;padding:6px;}
+}
+</style>
+</head>
+<body>
+<div class="cv-app">
+  <div class="cv-topbar">
+    <div class="cv-brand">N</div>
+    <div class="cv-client-name" id="cv-client-name">—</div>
+    <div class="cv-badge" id="cv-pkg-badge"></div>
+    <div class="cv-space"></div>
+    <div class="cv-powered">Nassa Studio</div>
+  </div>
+  <div class="cv-tabs">
+    <div class="cv-tab active" id="cvtab-preview" onclick="cvSwitchTab('preview')">Preview</div>
+    <div class="cv-tab" id="cvtab-ugc" onclick="cvSwitchTab('ugc')">UGC</div>
+    <div class="cv-tab" id="cvtab-anno" onclick="cvSwitchTab('anno')">Anno</div>
+  </div>
+  <div class="cv-body">
+    <!-- PREVIEW PANEL -->
+    <div class="cv-panel active" id="cvpanel-preview">
+      <div class="cv-preview-bar">
+        <select class="cv-month-sel" id="cv-month-sel" onchange="cvRenderPreview()"></select>
+        <div class="cv-acc-tabs" id="cv-acc-tabs"></div>
+        <div style="flex:1;"></div>
+        <span style="font-size:11px;color:var(--text-3);" id="cv-preview-count"></span>
+      </div>
+      <div id="cv-preview-grid"></div>
+    </div>
+    <!-- UGC PANEL -->
+    <div class="cv-panel" id="cvpanel-ugc">
+      <div id="cv-ugc-body" style="padding:16px;"></div>
+    </div>
+    <!-- ANNO PANEL -->
+    <div class="cv-panel" id="cvpanel-anno">
+      <div class="cv-anno-wrap" id="cv-anno-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- REVISION MODAL -->
+<div class="cv-modal-bg" id="cv-revision-modal">
+  <div class="cv-modal">
+    <h3>Invia in revisione</h3>
+    <div>
+      <label>Spiega cosa vorresti cambiare</label>
+      <textarea id="cv-revision-note" rows="4" placeholder="Es: Cambia il testo in basso, usa un colore più chiaro…"></textarea>
+    </div>
+    <div class="cv-modal-actions">
+      <button class="cv-btn" onclick="cvCloseRevisionModal()">Annulla</button>
+      <button class="cv-btn primary" onclick="cvSubmitRevision()">Invia revisione</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="cv-lb" id="cv-lb" onclick="if(event.target===this)cvLbClose()">
+  <div class="cv-lb-inner" id="cv-lb-inner">
+    <button class="cv-lb-close" onclick="cvLbClose()">×</button>
+    <button class="cv-lb-nav cv-lb-prev" id="cv-lb-prev" onclick="cvLbNav(-1)">‹</button>
+    <button class="cv-lb-nav cv-lb-next" id="cv-lb-next" onclick="cvLbNav(1)">›</button>
+  </div>
+</div>
+
+<script>
+const API_URL = '/api/project';
+const API_KEY = 'NASSA_SECRET_2026';
+const MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+let cvData = null;
+let cvClientId = null;
+let cvClient = null;
+let cvActiveAcc = 0;
+let cvMonth = '';
+let cvRevisionIdx = null;
+let cvLbItems = [];
+let cvLbIdx = 0;
+
+// Parse client id from URL: /client/{id}/...
+function getClientIdFromUrl() {
+  const m = window.location.pathname.match(/\/client\/([^/]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function cvSwitchTab(tab) {
+  ['preview','ugc','anno'].forEach(t => {
+    document.getElementById('cvtab-'+t)?.classList.toggle('active', t===tab);
+    document.getElementById('cvpanel-'+t)?.classList.toggle('active', t===tab);
+  });
+  if(tab==='ugc') cvRenderUGC();
+  if(tab==='anno') cvRenderAnno();
+  // Update URL without reload
+  const base = window.location.pathname.split('/').slice(0,3).join('/');
+  history.replaceState(null,'', base + '/' + tab);
+}
+
+async function cvInit() {
+  cvClientId = getClientIdFromUrl();
+  if(!cvClientId) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Link non valido.</div>'; return; }
+
+  try {
+    // Load project data — we use 'shared' user for client view (read all data)
+    const res = await fetch(API_URL + '?user=shared', { headers: { 'x-nassa-key': API_KEY } });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const { data } = await res.json();
+    if(!data) throw new Error('No data');
+    cvData = data;
+
+    // Find client
+    cvClient = (data.clients||[]).find(c => c.id === cvClientId || encodeURIComponent(c.name) === cvClientId || c.name === cvClientId);
+    if(!cvClient) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Cliente non trovato.</div>'; return; }
+
+    document.title = cvClient.name + ' — Nassa Studio';
+    document.getElementById('cv-client-name').textContent = cvClient.name;
+    const pkgBadge = document.getElementById('cv-pkg-badge');
+    if(pkgBadge) pkgBadge.textContent = cvClient.pkg?.replace(/^[^\w]*/,'').trim() || '';
+
+    cvBuildMonthSel();
+    cvBuildAccTabs();
+    cvRenderPreview();
+  } catch(e) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Errore caricamento dati: ' + e.message + '</div>';
+  }
+}
+
+function accountKey(accId, month) { return accId + '|||' + month; }
+
+function cvGetFeedItems(accId, month) {
+  const k = accountKey(accId, month);
+  return ((cvData.feeds||{})[k]||[]).filter(i => i.type !== 'pending' && (i.apprStato||'bozza') !== 'bozza');
+}
+
+function cvBuildMonthSel() {
+  const sel = document.getElementById('cv-month-sel');
+  if(!sel) return;
+  const accs = cvClient.accounts || [];
+  let months = new Set();
+  accs.forEach(acc => {
+    Object.keys(cvData.feeds||{}).filter(k=>k.startsWith(acc.id+'|||')).forEach(k=>{
+      const m = k.split('|||')[1];
+      if(m && (cvData.feeds[k]||[]).filter(i=>i.type!=='pending'&&(i.apprStato||'bozza')!=='bozza').length) months.add(m);
+    });
+  });
+  let arr = [...months].sort((a,b)=>{
+    const pa=a.split(' '),pb=b.split(' ');
+    const ya=parseInt(pa[1])||0,yb=parseInt(pb[1])||0;
+    if(ya!==yb)return ya-yb;
+    return MONTHS.indexOf(pa[0])-MONTHS.indexOf(pb[0]);
+  });
+  if(!arr.length) { const now=new Date(); arr=[MONTHS[now.getMonth()]+' '+now.getFullYear()]; }
+  sel.innerHTML = arr.map(m=>`<option value="${m}">${m}</option>`).join('');
+  // Default to last month (most recent)
+  cvMonth = arr[arr.length-1];
+  sel.value = cvMonth;
+}
+
+function cvBuildAccTabs() {
+  const wrap = document.getElementById('cv-acc-tabs');
+  if(!wrap) return;
+  const accs = cvClient.accounts || [];
+  if(accs.length <= 1) { wrap.style.display='none'; return; }
+  wrap.innerHTML = accs.map((a,i)=>`<button class="cv-acc-tab${i===0?' active':''}" onclick="cvSetAcc(${i})">${a.name}</button>`).join('');
+}
+
+function cvSetAcc(idx) {
+  cvActiveAcc = idx;
+  document.querySelectorAll('.cv-acc-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  cvRenderPreview();
+}
+
+function cvRenderPreview() {
+  const msel = document.getElementById('cv-month-sel');
+  if(msel) cvMonth = msel.value;
+  const accs = cvClient.accounts || [];
+  const acc = accs[cvActiveAcc] || accs[0];
+  if(!acc) return;
+  const items = cvGetFeedItems(acc.id, cvMonth);
+  const countEl = document.getElementById('cv-preview-count');
+  if(countEl) countEl.textContent = items.length + ' contenut' + (items.length===1?'o':'i');
+
+  const grid = document.getElementById('cv-preview-grid');
+  if(!grid) return;
+
+  if(!items.length) {
+    grid.innerHTML = '<div class="cv-empty">Nessun contenuto approvato per questo mese.</div>';
+    return;
+  }
+
+  grid.innerHTML = '';
+  const gridEl = document.createElement('div');
+  gridEl.className = 'cv-grid';
+
+  items.forEach((item, i) => {
+    const apprSt = item.apprStato || 'bozza';
+    const post = document.createElement('div');
+    post.className = 'cv-post' + (apprSt==='approvato'?' approved':apprSt==='approvare'?' revision':'');
+    const cell = document.createElement('div');
+    cell.className = 'cv-cell';
+    cell.onclick = () => cvLbOpen(i, items);
+
+    const url = item.type==='carousel'&&item.slides?.length ? (item.slides[0].url||'') : (item.url||item.externalUrl||'');
+
+    if(item.type==='video') {
+      if(item.coverUrl) {
+        const img = document.createElement('img'); img.src=item.coverUrl; img.alt=''; cell.appendChild(img);
+        const play = document.createElement('div');
+        play.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+        play.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>';
+        cell.appendChild(play);
+      } else {
+        cell.style.background='#111';
+        cell.innerHTML='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>';
+      }
+    } else if(url) {
+      const img = document.createElement('img'); img.src=url; img.alt=''; img.loading='lazy'; cell.appendChild(img);
+    } else {
+      cell.style.background='#e8e8ea';
+    }
+
+    if(item.showDate && item.date) {
+      const db = document.createElement('div'); db.className='cv-date-bar'; db.textContent=item.date; cell.appendChild(db);
+    }
+
+    // Stato badge
+    const STATI = {
+      approvare: {label:'In revisione',dot:'#d4a800',bg:'rgba(212,168,0,0.85)',text:'#3d2e00'},
+      approvato: {label:'Approvato',dot:'#22c97a',bg:'rgba(26,122,74,0.85)',text:'#d6fff0'},
+    };
+    const cfg = STATI[apprSt];
+    if(cfg) {
+      const badge = document.createElement('div');
+      badge.className = 'cv-stato-badge';
+      badge.style.cssText = `background:${cfg.bg};color:${cfg.text};border:1px solid ${cfg.dot};`;
+      badge.innerHTML = `<span class="cv-stato-dot" style="background:${cfg.dot};"></span>${cfg.label}`;
+      cell.appendChild(badge);
+    }
+
+    post.appendChild(cell);
+
+    // Revision button (only for non-approved items)
+    if(apprSt !== 'approvato') {
+      const revRow = document.createElement('div');
+      revRow.style.cssText = 'display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--border-lt);';
+      const revBtn = document.createElement('button');
+      revBtn.className = 'cv-btn danger';
+      revBtn.style.cssText = 'font-size:11px;padding:4px 10px;flex:1;justify-content:center;';
+      revBtn.textContent = '✏ Invia in revisione';
+      revBtn.onclick = (e) => { e.stopPropagation(); cvOpenRevisionModal(i, items, acc.id, cvMonth); };
+      revRow.appendChild(revBtn);
+      post.appendChild(revRow);
+    }
+
+    if(item.copy?.trim()) {
+      const cd = document.createElement('div'); cd.className='cv-copy'; cd.textContent=item.copy; post.appendChild(cd);
+    }
+    // Show revision note if present
+    if(item.apprNote?.trim()) {
+      const noteEl = document.createElement('div');
+      noteEl.style.cssText = 'padding:6px 10px 8px;font-size:11px;color:#7a5c00;background:rgba(212,168,0,0.1);border-top:1px solid rgba(212,168,0,0.3);line-height:1.5;';
+      noteEl.innerHTML = '<strong>Nota revisione:</strong> ' + item.apprNote;
+      post.appendChild(noteEl);
+    }
+
+    gridEl.appendChild(post);
+  });
+
+  grid.appendChild(gridEl);
+}
+
+function cvOpenRevisionModal(idx, items, accId, month) {
+  cvRevisionIdx = { idx, items, accId, month };
+  document.getElementById('cv-revision-note').value = items[idx].apprNote || '';
+  document.getElementById('cv-revision-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('cv-revision-note')?.focus(), 100);
+}
+function cvCloseRevisionModal() {
+  document.getElementById('cv-revision-modal').classList.remove('open');
+  cvRevisionIdx = null;
+}
+async function cvSubmitRevision() {
+  if(!cvRevisionIdx) return;
+  const note = document.getElementById('cv-revision-note')?.value?.trim();
+  if(!note) { document.getElementById('cv-revision-note')?.focus(); return; }
+  const { idx, items, accId, month } = cvRevisionIdx;
+  items[idx].apprStato = 'approvare';
+  items[idx].apprNote = note;
+  items[idx].apprRevisions = (items[idx].apprRevisions || 0) + 1;
+  // Save back to cloud
+  const k = accountKey(accId, month);
+  if(cvData.feeds[k]) {
+    const origIdx = cvData.feeds[k].findIndex(it=>it===items[idx]||JSON.stringify(it)===JSON.stringify(items[idx]));
+    // Find by matching — update all filtered items back
+    cvData.feeds[k] = cvData.feeds[k].map(it => {
+      if(it.type==='pending') return it;
+      const visibleIdx = items.findIndex(vi=>vi===it);
+      if(visibleIdx >= 0) return items[visibleIdx];
+      return it;
+    });
+  }
+  try {
+    await fetch('/api/project', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-nassa-key':'NASSA_SECRET_2026'},
+      body: JSON.stringify({ user:'shared', data: cvData })
+    });
+    cvCloseRevisionModal();
+    cvRenderPreview();
+    cvShowToast('✓ Revisione inviata all\'agenzia');
+  } catch(e) {
+    cvShowToast('Errore salvataggio — riprova');
+  }
+}
+
+function cvRenderUGC() {
+  const body = document.getElementById('cv-ugc-body');
+  if(!body || !cvData) return;
+  const pedPlans = cvData.pedPlans || {};
+  const now = new Date();
+  const clientPlans = Object.entries(pedPlans)
+    .filter(([k]) => k.startsWith(cvClient.name + '|||'))
+    .map(([k,v]) => ({ month: k.split('|||')[1], slots: v||[] }))
+    .filter(p => p.slots.length)
+    .sort((a,b)=>{
+      const pa=a.month.split(' '),pb=b.month.split(' ');
+      return (parseInt(pa[1])||0)-(parseInt(pb[1])||0) || MONTHS.indexOf(pa[0])-MONTHS.indexOf(pb[0]);
+    });
+  if(!clientPlans.length) { body.innerHTML='<div class="cv-empty">Nessun piano UGC disponibile.</div>'; return; }
+  body.innerHTML = clientPlans.map(p=>`
+    <div style="margin-bottom:24px;">
+      <h3 style="font-size:13px;font-weight:700;color:var(--text-2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);">${p.month}</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+        ${p.slots.map(s=>{
+          const colors = {raccolto:{bg:'#888',text:'#fff'},selezionato:{bg:'#1D6FA8',text:'#fff'},adattato:{bg:'#d4a800',text:'#3d2e00'},approvato:{bg:'#1a7a4a',text:'#d6fff0'},autonoma:{bg:'#444',text:'#eee'}};
+          const cfg=colors[s.ugcStato||'autonoma']||colors.autonoma;
+          return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;">${s.date||'—'}</div>
+            <div style="font-size:11px;color:var(--text-2);margin-bottom:6px;">${s.brief||s.type||'—'}</div>
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:${cfg.bg};color:${cfg.text};">${s.ugcStato||'autonoma'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function cvRenderAnno() {
+  const body = document.getElementById('cv-anno-body');
+  if(!body || !cvData) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const accs = cvClient.accounts || [];
+  body.innerHTML = `<h2 style="font-size:15px;font-weight:700;margin-bottom:16px;">Calendario ${year}</h2>`;
+  MONTHS.forEach((mName, mi) => {
+    const events = [];
+    accs.forEach(acc => {
+      const k = accountKey(acc.id, mName + ' ' + year);
+      ((cvData.feeds||{})[k]||[]).filter(i=>i.type!=='pending'&&i.date&&(i.apprStato||'bozza')!=='bozza').forEach(it=>{
+        events.push({ date: it.date, label: it.copy?.slice(0,40)||it.type||'Post', type:'feed' });
+      });
+    });
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;';
+    div.innerHTML = `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:13px;font-weight:700;">${mName} ${year}</span>
+        <span style="font-size:11px;color:var(--text-3);">${events.length} event${events.length===1?'o':'i'}</span>
+      </div>
+      ${events.length ? `<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px;">${events.map(ev=>`
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+          <span style="color:var(--green-dk);font-weight:600;flex-shrink:0;min-width:90px;">${ev.date}</span>
+          <span style="color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.label}</span>
+        </div>`).join('')}</div>` : `<div style="padding:14px;font-size:12px;color:var(--text-3);">Nessun contenuto con data.</div>`}`;
+    body.appendChild(div);
+  });
+}
+
+// LIGHTBOX
+function cvLbOpen(idx, items) {
+  cvLbItems = items;
+  cvLbIdx = idx;
+  cvLbRender();
+  document.getElementById('cv-lb').classList.add('open');
+}
+function cvLbClose() { document.getElementById('cv-lb').classList.remove('open'); }
+function cvLbNav(d) { cvLbIdx=(cvLbIdx+d+cvLbItems.length)%cvLbItems.length; cvLbRender(); }
+function cvLbRender() {
+  const inner = document.getElementById('cv-lb-inner');
+  if(!inner) return;
+  // Remove old media
+  inner.querySelectorAll('img,video').forEach(el=>el.remove());
+  const item = cvLbItems[cvLbIdx];
+  if(!item) return;
+  const url = item.type==='carousel'&&item.slides?.length?(item.slides[0].url||''):(item.url||item.externalUrl||'');
+  if(item.type==='video' && url) {
+    const v = document.createElement('video');
+    v.src=url; v.controls=true; v.playsInline=true; v.style.cssText='max-width:100%;max-height:80dvh;display:block;';
+    inner.insertBefore(v, inner.querySelector('.cv-lb-close'));
+    v.play().catch(()=>{});
+  } else if(url) {
+    const img = document.createElement('img'); img.src=url; img.alt='';
+    img.style.cssText='max-width:100%;max-height:80dvh;display:block;';
+    inner.insertBefore(img, inner.querySelector('.cv-lb-close'));
+  }
+  document.getElementById('cv-lb-prev').style.display=cvLbItems.length>1?'flex':'none';
+  document.getElementById('cv-lb-next').style.display=cvLbItems.length>1?'flex':'none';
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')cvLbClose(); if(e.key==='ArrowLeft')cvLbNav(-1); if(e.key==='ArrowRight')cvLbNav(1); });
+
+// TOAST
+function cvShowToast(msg) {
+  let t = document.getElementById('cv-toast');
+  if(!t){ t=document.createElement('div');t.id='cv-toast';t.style.cssText='position:fixed;bottom:24px;right:20px;background:var(--green);color:#111;font-size:13px;font-weight:600;padding:10px 18px;border-radius:99px;z-index:999;font-family:Inter,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.15);transition:opacity .3s;';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity='0';},3000);
+}
+
+document.addEventListener('DOMContentLoaded', cvInit);
+</script>
+</body>
+</html>

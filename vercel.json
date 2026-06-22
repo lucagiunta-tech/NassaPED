@@ -7,48 +7,24 @@
     }
   },
   "rewrites": [
-    { "source": "/robots.txt", "destination": "/robots.txt" }
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/client/:path*", "destination": "/client-view.html" },
+    { "source": "/(feed|stories|storyboard|ped|cal|anno|preview|ads|notes|pilastri|studio)", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Pragma",
-          "value": "no-cache"
-        },
-        {
-          "key": "Expires",
-          "value": "0"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://dl.dropboxusercontent.com https://www.dropbox.com https://uc.dropbox.com; media-src 'self' blob: https://dl.dropboxusercontent.com https://www.dropbox.com; connect-src 'self' https://api.dropbox.com https://content.dropboxapi.com https://api.anthropic.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
-        }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "Expires", "value": "0" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://dl.dropboxusercontent.com https://www.dropbox.com https://uc.dropbox.com; media-src 'self' blob: https://dl.dropboxusercontent.com https://www.dropbox.com; connect-src 'self' https://api.dropbox.com https://content.dropboxapi.com https://api.anthropic.com; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" }
       ]
     }
   ]

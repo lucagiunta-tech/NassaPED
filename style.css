@@ -783,7 +783,10 @@ tbody tr:hover .tr-actions{opacity:1;}
 .copy-item-name{font-size:var(--fs-sm);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* PREVIEW */
-.preview-wrap{flex:1;overflow-y:auto;background:var(--bg);}
+.preview-wrap{flex:1;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;}
+.preview-topbar{flex-shrink:0 !important;}
+.appr-stats-bar{flex-shrink:0 !important;}
+.preview-body{flex:1;overflow-y:auto;}
 .preview-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
 .preview-acc-tabs{display:flex;gap:6px;margin-bottom:24px;border-bottom:2px solid var(--border);padding-bottom:0;}
 .preview-acc-tab{padding:8px 20px;font-size:var(--fs-base);font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all var(--t-fast);border-radius:var(--rs) var(--rs) 0 0;}
@@ -1033,7 +1036,8 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-month-pills-inline .year-nav{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 .feed-month-pills-inline .year-nav-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:var(--fs-base);padding:0 3px;line-height:1;}
 .feed-month-pills-inline .year-label{font-size:var(--fs-base);font-weight:600;color:var(--text-2);}
-.ctx-fmt-badge{font-size:var(--fs-base);font-weight:600;padding:5px 13px;border-radius:var(--r-pill);background:var(--fmt-badge-bg);color:var(--fmt-badge-color);white-space:nowrap;flex-shrink:0;border:.5px solid var(--green-mid);}
+.ctx-fmt-badge{font-size:var(--fs-base);font-weight:600;padding:5px 13px;border-radius:var(--r-pill);background:var(--green-lt);color:#111;white-space:nowrap;flex-shrink:0;border:.5px solid var(--green-mid);cursor:pointer;transition:all var(--t-fast);font-family:var(--font);}
+.ctx-fmt-badge:hover{background:var(--green);}
 .ctx-expand-btn{width:32px;height:32px;border-radius:var(--r);border:.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-3);flex-shrink:0;transition:all var(--t-fast);}
 .ctx-expand-btn:hover{background:var(--bg);color:var(--text);}
 .ctx-expand-btn svg{width:14px;height:14px;}
@@ -1831,8 +1835,9 @@ tbody tr:hover .tr-actions{opacity:1;}
   background:rgba(255,255,255,0.85);border:none;
   font-size:16px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  z-index:12;transition:background var(--t-base);
+  z-index:20;transition:background var(--t-base);
   color:#111;line-height:1;
+  pointer-events:all !important;
 }
 .cc-arrow:hover{background:rgba(255,255,255,0.97);}
 .cc-prev{left:6px;}
@@ -2980,3 +2985,11 @@ tbody tr:hover .tr-actions{opacity:1;}
   70%  { transform: scale(1.2); }
   100% { transform: scale(1); }
 }
+
+/* ══ Carousel cells: keep arrows above overlay ══ */
+.feed-cell.has-carousel .cell-overlay { top: 45%; }
+.feed-cell.has-carousel .cc-arrow { z-index: 20 !important; pointer-events: all !important; }
+.feed-cell .cc-arrow { pointer-events: all !important; z-index: 20 !important; }
+
+/* ══ Platform dropdown animation ══ */
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px);} to{opacity:1;transform:translateY(0);} }

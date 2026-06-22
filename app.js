@@ -331,6 +331,7 @@ const CLOUD = {
 ══════════════════════════════════════════ */
 const DROPBOX = {
   uploading: 0,
+  _abortController: null,
   async upload(file, destPath) {
     DROPBOX.uploading++;
     const bar = document.getElementById('dbx-upload-bar');
@@ -338,27 +339,38 @@ const DROPBOX = {
     if (bar) bar.classList.add('visible');
     if (txt) txt.textContent = 'Caricamento su Dropbox: ' + file.name;
     try {
+      DROPBOX._abortController = new AbortController();
       const formData = new FormData();
       formData.append('file', file);
       formData.append('path', destPath || '/nassa/' + file.name);
       const res = await fetch('/api/dropbox-upload', {
         method: 'POST',
         headers: { 'x-nassa-key': CLOUD.apiKey },
-        body: formData
+        body: formData,
+        signal: DROPBOX._abortController.signal
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      if (bar) bar.classList.remove('visible');
       DROPBOX.uploading=Math.max(0,DROPBOX.uploading-1);
+      if(DROPBOX.uploading===0){ const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
       return data.shared_link || data.url || null;
     } catch(e) {
-      console.warn('[DROPBOX] Upload failed:', e.message);
-      if (bar) bar.classList.remove('visible');
       DROPBOX.uploading=Math.max(0,DROPBOX.uploading-1);
+      if(DROPBOX.uploading===0){ const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
+      if(e.name==='AbortError'){ return null; }
+      console.warn('[DROPBOX] Upload failed:', e.message);
       return null;
     }
   }
 };
+
+function cancelDropboxUpload(){
+  if(DROPBOX._abortController) DROPBOX._abortController.abort();
+  DROPBOX.uploading=0;
+  const bar=document.getElementById('dbx-upload-bar');
+  if(bar)bar.classList.remove('visible');
+  showToast('Upload annullato');
+}
 
 /* ══════════════════════════════════════════
    GLOBAL STATE
@@ -409,11 +421,152 @@ function getPlatformFormat(){
   const acc=getAccount(feedClientIdx,feedAccountIdx);
   return PLATFORM_FORMAT[acc?.platform]||PLATFORM_FORMAT['Instagram'];
 }
+
+
+/* ══════════════════════════════════════════
+   PLATFORM / ACCOUNT SWITCHER DROPDOWN
+   The badge button shows a dropdown listing
+   only the accounts this client actually has.
+   Selecting one switches to that account feed.
+   If client has 1 account → no dropdown, badge is static.
+══════════════════════════════════════════ */
+function toggleFmtDropdown() {
+  // Remove existing dropdown first
+  const existing = document.getElementById('fmt-dropdown');
+  if(existing) { existing.remove(); return; }
+
+  const accs = clients[feedClientIdx]?.accounts || [];
+  // If only 1 account, nothing to switch — badge is informational
+  if(accs.length <= 1) return;
+
+  const badge = document.getElementById('feed-fmt-badge');
+  if(!badge) return;
+  const rect = badge.getBoundingClientRect();
+
+  const dropdown = document.createElement('div');
+  dropdown.id = 'fmt-dropdown';
+  dropdown.style.cssText = `
+    position:fixed;
+    top:${rect.bottom + 4}px;
+    right:${window.innerWidth - rect.right}px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--r);
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+    z-index:500;
+    min-width:180px;
+    overflow:hidden;
+    animation:fadeIn .1s ease;
+  `;
+
+  accs.forEach((acc, ai) => {
+    const fmt = PLATFORM_FORMAT[acc.platform] || PLATFORM_FORMAT['Instagram'];
+    const isActive = ai === feedAccountIdx;
+    const item = document.createElement('button');
+    item.style.cssText = `
+      display:flex;align-items:center;gap:10px;
+      width:100%;padding:9px 14px;
+      background:${isActive ? 'var(--green-lt)' : 'transparent'};
+      border:none;cursor:pointer;font-family:var(--font);
+      font-size:var(--fs-sm);color:var(--text);
+      text-align:left;transition:background .1s;
+    `;
+    item.onmouseover = () => { if(!isActive) item.style.background='var(--bg)'; };
+    item.onmouseout  = () => { if(!isActive) item.style.background='transparent'; };
+
+    const dot = document.createElement('span');
+    dot.style.cssText = `width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${isActive?'var(--green)':'var(--border)'};`;
+
+    const label = document.createElement('span');
+    label.style.cssText = 'flex:1;';
+    label.innerHTML = `<span style="font-weight:${isActive?700:500};">${acc.name}</span><span style="color:var(--text-3);font-size:10px;margin-left:6px;">${fmt.label.split('·')[1]?.trim()||''}</span>`;
+
+    if(isActive) {
+      const check = document.createElement('span');
+      check.textContent = '✓';
+      check.style.cssText = 'color:var(--green);font-weight:700;font-size:12px;';
+      item.appendChild(dot);item.appendChild(label);item.appendChild(check);
+    } else {
+      item.appendChild(dot);item.appendChild(label);
+    }
+
+    item.onclick = () => {
+      dropdown.remove();
+      switchAccount(ai);
+    };
+    dropdown.appendChild(item);
+  });
+
+  document.body.appendChild(dropdown);
+
+  // Close on outside click
+  const closeDropdown = (e) => {
+    if(!dropdown.contains(e.target) && e.target !== badge) {
+      dropdown.remove();
+      document.removeEventListener('click', closeDropdown, true);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeDropdown, true), 10);
+}
+
+// Update the badge text to show current account platform
+function updateFmtBadge() {
+  const badge = document.getElementById('feed-fmt-badge');
+  if(!badge) return;
+  const fmt = getPlatformFormat();
+  const accs = clients[feedClientIdx]?.accounts || [];
+  const hasMultiple = accs.length > 1;
+  badge.textContent = fmt.label + (hasMultiple ? ' ▾' : '');
+  badge.style.cursor = hasMultiple ? 'pointer' : 'default';
+}
+
+/* ══ PREVIEW ACCOUNT SWITCHER ══ */
+function updatePreviewAccBadge() {
+  const badge = document.getElementById('preview-acc-badge');
+  if(!badge) return;
+  const accs = clients[previewClientIdx]?.accounts || [];
+  if(accs.length <= 1) { badge.style.display='none'; return; }
+  const acc = accs[previewActiveAcc] || accs[0];
+  const fmt = PLATFORM_FORMAT[acc?.platform] || PLATFORM_FORMAT['Instagram'];
+  badge.style.display = '';
+  badge.textContent = fmt.label + ' ▾';
+}
+
+function togglePreviewAccDropdown() {
+  const existing = document.getElementById('preview-acc-dropdown');
+  if(existing) { existing.remove(); return; }
+  const accs = clients[previewClientIdx]?.accounts || [];
+  if(accs.length <= 1) return;
+  const badge = document.getElementById('preview-acc-badge');
+  if(!badge) return;
+  const rect = badge.getBoundingClientRect();
+  const dropdown = document.createElement('div');
+  dropdown.id = 'preview-acc-dropdown';
+  dropdown.style.cssText = `position:fixed;top:${rect.bottom+4}px;right:${window.innerWidth-rect.right}px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;min-width:180px;overflow:hidden;`;
+  accs.forEach((acc,ai) => {
+    const fmt = PLATFORM_FORMAT[acc.platform]||PLATFORM_FORMAT['Instagram'];
+    const isActive = ai===previewActiveAcc;
+    const item = document.createElement('button');
+    item.style.cssText = `display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;background:${isActive?'var(--green-lt)':'transparent'};border:none;cursor:pointer;font-family:var(--font);font-size:var(--fs-sm);color:var(--text);text-align:left;`;
+    const dot = document.createElement('span');
+    dot.style.cssText = `width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${isActive?'var(--green)':'var(--border)'};`;
+    const label = document.createElement('span');
+    label.style.cssText='flex:1;';
+    label.innerHTML=`<span style="font-weight:${isActive?700:500};">${acc.name}</span><span style="color:var(--text-3);font-size:10px;margin-left:6px;">${fmt.label.split('·')[1]?.trim()||''}</span>`;
+    item.appendChild(dot);item.appendChild(label);
+    if(isActive){const c=document.createElement('span');c.textContent='✓';c.style.cssText='color:var(--green);font-weight:700;font-size:12px;';item.appendChild(c);}
+    item.onclick=()=>{ dropdown.remove(); previewActiveAcc=ai; updatePreviewAccBadge(); renderPreview(); };
+    dropdown.appendChild(item);
+  });
+  document.body.appendChild(dropdown);
+  const close=(e)=>{ if(!dropdown.contains(e.target)&&e.target!==badge){dropdown.remove();document.removeEventListener('click',close,true);} };
+  setTimeout(()=>document.addEventListener('click',close,true),10);
+}
+
 function updateFeedFormat(){
   const fmt=getPlatformFormat();
-  // Update badge
-  const badge=document.getElementById('feed-fmt-badge');
-  if(badge)badge.textContent=fmt.label;
+  // Update badge (uses updateFmtBadge for multi-account awareness)
+  updateFmtBadge();
   // Update grid columns and cell aspect ratio
   const grid=document.getElementById('feed-grid');
   if(grid){
@@ -615,9 +768,57 @@ function needsReloadPh(icon,name,reuploadFn){
 }
 
 
+
+/* ══════════════════════════════════════════
+   URL ROUTER — History API deep linking
+   /               → Studio
+   /{tab}          → tab direct
+   /client/{id}/*  → client portal (client-view.html, handled by vercel)
+══════════════════════════════════════════ */
+let _routerSilent = false;
+
+function routerPush(tab) {
+  if(_routerSilent) return;
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  let path = '/';
+  if(!tab || tab === 'studio') { path = '/'; }
+  else if(cl) { path = '/client/' + encodeURIComponent(cl.id || cl.name) + '/' + tab; }
+  else { path = '/' + tab; }
+  if(window.location.pathname !== path) history.pushState({ tab, clientId: cl?.id||null }, '', path);
+}
+
+function routerRestore() {
+  const path = window.location.pathname;
+  if(path === '/' || path === '') return;
+  const clientTabMatch = path.match(/^\/client\/([^/]+)\/([^/]+)$/);
+  if(clientTabMatch) {
+    const clientId = decodeURIComponent(clientTabMatch[1]);
+    const tab = clientTabMatch[2];
+    const ci = clients.findIndex(c => c.id === clientId || encodeURIComponent(c.name) === clientId);
+    if(ci >= 0) { _routerSilent=true; openClientFeed(ci); if(tab!=='feed')switchTab(tab); _routerSilent=false; }
+    return;
+  }
+  const tabMatch = path.match(/^\/([a-z]+)$/);
+  if(tabMatch) {
+    const tab = tabMatch[1];
+    const valid=['studio','notes','pilastri','feed','stories','storyboard','ped','cal','anno','preview','ads'];
+    if(valid.includes(tab)){ _routerSilent=true; switchTab(tab); _routerSilent=false; }
+  }
+}
+
+window.addEventListener('popstate', (e) => {
+  _routerSilent=true;
+  const s=e.state;
+  if(!s||s.tab==='studio'||!s.tab){ switchTab('studio'); }
+  else if(s.clientId){ const ci=clients.findIndex(c=>c.id===s.clientId); if(ci>=0){openClientFeed(ci);if(s.tab!=='feed')switchTab(s.tab);}else switchTab(s.tab); }
+  else switchTab(s.tab);
+  _routerSilent=false;
+});
+
 /* TAB SWITCHING */
 function switchTab(tab){
   currentTab=tab;
+  routerPush(tab);
   const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
@@ -656,19 +857,29 @@ function switchTab(tab){
   if(tab==='ads'){renderAdsTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
-function showStudioAdd(){openModal('add-client-modal');rebuildStudioAccountSelect();}
+function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
 function backToClients(){switchTab('studio');}
 
 /* CLIENT MANAGEMENT */
+function openAddClientModal(){ openModal('add-client-modal'); setTimeout(()=>document.getElementById('nc-name')?.focus(),80); }
 function addClient(){
   const name=document.getElementById('nc-name').value.trim();if(!name){document.getElementById('nc-name').focus();return;}
   if(clients.find(c=>c.name.toLowerCase()===name.toLowerCase())){showToast('Cliente già presente','warn');return;}
-  const id='c_'+Date.now();const defaultAccount={id:'a_'+Date.now(),name,platform:'Instagram',profileImg:'',bio:''};const defaultBrand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
+  const accName=(document.getElementById('nc-acc-name')?.value.trim())||name;
+  const accPlatform=(document.getElementById('nc-acc-platform')?.value)||'Instagram';
+  const id='c_'+Date.now();
+  const defaultAccount={id:'a_'+Date.now(),name:accName,platform:accPlatform,profileImg:'',bio:''};
   clients.push({id,name,pkg:document.getElementById('nc-pkg').value,status:document.getElementById('nc-status').value,revenue:parseFloat(document.getElementById('nc-revenue').value)||0,accounts:[defaultAccount]});
   document.getElementById('nc-name').value='';document.getElementById('nc-revenue').value='';
+  if(document.getElementById('nc-acc-name'))document.getElementById('nc-acc-name').value='';
   renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiunto');autoSave();
-  // Return to client list automatically
   closeModal('add-client-modal');
+}
+function copyClientLink(i){
+  const cl=clients[i];if(!cl)return;
+  const id=cl.id||encodeURIComponent(cl.name);
+  const url=window.location.origin+'/client/'+id+'/preview';
+  navigator.clipboard?.writeText(url).then(()=>showToast('✓ Link cliente copiato')).catch(()=>showToast('Link: '+url));
 }
 function addAccount(){const ci=parseInt(document.getElementById('na-client').value);if(isNaN(ci)||ci<0){showToast('Seleziona un cliente','warn');return;}const name=document.getElementById('na-name').value.trim();if(!name){document.getElementById('na-name').focus();return;}const platform=document.getElementById('na-platform').value;const id='a_'+Date.now();clients[ci].accounts.push({id,name,platform});document.getElementById('na-name').value='';renderStudio();rebuildAllSelects();showToast('✓ Account aggiunto');autoSave();}
 function removeClient(i){
@@ -702,7 +913,7 @@ function renderStudio(){
     return;
   }
   // FIX QA: tutti i dati utente (name, pkg, status) passano per esc() — previene XSS
-  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${esc(a.platform)}">${esc(a.name)} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td>${pkgBadge(c.pkg)}</td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})" title="Modifica cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg> Modifica</button><button class="btn sm danger" onclick="removeClient(${i})" title="Elimina cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></td>`;tbody.appendChild(tr);});
+  clients.forEach((c,i)=>{const dotCls={Attivo:'green','In onboarding':'blue','In pausa':'amber',Perso:'red'}[c.status]||'green';const accs=c.accounts||[];const accsHtml=accs.length===0?'<span style="color:var(--text-3);font-size:11px;">—</span>':accs.length===1&&accs[0].name===c.name?`<span class="feed-chip" onclick="openClientFeed(${i})" style="color:#111;border-color:var(--green-mid);">Feed →</span>`:accs.map(a=>`<span class="feed-chip" onclick="openAccountFeed(${i},'${a.id}')" title="${esc(a.platform)}">${esc(a.name)} →</span>`).join(' ');const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:500;">${esc(c.name)}</td><td style="font-size:11px;">${accsHtml}</td><td>${pkgBadge(c.pkg)}</td><td><span class="status-dot"><span class="dot ${dotCls}"></span>${esc(c.status)}</span></td><td class="muted">€ ${(c.revenue||0).toLocaleString('it-IT')}</td><td><div class="tr-actions"><button class="btn sm" onclick="openEditClientModal(${i})" title="Modifica cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg> Modifica</button><button class="btn sm" onclick="copyClientLink(${i})" title="Copia link cliente" aria-label="Copia link cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Link</button><button class="btn sm danger" onclick="removeClient(${i})" title="Elimina cliente"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></td>`;tbody.appendChild(tr);});
 }
 
 /* SELECTS */
@@ -780,7 +991,7 @@ function renderStoriesMonthPills(){const c=document.getElementById('stories-mont
 function renderStoriesMonthPillsForYear(year){if(storiesMonth){const oldMonth=storiesMonth.split(' ')[0];storiesMonth=oldMonth+' '+year;}renderStoriesMonthPills();}
 
 /* PREVIEW SELECTORS */
-function syncPreviewSelectors(){previewClientIdx=globalClientIdx;previewAccountIdx=feedAccountIdx;previewMonth=feedMonth||storiesMonth||MONTH_OPTIONS[new Date().getMonth()];previewActiveAcc=feedAccountIdx>=0?feedAccountIdx:0;const msel=document.getElementById('preview-month-sel');if(msel&&previewMonth)msel.value=previewMonth;}
+function syncPreviewSelectors(){previewClientIdx=globalClientIdx;previewAccountIdx=feedAccountIdx;previewMonth=feedMonth||storiesMonth||MONTH_OPTIONS[new Date().getMonth()];previewActiveAcc=feedAccountIdx>=0?feedAccountIdx:0;const msel=document.getElementById('preview-month-sel');if(msel&&previewMonth)msel.value=previewMonth;updatePreviewAccBadge();}
 function onPreviewClientChange(){const v=document.getElementById('preview-client-sel').value;previewClientIdx=v===''?-1:parseInt(v);previewAccountIdx=-1;populateAccountSelect('preview-account-sel',previewClientIdx,-1);previewMonth=MONTH_OPTIONS[new Date().getMonth()];rebuildPreviewSelects();renderPreview();}
 function onPreviewAccountChange(){const v=document.getElementById('preview-account-sel').value;previewAccountIdx=v===''?-1:parseInt(v);previewMonth=MONTH_OPTIONS[new Date().getMonth()];rebuildPreviewSelects();renderPreview();}
 
@@ -2620,18 +2831,19 @@ function renderLb(){
     if(videoUrl){
       const vWrap=document.createElement('div');vWrap.style.cssText='width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#111;position:relative;';
       const v=document.createElement('video');
-      v.src=videoUrl;v.controls=true;v.autoplay=false;v.muted=false;v.loop=false;v.playsInline=true;
+      v.src=videoUrl;v.controls=true;v.autoplay=true;v.muted=false;v.loop=false;v.playsInline=true;
       v.style.cssText='width:100%;height:100%;object-fit:contain;display:block;max-height:100%;';
-      // Fallback: se CORS blocca il video, mostra pulsante apri
       const fallback=document.createElement('div');
       fallback.style.cssText='display:none;flex-direction:column;align-items:center;gap:12px;padding:20px;text-align:center;';
-      fallback.innerHTML='<div style="font-size:32px;">🎬</div><div style="font-size:12px;color:#aaa;font-family:var(--font);">Il video non può essere riprodotto inline</div>';
       const openBtn=document.createElement('a');openBtn.href=videoUrl;openBtn.target='_blank';openBtn.rel='noopener';
-      openBtn.style.cssText='background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-family:var(--font);padding:8px 18px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-top:4px;';
-      openBtn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Apri video';
+      openBtn.style.cssText='background:rgba(255,255,255,.12);color:#fff;font-size:13px;font-family:var(--font);padding:10px 20px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;';
+      openBtn.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Apri video in nuova scheda';
+      fallback.innerHTML='<div style="font-size:14px;color:#aaa;font-family:var(--font);margin-bottom:8px;">Anteprima non disponibile inline</div>';
       fallback.appendChild(openBtn);
-      v.onerror=()=>{v.style.display='none';fallback.style.display='flex';};
-      v.addEventListener('loadeddata',()=>{v.play().catch(()=>{});},{ once:true });
+      v.onerror=()=>{ v.style.display='none'; fallback.style.display='flex'; };
+      v.addEventListener('canplay',()=>{ v.play().catch(()=>{}); },{ once:true });
+      const _vTimer=setTimeout(()=>{ if(v.paused&&v.readyState<2){ v.style.display='none'; fallback.style.display='flex'; } },3000);
+      v.addEventListener('playing',()=>clearTimeout(_vTimer),{once:true});
       vWrap.appendChild(v);vWrap.appendChild(fallback);inner.appendChild(vWrap);
     } else {
       const ph=document.createElement('div');ph.style.cssText='color:#555;font-size:48px;text-align:center;padding:40px;';ph.textContent='🎬';inner.appendChild(ph);
@@ -4154,6 +4366,7 @@ async function loadFromCloud(){
   }
   CLOUD._booting=false;
   showBootOverlay(false);
+  routerRestore();
 }
 
 function showBootOverlay(show){
