@@ -14,7 +14,7 @@
   <!-- Sicurezza: disabilita detection automatica numeri/email -->
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="/style.css?v=1782145168"/>
+<link rel="stylesheet" href="/style.css?v=1782145719"/>
 </head>
 <body>
 <div class="app">
@@ -825,8 +825,16 @@
         <div class="appr-modal-controls">
           <div class="appr-modal-section-lbl">Stato</div>
           <div class="appr-stato-pills" id="appr-stato-pills"></div>
-          <div class="appr-modal-section-lbl" style="margin-top:12px;">Note revisione</div>
-          <textarea class="appr-note-area" id="appr-note-area" rows="3" placeholder="Aggiungi note per l'agenzia..."></textarea>
+          <!-- Client message bubble (read-only) -->
+          <div id="appr-client-note-wrap" style="display:none;margin-top:12px;">
+            <div class="appr-modal-section-lbl" style="color:#7a2e00;">Messaggio del cliente</div>
+            <div id="appr-client-note-bubble" style="background:rgba(224,92,0,0.08);border:1px solid rgba(224,92,0,0.25);border-radius:var(--r);padding:10px 12px;font-size:13px;color:#7a2e00;line-height:1.5;margin-top:4px;position:relative;">
+              <div style="font-size:10px;font-weight:700;color:#e05c00;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;" id="appr-client-note-sender"></div>
+              <div id="appr-client-note-text"></div>
+            </div>
+          </div>
+          <div class="appr-modal-section-lbl" style="margin-top:12px;">Note interne agenzia</div>
+          <textarea class="appr-note-area" id="appr-note-area" rows="3" placeholder="Aggiungi note interne…"></textarea>
         </div>
       </div>
       <div class="appr-modal-foot">
@@ -1305,7 +1313,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782145168"></script>
+<script src="/app.js?v=1782145719"></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">

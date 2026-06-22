@@ -426,10 +426,10 @@ function cvRenderPreview() {
       const cd = document.createElement('div'); cd.className='cv-copy'; cd.textContent=item.copy; post.appendChild(cd);
     }
     // Show revision note if present
-    if(item.apprNote?.trim()) {
+    if(item.clientNote?.trim()) {
       const noteEl = document.createElement('div');
-      noteEl.style.cssText = 'padding:6px 10px 8px;font-size:11px;color:#7a5c00;background:rgba(212,168,0,0.1);border-top:1px solid rgba(212,168,0,0.3);line-height:1.5;';
-      noteEl.innerHTML = '<strong>Nota revisione:</strong> ' + item.apprNote;
+      noteEl.style.cssText = 'padding:8px 10px;font-size:11px;color:#7a2e00;background:rgba(224,92,0,0.08);border-top:1px solid rgba(224,92,0,0.2);line-height:1.5;';
+      noteEl.innerHTML = '<strong>Tuo messaggio:</strong> ' + item.clientNote;
       post.appendChild(noteEl);
     }
 
@@ -441,7 +441,7 @@ function cvRenderPreview() {
 
 function cvOpenRevisionModal(idx, items, accId, month) {
   cvRevisionIdx = { idx, items, accId, month };
-  document.getElementById('cv-revision-note').value = items[idx].apprNote || '';
+  document.getElementById('cv-revision-note').value = items[idx].clientNote || '';
   document.getElementById('cv-revision-modal').classList.add('open');
   setTimeout(()=>document.getElementById('cv-revision-note')?.focus(), 100);
 }
@@ -455,7 +455,8 @@ async function cvSubmitRevision() {
   if(!note) { document.getElementById('cv-revision-note')?.focus(); return; }
   const { idx, items, accId, month } = cvRevisionIdx;
   items[idx].apprStato = 'revisione';
-  items[idx].apprNote = note;
+  items[idx].clientNote = note;       // client message — separate from admin's apprNote
+  items[idx].clientName = cvClient.name;
   items[idx].apprRevisions = (items[idx].apprRevisions || 0) + 1;
   // Save back to cloud
   const k = accountKey(accId, month);

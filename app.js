@@ -1338,8 +1338,10 @@ function renderFeedGrid(){
         const _fst=item.apprStato||'bozza';
         const _fstCfg={bozza:{dot:'#888',label:'Bozza'},revisione:{dot:'#e05c00',label:'Da Revisionare'},approvare:{dot:'#d4a800',label:'Da Approvare'},approvato:{dot:'#22c97a',label:'Approvato'},pubblicato:{dot:'#2563eb',label:'Pubblicato'}};
         const _fc=_fstCfg[_fst]||_fstCfg.bozza;
-        feedStateBadge.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}`;
-        feedStateBadge.title='Cambia stato';
+        const _hasClientNote = !!(item.clientNote?.trim());
+        feedStateBadge.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}${_hasClientNote?' 💬':''}`;
+        feedStateBadge.title=_hasClientNote?`Messaggio cliente: "${item.clientNote}"` : 'Cambia stato';
+        if(_hasClientNote) feedStateBadge.style.background='rgba(224,92,0,0.85)';
         feedStateBadge.onclick=e=>{e.stopPropagation();openApprModal(idx,currentFeedItems());};
         cell.appendChild(feedStateBadge);
 
@@ -5810,9 +5812,23 @@ function openApprModal(idx, items){
     </button>`;
   }).join('');
 
-  // Note
+  // Admin's own note (textarea — editable)
   const noteArea = document.getElementById('appr-note-area');
   noteArea.value = post.apprNote || '';
+
+  // Client message (read-only bubble)
+  const clientWrap = document.getElementById('appr-client-note-wrap');
+  const clientBubble = document.getElementById('appr-client-note-text');
+  const clientSender = document.getElementById('appr-client-note-sender');
+  if(clientWrap && clientBubble) {
+    if(post.clientNote?.trim()) {
+      clientWrap.style.display = 'block';
+      clientBubble.textContent = post.clientNote;
+      if(clientSender) clientSender.textContent = (post.clientName || 'Cliente') + ' ha scritto:';
+    } else {
+      clientWrap.style.display = 'none';
+    }
+  }
 
   // Bottone approva
   const apprBtn = document.getElementById('appr-approva-btn');
@@ -5928,12 +5944,14 @@ function apprInjectGrid(items){
     postEl.style.borderWidth = st==='bozza'?'1px':'1.5px';
 
     // Nota revisione
-    if(item.apprNote && st==='approvare' && !postEl.querySelector('.appr-rev-note')){
+    if((item.clientNote||item.apprNote) && (st==='approvare'||st==='revisione') && !postEl.querySelector('.appr-rev-note')){
       const revDiv = document.createElement('div');
       revDiv.className = 'appr-rev-note';
-      revDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#d4a800" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;margin-top:1px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span style="flex:1;">${esc(item.apprNote)}</span>
-        ${item.apprRevisions>0?`<span style="font-size:10px;color:#d4a800;white-space:nowrap;font-family:var(--font);">${item.apprRevisions} rev.</span>`:''}`;
+      const _noteText = item.clientNote || item.apprNote;
+      const _noteSender = item.clientName || 'Cliente';
+      revDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#e05c00" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;margin-top:1px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div style="flex:1;"><div style="font-size:9px;font-weight:700;color:#e05c00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">${esc(_noteSender)}</div><div>${esc(_noteText)}</div></div>
+        ${item.apprRevisions>0?`<span style="font-size:10px;color:#e05c00;white-space:nowrap;font-family:var(--font);">${item.apprRevisions} rev.</span>`:''}`;
       const cell2 = postEl.querySelector('.client-cell');
       if(cell2) cell2.after(revDiv);
     }
