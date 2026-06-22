@@ -1398,15 +1398,10 @@ function renderFeedGrid(){
       em.innerHTML='<span class="fe-icon">📭</span><p>Nessun contenuto in nessun mese.</p>';
       grid.appendChild(em);return;
     }
-    // Hide main grid, use a wrapper outside it
+    // Hide main grid, show all-months wrapper (already in HTML)
     grid.style.display='none';
-    let wrapper = document.getElementById('feed-all-months-wrap');
-    if(!wrapper){
-      wrapper=document.createElement('div');
-      wrapper.id='feed-all-months-wrap';
-      wrapper.style.cssText='display:flex;flex-direction:column;gap:0;overflow-y:auto;flex:1;min-height:0;';
-      grid.parentElement.appendChild(wrapper);
-    }
+    const wrapper = document.getElementById('feed-all-months-wrap');
+    if(!wrapper) return;
     wrapper.style.display='flex';
     wrapper.innerHTML='';
     groups.forEach(({month, items})=>{
@@ -1492,13 +1487,8 @@ function renderFeedGrid(){
     // Hide main grid, show backlog in wrapper
     grid.style.display='none';
     const _amw2=document.getElementById('feed-all-months-wrap');if(_amw2){_amw2.innerHTML='';_amw2.style.display='none';}
-    let backlogWrap=document.getElementById('feed-backlog-wrap');
-    if(!backlogWrap){
-      backlogWrap=document.createElement('div');
-      backlogWrap.id='feed-backlog-wrap';
-      backlogWrap.style.cssText='display:flex;flex-direction:column;flex:1;overflow-y:auto;min-height:0;';
-      grid.parentElement.appendChild(backlogWrap);
-    }
+    const backlogWrap=document.getElementById('feed-backlog-wrap');
+    if(!backlogWrap) return;
     backlogWrap.style.display='flex';
     backlogWrap.innerHTML='';
     const hdr2=document.createElement('div');hdr2.className='feed-backlog-banner';
