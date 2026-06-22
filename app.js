@@ -607,7 +607,7 @@ function needsReloadPh(icon,name,reuploadFn){
 /* TAB SWITCHING */
 function switchTab(tab){
   currentTab=tab;
-  const allTabs=['studio','notes','pilastri','feed','stories','storyboard','ped','cal','anno','preview','ads'];
+  const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
