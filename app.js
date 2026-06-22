@@ -1392,7 +1392,7 @@ function renderFeedGrid(){
 
   // All months mode — render directly into main grid
   if(feedAllMonthsMode > 0){
-    const groups = getAllMonthsItems();
+    let groups = getAllMonthsItems();
     if(!groups.length){
       const em=document.createElement('div');em.className='feed-empty';
       em.innerHTML='<span class="fe-icon">📭</span><p>Nessun contenuto in nessun mese.</p>';
