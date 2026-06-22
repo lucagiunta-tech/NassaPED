@@ -115,7 +115,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   <div class="cv-tabs">
     <div class="cv-tab active" id="cvtab-preview" onclick="cvSwitchTab('preview')">Preview</div>
     <div class="cv-tab" id="cvtab-ugc" onclick="cvSwitchTab('ugc')">UGC</div>
-    <div class="cv-tab" id="cvtab-anno" onclick="cvSwitchTab('anno')">Anno</div>
+    <div class="cv-tab" id="cvtab-ads" onclick="cvSwitchTab('ads')">Ads</div>
   </div>
   <div class="cv-body">
     <!-- PREVIEW PANEL -->
@@ -132,9 +132,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="cv-panel" id="cvpanel-ugc">
       <div id="cv-ugc-body" style="padding:16px;"></div>
     </div>
-    <!-- ANNO PANEL -->
-    <div class="cv-panel" id="cvpanel-anno">
-      <div class="cv-anno-wrap" id="cv-anno-body"></div>
+    <!-- ADS PANEL -->
+    <div class="cv-panel" id="cvpanel-ads">
+      <div id="cv-ads-body" style="padding:16px;"></div>
     </div>
   </div>
 </div>
@@ -189,12 +189,12 @@ function getShareTokenFromUrl() {
 }
 
 function cvSwitchTab(tab) {
-  ['preview','ugc','anno'].forEach(t => {
+  ['preview','ugc','ads'].forEach(t => {
     document.getElementById('cvtab-'+t)?.classList.toggle('active', t===tab);
     document.getElementById('cvpanel-'+t)?.classList.toggle('active', t===tab);
   });
   if(tab==='ugc') cvRenderUGC();
-  if(tab==='anno') cvRenderAnno();
+  if(tab==='ads') cvRenderAds();
   // Update URL without reload
   const base = window.location.pathname.split('/').slice(0,3).join('/');
   history.replaceState(null,'', base + '/' + tab);
@@ -258,7 +258,7 @@ function cvBuildMonthSel() {
     return MONTHS.indexOf(pa[0])-MONTHS.indexOf(pb[0]);
   });
   if(!arr.length) { const now=new Date(); arr=[MONTHS[now.getMonth()]+' '+now.getFullYear()]; }
-  sel.innerHTML = arr.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sel.innerHTML = '<option value="tutti">Tutti i mesi</option>' + arr.map(m=>`<option value="${m}">${m}</option>`).join('');
   // Default to last month (most recent)
   cvMonth = arr[arr.length-1];
   sel.value = cvMonth;
@@ -284,7 +284,20 @@ function cvRenderPreview() {
   const accs = cvClient.accounts || [];
   const acc = accs[cvActiveAcc] || accs[0];
   if(!acc) return;
-  const items = cvGetFeedItems(acc.id, cvMonth);
+
+  // Support "tutti" = aggregate all months
+  let items = [];
+  if(cvMonth === 'tutti') {
+    // Collect all months for this account
+    const allKeys = Object.keys(cvData.feeds||{}).filter(k=>k.startsWith(acc.id+'|||'));
+    allKeys.forEach(k => {
+      const month = k.split('|||')[1];
+      items = items.concat(cvGetFeedItems(acc.id, month));
+    });
+  } else {
+    items = cvGetFeedItems(acc.id, cvMonth);
+  }
+
   const countEl = document.getElementById('cv-preview-count');
   if(countEl) countEl.textContent = items.length + ' contenut' + (items.length===1?'o':'i');
 
@@ -453,34 +466,66 @@ function cvRenderUGC() {
   `).join('');
 }
 
-function cvRenderAnno() {
-  const body = document.getElementById('cv-anno-body');
+function cvRenderAds() {
+  const body = document.getElementById('cv-ads-body');
   if(!body || !cvData) return;
-  const now = new Date();
-  const year = now.getFullYear();
-  const accs = cvClient.accounts || [];
-  body.innerHTML = `<h2 style="font-size:15px;font-weight:700;margin-bottom:16px;">Calendario ${year}</h2>`;
-  MONTHS.forEach((mName, mi) => {
-    const events = [];
-    accs.forEach(acc => {
-      const k = accountKey(acc.id, mName + ' ' + year);
-      ((cvData.feeds||{})[k]||[]).filter(i=>i.type!=='pending'&&i.date&&(i.apprStato||'bozza')!=='bozza').forEach(it=>{
-        events.push({ date: it.date, label: it.copy?.slice(0,40)||it.type||'Post', type:'feed' });
-      });
-    });
-    const div = document.createElement('div');
-    div.style.cssText = 'margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;';
-    div.innerHTML = `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:13px;font-weight:700;">${mName} ${year}</span>
-        <span style="font-size:11px;color:var(--text-3);">${events.length} event${events.length===1?'o':'i'}</span>
-      </div>
-      ${events.length ? `<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px;">${events.map(ev=>`
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
-          <span style="color:var(--green-dk);font-weight:600;flex-shrink:0;min-width:90px;">${ev.date}</span>
-          <span style="color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.label}</span>
-        </div>`).join('')}</div>` : `<div style="padding:14px;font-size:12px;color:var(--text-3);">Nessun contenuto con data.</div>`}`;
-    body.appendChild(div);
-  });
+  const adsData = cvData.adsCampaigns || {};
+  // Find campaigns for this client
+  const clientKey = Object.keys(adsData).find(k => {
+    const cl = (cvData.clients||[]).find(c=>c.id===cvClient.id||c.shareToken===cvClient.shareToken);
+    return k === (cl?.name||'') || k === cl?.id;
+  }) || cvClient.name;
+  const camps = adsData[clientKey] || [];
+
+  if(!camps.length) {
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3);font-size:13px;">Nessun dato pubblicitario disponibile.</div>';
+    return;
+  }
+
+  const totalBudget = camps.reduce((s,c)=>s+(c.budget||0),0);
+  const totalSpent  = camps.reduce((s,c)=>s+(c.spent||0),0);
+  const active      = camps.filter(c=>c.status==='active');
+  const avgRoas     = active.length ? (active.reduce((s,c)=>s+(c.roas||0),0)/active.length).toFixed(1) : 0;
+  const totalImp    = camps.reduce((s,c)=>s+(c.impressions||0),0);
+
+  const metrics = [
+    {lbl:'Budget totale',   val:'€'+totalBudget.toLocaleString('it'), sub: totalSpent?'€'+totalSpent.toLocaleString('it')+' spesi':'—'},
+    {lbl:'ROAS medio',      val:avgRoas+'×',                          sub: active.length+' campagne attive'},
+    {lbl:'Impression tot.', val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—', sub:''},
+    {lbl:'Campagne',        val:active.length+'/'+camps.length,       sub:'attive / totali'},
+  ];
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;">
+      ${metrics.map(m=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">${m.lbl}</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);">${m.val}</div>
+        ${m.sub?`<div style="font-size:11px;color:var(--text-3);margin-top:4px;">${m.sub}</div>`:''}
+      </div>`).join('')}
+    </div>
+    <h3 style="font-size:13px;font-weight:700;color:var(--text-2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">Campagne</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${camps.map(c=>{
+        const stColors = {active:'#22c97a',paused:'#d4a800',ended:'#999',draft:'#aaa'};
+        const stLabels = {active:'Attiva',paused:'In pausa',ended:'Terminata',draft:'Bozza'};
+        const dot = stColors[c.status]||'#999';
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">${c.name||'—'}</div>
+            <div style="font-size:11px;color:var(--text-3);">${c.platform||''} ${c.startDate?'· '+c.startDate:''} ${c.endDate?'→ '+c.endDate:''}</div>
+            <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+              ${c.budget?`<span style="font-size:12px;"><strong>€${(c.budget||0).toLocaleString('it')}</strong> <span style="color:var(--text-3);">budget</span></span>`:''}
+              ${c.roas?`<span style="font-size:12px;"><strong>${c.roas}×</strong> <span style="color:var(--text-3);">ROAS</span></span>`:''}
+              ${c.impressions?`<span style="font-size:12px;"><strong>${c.impressions>=1000?(c.impressions/1000).toFixed(1)+'K':c.impressions}</strong> <span style="color:var(--text-3);">imp.</span></span>`:''}
+            </div>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;background:${dot}22;color:${dot};">
+            <span style="width:6px;height:6px;border-radius:50%;background:${dot};flex-shrink:0;"></span>
+            ${stLabels[c.status]||c.status||'—'}
+          </span>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 // LIGHTBOX

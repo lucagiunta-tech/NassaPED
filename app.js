@@ -783,7 +783,7 @@ function routerPush(tab, replace) {
   let path = '/';
   if(!tab || tab === 'studio') { path = '/'; }
   else if(cl) {
-    path = '/client/' + encodeURIComponent(cl.id) + '/' + tab;
+    path = '/a/' + encodeURIComponent(cl.id) + '/' + tab;
     // Encode month and account into URL for feed/stories/preview
     const month = feedMonth || '';
     const accIdx = feedAccountIdx >= 0 ? feedAccountIdx : 0;
@@ -810,7 +810,7 @@ function routerRestore() {
   const path = window.location.pathname;
   if(path === '/' || path === '') return;
   // Match /client/{id}/{tab} OR /client/{id}/{tab}/{month} OR /client/{id}/{tab}/{month}/{accIdx}
-  const clientTabMatch = path.match(/^\/client\/([^/]+)\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
+  const clientTabMatch = path.match(/^\/a\/([^/]+)\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
   if(clientTabMatch) {
     const clientId = decodeURIComponent(clientTabMatch[1]);
     const tab = clientTabMatch[2];
@@ -1336,7 +1336,7 @@ function renderFeedGrid(){
         const feedStateBadge=document.createElement('button');
         feedStateBadge.className='feed-cell-stato-btn';
         const _fst=item.apprStato||'bozza';
-        const _fstCfg={bozza:{dot:'#888',label:'Bozza'},approvare:{dot:'#d4a800',label:'In revisione'},revisione:{dot:'#d4a800',label:'In revisione'},approvato:{dot:'#22c97a',label:'Approvato'}};
+        const _fstCfg={bozza:{dot:'#888',label:'Bozza'},revisione:{dot:'#e05c00',label:'Da Revisionare'},approvare:{dot:'#d4a800',label:'Da Approvare'},approvato:{dot:'#22c97a',label:'Approvato'},pubblicato:{dot:'#2563eb',label:'Pubblicato'}};
         const _fc=_fstCfg[_fst]||_fstCfg.bozza;
         feedStateBadge.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}`;
         feedStateBadge.title='Cambia stato';
@@ -2553,7 +2553,8 @@ function renderPreview(){
         bozza:     {label:'Bozza',        dot:'#aaa',    bg:'rgba(0,0,0,0.52)',      text:'#e8e8e8',       border:'rgba(255,255,255,0.15)'},
         approvare: {label:'In revisione',  dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
         revisione: {label:'In revisione',  dot:'#f5c800', bg:'rgba(212,168,0,0.82)', text:'#3d2e00',       border:'rgba(212,168,0,0.9)'},
-        approvato: {label:'Approvato',     dot:'#22c97a', bg:'rgba(26,122,74,0.82)', text:'#d6fff0',       border:'rgba(26,122,74,0.9)'},
+        approvato:   {label:'Approvato',    dot:'#22c97a', bg:'rgba(26,122,74,0.82)', text:'#d6fff0',  border:'rgba(26,122,74,0.9)'},
+        pubblicato:  {label:'Pubblicato',   dot:'#60a5fa', bg:'rgba(37,99,235,0.82)',  text:'#dbeafe', border:'rgba(37,99,235,0.9)'},
       };
       const cfg = APPR_CFG[apprSt] || APPR_CFG.bozza;
       // Bordo card colorato per stato
@@ -5626,10 +5627,11 @@ function renderAnnoTab() {
 /* ══ SISTEMA APPROVAZIONE FEED ══ */
 
 const APPR_STATI = [
-  {key:'bozza',     label:'Bozza',            dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)', border:'var(--border)'},
-  {key:'revisione', label:'Da Revisionare',   dot:'#e05c00', bg:'rgba(224,92,0,0.13)',    text:'#7a2e00',       border:'rgba(224,92,0,0.45)'},
-  {key:'approvare', label:'Da Approvare',     dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',       border:'rgba(212,168,0,0.5)'},
-  {key:'approvato', label:'Approvato',        dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
+  {key:'bozza',       label:'Bozza',            dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)', border:'var(--border)'},
+  {key:'revisione',   label:'Da Revisionare',   dot:'#e05c00', bg:'rgba(224,92,0,0.13)',    text:'#7a2e00',       border:'rgba(224,92,0,0.45)'},
+  {key:'approvare',   label:'Da Approvare',     dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',       border:'rgba(212,168,0,0.5)'},
+  {key:'approvato',   label:'Approvato',        dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
+  {key:'pubblicato',  label:'Pubblicato',       dot:'#2563eb', bg:'rgba(37,99,235,0.12)',   text:'#1e3a8a',       border:'rgba(37,99,235,0.4)'},
 ];
 /* ══ SISTEMA NOTIFICHE NOTE ══ */
 function updateNotifBadge(){
@@ -5696,7 +5698,7 @@ function apprUpdateStats(items){
 
   // Conteggi per stato approvazione (su tutto il feed, non filtered)
   const allItems = apprGetItems ? apprGetItems() : items;
-  const counts = {bozza:0, revisione:0, approvare:0, approvato:0};
+  const counts = {bozza:0, revisione:0, approvare:0, approvato:0, pubblicato:0};
   allItems.forEach(it => { const st=it.apprStato||'bozza'; counts[st]=(counts[st]||0)+1; });
   const total = allItems.length;
 
@@ -5712,7 +5714,7 @@ function apprUpdateStats(items){
     if(!cell) return;
     const num = cell.querySelector('.appr-stat-num');
     const barEl = cell.querySelector('.appr-stat-bar');
-    const displayCount = k==='approvare' ? (counts.approvare||0)+(counts.revisione||0) : (counts[k]||0);
+    const displayCount = (counts[k]||0);
     if(num) num.textContent = displayCount;
     if(barEl) barEl.style.width = total ? Math.round(displayCount/total*100)+'%' : '0%';
   });
