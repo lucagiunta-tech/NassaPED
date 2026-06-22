@@ -421,16 +421,25 @@ const DROPBOX = {
         body: formData,
         signal: DROPBOX._abortController.signal
       });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) {
+        const errBody = await res.text().catch(()=>'');
+        console.error('%c[DROPBOX] HTTP '+res.status+' error from /api/dropbox-upload', 'color:#ef4444;font-weight:700');
+        console.error('[DROPBOX] Response body:', errBody);
+        throw new Error('HTTP ' + res.status + ' — ' + errBody.slice(0,200));
+      }
       const data = await res.json();
+      console.log('%c[DROPBOX] ✅ Upload OK', 'color:#22c97a;font-weight:700', {
+        url: data.shared_link || data.url || 'null',
+        file: destPath
+      });
       DROPBOX.uploading=Math.max(0,DROPBOX.uploading-1);
       if(DROPBOX.uploading===0){ const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
       return data.shared_link || data.url || null;
     } catch(e) {
       DROPBOX.uploading=Math.max(0,DROPBOX.uploading-1);
       if(DROPBOX.uploading===0){ const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
-      if(e.name==='AbortError'){ return null; }
-      console.warn('[DROPBOX] Upload failed:', e.message);
+      if(e.name==='AbortError'){ console.log('[DROPBOX] Upload aborted by user'); return null; }
+      console.error('%c[DROPBOX] Upload exception: '+e.message, 'color:#ef4444;font-weight:700');
       return null;
     }
   }

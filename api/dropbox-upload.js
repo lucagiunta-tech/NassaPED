@@ -58,6 +58,7 @@ function toDirectUrl(url) {
 }
 
 async function uploadToDropbox(token, buffer, destPath) {
+  console.log('[dropbox-upload] Starting upload to path:', destPath, 'size:', buffer.length, 'bytes');
   const uploadResp = await fetch('https://content.dropboxapi.com/2/files/upload', {
     method: 'POST',
     headers: {
@@ -68,7 +69,12 @@ async function uploadToDropbox(token, buffer, destPath) {
     body: buffer,
   });
   const uploadData = await uploadResp.json();
-  if (!uploadData.id) throw new Error('Upload failed: ' + JSON.stringify(uploadData));
+  console.log('[dropbox-upload] Upload response status:', uploadResp.status);
+  if (!uploadData.id) {
+    console.error('[dropbox-upload] Upload failed response:', JSON.stringify(uploadData));
+    throw new Error('Upload failed: ' + JSON.stringify(uploadData));
+  }
+  console.log('[dropbox-upload] File uploaded OK, path:', uploadData.path_display);
 
   const linkResp = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
     method: 'POST',
@@ -76,13 +82,20 @@ async function uploadToDropbox(token, buffer, destPath) {
     body: JSON.stringify({ path: uploadData.path_display, settings: { requested_visibility: 'public' } }),
   });
   const linkData = await linkResp.json();
+  console.log('[dropbox-upload] Link creation status:', linkResp.status, 'error tag:', linkData?.error?.['.tag'] || 'none');
 
   if (linkData?.error?.['.tag'] === 'shared_link_already_exists') {
     const existingUrl = linkData.error?.shared_link_already_exists?.metadata?.url;
+    console.log('[dropbox-upload] Using existing link:', existingUrl?.slice(0,80));
     if (existingUrl) return toDirectUrl(existingUrl);
   }
 
-  return toDirectUrl(linkData.url || '');
+  if (!linkData.url) {
+    console.error('[dropbox-upload] No URL in link response:', JSON.stringify(linkData));
+  }
+  const finalUrl = toDirectUrl(linkData.url || '');
+  console.log('[dropbox-upload] Final URL:', finalUrl?.slice(0,80));
+  return finalUrl;
 }
 
 export const config = { api: { bodyParser: false } };
