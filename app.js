@@ -415,7 +415,7 @@ const DROPBOX = {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('path', destPath || '/nassa/' + file.name);
-      const res = await fetch('/api/media-upload', {
+      const res = await fetch('/api/dropbox-upload', {
         method: 'POST',
         headers: { 'x-nassa-key': CLOUD.apiKey },
         body: formData,

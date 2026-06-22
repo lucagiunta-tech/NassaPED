@@ -22,22 +22,13 @@ function safePath(rawPath, user) {
 }
 
 async function getAccessToken() {
-  const resp = await fetch('https://api.dropbox.com/oauth2/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ' + Buffer.from(
-        process.env.DROPBOX_APP_KEY + ':' + process.env.DROPBOX_APP_SECRET
-      ).toString('base64'),
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: process.env.DROPBOX_REFRESH_TOKEN,
-    }),
-  });
-  const data = await resp.json();
-  if (!data.access_token) throw new Error('Failed to get Dropbox token: ' + JSON.stringify(data));
-  return data.access_token;
+  // DROPBOX_ACCESS_TOKEN: long-lived token generated from Dropbox App Console
+  // (Settings → OAuth 2 → Generated access token → Generate)
+  // For Development apps this token does not expire.
+  // If it ever expires, regenerate it in the App Console and update the Vercel env var.
+  const token = process.env.DROPBOX_ACCESS_TOKEN;
+  if (!token) throw new Error('Missing DROPBOX_ACCESS_TOKEN env var');
+  return token;
 }
 
 function toDirectUrl(url) {
