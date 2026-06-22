@@ -32,7 +32,7 @@ function safeUser(user) {
 }
 
 // FIX QA: validazione dimensione body — previene oversized payload
-const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5MB max per il JSON del progetto
+const MAX_BODY_BYTES = 15 * 1024 * 1024; // 15MB max per il JSON del progetto
 
 export default async function handler(req, res) {
   // FIX QA: CORS ristretto
@@ -72,7 +72,8 @@ export default async function handler(req, res) {
       // FIX QA: controlla dimensione payload prima di scrivere su DB
       const payloadSize = JSON.stringify(projectData).length;
       if (payloadSize > MAX_BODY_BYTES) {
-        return res.status(413).json({ error: `Payload troppo grande: ${Math.round(payloadSize/1024)}KB (max 5MB)` });
+        console.warn('[api/project] Payload too large:', Math.round(payloadSize/1024), 'KB');
+        return res.status(413).json({ error: `Progetto troppo grande: ${Math.round(payloadSize/1024)}KB (max ${Math.round(MAX_BODY_BYTES/1024/1024)}MB). Contatta il supporto.` });
       }
 
       const { error } = await supabase

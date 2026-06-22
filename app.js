@@ -239,11 +239,20 @@ const CLOUD = {
   async saveNow(projectData) {
     try {
       CLOUD.setStatus('saving');
+      const body = JSON.stringify({ user: CLOUD.user, data: projectData });
+      const sizeKB = Math.round(body.length / 1024);
       const res = await fetch(CLOUD.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
-        body: JSON.stringify({ user: CLOUD.user, data: projectData })
+        body
       });
+      if (res.status === 413) {
+        const err = await res.json().catch(()=>({}));
+        CLOUD.setStatus('error');
+        showToast('⚠ Salvataggio fallito: progetto troppo grande ('+sizeKB+'KB). Alcune immagini potrebbero non essere salvate.', 'warn');
+        console.warn('[CLOUD] 413 Payload too large:', sizeKB, 'KB');
+        return;
+      }
       if (!res.ok) throw new Error('HTTP ' + res.status);
       CLOUD.setStatus('saved');
     } catch(e) {
@@ -268,8 +277,39 @@ const CLOUD = {
   },
 
   snapshot() {
+    // Strip blob: URLs before saving — they're only valid in the current session
+    // and waste space in the JSON payload. externalUrl is what persists.
+    function cleanFeeds(feedsObj) {
+      const out = {};
+      Object.keys(feedsObj||{}).forEach(k => {
+        out[k] = (feedsObj[k]||[]).map(item => {
+          const clean = {...item};
+          if(clean.url && clean.url.startsWith('blob:')) clean.url = '';
+          if(clean.slides) clean.slides = clean.slides.map(s => {
+            const sc={...s};
+            if(sc.url&&sc.url.startsWith('blob:'))sc.url='';
+            return sc;
+          });
+          return clean;
+        });
+      });
+      return out;
+    }
+    function cleanStories(storiesObj) {
+      const out = {};
+      Object.keys(storiesObj||{}).forEach(k => {
+        out[k] = (storiesObj[k]||[]).map(st => {
+          const clean={...st};
+          if(clean.url&&clean.url.startsWith('blob:'))clean.url='';
+          if(clean.slides)clean.slides=clean.slides.map(s=>{const sc={...s};if(sc.url&&sc.url.startsWith('blob:'))sc.url='';return sc;});
+          return clean;
+        });
+      });
+      return out;
+    }
     return { version:'2.0', exportedAt: new Date().toISOString(),
-      clients, feeds, stories, highlights, pedPlans, notesData, pilastri, adsCampaigns,
+      clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
+      highlights, pedPlans, notesData, pilastri, adsCampaigns,
       meta: { showAllDates, showAllCopy, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
