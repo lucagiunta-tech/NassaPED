@@ -2044,16 +2044,17 @@ function renderFeedGrid(){
   }
 
   function _pdCleanup(){
-    if(_pd.ghost){ _pd.ghost.remove(); _pd.ghost=null; }
-    _pd.indicator?.remove();
+    _pd.active = false; // per sicurezza
     if(_pd.rafId){ cancelAnimationFrame(_pd.rafId); _pd.rafId=null; }
+    if(_pd.ghost){ _pd.ghost.remove(); _pd.ghost=null; }
+    if(_pd.indicator){ _pd.indicator.remove(); } // non null — riusato
     grid.querySelectorAll('.cell-wrap').forEach(c=>{
       c.classList.remove('dragging');
       c.style.willChange='';
     });
     document.body.style.userSelect='';
     document.body.style.cursor='';
-    _pd.active=false; _pd.srcIdx=null; _pd.lastTarget=null;
+    _pd.srcIdx=null; _pd.lastTarget=null;
   }
 
   // Attach al drag handle di ogni card
@@ -2105,7 +2106,7 @@ function renderFeedGrid(){
     if(_pd.rafId) return; // throttle 60fps
     _pd.rafId = requestAnimationFrame(()=>{
       _pd.rafId = null;
-      if(!_pd.active) return;
+      if(!_pd.active || _pd.srcIdx===null) return; // double-check inside rAF
 
       // Muovi ghost
       if(_pd.ghost){
@@ -2139,11 +2140,14 @@ function renderFeedGrid(){
 
   document.addEventListener('pointerup', e=>{
     if(!_pd.active) return;
+    // Stop SUBITO — evita che rAF in volo modifichi ancora
+    _pd.active = false;
     if(_pd.rafId){ cancelAnimationFrame(_pd.rafId); _pd.rafId=null; }
 
-    // Calcola posizione finale dall'indicatore
+    // Leggi indicatore PRIMA di cleanup (che lo rimuove dal DOM)
     const ind = _pd.indicator;
-    let insertIdx = _pd.srcIdx;
+    const srcIdx = _pd.srcIdx;
+    let insertIdx = srcIdx;
 
     if(ind && ind.parentElement === grid){
       let count = 0;
@@ -2154,23 +2158,19 @@ function renderFeedGrid(){
       insertIdx = count;
     }
 
-    const srcIdx = _pd.srcIdx;
+    // Ora cleanup (rimuove ghost, indicator, classi)
     _pdCleanup();
 
     if(insertIdx !== srcIdx){
-      const arr = currentFeedItems();
-      console.log('[DnD] before:', arr.map(i=>i.name||i.copy||'?').join(','));
-      console.log('[DnD] srcIdx='+srcIdx+' insertIdx='+insertIdx);
+      const arr = currentFeedItems().slice(); // copia difensiva
       const [moved] = arr.splice(srcIdx, 1);
       const fi = insertIdx > srcIdx ? insertIdx-1 : insertIdx;
       arr.splice(fi, 0, moved);
-      console.log('[DnD] after:', arr.map(i=>i.name||i.copy||'?').join(','));
       setFeedItems(arr);
-      console.log('[DnD] currentFeedItems after set:', currentFeedItems().map(i=>i.name||i.copy||'?').join(','));
       autoSave();
       renderFeedGrid();
       showUndoToast('Post riordinato', ()=>{
-        const ar = currentFeedItems();
+        const ar = currentFeedItems().slice();
         const [m] = ar.splice(fi, 1);
         ar.splice(srcIdx, 0, m);
         setFeedItems(ar); renderFeedGrid();
