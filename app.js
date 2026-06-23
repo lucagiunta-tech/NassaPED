@@ -5657,25 +5657,25 @@ function renderNotesDocList(){
 
 // Migrazione vecchi dati mensili → documenti
 function _migrateOldNotes(clientName){
+  // SAFE: legge le chiavi mensili ma NON le cancella mai
+  // Crea doc paralleli senza distruggere i dati originali
   const monthPrefix = clientName+'|||';
   const docPrefix   = clientName+'|||doc|||';
+  let migrated = false;
   Object.keys(notesData).forEach(k=>{
     if(k.startsWith(monthPrefix) && !k.startsWith(docPrefix) && typeof notesData[k]==='string' && notesData[k].trim()){
       const month = k.replace(monthPrefix,'');
-      const newId = 'migrated_'+month.replace(/\s/g,'_');
+      const newId = 'migrated_'+month.replace(/[^a-zA-Z0-9]/g,'_');
       const newKey = _docKey(clientName, newId);
       if(!notesData[newKey]){
-        notesData[newKey] = {
-          title: 'Piano '+month,
-          content: notesData[k],
-          created: Date.now(),
-          updated: Date.now(),
-          _migratedFrom: month
-        };
+        notesData[newKey] = { title:'Piano '+month, content:notesData[k],
+          created:Date.now(), updated:Date.now(), _migratedFrom:month };
+        migrated = true;
       }
-      delete notesData[k];
+      // NON delete notesData[k] — chiave originale resta intatta come backup
     }
   });
+  if(migrated) setTimeout(()=>autoSave(), 2000);
 }
 
 function renderNotesEditor(){
