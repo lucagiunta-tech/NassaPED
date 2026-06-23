@@ -702,11 +702,78 @@ function pedUID(){return Math.random().toString(36).slice(2,9);}
 let pedFreqDays = new Set([0,2,4]);
 
 /* FEED FILES - upload to Dropbox, fall back to blob URL */
+/* ══ FILE UPLOAD VALIDATION ══ */
+const UPLOAD_ALLOWED_TYPES = new Set([
+  'image/jpeg','image/jpg','image/png','image/webp','image/gif',
+  'video/mp4','video/quicktime','video/mov','video/avi','video/webm'
+]);
+const UPLOAD_MAX_MB = 50;
+const UPLOAD_MAX_BYTES = UPLOAD_MAX_MB * 1024 * 1024;
+
+// Verifica i magic bytes reali del file (non si fida del tipo dichiarato)
+async function checkMagicBytes(file){
+  try {
+    const buf = await file.slice(0, 12).arrayBuffer();
+    const b = new Uint8Array(buf);
+    // JPEG: FF D8 FF
+    if(b[0]===0xFF&&b[1]===0xD8&&b[2]===0xFF) return true;
+    // PNG: 89 50 4E 47 0D 0A 1A 0A
+    if(b[0]===0x89&&b[1]===0x50&&b[2]===0x4E&&b[3]===0x47) return true;
+    // GIF: 47 49 46 38
+    if(b[0]===0x47&&b[1]===0x49&&b[2]===0x46&&b[3]===0x38) return true;
+    // WebP: RIFF????WEBP
+    if(b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46&&
+       b[8]===0x57&&b[9]===0x45&&b[10]===0x42&&b[11]===0x50) return true;
+    // MP4/MOV: ftyp at offset 4
+    if(b[4]===0x66&&b[5]===0x74&&b[6]===0x79&&b[7]===0x70) return true;
+    // AVI: RIFF????AVI
+    if(b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46) return true;
+    // WebM: 1A 45 DF A3
+    if(b[0]===0x1A&&b[1]===0x45&&b[2]===0xDF&&b[3]===0xA3) return true;
+    return false;
+  } catch { return true; } // se non riesce a leggere, lascia passare
+}
+
+// Valida un array di file — restituisce {valid:[], rejected:[{name,reason}]}
+async function validateUploadFiles(files){
+  const valid = [];
+  const rejected = [];
+  for(const file of files){
+    // 1. Tipo MIME dichiarato
+    if(!UPLOAD_ALLOWED_TYPES.has(file.type.toLowerCase())){
+      rejected.push({name:file.name, reason:`Tipo non supportato (${file.type||'sconosciuto'})`});
+      continue;
+    }
+    // 2. Dimensione
+    if(file.size > UPLOAD_MAX_BYTES){
+      const mb = (file.size/1024/1024).toFixed(1);
+      rejected.push({name:file.name, reason:`File troppo grande (${mb}MB, max ${UPLOAD_MAX_MB}MB)`});
+      continue;
+    }
+    // 3. Magic bytes (verifica contenuto reale)
+    const ok = await checkMagicBytes(file);
+    if(!ok){
+      rejected.push({name:file.name, reason:'Contenuto non valido (il file potrebbe essere corrotto)'});
+      continue;
+    }
+    valid.push(file);
+  }
+  // Mostra errori se ci sono file rifiutati
+  if(rejected.length){
+    const msgs = rejected.map(r=>r.name+': '+r.reason).join(' | ');
+    showToast('\u26a0 '+rejected.length+' file non caricati: '+msgs, 'warn');
+  }
+  return valid;
+}
+
 function queueFeedFiles(files){
   if(feedAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
   // Reset file input so same file can be re-selected
   const inp=document.getElementById('feed-file-input');if(inp)inp.value='';
-  const filesArr=Array.from(files);
+  // Valida prima di procedere
+  (async()=>{
+    const filesArr = await validateUploadFiles(Array.from(files));
+    if(!filesArr.length) return;
   // Add all new items first, then upload each one
   const items=currentFeedItems();
   const uploadStartTimes = new Map(); // track unique ID per file for matching
@@ -817,6 +884,7 @@ function queueFeedFiles(files){
       showToast('⚠ Upload fallito. Connessione Dropbox assente o file troppo grande.','warn');
     }
   })();
+  })(); // close validateUploadFiles wrapper
 }
 
 function setFeedLinkTab(tab){
@@ -901,7 +969,9 @@ function addFeedLink(){
 function queueStoryFiles(files){
   if(storiesAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
   const inp=document.getElementById('stories-file-input');if(inp)inp.value='';
-  const filesArr=Array.from(files);
+  (async()=>{
+    const filesArr = await validateUploadFiles(Array.from(files));
+    if(!filesArr.length) return;
   const arr=currentStoryItems();
   const newItems=filesArr.map(f=>({type:detectType(f),url:URL.createObjectURL(f),name:f.name,date:'',note:'',isStoryboard:false,slides:[]}));
   setStoryItems([...newItems,...arr]);renderStoriesGrid();updateStoriesStats(); // skipAutoSave — don't schedule a stale save before upload completes
@@ -932,6 +1002,7 @@ function queueStoryFiles(files){
       }
     }
   })();
+  })(); // close validateUploadFiles wrapper
 }
 
 function setStoriesLinkTab(tab){
