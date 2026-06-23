@@ -806,18 +806,14 @@ function queueFeedFiles(files){
     }
     // Upload completato
     if(uploadBar) uploadBar.style.display = 'none';
-    if(done===total){
-      showToast('✓ '+total+(total===1?' file caricato':' file caricati')+' su Dropbox');
-    } else if(failed>0&&done>0){
-      showToast('✓ '+done+' caricati, '+failed+' falliti — riprova con bottone ↑','warn');
-    } else if(failed===total){
-      showToast('⚠ Upload fallito. Connessione Dropbox assente o file troppo grande.','warn');
-    }
-    if(uploadBar) uploadBar.style.display = 'none';
     if(done > 0 && failed === 0){
       showToast(total === 1 ? '✓ File caricato su Dropbox' : `✓ ${done} file caricati su Dropbox`);
-    } else if(failed > 0){
+      // Chiudi il pannello automaticamente dopo upload riuscito
+      if(feedPanelOpen) toggleFeedPanel();
+    } else if(failed > 0 && done > 0){
       showToast(`⚠ ${done} ok, ${failed} falliti — ricarica i file mancanti`, 'warn');
+    } else if(failed === total){
+      showToast('⚠ Upload fallito. Connessione Dropbox assente o file troppo grande.','warn');
     }
   })();
 }
