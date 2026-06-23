@@ -1802,8 +1802,8 @@ function renderFeedGrid(){
           const cvBtn=document.createElement('button');
           cvBtn.className='video-cover-pill';
           cvBtn.innerHTML=item.coverUrl
-            ?'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Cover ✓'
-            :'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> + Cover';
+            ?'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Cover ✓'
+            :'<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> + Cover';
           cvBtn.title = item.coverUrl ? 'Cambia cover' : 'Aggiungi cover reel';
           cvBtn.onclick=e=>{e.stopPropagation();openVideoCoverModal(idx);};
           cell.appendChild(cvBtn);}
@@ -1871,13 +1871,13 @@ function renderFeedGrid(){
           cardInner.innerHTML=`<div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.45;margin-bottom:6px;">${esc(item.editorialEyebrow||''  )}</div><div style="font-weight:800;line-height:1.1;letter-spacing:-1px;font-size:17px;flex:1;">${titleHtml}</div><div style="height:1px;background:currentColor;opacity:.15;margin:6px 0;"></div><div style="font-size:11px;opacity:.55;line-height:1.4;">${(item.editorialCopy||'').slice(0,80)}</div>`;
           cell.appendChild(cardInner);
           badge.className='cell-badge editorial';
-          badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card';
+          badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card';
         } else {
           badge.className='cell-badge '+(item.type||'pending');
           badge.innerHTML={
-            image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto',
-            video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel',
-            carousel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>Caros.'+(item.slides?.length?' '+item.slides.length:''),
+            image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto',
+            video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reel',
+            carousel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>Caros.'+(item.slides?.length?' '+item.slides.length:''),
           }[item.type]||'—';
         }
 
@@ -2649,7 +2649,7 @@ function renderStoriesGrid(){
           const icon=document.createElement('div');icon.className='ped-story-icon';icon.innerHTML=st.type==='autonoma'?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';cell.appendChild(icon);
           if(st.brief){const brief=document.createElement('div');brief.className='ped-story-brief-txt';brief.textContent=st.brief.slice(0,40);cell.appendChild(brief);}
           // Upload button
-          const upBtn=document.createElement('div');upBtn.className='ped-upload-btn';upBtn.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Carica media';
+          const upBtn=document.createElement('div');upBtn.className='ped-upload-btn';upBtn.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Carica media';
           const upInp=document.createElement('input');upInp.type='file';upInp.accept='image/*,video/*';
           upInp.style.cssText='position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:10;';
           upInp.onchange=async(e)=>{
@@ -4365,9 +4365,12 @@ document.addEventListener('click',e=>{
 /* ════════ PED STORIES ════════ */
 /* ════════ UGC / PED — REDESIGN ════════ */
 const UGC_STATI = {
-  raccolto:   {label:'Raccolto',   dot:'#d4a800', bg:'rgba(212,168,0,0.12)',   text:'#7a5c00',  border:'rgba(212,168,0,0.3)'},
-  selezionato:{label:'Selezionato',dot:'#1D9E75', bg:'rgba(29,158,117,0.12)', text:'#085041',  border:'rgba(29,158,117,0.3)'},
-  autonoma:   {label:'Autonoma',   dot:'#7F77DD', bg:'rgba(127,119,221,0.10)',text:'#26215C',  border:'rgba(127,119,221,0.3)'},
+  raccolto:   {label:'Raccolto',   dot:'var(--ugc-raccolto-border)',  bg:'var(--ugc-raccolto-bg)',   text:'var(--ugc-raccolto-text)',  border:'var(--ugc-raccolto-border)'},
+  selezionato:{label:'Selezionato',dot:'var(--ugc-selezionato-border)',bg:'var(--ugc-selezionato-bg)',text:'var(--ugc-selezionato-text)',border:'var(--ugc-selezionato-border)'},
+  autonoma:   {label:'Autonoma',   dot:'var(--ugc-autonoma-border)',   bg:'var(--ugc-autonoma-bg)',   text:'var(--ugc-autonoma-text)',  border:'var(--ugc-autonoma-border)'},
+  approvato:  {label:'Approvato',  dot:'var(--ugc-approvato-border)',  bg:'var(--ugc-approvato-bg)',  text:'var(--ugc-approvato-text)', border:'var(--ugc-approvato-border)'},
+  invio:      {label:'Inviato',    dot:'var(--ugc-invio-border)',      bg:'var(--ugc-invio-bg)',      text:'var(--ugc-invio-text)',     border:'var(--ugc-invio-border)'},
+  girato:     {label:'Girato',     dot:'var(--ugc-girato-border)',     bg:'var(--ugc-girato-bg)',     text:'var(--ugc-girato-text)',    border:'var(--ugc-girato-border)'},
 };
 
 let pedCurrentTab = 'calendario';
@@ -4922,7 +4925,7 @@ function _renderSbTabGridReal(){
     briefBtn.onclick=()=>{if(sb.briefInviato){showToast('Brief già inviato');return;}openBriefModal(sb);};
     actions.appendChild(editBtn);
     if(!sb.fileCaricato)actions.appendChild(moveBtn);
-    else{const doneLbl=document.createElement('span');doneLbl.style.cssText='font-size:11px;color:var(--green);font-weight:600;';doneLbl.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><polyline points="20 6 9 17 4 12"/></svg>Nel Feed';actions.appendChild(doneLbl);}
+    else{const doneLbl=document.createElement('span');doneLbl.style.cssText='font-size:11px;color:var(--green);font-weight:600;';doneLbl.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><polyline points="20 6 9 17 4 12"/></svg>Nel Feed';actions.appendChild(doneLbl);}
     actions.appendChild(briefBtn);
     info.appendChild(actions);
     // Mini stepper visivo: Bozza → Brief → Pubblicato
