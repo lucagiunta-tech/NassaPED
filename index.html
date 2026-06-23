@@ -22,15 +22,43 @@
 <div class="app">
 
 <!-- TOPBAR -->
-<div class="topbar">
+<div class="topbar" id="subtopbar">
+  <!-- Brand — sempre visibile, click → lista clienti -->
   <div class="topbar-brand" id="topbar-brand" onclick="switchTab('studio')" title="Torna ai clienti" role="button" aria-label="Torna alla lista clienti">
     <div class="brand-mark">N</div>
     <div class="brand-name" id="brand-name-text">Nassa Studio</div>
   </div>
-  <nav class="topbar-nav" aria-label="Navigazione principale">
-    <!-- tab-studio rimosso dalla topbar — navigazione ora solo nella sidebar e subtopbar -->
-    <div id="tab-studio" style="display:none;"></div>
-  </nav>
+
+  <!-- Sezione cliente — visibile solo quando un cliente è aperto -->
+  <div class="topbar-client-section" id="topbar-client-section" style="display:none;">
+    <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
+      <span class="subtopbar-back">‹</span>
+      <div>
+        <div class="subtopbar-name" id="subtopbar-name">—</div>
+        <div class="subtopbar-pkg" id="subtopbar-pkg"></div>
+      </div>
+    </div>
+    <div class="acc-switcher" id="acc-switcher" style="display:none;">
+      <div id="acc-btns" style="display:flex;gap:4px;"></div>
+    </div>
+    <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
+      <div class="sub-tab" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
+      <div class="sub-tab" id="sub-tab-pilastri"   onclick="switchTab('pilastri')">Pilastri</div>
+      <div class="sub-tab" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
+      <div class="sub-tab" id="sub-tab-feed"       onclick="switchTab('feed')">Feed</div>
+      <div class="sub-tab" id="sub-tab-stories"    onclick="switchTab('stories')">Stories</div>
+      <div class="sub-tab" id="sub-tab-ped"        onclick="switchTab('ped')">UGC</div>
+      <div class="sub-tab" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
+      <div class="sub-tab" id="sub-tab-cal"        onclick="switchTab('cal')">Calendario</div>
+      <div class="sub-tab" id="sub-tab-anno"       onclick="switchTab('anno')">Piano annuale</div>
+      <div class="sub-tab" id="sub-tab-preview"    onclick="switchTab('preview')">Preview</div>
+    </div>
+  </div>
+
+  <!-- tab-studio hidden (JS compat) -->
+  <div id="tab-studio" style="display:none;"></div>
+
+  <!-- Right: cloud + dark mode + avatar -->
   <div class="topbar-right">
     <span class="cloud-badge" id="cloud-status" title="Cloud sync">☁ Cloud</span>
     <button id="theme-toggle" onclick="toggleDarkMode()" title="Cambia tema" aria-label="Dark/Light mode" style="width:32px;height:32px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background var(--t-fast);">🌙</button>
@@ -41,31 +69,9 @@
   </div>
 </div>
 
-<!-- SUBTOPBAR CLIENTE -->
-<div class="subtopbar" id="subtopbar">
-  <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
-    <span class="subtopbar-back">‹</span>
-    <div>
-      <div class="subtopbar-name" id="subtopbar-name">—</div>
-      <div class="subtopbar-pkg" id="subtopbar-pkg"></div>
-    </div>
-  </div>
-  <!-- Account switcher — inline next to client name, visible only with 2+ accounts -->
-  <div class="acc-switcher" id="acc-switcher" style="display:none;">
-    <div id="acc-btns" style="display:flex;gap:4px;"></div>
-  </div>
-  <div class="subtopbar-tabs" style="touch-action:pan-x;">
-    <div class="sub-tab" id="sub-tab-notes"   onclick="switchTab('notes')">Piano</div>
-    <div class="sub-tab" id="sub-tab-pilastri" onclick="switchTab('pilastri')">Pilastri</div>
-    <div class="sub-tab" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
-    <div class="sub-tab" id="sub-tab-feed"    onclick="switchTab('feed')">Feed</div>
-    <div class="sub-tab" id="sub-tab-stories" onclick="switchTab('stories')">Stories</div>
-    <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">UGC</div>
-    <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
-    <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
-    <div class="sub-tab" id="sub-tab-anno"   onclick="switchTab('anno')">Piano annuale</div>
-    <div class="sub-tab" id="sub-tab-preview" onclick="switchTab('preview')">Preview</div>
-  </div>
+<!-- SUBTOPBAR rimossa — contenuto spostato nella topbar -->
+<div style="display:none;" aria-hidden="true">
+  <div id="subtopbar-compat" style="display:none;"></div>
 </div>
 
 <!-- USER SWITCHER -->

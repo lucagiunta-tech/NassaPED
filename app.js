@@ -1213,7 +1213,11 @@ function switchTab(tab){
     // FIX: si and sn were identical — deduplicated to one call
     const si=document.getElementById('si-'+t);if(si)si.classList.toggle('active',t===tab);
   });
-  const subt=document.getElementById('subtopbar');if(subt)subt.classList.toggle('visible',tab!=='studio');
+  // Topbar unificata: mostra/nascondi sezione cliente
+  const clientSection=document.getElementById('topbar-client-section');
+  if(clientSection) clientSection.style.display = (tab!=='studio') ? 'contents' : 'none';
+  const subt=document.getElementById('subtopbar'); // ora è la topbar stessa — sempre visibile
+  if(subt) subt.classList.add('visible'); // sempre visibile
   // FIX: sidebar toggle was called twice on same element — deduplicated
   const sb=document.getElementById('sidebar');
   if(sb) sb.classList.toggle('hidden', tab!=='studio');
@@ -6019,7 +6023,9 @@ function setGlobalClient(val){
 function updateGlobalClientUI(){
   const cl=globalClientIdx>=0?clients[globalClientIdx]:null;
   const subt=document.getElementById('subtopbar');const nameEl=document.getElementById('subtopbar-name');const pkgEl=document.getElementById('subtopbar-pkg');
-  if(subt)subt.classList.toggle('visible',!!cl&&currentTab!=='studio');if(nameEl)nameEl.textContent=cl?cl.name:'—';if(pkgEl)pkgEl.innerHTML=cl?pkgBadge(cl.pkg):'';
+  // Topbar unificata: mostra sezione cliente se c'è un cliente selezionato
+  const _cs=document.getElementById('topbar-client-section');
+  if(_cs) _cs.style.display = (!!cl && currentTab!=='studio') ? 'contents' : 'none';if(nameEl)nameEl.textContent=cl?cl.name:'—';if(pkgEl)pkgEl.innerHTML=cl?pkgBadge(cl.pkg):'';
   renderAccSwitcher();
 }
 

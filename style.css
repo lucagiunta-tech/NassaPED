@@ -11,7 +11,7 @@
   /* Surfaces */
   --bg:#f5f5f7;--surface:#fff;--border:#e5e7eb;--border-lt:#f0f0f2;
   /* Layout */
-  --topbar:68px;--sidebar:56px;--sidebar-expanded:220px;
+  --topbar:56px;--sidebar:56px;--sidebar-expanded:220px;
   --font:'Inter',sans-serif;
   --bw: .5px;  /* border width — use everywhere for consistency */
   --r:8px;    /* regular radius — cards, modals, inputs */
@@ -264,8 +264,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
 /* TOPBAR */
-.topbar{height:var(--topbar);flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;z-index:200;}
-.subtopbar{height:48px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:none;align-items:stretch;padding:0;z-index:199;}
+.topbar{height:56px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;z-index:200;}
+.subtopbar{display:none !important;} /* fusa nella topbar */
 .subtopbar.visible{display:flex;}
 .subtopbar-client{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid var(--border);min-width:180px;max-width:220px;cursor:pointer;transition:background var(--t-fast);}
 .subtopbar-client:hover{background:var(--surface);}
@@ -279,7 +279,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .acc-btn.active{background:var(--green);border-color:var(--green);color:var(--green-text);font-weight:600;}
 .acc-btn .acc-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6;flex-shrink:0;}
 /* .acc-lbl removed — label not needed next to client name */
-.sub-tab{display:flex;align-items:center;padding:0 14px;font-size:var(--fs-base);font-weight:500;color:var(--text-3);cursor:pointer;border-bottom:none;transition:color .12s;white-space:nowrap;letter-spacing:var(--ls-normal);}
+.sub-tab{display:flex;align-items:center;padding:0 12px;font-size:var(--fs-sm);font-weight:500;color:var(--text-3);cursor:pointer;border-bottom:3px solid transparent;transition:color var(--t-fast),border-color var(--t-fast);white-space:nowrap;letter-spacing:var(--ls-normal);flex-shrink:0;}
+.sub-tab:hover{color:var(--text);}
+.sub-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--green);}
 .sub-tab:hover{color:var(--text-2);background:none;}
 .sub-tab.active{color:var(--text);font-weight:700;border-bottom:none;}
 .topbar-brand{width:var(--sidebar);flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);transition:width .22s;overflow:hidden;gap:10px;padding:0;cursor:pointer;}.topbar-brand.expanded{width:var(--sidebar-expanded);justify-content:flex-start;padding:0 16px;}.topbar-brand .brand-name{opacity:0;white-space:nowrap;transition:opacity var(--t-base);font-size:var(--fs-base);font-weight:700;}.topbar-brand.expanded .brand-name{opacity:1;}
@@ -3751,3 +3753,24 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 .copy-preview{font-size:var(--fs-sm);color:var(--text-2);padding:2px 10px 8px;line-height:var(--lh-base);cursor:pointer;max-height:3.6em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .copy-preview.empty{color:var(--placeholder);font-style:italic;}
+/* Sezione cliente nella topbar unificata */
+.topbar-client-section{
+  display:contents; /* si comporta come se non ci fosse il wrapper */
+}
+.topbar-client-section .subtopbar-client{
+  display:flex;align-items:center;gap:8px;
+  padding:0 14px;border-left:1px solid var(--border);
+  cursor:pointer;transition:background var(--t-fast);
+  flex-shrink:0;white-space:nowrap;
+}
+.topbar-client-section .subtopbar-client:hover{background:var(--bg);}
+.topbar-client-section .subtopbar-tabs{
+  display:flex;align-items:stretch;
+  flex:1;overflow-x:auto;scrollbar-width:none;
+  padding:0 4px;
+}
+.topbar-client-section .subtopbar-tabs::-webkit-scrollbar{display:none;}
+.topbar-client-section .acc-switcher{
+  border-left:1px solid var(--border);
+  padding:0 10px;
+}
