@@ -153,7 +153,7 @@ function triggerUndo(){
 ══════════════════════════════════════════ */
 const CLOUD = {
   apiUrl: window.location.origin + '/api/project',
-  apiKey: '', // Rimosso: auth tramite cookie HttpOnly (più sicuro)
+  apiKey: 'NASSA_SECRET_2026', // Ripristinato temporaneamente — rimosso quando login UI è pronto
   user: localStorage.getItem('nassa_user') || 'shared',
   _saveTimer: null,
   _status: 'idle',
@@ -165,6 +165,7 @@ const CLOUD = {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(`${CLOUD.apiUrl}?user=${CLOUD.user}`, {
+        headers: { 'x-nassa-key': CLOUD.apiKey },
         credentials: 'include',
         signal: controller.signal
       });
@@ -204,7 +205,7 @@ const CLOUD = {
       console.log('%c[NassaPED] saveNow → '+sizeKB+'KB', 'color:#f59e0b;font-weight:700');
       const res = await fetch(CLOUD.apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
         credentials: 'include',
         body
       });
@@ -375,7 +376,7 @@ const DROPBOX = {
   async getToken() {
     // Cache token for 1 hour
     if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3600000) return DROPBOX._token;
-    const res = await fetch('/api/dropbox-token', { credentials: 'include' });
+    const res = await fetch('/api/dropbox-token', { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
     if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
     const d = await res.json();
     DROPBOX._token = d.token;
@@ -426,7 +427,7 @@ const DROPBOX = {
       // Step 2: Create shared link via our server (avoids CSP restrictions)
       const linkRes = await fetch('/api/dropbox-link', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
         credentials: 'include',
         body: JSON.stringify({ path: uploadData.path_display })
       });
@@ -6701,6 +6702,7 @@ async function saveAdsCampaign(){
       formData.append('path',destPath);
       const res=await fetch('/api/dropbox-upload',{
         method:'POST',
+        headers:{'x-nassa-key':CLOUD.apiKey},
         credentials:'include',
         body:formData
       });
