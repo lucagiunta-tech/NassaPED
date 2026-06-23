@@ -5994,6 +5994,20 @@ function renderPilastriContent(body,ci){
 /* SIDEBAR TOGGLE */
 let sidebarExpanded = localStorage.getItem('sb_expanded') === '1';
 let feedPanelOpen = false;
+function openFeedUploadPanel(){
+  // Apre il pannello se chiuso, poi evidenzia la drop zone
+  if(!feedPanelOpen) toggleFeedPanel();
+  // Piccolo delay per l'animazione apertura, poi scroll alla drop zone
+  setTimeout(()=>{
+    const dz = document.getElementById('feed-drop-zone');
+    if(dz){
+      dz.scrollIntoView({behavior:'smooth', block:'nearest'});
+      dz.classList.add('dz-highlight');
+      setTimeout(()=>dz.classList.remove('dz-highlight'), 1200);
+    }
+  }, 150);
+}
+
 function toggleFeedPanel(){
   feedPanelOpen=!feedPanelOpen;
   const panel=document.getElementById('feed-ctx-panel');
