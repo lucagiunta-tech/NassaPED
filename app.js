@@ -1613,10 +1613,8 @@ function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;
   // Assicura che tutti gli item abbiano _uid
   currentFeedItems().forEach(_ensureUID);
-  // Skeleton solo al primo caricamento
-  if(!grid.children.length || grid.querySelector('.feed-skeleton-card')){
-    grid.innerHTML='';
-  }
+  // Pulisci sempre la griglia prima di renderizzare
+  grid.innerHTML='';
   updateFeedFormat();
   // Always reset wrappers at start — they get re-created if needed
   document.querySelector('.feed-backlog-banner')?.remove();

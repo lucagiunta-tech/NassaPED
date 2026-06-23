@@ -76,7 +76,7 @@
   --t-base:.15s ease;    /* general state changes */
   --t-slow:.25s ease;    /* modals, panels, toasts */
   /* Layout chrome heights (per calcolo altezza max celle) */
-  --chrome-h: calc(var(--topbar) + 44px + 102px); /* topbar + subtopbar + ctx-bar (56+46) */
+  --chrome-h: calc(var(--topbar) + 102px); /* topbar(56) + ctx-bar(56+46) */
   /* Altezza max cella: 40% dello spazio disponibile = ~2.5 righe visibili */
   --cell-max-h: calc((100dvh - var(--chrome-h)) * 0.62);
 }
@@ -265,7 +265,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* TOPBAR */
 .topbar{height:56px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;z-index:200;}
-.subtopbar{display:none !important;} /* fusa nella topbar */
+.subtopbar{display:none;} /* fusa nella topbar — mostrata via topbar-client-section */
 .subtopbar.visible{display:flex;}
 .subtopbar-client{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid var(--border);min-width:180px;max-width:220px;cursor:pointer;transition:background var(--t-fast);}
 .subtopbar-client:hover{background:var(--surface);}
