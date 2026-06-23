@@ -866,6 +866,68 @@ function setFeedLinkTab(tab){
   document.getElementById('feed-link-inp').placeholder=tab==='frame'?'Incolla link Frame.io…':'Incolla URL diretto…';
 }
 
+/* BATCH REUPLOAD — ricarica tutti i media mancanti del mese corrente */
+function batchReuploadMissing(){
+  const inp = document.getElementById('batch-reupload-input');
+  if(!inp) return;
+  const missing = currentFeedItems().filter(i=>i.needsReload&&!i.url&&i.name);
+  if(!missing.length){ showToast('Nessun media mancante in questo mese','warn'); return; }
+  showToast(`Seleziona ${missing.length} file (in qualsiasi ordine — il nome deve corrispondere)`);
+  inp.value='';
+  inp.click();
+}
+
+async function batchReuploadFromFiles(files){
+  if(!files||!files.length) return;
+  const filesArr = Array.from(files);
+  const items = currentFeedItems();
+  const capturedKey = currentFeedKey();
+  let matched = 0, failed = 0;
+
+  showToast(`⟳ Caricamento ${filesArr.length} file…`);
+  const btn = document.getElementById('batch-reupload-btn');
+  if(btn){ btn.disabled=true; btn.style.opacity='0.6'; }
+
+  for(const f of filesArr){
+    // Match per nome file (case-insensitive, ignora timestamp prefissi)
+    const fname = f.name.toLowerCase();
+    const arr = capturedKey ? (feeds[capturedKey]||[]) : currentFeedItems();
+    let idx = arr.findIndex(it=>it.needsReload && it.name && it.name.toLowerCase()===fname);
+    if(idx<0){
+      // fallback: match parziale — il nome del DB potrebbe avere prefisso timestamp
+      idx = arr.findIndex(it=>it.needsReload && it.name && (
+        it.name.toLowerCase().includes(fname) || fname.includes(it.name.toLowerCase())
+      ));
+    }
+    if(idx<0){ console.warn('[batch] No match for:', f.name); failed++; continue; }
+
+    const destPath = '/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
+    const url = await DROPBOX.upload(f, destPath);
+    if(url){
+      arr[idx].url=url; arr[idx].externalUrl=url;
+      arr[idx].isExternalLink=true; arr[idx].needsReload=false;
+      if(arr[idx].type==='pending') arr[idx].type='image';
+      if(capturedKey) feeds[capturedKey]=arr;
+      matched++;
+      console.log('[batch] ✅ matched+uploaded:', f.name, '→', url.slice(0,60));
+    } else {
+      failed++;
+      console.warn('[batch] ❌ upload failed:', f.name);
+    }
+  }
+
+  if(btn){ btn.disabled=false; btn.style.opacity=''; }
+  clearTimeout(CLOUD._saveTimer);
+  await CLOUD.saveNow(CLOUD.snapshot());
+  if(capturedKey===currentFeedKey()) refreshFeed(true);
+  updateFeedStats();
+
+  if(matched>0 && failed===0) showToast(`✓ ${matched} media ricaricati`);
+  else if(matched>0) showToast(`✓ ${matched} ok, ${failed} non trovati — verifica i nomi file`,'warn');
+  else showToast(`⚠ Nessun file corrisponde ai media mancanti — verifica i nomi`,'warn');
+  document.getElementById('batch-reupload-input').value='';
+}
+
 function addFeedLink(){
   if(feedAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
   const raw=document.getElementById('feed-link-inp').value.trim();if(!raw)return;
@@ -1851,7 +1913,14 @@ function removeFeedItem(i){
     setFeedItems(cur);refreshFeed();autoSave();
   });
 }
-function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;}
+function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;
+  // Mostra bottone ricarica batch se ci sono media mancanti nel mese corrente
+  const missing = currentFeedItems().filter(i=>i.needsReload&&!i.url&&i.name);
+  const wrap = el('batch-reupload-wrap');
+  const lbl = el('batch-reupload-label');
+  if(wrap){ wrap.style.display = missing.length > 0 ? '' : 'none'; }
+  if(lbl && missing.length > 0) lbl.textContent = `↑ Ricarica ${missing.length} media mancant${missing.length===1?'e':'i'}`;
+}
 function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();feedProfileSync();}
 
 /* ── FEED PROFILE PANEL ── */
