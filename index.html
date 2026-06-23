@@ -1095,19 +1095,25 @@
       </div>
       <!-- COL 2: Fields + upload -->
       <div class="sb-fields">
-        <!-- Tab switcher -->
+        <!-- Tab switcher + azioni salvataggio -->
         <div class="sb-tab-row">
           <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)" aria-label="Tab editor">Editor</button>
           <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)" aria-label="Tab parser note">Parser note</button>
-          <div id="sb-save-bozza-wrap" style="margin-left:auto;display:flex;align-items:center;gap:4px;">
+          <div id="sb-save-bozza-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+            <!-- Input nome bozza (inline, nascosto di default) -->
             <div id="sb-save-bozza-inline" style="display:none;align-items:center;gap:4px;">
-              <input id="sb-bozza-name-inp" type="text" placeholder="Nome bozza…" style="font-size:11px;padding:3px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:130px;" onkeydown="if(event.key==='Enter')_sbDoSaveArchivio(this.value);if(event.key==='Escape')sbHideBozzaInput();"/>
-              <button class="btn primary sm" onclick="_sbDoSaveArchivio(document.getElementById('sb-bozza-name-inp').value)" style="font-size:11px;padding:3px 8px;">Salva</button>
+              <input id="sb-bozza-name-inp" type="text" placeholder="Nome bozza…" style="font-size:11px;padding:3px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:120px;" onkeydown="if(event.key==='Enter')_sbDoSaveArchivio(this.value);if(event.key==='Escape')sbHideBozzaInput();"/>
+              <button class="btn primary sm" onclick="_sbDoSaveArchivio(document.getElementById('sb-bozza-name-inp').value)" style="font-size:11px;padding:3px 8px;">OK</button>
               <button class="btn ghost sm" onclick="sbHideBozzaInput()" style="font-size:11px;padding:3px 6px;">✕</button>
             </div>
-            <button id="sb-save-bozza-btn" class="btn ghost sm" onclick="sbShowBozzaInput()" style="font-size:11px;gap:4px;" title="Salva come bozza nell'Archivio">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Salva bozza
+            <!-- Bottoni normali -->
+            <button id="sb-save-bozza-btn" class="btn ghost sm" onclick="sbShowBozzaInput()" style="font-size:11px;gap:4px;" title="Salva come bozza (non collega alle Stories)">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Bozza
+            </button>
+            <button class="btn primary sm" onclick="saveStoryboard()" style="font-size:11px;gap:4px;" title="Salva storyboard e collega alle Stories">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Salva
             </button>
           </div>
         </div>
@@ -1241,15 +1247,6 @@
       <button class="sb-mob-nav-btn" id="sb-mob-preview-btn" onclick="sbMobTab('preview')" aria-label="Anteprima">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Anteprima
-      </button>
-    </div>
-    <!-- Footer actions -->
-    <div class="modal-actions" style="border-top:.5px solid var(--border);margin-top:0;padding-top:12px;">
-      <button class="btn sm" onclick="closeModal('storyboard-modal')">Annulla</button>
-      <div style="flex:1;"></div>
-      <button class="btn primary sm" onclick="saveStoryboard()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Salva storyboard
       </button>
     </div>
   </div>
