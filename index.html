@@ -23,12 +23,13 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="topbar-brand" id="topbar-brand">
+  <div class="topbar-brand" id="topbar-brand" onclick="switchTab('studio')" title="Torna ai clienti" role="button" aria-label="Torna alla lista clienti">
     <div class="brand-mark">N</div>
     <div class="brand-name" id="brand-name-text">Nassa Studio</div>
   </div>
-  <nav class="topbar-nav">
-    <div class="nav-tab active" id="tab-studio" onclick="switchTab('studio')">Clienti</div>
+  <nav class="topbar-nav" aria-label="Navigazione principale">
+    <!-- tab-studio rimosso dalla topbar — navigazione ora solo nella sidebar e subtopbar -->
+    <div id="tab-studio" style="display:none;"></div>
   </nav>
   <div class="topbar-right">
     <span class="cloud-badge" id="cloud-status" title="Cloud sync">☁ Cloud</span>
