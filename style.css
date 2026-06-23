@@ -1736,17 +1736,43 @@ tbody tr:hover .tr-actions{opacity:1;}
 .anno-month-name{font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--text);line-height:1;}
 .anno-channel{border-left:.5px solid var(--border);padding:10px 10px;}
 .anno-ch-count{font-size:12px;color:var(--text-2);padding-top:2px;}
+.anno-ch-empty{font-size:12px;color:var(--text-3);padding-top:2px;}
 
-/* Event items */
-.anno-ev-row{display:flex;gap:7px;margin-bottom:12px;align-items:flex-start;cursor:pointer;}
-.anno-ev-row:last-child{margin-bottom:0;}
+/* Post normale */
+.anno-ev-item{display:flex;gap:6px;margin-bottom:8px;align-items:flex-start;cursor:pointer;border-radius:4px;padding:2px 3px;transition:background var(--t-fast);}
+.anno-ev-item:hover{background:var(--bg);}
+.anno-ev-item:last-child{margin-bottom:0;}
+.anno-ev-day{font-size:12px;font-weight:700;color:var(--text-3);min-width:18px;text-align:right;flex-shrink:0;padding-top:1px;}
+.anno-ev-body{flex:1;min-width:0;}
+.anno-ev-title{font-size:12px;font-weight:500;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.anno-ev-meta{display:flex;align-items:center;gap:4px;margin-top:2px;}
+.anno-ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.anno-ev-type{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;}
+.anno-ev-sub-txt{font-size:10px;color:var(--text-3);}
+
+/* Deadline — prominente */
+.anno-ev-deadline{display:flex;align-items:flex-start;gap:5px;margin-bottom:8px;padding:5px 7px 5px 8px;border-radius:5px;border-left:3px solid #ef4444;background:#fef2f2;cursor:pointer;transition:background var(--t-fast);}
+.anno-ev-deadline:hover{background:#fee2e2;}
+.anno-ev-dl-day{font-size:11px;font-weight:800;color:#ef4444;min-width:16px;text-align:right;flex-shrink:0;padding-top:1px;}
+.anno-ev-dl-icon{font-size:11px;flex-shrink:0;color:#ef4444;}
+.anno-ev-dl-body{flex:1;min-width:0;}
+.anno-ev-dl-title{font-size:12px;font-weight:600;color:#7f1d1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+.anno-ev-dl-sub{font-size:9px;font-weight:700;color:#b91c1c;letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
+
+/* Nota — grigio neutro */
+.anno-ev-note{display:flex;align-items:flex-start;gap:5px;margin-bottom:6px;padding:4px 6px;border-radius:4px;border-left:2px solid var(--border);background:var(--bg);cursor:pointer;transition:background var(--t-fast);}
+.anno-ev-note:hover{background:var(--surface);}
+.anno-ev-note-icon{font-size:11px;flex-shrink:0;}
+.anno-ev-note-text{font-size:11px;color:var(--text-2);line-height:1.4;}
+
+/* Legacy — kept for compat */
+.anno-ev-row{display:flex;gap:7px;margin-bottom:8px;align-items:flex-start;cursor:pointer;}
 .anno-day-pri{font-size:var(--fs-md);font-weight:700;color:var(--green);line-height:1;min-width:24px;flex-shrink:0;}
-.anno-day-sec{font-size:var(--fs-sm);font-weight:600;color:var(--text-2);line-height:1;min-width:20px;flex-shrink:0;padding-top:2px;}
+.anno-day-sec{font-size:var(--fs-sm);font-weight:600;color:var(--text-2);line-height:1;min-width:20px;flex-shrink:0;}
 .anno-ev-content{flex:1;min-width:0;}
 .anno-ev-primary{border-left:2px solid;padding-left:6px;}
-.anno-ev-tag{font-size:10px;font-family:var(--font);letter-spacing:.05em;padding:2px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;display:inline-block;margin-bottom:2px;}
-.anno-ev-title{font-size:var(--fs-sm);font-weight:500;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.anno-ev-sub{font-size:var(--fs-xs);color:var(--text-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.anno-ev-tag{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;display:inline-block;margin-bottom:2px;}
+.anno-ev-sub{font-size:var(--fs-xs);color:var(--text-2);margin-top:1px;}
 .anno-ev-label{font-size:var(--fs-xs);color:var(--text-2);font-style:italic;}
 
 /* Footer */

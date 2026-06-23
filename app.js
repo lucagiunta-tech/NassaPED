@@ -6976,32 +6976,44 @@ function renderAnnoTab() {
       html += `<div class="anno-channel">`;
       chEvs.forEach((ev, ei) => {
         const tc = ANNO_TAG_COLORS[ev.tag] || ANNO_TAG_COLORS.note;
-        const dayEl = ch === 0
-          ? `<span class="anno-day-pri">${ev.day}</span>`
-          : `<span class="anno-day-sec">${ev.day}</span>`;
+        const evIdx = evs.indexOf(ev);
+        const onclick = `event.stopPropagation();annoSelectEv(${mi},${evIdx})`;
+        const dayStr = ev.day ? String(ev.day) : '';
 
-        if(ev.label) {
-          html += `<div class="anno-ev-row" onclick="event.stopPropagation();annoSelectEv(${mi},${byCh[ch].indexOf(ev)+(ch>0?byCh[0].length+(ch>1?byCh[1].length:0):0)})">
-            ${dayEl}
-            <div class="anno-ev-content">
-              <span class="anno-ev-tag" style="background:${tc.bg};color:${tc.text}">${ev.tag.toUpperCase()}</span>
-              <div class="anno-ev-label">${esc(ev.label)}</div>
+        if(ev.tag === 'deadline') {
+          // Deadline — barra rossa prominente
+          html += `<div class="anno-ev-deadline" onclick="${onclick}">
+            <span class="anno-ev-dl-day">${dayStr}</span>
+            <span class="anno-ev-dl-icon">⚑</span>
+            <div class="anno-ev-dl-body">
+              <div class="anno-ev-dl-title">${esc(ev.label||ev.title||'Deadline')}</div>
+              <div class="anno-ev-dl-sub">DEADLINE</div>
             </div>
           </div>`;
+        } else if(ev.tag === 'note') {
+          // Nota — grigio neutro, compatta
+          html += `<div class="anno-ev-note" onclick="${onclick}">
+            <span class="anno-ev-note-icon">📝</span>
+            <div class="anno-ev-note-text">${esc(ev.label||ev.title||'Nota')}</div>
+          </div>`;
         } else {
-          html += `<div class="anno-ev-row" onclick="event.stopPropagation();annoSelectEv(${mi},${evs.indexOf(ev)})">
-            ${dayEl}
-            <div class="anno-ev-content">
-              <div class="anno-ev-primary" style="border-color:${tc.border}">
-                <span class="anno-ev-tag" style="background:${tc.bg};color:${tc.text}">${ev.tag}</span>
-                <div class="anno-ev-title">${esc(ev.title||'—')}</div>
-                ${ev.sub ? `<div class="anno-ev-sub">${esc(ev.sub)}</div>` : ''}
+          // Post normale — giorno + titolo + tipo
+          const typeLabel = ev.tag==='Reel'?'Reel':ev.tag==='Feed'?'Feed':ev.tag==='Stories'?'Story':ev.tag==='UGC'?'UGC':ev.tag==='Paid'?'Paid':ev.tag;
+          const dotColor = tc.bg;
+          html += `<div class="anno-ev-item" onclick="${onclick}">
+            <span class="anno-ev-day">${dayStr}</span>
+            <div class="anno-ev-body">
+              <div class="anno-ev-title">${esc(ev.title||ev.label||'—')}</div>
+              <div class="anno-ev-meta">
+                <span class="anno-ev-dot" style="background:${tc.border};"></span>
+                <span class="anno-ev-type">${typeLabel}</span>
+                ${ev.sub ? `<span class="anno-ev-sub-txt">${esc(ev.sub.split('·')[0].trim())}</span>` : ''}
               </div>
             </div>
           </div>`;
         }
       });
-      if(!chEvs.length) html += `<div class="anno-ch-count">—</div>`;
+      if(!chEvs.length) html += `<div class="anno-ch-empty">—</div>`;
       html += `</div>`;
     });
 
