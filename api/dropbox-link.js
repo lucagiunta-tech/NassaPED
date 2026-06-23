@@ -1,12 +1,44 @@
-// Crea shared link Dropbox per un file già uploadato.
+// Crea shared link Dropbox. Tutto inline — nessun import cross-file.
 // Variabili Vercel: DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, NASSA_API_KEY
-
-import { getFreshDropboxToken } from '../lib/dropbox-auth.js';
 
 const ALLOWED_ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
   'http://localhost:3000',
 ];
+
+let _cachedToken = null;
+let _cachedTokenExp = 0;
+
+async function getFreshToken() {
+  const now = Date.now();
+  if (_cachedToken && now < _cachedTokenExp - 5 * 60 * 1000) return _cachedToken;
+
+  const { DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN } = process.env;
+  if (!DROPBOX_APP_KEY || !DROPBOX_APP_SECRET || !DROPBOX_REFRESH_TOKEN) {
+    throw new Error('Missing env vars: ' +
+      (!DROPBOX_APP_KEY ? 'DROPBOX_APP_KEY ' : '') +
+      (!DROPBOX_APP_SECRET ? 'DROPBOX_APP_SECRET ' : '') +
+      (!DROPBOX_REFRESH_TOKEN ? 'DROPBOX_REFRESH_TOKEN' : ''));
+  }
+
+  const resp = await fetch('https://api.dropbox.com/oauth2/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + Buffer.from(DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET).toString('base64'),
+    },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: DROPBOX_REFRESH_TOKEN }),
+  });
+
+  const text = await resp.text();
+  if (!resp.ok) throw new Error('Dropbox OAuth failed (' + resp.status + '): ' + text.slice(0, 300));
+  const data = JSON.parse(text);
+  if (!data.access_token) throw new Error('No access_token: ' + text.slice(0, 200));
+
+  _cachedToken = data.access_token;
+  _cachedTokenExp = now + (data.expires_in || 14400) * 1000;
+  return _cachedToken;
+}
 
 function toDirectUrl(url) {
   if (!url) return '';
@@ -31,7 +63,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    const token = await getFreshDropboxToken();
+    const token = await getFreshToken();
 
     let path;
     if (req.body && req.body.path) {
@@ -58,9 +90,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Non-JSON from Dropbox: ' + linkText.slice(0, 200) });
     }
 
-    if (linkData.url) {
-      return res.status(200).json({ url: toDirectUrl(linkData.url) });
-    }
+    if (linkData.url) return res.status(200).json({ url: toDirectUrl(linkData.url) });
 
     const errorTag = linkData?.error?.['.tag'] || linkData?.error_summary || '';
     if (errorTag.includes('shared_link_already_exists')) {
@@ -78,11 +108,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Could not retrieve existing link', detail: listData });
     }
 
-    console.error('[dropbox-link] Unexpected error:', linkText);
     return res.status(500).json({ error: errorTag || 'Unknown Dropbox error', detail: linkData });
 
   } catch (err) {
-    console.error('[dropbox-link] Exception:', err.message);
+    console.error('[dropbox-link] ERROR:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
