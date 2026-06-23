@@ -8247,12 +8247,10 @@ let _dbxSearchMode = false;
 function toggleDbxPanel(){
   const panel = document.getElementById('notes-dbx-panel');
   const btn   = document.getElementById('notes-dbx-btn');
-  const layout = document.querySelector('.notes-layout');
   if(!panel) return;
   const open = panel.style.display === 'none' || !panel.style.display;
   panel.style.display = open ? 'flex' : 'none';
   if(btn) btn.classList.toggle('active', open);
-  if(layout) layout.classList.toggle('dbx-open', open);
   if(open) dbxNavigate(dbxCurrentPath);
 }
 
@@ -8359,7 +8357,7 @@ function dbxRenderList(entries){
 }
 
 async function dbxInsertFile(path, name){
-  showToast('⟳ Ottengo link condivisibile…');
+  showToast('⟳ Ottengo link…');
   try {
     const res = await fetch('/api/dropbox-link', {
       method: 'POST',
@@ -8367,23 +8365,22 @@ async function dbxInsertFile(path, name){
       credentials: 'include',
       body: JSON.stringify({ path })
     });
-    const text = await res.text();
-    let url = text.trim();
-    // Converti in link diretto
-    url = url.replace('www.dropbox.com','dl.dropboxusercontent.com')
-             .replace('?dl=0','').replace('?dl=1','');
+    const data = await res.json();
+    if(!res.ok || !data.url) throw new Error(data.error || 'Nessun URL ricevuto');
 
+    const url = data.url;
     const ext = name.split('.').pop().toLowerCase();
     const ICONS = {pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',
                    ppt:'📊',pptx:'📊',png:'🖼',jpg:'🖼',jpeg:'🖼',
-                   mp4:'🎬',mov:'🎬',zip:'📦',txt:'📄',csv:'📊'};
+                   mp4:'🎬',mov:'🎬',zip:'📦',txt:'📄',csv:'📊',
+                   paper:'📄'};
     const icon = ICONS[ext] || '📎';
     notesInsertAtCursor(`
 ${icon} [${name}](${url})
 `);
     showToast(`✓ "${name}" inserito`);
   } catch(e) {
-    showToast('⚠ Impossibile ottenere link: '+e.message,'warn');
+    showToast('⚠ ' + e.message, 'warn');
   }
 }
 
@@ -8500,8 +8497,10 @@ function notesConfirmPaperLink(){
                url.includes('notion.so') ? '📋' :
                url.includes('figma.com') ? '🎨' : '🔗';
 
+  // Titolo pulito: se uguale all'url, tronca a 60 char
+  const displayTitle = title === url ? url.replace(/^https?:\/\//,'').slice(0,60) : title;
   const mdLink = `
-${icon} [${title}](${url})
+${icon} [${displayTitle}](${url})
 `;
   notesInsertAtCursor(mdLink);
 

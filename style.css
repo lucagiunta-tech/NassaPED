@@ -3809,15 +3809,12 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 
 /* ══ NOTES — DROPBOX FILE BROWSER PANEL ══ */
-.notes-layout.dbx-open{
-  display:grid;
-  grid-template-columns:auto 1fr 300px;
-}
+/* Il pannello si aggiunge come terzo elemento flex — nessun cambio al layout base */
 .notes-dbx-panel{
   width:300px;flex-shrink:0;
   background:var(--surface);
   border-left:var(--bw) solid var(--border);
-  display:flex;flex-direction:column;
+  flex-direction:column;
   height:100%;overflow:hidden;
 }
 .notes-dbx-head{
