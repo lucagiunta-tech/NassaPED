@@ -24,14 +24,14 @@
 <!-- TOPBAR -->
 <div class="topbar" id="subtopbar">
   <!-- Brand — sempre visibile, click → lista clienti -->
-  <div class="topbar-brand" id="topbar-brand" onclick="switchTab('studio')" title="Torna ai clienti" role="button" aria-label="Torna alla lista clienti">
+  <div class="topbar-brand" id="topbar-brand" data-action="switchTab" data-args="'studio'" title="Torna ai clienti" role="button" aria-label="Torna alla lista clienti">
     <div class="brand-mark">N</div>
     <div class="brand-name" id="brand-name-text">Nassa Studio</div>
   </div>
 
   <!-- Sezione cliente — visibile solo quando un cliente è aperto -->
   <div class="topbar-client-section" id="topbar-client-section" style="display:none;">
-    <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
+    <div class="subtopbar-client" data-action="backToClients" aria-label="Torna ai clienti" title="Torna ai clienti">
       <span class="subtopbar-back">‹</span>
       <div>
         <div class="subtopbar-name" id="subtopbar-name">—</div>
@@ -42,16 +42,16 @@
       <div id="acc-btns" style="display:flex;gap:4px;"></div>
     </div>
     <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
-      <div class="sub-tab" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
-      <div class="sub-tab" id="sub-tab-pilastri"   onclick="switchTab('pilastri')">Pilastri</div>
-      <div class="sub-tab" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
-      <div class="sub-tab" id="sub-tab-feed"       onclick="switchTab('feed')">Feed</div>
-      <div class="sub-tab" id="sub-tab-stories"    onclick="switchTab('stories')">Stories</div>
-      <div class="sub-tab" id="sub-tab-ped"        onclick="switchTab('ped')">UGC</div>
-      <div class="sub-tab" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
-      <div class="sub-tab" id="sub-tab-cal"        onclick="switchTab('cal')">Calendario</div>
-      <div class="sub-tab" id="sub-tab-anno"       onclick="switchTab('anno')">Piano annuale</div>
-      <div class="sub-tab" id="sub-tab-preview"    onclick="switchTab('preview')">Preview</div>
+      <div class="sub-tab" id="sub-tab-notes"      data-action="switchTab" data-args="'notes'">Piano</div>
+      <div class="sub-tab" id="sub-tab-pilastri"   data-action="switchTab" data-args="'pilastri'">Pilastri</div>
+      <div class="sub-tab" id="sub-tab-storyboard" data-action="switchTab" data-args="'storyboard'">Storyboard</div>
+      <div class="sub-tab" id="sub-tab-feed"       data-action="switchTab" data-args="'feed'">Feed</div>
+      <div class="sub-tab" id="sub-tab-stories"    data-action="switchTab" data-args="'stories'">Stories</div>
+      <div class="sub-tab" id="sub-tab-ped"        data-action="switchTab" data-args="'ped'">UGC</div>
+      <div class="sub-tab" id="sub-tab-ads"        data-action="switchTab" data-args="'ads'">Ads</div>
+      <div class="sub-tab" id="sub-tab-cal"        data-action="switchTab" data-args="'cal'">Calendario</div>
+      <div class="sub-tab" id="sub-tab-anno"       data-action="switchTab" data-args="'anno'">Piano annuale</div>
+      <div class="sub-tab" id="sub-tab-preview"    data-action="switchTab" data-args="'preview'">Preview</div>
     </div>
   </div>
 
@@ -61,9 +61,9 @@
   <!-- Right: cloud + dark mode + avatar -->
   <div class="topbar-right">
     <span class="cloud-badge" id="cloud-status" title="Cloud sync">☁ Cloud</span>
-    <button id="theme-toggle" onclick="toggleDarkMode()" title="Cambia tema" aria-label="Dark/Light mode" style="width:32px;height:32px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background var(--t-fast);">🌙</button>
+    <button id="theme-toggle" data-action="toggleDarkMode" title="Cambia tema" aria-label="Dark/Light mode" style="width:32px;height:32px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background var(--t-fast);">🌙</button>
     <div style="position:relative;display:inline-block;">
-      <div class="avatar" id="user-avatar" onclick="toggleUserSwitcher()" aria-label="Cambia utente">AA</div>
+      <div class="avatar" id="user-avatar" data-action="toggleUserSwitcher" aria-label="Cambia utente">AA</div>
       <div class="avatar-online-dot" title="Sessione attiva"></div>
     </div>
   </div>
@@ -77,14 +77,14 @@
 <!-- USER SWITCHER -->
 <div class="user-switcher" id="user-switcher">
   <div class="user-switcher-title">Utente</div>
-  <button class="user-btn" onclick="switchUser('shared')">Shared (team)</button>
-  <button class="user-btn" onclick="switchUser('luca')">Luca</button>
-  <button class="user-btn" onclick="switchUser('alberto')">Alberto</button>
-  <button class="user-btn" onclick="switchUser('giacomo')">Giacomo</button>
-  <button class="user-btn" onclick="switchUser('paolone')">Paolone</button>
-  <button class="user-btn" onclick="switchUser('akash')">Akash</button>
-  <button class="user-btn" onclick="switchUser('hermes')">Hermes</button>
-  <button class="user-btn" onclick="switchUser('matteo')">Matteo</button>
+  <button class="user-btn" data-action="switchUser" data-args="'shared'">Shared (team)</button>
+  <button class="user-btn" data-action="switchUser" data-args="'luca'">Luca</button>
+  <button class="user-btn" data-action="switchUser" data-args="'alberto'">Alberto</button>
+  <button class="user-btn" data-action="switchUser" data-args="'giacomo'">Giacomo</button>
+  <button class="user-btn" data-action="switchUser" data-args="'paolone'">Paolone</button>
+  <button class="user-btn" data-action="switchUser" data-args="'akash'">Akash</button>
+  <button class="user-btn" data-action="switchUser" data-args="'hermes'">Hermes</button>
+  <button class="user-btn" data-action="switchUser" data-args="'matteo'">Matteo</button>
 </div>
 
 <div class="body">
@@ -96,7 +96,7 @@
     <div class="sb-nav-top">
 
       <!-- HOME -->
-      <div class="sb-nav-item active" id="si-studio" onclick="switchTab('studio')">
+      <div class="sb-nav-item active" id="si-studio" data-action="switchTab" data-args="'studio'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         <span class="sb-nav-label">Clienti</span>
       </div>
@@ -105,27 +105,27 @@
 
       <!-- GRUPPO 1: CONTENUTO -->
       <div class="sb-group-lbl">Contenuto</div>
-      <div class="sb-nav-item" id="si-notes" onclick="switchTab('notes')">
+      <div class="sb-nav-item" id="si-notes" data-action="switchTab" data-args="'notes'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span class="sb-nav-label">Piano</span>
       </div>
-      <div class="sb-nav-item" id="si-pilastri" onclick="switchTab('pilastri')">
+      <div class="sb-nav-item" id="si-pilastri" data-action="switchTab" data-args="'pilastri'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span class="sb-nav-label">Pilastri</span>
       </div>
-      <div class="sb-nav-item" id="si-storyboard" onclick="switchTab('storyboard')">
+      <div class="sb-nav-item" id="si-storyboard" data-action="switchTab" data-args="'storyboard'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         <span class="sb-nav-label">Storyboard</span>
       </div>
-      <div class="sb-nav-item" id="si-feed" onclick="switchTab('feed')">
+      <div class="sb-nav-item" id="si-feed" data-action="switchTab" data-args="'feed'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         <span class="sb-nav-label">Feed</span>
       </div>
-      <div class="sb-nav-item" id="si-stories" onclick="switchTab('stories')">
+      <div class="sb-nav-item" id="si-stories" data-action="switchTab" data-args="'stories'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
         <span class="sb-nav-label">Stories</span>
       </div>
-      <div class="sb-nav-item" id="si-ped" onclick="switchTab('ped')">
+      <div class="sb-nav-item" id="si-ped" data-action="switchTab" data-args="'ped'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="sb-nav-label">UGC</span>
       </div>
@@ -134,11 +134,11 @@
 
       <!-- GRUPPO 2: PIANIFICAZIONE -->
       <div class="sb-group-lbl">Pianificazione</div>
-      <div class="sb-nav-item" id="si-cal" onclick="switchTab('cal')">
+      <div class="sb-nav-item" id="si-cal" data-action="switchTab" data-args="'cal'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span class="sb-nav-label">Calendario</span>
       </div>
-      <div class="sb-nav-item" id="si-anno" onclick="switchTab('anno')">
+      <div class="sb-nav-item" id="si-anno" data-action="switchTab" data-args="'anno'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
         <span class="sb-nav-label">Piano annuale</span>
       </div>
@@ -147,11 +147,11 @@
 
       <!-- GRUPPO 3: GESTIONE -->
       <div class="sb-group-lbl">Gestione</div>
-      <div class="sb-nav-item" id="si-ads" onclick="switchTab('ads')">
+      <div class="sb-nav-item" id="si-ads" data-action="switchTab" data-args="'ads'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
         <span class="sb-nav-label">Ads</span>
       </div>
-      <div class="sb-nav-item" id="si-preview" onclick="switchTab('preview')">
+      <div class="sb-nav-item" id="si-preview" data-action="switchTab" data-args="'preview'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         <span class="sb-nav-label">Preview</span>
       </div>
@@ -159,11 +159,11 @@
     </div>
     <div class="sb-nav-foot">
       <div class="sb-nav-sep"></div>
-      <div class="sb-nav-item" style="color:var(--text-3);" onclick="toggleUserSwitcher()">
+      <div class="sb-nav-item" style="color:var(--text-3);" data-action="toggleUserSwitcher">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span class="sb-nav-label">Utente</span>
       </div>
-      <button class="sb-toggle-btn" id="sb-toggle-btn" onclick="toggleSidebar()" title="Espandi/comprimi" aria-label="Espandi/comprimi">
+      <button class="sb-toggle-btn" id="sb-toggle-btn" data-action="toggleSidebar" title="Espandi/comprimi" aria-label="Espandi/comprimi">
         <svg id="sb-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
@@ -191,7 +191,7 @@
       <span class="content-title">Studio</span>
       <span class="content-tag" id="studio-count">0 clienti</span>
       <div class="content-space"></div>
-      <button class="btn sm primary" onclick="showStudioAdd()">+ Aggiungi</button>
+      <button class="btn sm primary" data-action="showStudioAdd">+ Aggiungi</button>
     </div>
     <div class="studio-main">
       <div class="kpi-grid">
@@ -248,39 +248,39 @@
         </div>
         <!-- Toolbar -->
         <div class="notes-toolbar">
-          <button class="ntb" title="Titolo H1" onclick="notesInsert('h1')" aria-label="Titolo H1">H1</button>
-          <button class="ntb" title="Titolo H2" onclick="notesInsert('h2')" aria-label="Titolo H2">H2</button>
-          <button class="ntb" title="Titolo H3" onclick="notesInsert('h3')" aria-label="Titolo H3">H3</button>
+          <button class="ntb" title="Titolo H1" data-action="notesInsert" data-args="'h1'" aria-label="Titolo H1">H1</button>
+          <button class="ntb" title="Titolo H2" data-action="notesInsert" data-args="'h2'" aria-label="Titolo H2">H2</button>
+          <button class="ntb" title="Titolo H3" data-action="notesInsert" data-args="'h3'" aria-label="Titolo H3">H3</button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Grassetto" onclick="notesInsert('bold')" aria-label="Grassetto">
+          <button class="ntb" title="Grassetto" data-action="notesInsert" data-args="'bold'" aria-label="Grassetto">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
           </button>
-          <button class="ntb" title="Corsivo" onclick="notesInsert('italic')" aria-label="Corsivo">
+          <button class="ntb" title="Corsivo" data-action="notesInsert" data-args="'italic'" aria-label="Corsivo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
           </button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Lista puntata" onclick="notesInsert('ul')" aria-label="Lista puntata">
+          <button class="ntb" title="Lista puntata" data-action="notesInsert" data-args="'ul'" aria-label="Lista puntata">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
           </button>
-          <button class="ntb" title="Lista numerata" onclick="notesInsert('ol')" aria-label="Lista numerata">
+          <button class="ntb" title="Lista numerata" data-action="notesInsert" data-args="'ol'" aria-label="Lista numerata">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
           </button>
-          <button class="ntb" title="Citazione" onclick="notesInsert('quote')" aria-label="Citazione">
+          <button class="ntb" title="Citazione" data-action="notesInsert" data-args="'quote'" aria-label="Citazione">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
           </button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Inserisci link" onclick="notesInsert('link')" aria-label="Inserisci link">
+          <button class="ntb" title="Inserisci link" data-action="notesInsert" data-args="'link'" aria-label="Inserisci link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>
-          <button class="ntb" title="Inserisci immagine (file, URL, Dropbox)" onclick="notesInsert('media')" aria-label="Inserisci immagine">
+          <button class="ntb" title="Inserisci immagine (file, URL, Dropbox)" data-action="notesInsert" data-args="'media'" aria-label="Inserisci immagine">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </button>
           <div class="ntb-sep"></div>
-          <button class="ntb" title="Separatore" onclick="notesInsert('hr')" aria-label="Separatore">
+          <button class="ntb" title="Separatore" data-action="notesInsert" data-args="'hr'" aria-label="Separatore">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
           <div style="flex:1;"></div>
-          <button class="ntb ntb-toggle" id="notes-preview-btn" title="Anteprima" onclick="toggleNotesPreview()" aria-label="Anteprima">
+          <button class="ntb ntb-toggle" id="notes-preview-btn" title="Anteprima" data-action="toggleNotesPreview" aria-label="Anteprima">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Preview
           </button>
@@ -312,14 +312,14 @@
 
       <!-- RIGA 1: navigazione -->
       <div class="feed-ctx-row1">
-        <button class="fbar-btn" id="toggle-view" onclick="toggleFeedView()" aria-label="Cambia vista" title="Griglia/Lista">
+        <button class="fbar-btn" id="toggle-view" data-action="toggleFeedView" aria-label="Cambia vista" title="Griglia/Lista">
           <svg id="toggle-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         </button>
-        <button class="fbar-pill" id="feed-all-months-btn" onclick="toggleAllMonthsMode()" aria-label="Tutti i mesi">
+        <button class="fbar-pill" id="feed-all-months-btn" data-action="toggleAllMonthsMode" aria-label="Tutti i mesi">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span class="all-months-lbl">Tutti</span>
         </button>
-        <button class="fbar-pill" id="feed-backlog-btn" onclick="toggleBacklogFilter()" aria-label="Backlog">
+        <button class="fbar-pill" id="feed-backlog-btn" data-action="toggleBacklogFilter" aria-label="Backlog">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4" stroke-width="2"/></svg>
           Backlog
         </button>
@@ -328,10 +328,10 @@
         <div class="fbar-sep"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
         <div class="fbar-sep"></div>
-        <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma">Instagram · 4:5 ▾</button>
+        <button class="ctx-fmt-badge" id="feed-fmt-badge" data-action="toggleFmtDropdown" aria-label="Cambia piattaforma">Instagram · 4:5 ▾</button>
         <!-- + Carica con popover -->
         <div style="position:relative;" id="feed-upload-anchor">
-          <button class="feed-upload-quick-btn" id="feed-upload-btn" onclick="openFeedUploadPanel()" aria-label="Carica foto o video">
+          <button class="feed-upload-quick-btn" id="feed-upload-btn" data-action="openFeedUploadPanel" aria-label="Carica foto o video">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             + Carica
             <svg id="feed-upload-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:1px;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
@@ -346,12 +346,12 @@
             <div class="fup-divider">oppure incolla link</div>
             <div style="display:flex;flex-direction:column;gap:6px;">
               <div class="link-tabs" style="margin-bottom:0;">
-                <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
-                <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Link</button>
+                <button class="link-tab active" id="fl-tab-frame" data-action="setFeedLinkTab" data-args="'frame'">Frame.io</button>
+                <button class="link-tab" id="fl-tab-other" data-action="setFeedLinkTab" data-args="'other'">Link</button>
               </div>
               <div class="link-row">
                 <input type="text" id="feed-link-inp" placeholder="Incolla link…" autocomplete="url" inputmode="url" onkeydown="if(event.key==='Enter')addFeedLink()"/>
-                <button onclick="addFeedLink()">+</button>
+                <button data-action="addFeedLink">+</button>
               </div>
             </div>
             <div class="fup-divider">aggiungi</div>
@@ -364,7 +364,7 @@
               </button>
             </div>
             <div id="batch-reupload-wrap" style="display:none;">
-              <button class="btn sm" id="batch-reupload-btn" onclick="batchReuploadMissing()" style="width:100%;justify-content:center;gap:5px;background:#f59e0b;color:#111;border:none;font-size:11px;">
+              <button class="btn sm" id="batch-reupload-btn" data-action="batchReuploadMissing" style="width:100%;justify-content:center;gap:5px;background:#f59e0b;color:#111;border:none;font-size:11px;">
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
                 <span id="batch-reupload-label">Ricarica mancanti</span>
               </button>
@@ -383,28 +383,28 @@
           <span class="fbr2-stat"><span class="fbr2-n" id="stat-stories">0</span><span class="fbr2-l">stories</span></span>
           <span class="fbr2-stat"><span class="fbr2-n" id="stat-hl">0</span><span class="fbr2-l">evid.</span></span>
           <span class="fbar-sep"></span>
-          <button class="fbr2-toggle" id="toggle-dates" onclick="toggleAllDates()" aria-label="Mostra/nascondi date">
+          <button class="fbr2-toggle" id="toggle-dates" data-action="toggleAllDates" aria-label="Mostra/nascondi date">
             Data <span class="gtoggle-chip" id="toggle-dates-chip">ON</span>
           </button>
-          <button class="fbr2-toggle" id="toggle-copy" onclick="toggleAllCopy()" aria-label="Mostra/nascondi copy">
+          <button class="fbr2-toggle" id="toggle-copy" data-action="toggleAllCopy" aria-label="Mostra/nascondi copy">
             Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span>
           </button>
         </div>
         <div class="fbr2-actions">
-          <button class="fbr2-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" aria-label="Profilo">
+          <button class="fbr2-btn" id="feed-profile-toggle-btn" data-action="toggleFigProfile" aria-label="Profilo">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Profilo
           </button>
-          <button class="fbr2-btn" onclick="openEditorialModal()" aria-label="Card editoriale">
+          <button class="fbr2-btn" data-action="openEditorialModal" aria-label="Card editoriale">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             Card
           </button>
-          <button class="fbr2-btn" onclick="addPendingSlot()" aria-label="Slot vuoto">
+          <button class="fbr2-btn" data-action="addPendingSlot" aria-label="Slot vuoto">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             Slot
           </button>
           <span class="fbar-sep"></span>
-          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+          <button class="fbr2-btn fbr2-cal-btn" data-action="switchTab" data-args="'cal'" aria-label="Calendario">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Calendario
           </button>
@@ -421,7 +421,7 @@
         <div class="fig-inner">
           <!-- Avatar -->
           <div class="fig-avatar-wrap">
-            <div class="fig-avatar" id="fig-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
+            <div class="fig-avatar" id="fig-avatar" data-action="feedProfileAvatarClick" title="Cambia foto profilo">
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
           </div>
@@ -431,7 +431,7 @@
             <div class="fig-top">
               <input id="fig-username" class="fig-username-inp" type="text" placeholder="@username" maxlength="30" autocomplete="username"
                 oninput="figSaveField('username',this.value)" />
-              <button class="btn ghost sm" onclick="feedProfileAvatarClick()" style="font-size:11px;padding:3px 8px;gap:4px;">
+              <button class="btn ghost sm" data-action="feedProfileAvatarClick" style="font-size:11px;padding:3px 8px;gap:4px;">
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Cambia foto
               </button>
@@ -487,7 +487,7 @@
         <div class="fbar-sep"></div>
         <!-- Popover upload Stories -->
         <div style="position:relative;" id="stories-upload-anchor">
-          <button class="feed-upload-quick-btn" id="stories-upload-btn" onclick="openStoriesUploadPanel()" aria-label="Carica storia">
+          <button class="feed-upload-quick-btn" id="stories-upload-btn" data-action="openStoriesUploadPanel" aria-label="Carica storia">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             + Carica
             <svg id="stories-upload-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:1px;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
@@ -502,12 +502,12 @@
             <div class="fup-divider">oppure incolla link</div>
             <div style="display:flex;flex-direction:column;gap:6px;">
               <div class="link-tabs" style="margin-bottom:0;">
-                <button class="link-tab active" id="sl-tab-frame" onclick="setStoriesLinkTab('frame')">Frame.io</button>
-                <button class="link-tab" id="sl-tab-other" onclick="setStoriesLinkTab('other')">Link</button>
+                <button class="link-tab active" id="sl-tab-frame" data-action="setStoriesLinkTab" data-args="'frame'">Frame.io</button>
+                <button class="link-tab" id="sl-tab-other" data-action="setStoriesLinkTab" data-args="'other'">Link</button>
               </div>
               <div class="link-row">
                 <input type="text" id="stories-link-inp" placeholder="Incolla link…" autocomplete="url" inputmode="url" onkeydown="if(event.key==='Enter')addStoryLink()"/>
-                <button onclick="addStoryLink()">+</button>
+                <button data-action="addStoryLink">+</button>
               </div>
             </div>
           </div>
@@ -521,12 +521,12 @@
           <span class="fbr2-stat"><span class="fbr2-n" id="sst-hl">0</span><span class="fbr2-l">evidenze</span></span>
         </div>
         <div class="fbr2-actions">
-          <button class="fbr2-btn" onclick="openCopyModal('stories')" aria-label="Copia da feed">
+          <button class="fbr2-btn" data-action="openCopyModal" data-args="'stories'" aria-label="Copia da feed">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copia da…
           </button>
           <span class="fbar-sep"></span>
-          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+          <button class="fbr2-btn fbr2-cal-btn" data-action="switchTab" data-args="'cal'" aria-label="Calendario">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Calendario
           </button>
@@ -564,18 +564,18 @@
     </div>
     <!-- Tab switcher -->
     <div class="ped-tabs-bar" id="ped-tabs-bar">
-      <button class="ped-tab-btn active" id="ped-tab-calendario" onclick="pedSwitchTab('calendario')">Calendario</button>
-      <button class="ped-tab-btn" id="ped-tab-piano" onclick="pedSwitchTab('piano')">Piano</button>
-      <button class="ped-tab-btn" id="ped-tab-anno" onclick="pedSwitchTab('anno')">Anno</button>
+      <button class="ped-tab-btn active" id="ped-tab-calendario" data-action="pedSwitchTab" data-args="'calendario'">Calendario</button>
+      <button class="ped-tab-btn" id="ped-tab-piano" data-action="pedSwitchTab" data-args="'piano'">Piano</button>
+      <button class="ped-tab-btn" id="ped-tab-anno" data-action="pedSwitchTab" data-args="'anno'">Anno</button>
     </div>
     <!-- Tab Calendario -->
     <div class="ped-tab-panel active" id="ped-panel-calendario">
       <!-- Cal header (giorni + controlli) -->
       <div class="ped-cal-toolbar" id="ped-cal-toolbar">
         <div class="ped-cal-nav">
-          <button class="btn sm icon" onclick="pedCalNav(-1)" aria-label="Mese precedente">‹</button>
+          <button class="btn sm icon" data-action="pedCalNav" data-args="-1" aria-label="Mese precedente">‹</button>
           <span class="ped-cal-month-lbl" id="ped-cal-month-lbl">—</span>
-          <button class="btn sm icon" onclick="pedCalNav(1)" aria-label="Mese successivo">›</button>
+          <button class="btn sm icon" data-action="pedCalNav" data-args="1" aria-label="Mese successivo">›</button>
         </div>
         <div class="ped-cal-legend">
           <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#d4a800;"></span>Raccolto</span>
@@ -584,12 +584,12 @@
         </div>
         <div class="ped-cal-toolbar-right">
           <div class="freq-days-mini" id="ped-freq-days"></div>
-          <button class="btn sm primary" onclick="pedOpenDrawerNew()" style="gap:5px;">
+          <button class="btn sm primary" data-action="pedOpenDrawerNew" style="gap:5px;">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Aggiungi slot
           </button>
-          <button class="btn sm ghost" onclick="pedGenerate()">Genera piano</button>
-          <button class="btn sm ghost" onclick="pedClear()">Svuota</button>
+          <button class="btn sm ghost" data-action="pedGenerate">Genera piano</button>
+          <button class="btn sm ghost" data-action="pedClear">Svuota</button>
         </div>
       </div>
       <!-- Empty state -->
@@ -621,14 +621,14 @@
     <div class="feed-ctx-bar">
       <!-- Riga 1 -->
       <div class="feed-ctx-row1">
-        <button class="fbar-btn" id="sb-toggle-view" onclick="toggleSbView()" aria-label="Cambia vista" title="Griglia/Lista">
+        <button class="fbar-btn" id="sb-toggle-view" data-action="toggleSbView" aria-label="Cambia vista" title="Griglia/Lista">
           <svg id="sb-toggle-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         </button>
         <select id="sb-tab-account-sel" class="ctx-select" onchange="onSbTabAccountChange()"></select>
         <div class="fbar-sep"></div>
         <div id="sb-tab-month-pills" class="feed-month-pills-inline"></div>
         <div class="fbar-sep"></div>
-        <button class="feed-upload-quick-btn" onclick="openStoryboardModal(-1)" aria-label="Nuovo storyboard">
+        <button class="feed-upload-quick-btn" data-action="openStoryboardModal" data-args="-1" aria-label="Nuovo storyboard">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
           + Nuovo storyboard
         </button>
@@ -642,12 +642,12 @@
           <span class="fbr2-stat"><span class="fbr2-n" id="sbt-pub">0</span><span class="fbr2-l">pubblicati</span></span>
         </div>
         <div class="fbr2-actions">
-          <button class="fbr2-btn" onclick="toggleArchivioBozze()" aria-label="Archivio bozze">
+          <button class="fbr2-btn" data-action="toggleArchivioBozze" aria-label="Archivio bozze">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
             Archivio bozze
           </button>
           <span class="fbar-sep"></span>
-          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+          <button class="fbr2-btn fbr2-cal-btn" data-action="switchTab" data-args="'cal'" aria-label="Calendario">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Calendario
           </button>
@@ -660,7 +660,7 @@
 
       <!-- Archivio Bozze -->
       <div id="archivio-bozze-section" style="border-top:1px solid var(--border);margin-top:8px;padding:12px 16px 24px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;" onclick="toggleArchivioBozze()">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;" data-action="toggleArchivioBozze">
           <span style="font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);opacity:.8;">Archivio bozze</span>
           <span id="archivio-bozze-count" style="font-size:11px;color:var(--text-3);"></span>
           <svg id="archivio-bozze-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
@@ -675,14 +675,14 @@
     <div class="feed-ctx-bar">
       <div class="feed-ctx-row1">
         <!-- Nav mese -->
-        <button class="fbar-btn" onclick="calNav(-1)" aria-label="Mese precedente">
+        <button class="fbar-btn" data-action="calNav" data-args="-1" aria-label="Mese precedente">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span class="cal-month-label" id="cal-month-label" style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">—</span>
-        <button class="fbar-btn" onclick="calNav(1)" aria-label="Mese successivo">
+        <button class="fbar-btn" data-action="calNav" data-args="1" aria-label="Mese successivo">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
-        <button class="fbar-pill" onclick="calGoToday()" style="font-size:11px;">Oggi</button>
+        <button class="fbar-pill" data-action="calGoToday" style="font-size:11px;">Oggi</button>
         <div class="fbar-sep"></div>
         <!-- Legenda inline compatta -->
         <div class="cal-legend-inline">
@@ -695,13 +695,13 @@
         <div style="flex:1;"></div>
         <!-- Switcher vista -->
         <div class="cal-view-toggle">
-          <button class="cal-view-btn active" id="cal-btn-month" onclick="setCalView('month')">Mese</button>
-          <button class="cal-view-btn" id="cal-btn-week" onclick="setCalView('week')">Settimana</button>
-          <button class="cal-view-btn" id="cal-btn-year" onclick="setCalView('year')">Anno</button>
+          <button class="cal-view-btn active" id="cal-btn-month" data-action="setCalView" data-args="'month'">Mese</button>
+          <button class="cal-view-btn" id="cal-btn-week" data-action="setCalView" data-args="'week'">Settimana</button>
+          <button class="cal-view-btn" id="cal-btn-year" data-action="setCalView" data-args="'year'">Anno</button>
         </div>
         <!-- Link Piano annuale -->
         <div class="fbar-sep"></div>
-        <button class="fbr2-btn" onclick="switchTab('anno')" style="height:30px;font-size:11px;" aria-label="Piano annuale">
+        <button class="fbr2-btn" data-action="switchTab" data-args="'anno'" style="height:30px;font-size:11px;" aria-label="Piano annuale">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
           Piano annuale
         </button>
@@ -711,7 +711,7 @@
     <div class="cal-day-panel" id="cal-day-panel">
       <div class="cal-day-panel-head">
         <h3 id="cal-panel-date">—</h3>
-        <button class="btn ghost sm icon" onclick="closeCalPanel()" aria-label="Chiudi pannello">✕</button>
+        <button class="btn ghost sm icon" data-action="closeCalPanel" aria-label="Chiudi pannello">✕</button>
       </div>
       <div class="cal-day-panel-body" id="cal-panel-body"></div>
     </div>
@@ -726,10 +726,10 @@
         <div style="flex:1;"></div>
         <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;font-size:12px;"></select>
         <!-- Account/Platform switcher (visible only with 2+ accounts) -->
-        <button class="ctx-fmt-badge" id="preview-acc-badge" onclick="togglePreviewAccDropdown()" aria-label="Cambia piattaforma" style="display:none;cursor:pointer;font-size:12px;"></button>
+        <button class="ctx-fmt-badge" id="preview-acc-badge" data-action="togglePreviewAccDropdown" aria-label="Cambia piattaforma" style="display:none;cursor:pointer;font-size:12px;"></button>
         <!-- Toggle modalità approvazione -->
         <div style="position:relative;display:inline-block;">
-        <button class="appr-toggle-btn" id="appr-toggle-btn" onclick="toggleApprMode()" aria-label="Attiva modalità approvazione" title="Modalità Approvazione">
+        <button class="appr-toggle-btn" id="appr-toggle-btn" data-action="toggleApprMode" aria-label="Attiva modalità approvazione" title="Modalità Approvazione">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
           <span id="appr-toggle-lbl">Approvazione</span>
         </button>
@@ -775,11 +775,11 @@
       <div class="feed-ctx-bar">
         <div class="feed-ctx-row1">
           <!-- Nav anno -->
-          <button class="fbar-btn" onclick="annoPrevYear()" aria-label="Anno precedente">
+          <button class="fbar-btn" data-action="annoPrevYear" aria-label="Anno precedente">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <span class="anno-year-lbl" id="anno-year-lbl" style="font-size:15px;font-weight:700;color:var(--text);min-width:40px;text-align:center;">2026</span>
-          <button class="fbar-btn" onclick="annoNextYear()" aria-label="Anno successivo">
+          <button class="fbar-btn" data-action="annoNextYear" aria-label="Anno successivo">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
           <div class="fbar-sep"></div>
@@ -806,7 +806,7 @@
           <div class="ads-page-title" id="ads-page-title">Performance Ads</div>
           <div class="ads-page-sub">Dati manuali · sola lettura</div>
         </div>
-        <button class="btn sm" onclick="openAddAdsCampaignModal()">
+        <button class="btn sm" data-action="openAddAdsCampaignModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nuova campagna
         </button>
@@ -851,28 +851,28 @@
 </div><!-- /app -->
 
 <!-- UGC SLOT MODAL -->
-<div id="ped-slot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseDrawer()">
+<div id="ped-slot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;" data-action="if" data-args="event.target===this)pedCloseDrawer(">
   <div style="background:var(--surface);border-radius:14px;width:360px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <span id="ped-drawer-date" style="font-size:14px;font-weight:700;color:var(--text);">—</span>
-      <button class="btn ghost sm icon" onclick="pedCloseDrawer()" aria-label="Chiudi">✕</button>
+      <button class="btn ghost sm icon" data-action="pedCloseDrawer" aria-label="Chiudi">✕</button>
     </div>
     <div id="ped-drawer-body" style="overflow-y:auto;flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;"></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0;">
-      <button class="btn sm danger" id="ped-drawer-del" onclick="pedDrawerDelete()">Elimina</button>
+      <button class="btn sm danger" id="ped-drawer-del" data-action="pedDrawerDelete">Elimina</button>
       <div style="flex:1;"></div>
-      <button class="btn sm" onclick="pedCloseDrawer()">Annulla</button>
-      <button class="btn sm primary" onclick="pedDrawerSave()">Salva</button>
+      <button class="btn sm" data-action="pedCloseDrawer">Annulla</button>
+      <button class="btn sm primary" data-action="pedDrawerSave">Salva</button>
     </div>
   </div>
 </div>
 
 <!-- VIDEO COVER MODAL -->
-<div id="video-cover-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeVideoCoverModal()">
+<div id="video-cover-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" data-action="if" data-args="event.target===this)closeVideoCoverModal(">
   <div style="background:var(--surface);width:320px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:13px;font-weight:600;color:var(--text);">Cover reel</div>
-      <button onclick="closeVideoCoverModal()" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:2px 6px;">✕</button>
+      <button data-action="closeVideoCoverModal" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:2px 6px;">✕</button>
     </div>
     <div id="vcm-preview" style="display:none;margin:12px 16px 0;aspect-ratio:4/5;border-radius:var(--rs);overflow:hidden;background:var(--cell-bg);"></div>
     <div style="padding:12px 16px;">
@@ -894,8 +894,8 @@
       </button>
     </div>
     <div style="padding:10px 16px 14px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);">
-      <button onclick="removeVideoCover()" style="font-size:11px;font-family:var(--font);padding:5px 12px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--red);cursor:pointer;">Rimuovi cover</button>
-      <button onclick="closeVideoCoverModal()" style="font-size:11px;font-family:var(--font);padding:5px 12px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;">Chiudi</button>
+      <button data-action="removeVideoCover" style="font-size:11px;font-family:var(--font);padding:5px 12px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--red);cursor:pointer;">Rimuovi cover</button>
+      <button data-action="closeVideoCoverModal" style="font-size:11px;font-family:var(--font);padding:5px 12px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;">Chiudi</button>
     </div>
   </div>
 </div>
@@ -903,7 +903,7 @@
 
 
 <!-- BRIEF CREATOR MODAL (Gruppo C) -->
-<div id="brief-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeBriefModal()">
+<div id="brief-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" data-action="if" data-args="event.target===this)closeBriefModal(">
   <div style="background:var(--surface);width:440px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;border:1px solid var(--border);">
     <!-- Header -->
     <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -911,7 +911,7 @@
         <div style="font-size:9px;font-family:var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:3px;">Brief UGC</div>
         <div id="brief-modal-title" style="font-size:13px;font-weight:600;color:var(--text);">—</div>
       </div>
-      <button onclick="closeBriefModal()" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:4px 8px;">✕</button>
+      <button data-action="closeBriefModal" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:4px 8px;">✕</button>
     </div>
     <!-- Nota info -->
     <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;color:var(--text-2);flex-shrink:0;">
@@ -923,24 +923,24 @@
     <div style="padding:12px 18px;border-top:1px solid var(--border);flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;">
         <span id="brief-modal-link" style="flex:1;font-size:11px;font-family:var(--font);color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-        <button onclick="copyBriefLink()" style="font-size:10px;font-family:var(--font);padding:3px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap;">Copia link</button>
+        <button data-action="copyBriefLink" style="font-size:10px;font-family:var(--font);padding:3px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap;">Copia link</button>
       </div>
     </div>
     <!-- Footer -->
     <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;">
-      <button onclick="closeBriefModal()" style="font-size:12px;font-family:var(--font);padding:6px 14px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;">Annulla</button>
-      <button id="brief-modal-invia" onclick="inviaBreifCreator()" style="font-size:12px;font-family:var(--font);padding:6px 14px;border:none;border-radius:var(--rs);background:#7F77DD;color:#fff;cursor:pointer;font-weight:600;">Invia brief al creator</button>
+      <button data-action="closeBriefModal" style="font-size:12px;font-family:var(--font);padding:6px 14px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;">Annulla</button>
+      <button id="brief-modal-invia" data-action="inviaBreifCreator" style="font-size:12px;font-family:var(--font);padding:6px 14px;border:none;border-radius:var(--rs);background:#7F77DD;color:#fff;cursor:pointer;font-weight:600;">Invia brief al creator</button>
     </div>
   </div>
 </div>
 
 
 
-    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Anteprima contenuto" onclick="lbBg(event)">
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Anteprima contenuto" data-action="lbBg" data-args="event">
       <div class="lb-wrap">
-        <button class="lb-nav lb-prev" id="lb-prev" onclick="lbNav(-1)" aria-label="Post precedente">‹</button>
+        <button class="lb-nav lb-prev" id="lb-prev" data-action="lbNav" data-args="-1" aria-label="Post precedente">‹</button>
         <div class="lb-inner" id="lb-inner"></div>
-        <button class="lb-nav lb-next" id="lb-next" onclick="lbNav(1)" aria-label="Post successivo">›</button>
+        <button class="lb-nav lb-next" id="lb-next" data-action="lbNav" data-args="1" aria-label="Post successivo">›</button>
         <div class="lb-counter" id="lb-counter"></div>
         <div class="lb-copy" id="lb-copy"></div>
         <div class="lb-stories-strip" id="lb-stories-strip"></div>
@@ -949,13 +949,13 @@
 
 
   <!-- MODAL APPROVAZIONE -->
-  <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
+  <div class="appr-modal-bg" id="appr-modal-bg" data-action="closeApprModal" style="display:none;">
     <div class="appr-modal" onclick="event.stopPropagation()">
       <div class="appr-modal-head">
         <div>
           <div class="appr-modal-title" id="appr-modal-title">Dettaglio Post</div>
         </div>
-        <button onclick="closeApprModal()" class="appr-modal-close" aria-label="Chiudi">✕</button>
+        <button data-action="closeApprModal" class="appr-modal-close" aria-label="Chiudi">✕</button>
       </div>
       <div class="appr-modal-body">
         <div class="appr-modal-thumb" id="appr-modal-thumb"></div>
@@ -975,9 +975,9 @@
         </div>
       </div>
       <div class="appr-modal-foot">
-        <button class="btn sm" onclick="closeApprModal()">Annulla</button>
-        <button class="btn sm" id="appr-approva-btn" onclick="apprModalApprova()" style="background:#1a7a4a;color:#fff;border-color:#1a7a4a;">✓ Approva</button>
-        <button class="btn" onclick="apprModalSalva()" style="margin-left:auto;">Salva</button>
+        <button class="btn sm" data-action="closeApprModal">Annulla</button>
+        <button class="btn sm" id="appr-approva-btn" data-action="apprModalApprova" style="background:#1a7a4a;color:#fff;border-color:#1a7a4a;">✓ Approva</button>
+        <button class="btn" data-action="apprModalSalva" style="margin-left:auto;">Salva</button>
       </div>
     </div>
   </div>
@@ -989,7 +989,7 @@
 <!-- ADS CAMPAIGN MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="ads-camp-modal">
   <div class="modal" style="width:480px;">
-    <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" onclick="closeModal('ads-camp-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" data-action="closeModal" data-args="'ads-camp-modal'" aria-label="Chiudi">✕</button></div>
     <div class="field"><label>Nome campagna</label><input type="text" id="adm-name" placeholder="es. Estate 2026 — Awareness"/></div>
     <div class="field"><label>Piattaforma</label>
       <select id="adm-platform">
@@ -1046,8 +1046,8 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('ads-camp-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="saveAdsCampaign()">Salva</button>
+      <button class="btn sm" data-action="closeModal" data-args="'ads-camp-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="saveAdsCampaign">Salva</button>
     </div>
   </div>
 </div>
@@ -1058,15 +1058,15 @@
   <div class="modal" style="width:380px;gap:12px;">
     <div class="modal-top" style="border-bottom:none;padding-bottom:0;">
       <div class="confirm-icon" id="confirm-icon"></div>
-      <button class="btn ghost sm icon" onclick="confirmCancel()" aria-label="Annulla">✕</button>
+      <button class="btn ghost sm icon" data-action="confirmCancel" aria-label="Annulla">✕</button>
     </div>
     <div style="padding:0 18px 4px;">
       <div class="confirm-title" id="confirm-title"></div>
       <div class="confirm-body" id="confirm-body"></div>
     </div>
     <div class="modal-actions" style="padding:12px 18px;">
-      <button class="btn sm" id="confirm-cancel-btn" onclick="confirmCancel()">Annulla</button>
-      <button class="btn sm" id="confirm-ok-btn" onclick="confirmOk()">Conferma</button>
+      <button class="btn sm" id="confirm-cancel-btn" data-action="confirmCancel">Annulla</button>
+      <button class="btn sm" id="confirm-ok-btn" data-action="confirmOk">Conferma</button>
     </div>
   </div>
 </div>
@@ -1076,7 +1076,7 @@
   <div class="modal" style="width:480px;">
     <div class="modal-top">
       <h3 id="edit-client-title">Modifica cliente</h3>
-      <button class="btn ghost sm icon" onclick="closeModal('edit-client-modal')" aria-label="Chiudi">✕</button>
+      <button class="btn ghost sm icon" data-action="closeModal" data-args="'edit-client-modal'" aria-label="Chiudi">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="ec-name" placeholder="Nome"/></div>
@@ -1099,7 +1099,7 @@
           <div class="field" style="margin:0;"><label>Piattaforma</label>
             <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Pin Idea</option><option>Altro</option></select>
           </div>
-          <button class="btn primary sm" onclick="ecAddAccount()" style="margin-bottom:1px;">+</button>
+          <button class="btn primary sm" data-action="ecAddAccount" style="margin-bottom:1px;">+</button>
         </div>
       </div>
     </div>
@@ -1146,10 +1146,10 @@
       <div class="ec-pal-hint">Anteprima card editoriale con i colori brand</div>
     </div>
     <div class="modal-actions">
-      <button class="btn sm danger" onclick="ecDeleteClient()">Elimina cliente</button>
+      <button class="btn sm danger" data-action="ecDeleteClient">Elimina cliente</button>
       <div style="flex:1;"></div>
-      <button class="btn sm" onclick="closeModal('edit-client-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="ecSave()">Salva modifiche</button>
+      <button class="btn sm" data-action="closeModal" data-args="'edit-client-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="ecSave">Salva modifiche</button>
     </div>
   </div>
 </div>
@@ -1157,7 +1157,7 @@
 <!-- CAROUSEL MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="carousel-modal">
   <div class="modal" style="max-width:540px;width:95vw;">
-    <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" data-action="closeModal" data-args="'carousel-modal'" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">La prima slide appare nella griglia. Ogni slide può avere un copy dedicato.</p>
     <div class="c-upload-zone" id="c-upload-zone">
       <input type="file" id="c-file-input" accept="image/*" multiple onchange="addCarouselFiles(this.files)"/>
@@ -1165,8 +1165,8 @@
     </div>
     <div class="c-thumbs" id="c-thumbs"></div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('carousel-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="saveCarousel()">Salva</button>
+      <button class="btn sm" data-action="closeModal" data-args="'carousel-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="saveCarousel">Salva</button>
     </div>
   </div>
 </div>
@@ -1178,11 +1178,11 @@
     <div class="modal-top">
       <h3>Slide Builder</h3>
       <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-        <button class="btn sm" onclick="sbDownloadPNG()" aria-label="Esporta PNG" title="Esporta PNG">
+        <button class="btn sm" data-action="sbDownloadPNG" aria-label="Esporta PNG" title="Esporta PNG">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           PNG
         </button>
-        <button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')" aria-label="Chiudi Slide Builder">✕</button>
+        <button class="btn ghost sm icon" data-action="closeModal" data-args="'storyboard-modal'" aria-label="Chiudi Slide Builder">✕</button>
       </div>
     </div>
     <!-- 3-col layout -->
@@ -1191,7 +1191,7 @@
       <div class="sbcol-nav">
         <div class="sbcol-head">
           <span class="sec-lbl">Slide</span>
-          <button class="btn sm" onclick="addSbSlide()" aria-label="Aggiungi slide">+</button>
+          <button class="btn sm" data-action="addSbSlide" aria-label="Aggiungi slide">+</button>
         </div>
         <div id="sb-thumbs"></div>
       </div>
@@ -1199,21 +1199,21 @@
       <div class="sb-fields">
         <!-- Tab switcher + azioni salvataggio -->
         <div class="sb-tab-row">
-          <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)" aria-label="Tab editor">Editor</button>
-          <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)" aria-label="Tab parser note">Parser note</button>
+          <button class="sb-tab active" id="sb-tab-editor" data-action="sbSwitchTab" data-args="'editor',this" aria-label="Tab editor">Editor</button>
+          <button class="sb-tab" id="sb-tab-parser" data-action="sbSwitchTab" data-args="'parser',this" aria-label="Tab parser note">Parser note</button>
           <div id="sb-save-bozza-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;">
             <!-- Input nome bozza (inline, nascosto di default) -->
             <div id="sb-save-bozza-inline" style="display:none;align-items:center;gap:4px;">
               <input id="sb-bozza-name-inp" type="text" placeholder="Nome bozza…" style="font-size:11px;padding:3px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:120px;" onkeydown="if(event.key==='Enter')_sbDoSaveArchivio(this.value);if(event.key==='Escape')sbHideBozzaInput();"/>
-              <button class="btn primary sm" onclick="_sbDoSaveArchivio(document.getElementById('sb-bozza-name-inp').value)" style="font-size:11px;padding:3px 8px;">OK</button>
-              <button class="btn ghost sm" onclick="sbHideBozzaInput()" style="font-size:11px;padding:3px 6px;">✕</button>
+              <button class="btn primary sm" data-action="_sbDoSaveArchivio" data-args="document.getElementById('sb-bozza-name-inp').value" style="font-size:11px;padding:3px 8px;">OK</button>
+              <button class="btn ghost sm" data-action="sbHideBozzaInput" style="font-size:11px;padding:3px 6px;">✕</button>
             </div>
             <!-- Bottoni normali -->
-            <button id="sb-save-bozza-btn" class="btn ghost sm" onclick="sbShowBozzaInput()" style="font-size:11px;gap:4px;" title="Salva come bozza (non collega alle Stories)">
+            <button id="sb-save-bozza-btn" class="btn ghost sm" data-action="sbShowBozzaInput" style="font-size:11px;gap:4px;" title="Salva come bozza (non collega alle Stories)">
               <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Bozza
             </button>
-            <button class="btn primary sm" onclick="saveStoryboard()" style="font-size:11px;gap:4px;" title="Salva storyboard e collega alle Stories">
+            <button class="btn primary sm" data-action="saveStoryboard" style="font-size:11px;gap:4px;" title="Salva storyboard e collega alle Stories">
               <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Salva
             </button>
@@ -1227,7 +1227,7 @@
             <input type="file" id="sb-file-inp" accept="image/*" onchange="sbSetImage(this.files[0])"/>
             <div id="sb-img-preview" style="display:none;position:absolute;inset:0;">
               <img id="sb-img-el" style="width:100%;height:100%;object-fit:cover;"/>
-              <button class="sb-img-clear" onclick="sbClearImage()" aria-label="Rimuovi immagine">✕</button>
+              <button class="sb-img-clear" data-action="sbClearImage" aria-label="Rimuovi immagine">✕</button>
             </div>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span class="sb-img-lbl">Foto slide (opzionale)</span>
@@ -1273,18 +1273,18 @@
             <div class="sec-lbl" style="margin-bottom:8px;">Stile</div>
             <label class="sb-style-lbl">Sfondo</label>
             <div class="sb-bg-row">
-              <button class="sb-bg-btn active" data-bg="lined" onclick="sbSetBg('lined',this)">Righe</button>
-              <button class="sb-bg-btn" data-bg="grid" onclick="sbSetBg('grid',this)">Quadr.</button>
-              <button class="sb-bg-btn" data-bg="ivory" onclick="sbSetBg('ivory',this)">Avorio</button>
-              <button class="sb-bg-btn" data-bg="dark" onclick="sbSetBg('dark',this)">Dark</button>
+              <button class="sb-bg-btn active" data-bg="lined" data-action="sbSetBg" data-args="'lined',this">Righe</button>
+              <button class="sb-bg-btn" data-bg="grid" data-action="sbSetBg" data-args="'grid',this">Quadr.</button>
+              <button class="sb-bg-btn" data-bg="ivory" data-action="sbSetBg" data-args="'ivory',this">Avorio</button>
+              <button class="sb-bg-btn" data-bg="dark" data-action="sbSetBg" data-args="'dark',this">Dark</button>
             </div>
             <label class="sb-style-lbl" style="margin-top:8px;">Colore numero</label>
             <div class="sb-color-row">
-              <div class="sb-color-dot active" style="background:#2563eb;" data-c="#2563eb" onclick="sbSetColor('#2563eb',this)"></div>
-              <div class="sb-color-dot" style="background:#e8593c;" data-c="#e8593c" onclick="sbSetColor('#e8593c',this)"></div>
-              <div class="sb-color-dot" style="background:#16a34a;" data-c="#16a34a" onclick="sbSetColor('#16a34a',this)"></div>
-              <div class="sb-color-dot" style="background:#0dff00;border:.5px solid #ccc;" data-c="#0dff00" onclick="sbSetColor('#0dff00',this)"></div>
-              <div class="sb-color-dot" style="background:#1c1c1e;" data-c="#1c1c1e" onclick="sbSetColor('#1c1c1e',this)"></div>
+              <div class="sb-color-dot active" style="background:#2563eb;" data-c="#2563eb" data-action="sbSetColor" data-args="'#2563eb',this"></div>
+              <div class="sb-color-dot" style="background:#e8593c;" data-c="#e8593c" data-action="sbSetColor" data-args="'#e8593c',this"></div>
+              <div class="sb-color-dot" style="background:#16a34a;" data-c="#16a34a" data-action="sbSetColor" data-args="'#16a34a',this"></div>
+              <div class="sb-color-dot" style="background:#0dff00;border:.5px solid #ccc;" data-c="#0dff00" data-action="sbSetColor" data-args="'#0dff00',this"></div>
+              <div class="sb-color-dot" style="background:#1c1c1e;" data-c="#1c1c1e" data-action="sbSetColor" data-args="'#1c1c1e',this"></div>
             </div>
           </div>
         </div>
@@ -1295,7 +1295,7 @@
           <div class="sec-lbl" style="margin-bottom:8px;">Parser note</div>
           <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Usa i tag <strong>[NUM]</strong> <strong>[OCCHIELLO]</strong> <strong>[TITOLO]</strong> <strong>[COPY]</strong> per compilare la slide automaticamente.</p>
           <textarea id="sb-parser-input" rows="8" oninput="sbLivePreview()" placeholder="[NUM] 1.&#10;[OCCHIELLO] Strategia&#10;[TITOLO] Documenta tutto&#10;[COPY] Cattura screenshot e file..." style="width:100%;resize:none;border:.5px solid var(--border);border-radius:var(--rs);padding:8px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);line-height:1.5;outline:none;"></textarea>
-          <button class="btn primary sm" onclick="sbParseNote()" style="margin-top:8px;width:100%;">Applica alla slide attiva</button>
+          <button class="btn primary sm" data-action="sbParseNote" style="margin-top:8px;width:100%;">Applica alla slide attiva</button>
           <!-- Live preview -->
           <div id="sb-live-preview" class="sb-live-preview" style="display:none;">
             <div class="sb-live-lbl">Anteprima live</div>
@@ -1304,7 +1304,7 @@
             <div class="sb-live-tit" id="sb-live-tit"></div>
             <div class="sb-live-cop" id="sb-live-cop"></div>
           </div>
-          <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer;" onclick="sbFillParserExample()">
+          <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer;" data-action="sbFillParserExample">
             <div class="sec-lbl" style="margin-bottom:4px;">Esempio — clicca per inserire</div>
             <pre style="font-size:10px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;">[NUM] 1.
 [OCCHIELLO] Strategia
@@ -1319,9 +1319,9 @@
       <div class="sb-preview-col">
         <div class="sec-lbl" style="margin-bottom:8px;">Anteprima</div>
         <div class="sb-fmt-row">
-          <button class="sb-fmt-btn" data-fmt="stories" onclick="sbSetFmt('stories',this)">9:16</button>
-          <button class="sb-fmt-btn active" data-fmt="feed" onclick="sbSetFmt('feed',this)">4:5</button>
-          <button class="sb-fmt-btn" data-fmt="square" onclick="sbSetFmt('square',this)">1:1</button>
+          <button class="sb-fmt-btn" data-fmt="stories" data-action="sbSetFmt" data-args="'stories',this">9:16</button>
+          <button class="sb-fmt-btn active" data-fmt="feed" data-action="sbSetFmt" data-args="'feed',this">4:5</button>
+          <button class="sb-fmt-btn" data-fmt="square" data-action="sbSetFmt" data-args="'square',this">1:1</button>
         </div>
         <div class="sb-preview-wrap">
           <div class="sb-canvas lined" id="sb-canvas">
@@ -1338,15 +1338,15 @@
     </div>
     <!-- Bottom nav mobile (nascosta su desktop) -->
     <div class="sb-mob-nav" id="sb-mob-nav">
-      <button class="sb-mob-nav-btn" id="sb-mob-slide-btn" onclick="sbMobTab('slides')" aria-label="Slide">
+      <button class="sb-mob-nav-btn" id="sb-mob-slide-btn" data-action="sbMobTab" data-args="'slides'" aria-label="Slide">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
         Slide
       </button>
-      <button class="sb-mob-nav-btn active" id="sb-mob-editor-btn" onclick="sbMobTab('editor')" aria-label="Campi editor">
+      <button class="sb-mob-nav-btn active" id="sb-mob-editor-btn" data-action="sbMobTab" data-args="'editor'" aria-label="Campi editor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Campi
       </button>
-      <button class="sb-mob-nav-btn" id="sb-mob-preview-btn" onclick="sbMobTab('preview')" aria-label="Anteprima">
+      <button class="sb-mob-nav-btn" id="sb-mob-preview-btn" data-action="sbMobTab" data-args="'preview'" aria-label="Anteprima">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Anteprima
       </button>
@@ -1356,15 +1356,15 @@
 <!-- HIGHLIGHT MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="highlight-modal">
   <div class="modal" style="width:360px;">
-    <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" data-action="closeModal" data-args="'highlight-modal'" aria-label="Chiudi">✕</button></div>
     <div class="field"><label>Nome</label><input type="text" id="hl-name" placeholder="Es: Menu · Estate · Team"/></div>
     <div class="c-upload-zone" id="hl-upload-zone">
       <input type="file" id="hl-file-input" accept="image/*" onchange="setHlCover(this.files)"/>
       <p id="hl-upload-lbl">Carica copertina · <strong>clicca per sfogliare</strong></p>
     </div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('highlight-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="saveHighlight()">Salva</button>
+      <button class="btn sm" data-action="closeModal" data-args="'highlight-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="saveHighlight">Salva</button>
     </div>
   </div>
 </div>
@@ -1372,12 +1372,12 @@
 <!-- LINK STORIES MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="link-stories-modal">
   <div class="modal">
-    <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" data-action="closeModal" data-args="'link-stories-modal'" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare a questo post.</p>
     <div class="link-modal-grid" id="link-modal-grid"></div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('link-stories-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="saveLinkStories()">Collega</button>
+      <button class="btn sm" data-action="closeModal" data-args="'link-stories-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="saveLinkStories">Collega</button>
     </div>
   </div>
 </div>
@@ -1385,14 +1385,14 @@
 <!-- COPY CONTENT MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="copy-content-modal">
   <div class="modal">
-    <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" data-action="closeModal" data-args="'copy-content-modal'" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">Copia da un altro account o mese.</p>
     <div class="field"><label>Account sorgente</label><select id="copy-src-account" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
     <div class="field"><label>Mese</label><select id="copy-src-month" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
     <div class="copy-content-list" id="copy-content-list"></div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('copy-content-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="executeCopy()">Copia</button>
+      <button class="btn sm" data-action="closeModal" data-args="'copy-content-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="executeCopy">Copia</button>
     </div>
   </div>
 </div>
@@ -1402,7 +1402,7 @@
   <div class="modal" style="width:480px;">
     <div class="modal-top">
       <h3>Aggiungi cliente</h3>
-      <button class="btn ghost sm icon" onclick="closeModal('add-client-modal')" aria-label="Chiudi">✕</button>
+      <button class="btn ghost sm icon" data-action="closeModal" data-args="'add-client-modal'" aria-label="Chiudi">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" autocomplete="organization" onkeydown="if(event.key==='Enter')addClient()"/></div>
@@ -1426,8 +1426,8 @@
       <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Puoi aggiungere altri account dopo dalla scheda cliente.</div>
     </div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('add-client-modal')">Annulla</button>
-      <button class="btn primary sm" onclick="addClient()">Aggiungi cliente</button>
+      <button class="btn sm" data-action="closeModal" data-args="'add-client-modal'">Annulla</button>
+      <button class="btn primary sm" data-action="addClient">Aggiungi cliente</button>
     </div>
   </div>
 </div>
@@ -1436,26 +1436,26 @@
 <div class="dbx-upload-bar" id="dbx-upload-bar">
   <div class="dbx-spinner"></div>
   <span id="dbx-upload-text">Caricamento su Dropbox…</span>
-  <button id="dbx-cancel-btn" onclick="cancelDropboxUpload()" aria-label="Annulla upload" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:var(--rs);padding:2px 8px;font-size:11px;font-family:var(--font);color:var(--text-2);cursor:pointer;flex-shrink:0;">✕ Annulla</button>
+  <button id="dbx-cancel-btn" data-action="cancelDropboxUpload" aria-label="Annulla upload" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:var(--rs);padding:2px 8px;font-size:11px;font-family:var(--font);color:var(--text-2);cursor:pointer;flex-shrink:0;">✕ Annulla</button>
 </div>
 
 <!-- SAVE BAR -->
 <div class="save-bar">
   <span class="save-bar-label">💾</span>
-  <button class="btn sm" onclick="importProject()">Importa</button>
-  <button class="btn sm primary" onclick="exportProject()">Esporta</button>
+  <button class="btn sm" data-action="importProject">Importa</button>
+  <button class="btn sm primary" data-action="exportProject">Esporta</button>
   <input type="file" id="import-input" class="import-hidden" accept=".json" onchange="loadProjectFile(this)"/>
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782171720"></script>
+<script src="/app.js?v=1782250000" defer></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
-<div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
+<div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" data-action="if" data-args="event.target===this)closeModal('editorial-modal'">
   <div class="modal-box ed-modal-box">
     <div class="modal-top">
       <h3>Card editoriale</h3>
-      <button class="btn ghost sm icon" onclick="closeModal('editorial-modal')" aria-label="Chiudi">✕</button>
+      <button class="btn ghost sm icon" data-action="closeModal" data-args="'editorial-modal'" aria-label="Chiudi">✕</button>
     </div>
     <!-- Layout 2 colonne: anteprima | campi -->
     <div class="ed-modal-body">
@@ -1464,13 +1464,13 @@
         <!-- Selezione tema e formato -->
         <div class="ed-controls">
           <div class="ed-ctrl-row">
-            <button class="ed-theme-btn" data-theme="light" onclick="setEdTheme('light')">☀ Chiaro</button>
-            <button class="ed-theme-btn" data-theme="dark" onclick="setEdTheme('dark')">🌙 Scuro</button>
-            <button class="ed-theme-btn" data-theme="brand" onclick="setEdTheme('brand')">🎨 Brand</button>
+            <button class="ed-theme-btn" data-theme="light" data-action="setEdTheme" data-args="'light'">☀ Chiaro</button>
+            <button class="ed-theme-btn" data-theme="dark" data-action="setEdTheme" data-args="'dark'">🌙 Scuro</button>
+            <button class="ed-theme-btn" data-theme="brand" data-action="setEdTheme" data-args="'brand'">🎨 Brand</button>
           </div>
           <div class="ed-ctrl-row">
-            <button class="ed-fmt-btn active" data-fmt="feed" onclick="setEdFmt('feed')">Feed 4:5</button>
-            <button class="ed-fmt-btn" data-fmt="story" onclick="setEdFmt('story')">Story 9:16</button>
+            <button class="ed-fmt-btn active" data-fmt="feed" data-action="setEdFmt" data-args="'feed'">Feed 4:5</button>
+            <button class="ed-fmt-btn" data-fmt="story" data-action="setEdFmt" data-args="'story'">Story 9:16</button>
           </div>
         </div>
         <!-- Canvas anteprima -->
@@ -1499,8 +1499,8 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn ghost" onclick="closeModal('editorial-modal')">Annulla</button>
-      <button class="btn primary" onclick="saveEditorialCard()">+ Aggiungi al feed</button>
+      <button class="btn ghost" data-action="closeModal" data-args="'editorial-modal'">Annulla</button>
+      <button class="btn primary" data-action="saveEditorialCard">+ Aggiungi al feed</button>
     </div>
   </div>
 </div>
