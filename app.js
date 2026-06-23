@@ -4592,7 +4592,7 @@ function sbTabMoveToFeed(sb, origIdx, key){
       ${hasSlides
         ? `<div style="font-size:11px;color:var(--text-3);background:var(--surface-2,var(--surface));border:1px solid var(--border-lt);border-radius:6px;padding:8px 10px;line-height:1.5;">
             ${slides.length===1
-              ? '→ Verrà creato <strong>1 post</strong> con l'immagine della slide.'
+              ? "→ Verrà creato <strong>1 post</strong> con l'immagine della slide."
               : '→ Verrà creato <strong>1 post carosello</strong> con ' + slides.length + ' slide.'}
            </div>`
         : `<div style="font-size:11px;color:var(--amber,#f59e0b);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 10px;line-height:1.5;">
