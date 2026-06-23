@@ -1,44 +1,4 @@
-function renderEdPreview(){
-  const eyebrow = document.getElementById('ed-eyebrow')?.value||'';
-  const title   = document.getElementById('ed-title')?.value||'';
-  const accent  = document.getElementById('ed-accent')?.value||'';
-  const copy    = document.getElementById('ed-copy')?.value||'';
-  const cols    = getEdColors();
-
-  // Aggiorna colori sfondo
-  const wrap  = document.getElementById('ed-preview-wrap');
-  const inner = document.getElementById('ed-preview-inner');
-  const badge = document.getElementById('ed-prev-badge');
-  if(!wrap) return;
-  wrap.style.background = cols.bg;
-  if(inner){ inner.style.color = cols.text; }
-  if(badge){ badge.style.background = cols.logo; badge.style.color = cols.logoText; }
-
-  // Aspect ratio formato
-  wrap.style.aspectRatio = edFmt === 'story' ? '9/16' : '4/5';
-
-  // Testi
-  const el = id => document.getElementById(id);
-  if(el('ed-prev-eyebrow')) el('ed-prev-eyebrow').textContent = eyebrow;
-
-  // Titolo con parola colorata
-  if(el('ed-prev-title')){
-    if(accent && title.includes(accent)){
-      el('ed-prev-title').innerHTML = esc(title).replace(
-        esc(accent),
-        `<span style="color:${cols.accent};">${esc(accent)}</span>`
-      );
-    } else {
-      el('ed-prev-title').textContent = title;
-    }
-  }
-  if(el('ed-prev-copy')) el('ed-prev-copy').textContent = copy.slice(0,100);
-  // Placeholder titolo se vuoto
-  if(el('ed-prev-title') && !title) el('ed-prev-title').textContent = 'Titolo';
-  // Aggiorna aspect-ratio wrap
-  const wr=el('ed-preview-wrap');
-  if(wr) wr.style.aspectRatio = edFmt==='story' ? '9/16' : '4/5';
-}/* ══════════════════════════════════════════
+/* ══════════════════════════════════════════
    UTILITIES — helpers globali usati in tutto il file
 ══════════════════════════════════════════ */
 
@@ -828,11 +788,11 @@ function queueFeedFiles(files){
         console.log('Snapshot item['+Math.max(0,match)+'] externalUrl:', snapItem?.externalUrl?.slice(0,80)||'❌ MISSING');
         const snapSize = JSON.stringify(snap).length;
         console.log('Snapshot size:', Math.round(snapSize/1024)+'KB', snapSize > 15*1024*1024 ? '❌ TOO LARGE' : '✅ OK');
-        console.groupEnd();
         // Cancel any pending debounce save — avoids a stale write racing against this authoritative one
         clearTimeout(CLOUD._saveTimer);
         await CLOUD.saveNow(snap);
         console.log('✅ saveNow completed');
+        console.groupEnd();
       } else {
         console.warn('❌ Dropbox upload returned null — network error or auth failure');
         console.groupEnd();
@@ -5163,7 +5123,7 @@ function ecDeleteClient(){
 
 /* EXPORT / IMPORT */
 function exportProject(){
-  function san(arr){return(arr||[]).map(item=>({type:item.type,name:item.name||'',date:item.date||'',showDate:item.showDate||false,copy:item.copy||'',linkedStories:item.linkedStories||[],isStoryboard:item.isStoryboard||false,isExternalLink:item.isExternalLink||false,linkSource:item.linkSource||'',externalUrl:item.externalUrl||'',slides:(item.slides||[]).map(s=>({title:s.title||'',note:s.note||'',copy:s.copy||'',name:s.name||'',externalUrl:s.externalUrl||''}))}));}
+  function san(arr){return(arr||[]).map(item=>({type:item.type,name:item.name||'',date:item.date||'',showDate:item.showDate||false,copy:item.copy||'',linkedStories:item.linkedStories||[],isStoryboard:item.isStoryboard||false,isExternalLink:item.isExternalLink||false,linkSource:item.linkSource||'',externalUrl:item.externalUrl||'',url:(item.externalUrl&&item.externalUrl.startsWith('http'))?item.externalUrl:'',coverUrl:item.coverUrl||'',slides:(item.slides||[]).map(s=>({title:s.title||'',note:s.note||'',copy:s.copy||'',name:s.name||'',externalUrl:s.externalUrl||'',url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))}));}
   function sanSt(arr){return(arr||[]).map(st=>({type:st.type,name:st.name||'',date:st.date||'',note:st.note||'',isStoryboard:st.isStoryboard||false,isExternalLink:st.isExternalLink||false,linkSource:st.linkSource||'',externalUrl:st.externalUrl||'',briefInviato:st.briefInviato||false,fileCaricato:st.fileCaricato||false,slides:(st.slides||[]).map(s=>({title:s.title||'',eye:s.eye||'',num:s.num||'',note:s.note||'',noteRegia:s.noteRegia||'',sfondo:s.sfondo||'',name:s.name||'',externalUrl:s.externalUrl||'',url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:(s.url&&!s.url.startsWith('blob:'))?s.url:''}))}));}
   const ef={};Object.keys(feeds).forEach(k=>{ef[k]=san(feeds[k]);});const es={};Object.keys(stories).forEach(k=>{es[k]=sanSt(stories[k]);});
   const eh={};Object.keys(highlights).forEach(k=>{eh[k]=(highlights[k]||[]).map(h=>({name:h.name,coverUrl:(h.coverUrl&&h.coverUrl.startsWith('http'))?h.coverUrl:''}));});
