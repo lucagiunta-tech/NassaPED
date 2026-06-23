@@ -297,60 +297,43 @@
 
   <!-- FEED -->
   <div class="tab-page" id="page-feed">
-    <!-- Context bar row 1: selectors + months + format -->
+    <!-- Feed context bar — 2 righe fisse -->
     <div class="feed-ctx-bar">
+
+      <!-- RIGA 1: navigazione -->
       <div class="feed-ctx-row1">
-        <!-- Bottone cambio vista sempre visibile -->
-        <button class="feed-view-toggle-btn" id="toggle-view" onclick="toggleFeedView()" aria-label="Cambia vista" title="Cambia vista griglia/lista">
+        <button class="fbar-btn" id="toggle-view" onclick="toggleFeedView()" aria-label="Cambia vista" title="Griglia/Lista">
           <svg id="toggle-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         </button>
-        <button class="feed-backlog-btn" id="feed-all-months-btn" onclick="toggleAllMonthsMode()" title="Tutti i mesi → click: per mese | doppio click: flusso continuo" aria-label="Vista tutti i mesi">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <button class="fbar-pill" id="feed-all-months-btn" onclick="toggleAllMonthsMode()" aria-label="Tutti i mesi">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span class="all-months-lbl">Tutti</span>
         </button>
-        <button class="feed-backlog-btn" id="feed-backlog-btn" onclick="toggleBacklogFilter()" title="Mostra solo post senza data (backlog)" aria-label="Filtro backlog">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14" stroke-linecap="round" stroke-width="2.5"/><path d="M12 14l2 2 4-4" stroke-width="2"/></svg>
+        <button class="fbar-pill" id="feed-backlog-btn" onclick="toggleBacklogFilter()" aria-label="Backlog">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4" stroke-width="2"/></svg>
           Backlog
         </button>
-        <!-- Account selector only — client fixed from global context -->
         <select id="feed-account-sel" class="ctx-select" onchange="onFeedAccountChange()"></select>
-        <!-- Hidden selects kept for JS compat -->
         <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">—</option></select>
-        <div class="ctx-divider"></div>
+        <div class="fbar-sep"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
-        <!-- Scorciatoia Calendario — sempre visibile accanto ai mesi -->
-        <button class="feed-backlog-btn" onclick="switchTab('cal')" title="Vai al Calendario" aria-label="Calendario" style="gap:4px;flex-shrink:0;">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Cal
-        </button>
-        <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma" style="cursor:pointer;">Instagram · 4:5 ▾</button>
-        <!-- Bottone Profilo -->
-        <button class="feed-backlog-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" title="Mostra/nascondi profilo" aria-label="Profilo account">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Profilo
-        </button>
-
-        <!-- Bottone + Carica con popover contestuale -->
+        <div class="fbar-sep"></div>
+        <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma">Instagram · 4:5 ▾</button>
+        <!-- + Carica con popover -->
         <div style="position:relative;" id="feed-upload-anchor">
-          <button class="feed-upload-quick-btn" id="feed-upload-btn" onclick="openFeedUploadPanel()" title="Carica foto/video" aria-label="Carica foto o video">
+          <button class="feed-upload-quick-btn" id="feed-upload-btn" onclick="openFeedUploadPanel()" aria-label="Carica foto o video">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             + Carica
-            <svg id="feed-upload-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg id="feed-upload-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:1px;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-
-          <!-- Popover verticale -->
           <div id="feed-ctx-panel" class="feed-upload-popover">
-            <!-- Drop zone -->
             <div class="feed-dz" id="feed-drop-zone">
               <input type="file" id="feed-file-input" accept="image/*,video/*" multiple onchange="queueFeedFiles(this.files)"/>
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <div class="dz-title">Trascina o <strong>sfoglia</strong></div>
               <div class="dz-sub">JPG · PNG · MP4 · MOV</div>
             </div>
-
             <div class="fup-divider">oppure incolla link</div>
-
-            <!-- Link -->
             <div style="display:flex;flex-direction:column;gap:6px;">
               <div class="link-tabs" style="margin-bottom:0;">
                 <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
@@ -361,23 +344,16 @@
                 <button onclick="addFeedLink()">+</button>
               </div>
             </div>
-
             <div class="fup-divider">aggiungi</div>
-
-            <!-- Azioni rapide -->
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <div style="display:flex;gap:6px;">
               <button class="btn sm" onclick="openEditorialModal();closeFeedUploadPanel();" style="flex:1;justify-content:center;gap:5px;font-size:11px;">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Card
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card
               </button>
               <button class="btn sm" onclick="addPendingSlot();closeFeedUploadPanel();" style="flex:1;justify-content:center;gap:5px;font-size:11px;">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                Slot
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Slot
               </button>
             </div>
-
-            <!-- Media mancanti -->
-            <div id="batch-reupload-wrap" style="display:none;margin-top:2px;">
+            <div id="batch-reupload-wrap" style="display:none;">
               <button class="btn sm" id="batch-reupload-btn" onclick="batchReuploadMissing()" style="width:100%;justify-content:center;gap:5px;background:#f59e0b;color:#111;border:none;font-size:11px;">
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
                 <span id="batch-reupload-label">Ricarica mancanti</span>
@@ -386,41 +362,46 @@
             </div>
           </div>
         </div>
-
-        <!-- Opzioni (date/copy/profilo) — ora separate, sempre visibili come toggle -->
-        <button class="ctx-expand-btn" id="feed-expand-btn" onclick="toggleFeedPanel()" title="Opzioni display" aria-label="Opzioni display">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="feed-expand-icon"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
       </div>
 
-      <!-- Pannello opzioni (riepilogo, profilo, date/copy) -->
-      <div class="feed-ctx-panel-opts" id="feed-ctx-panel-opts">
-
-        <!-- Colonna 1: Riepilogo -->
-        <div class="fpo-col">
-          <div class="ctx-sec-lbl">Riepilogo</div>
-          <div class="ctx-stats">
-            <div class="ctx-stat"><div class="cs-n" id="stat-tot">0</div><div class="cs-l">Post</div></div>
-            <div class="ctx-stat"><div class="cs-n" id="stat-vid">0</div><div class="cs-l">Reel</div></div>
-            <div class="ctx-stat"><div class="cs-n" id="stat-car">0</div><div class="cs-l">Caros.</div></div>
-            <div class="ctx-stat"><div class="cs-n" id="stat-stories">0</div><div class="cs-l">Stories</div></div>
-            <div class="ctx-stat"><div class="cs-n" id="stat-hl">0</div><div class="cs-l">Evid.</div></div>
-          </div>
-          <!-- Media mancanti -->
-          <!-- batch-reupload gestito dal popover upload -->
+      <!-- RIGA 2: stat + toggle + azioni — sempre visibile -->
+      <div class="feed-bar-r2">
+        <div class="fbr2-stats">
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-tot">0</span><span class="fbr2-l">post</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-vid">0</span><span class="fbr2-l">reel</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-car">0</span><span class="fbr2-l">caros.</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-stories">0</span><span class="fbr2-l">stories</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-hl">0</span><span class="fbr2-l">evid.</span></span>
+          <span class="fbar-sep"></span>
+          <button class="fbr2-toggle" id="toggle-dates" onclick="toggleAllDates()" aria-label="Mostra/nascondi date">
+            Data <span class="gtoggle-chip" id="toggle-dates-chip">ON</span>
+          </button>
+          <button class="fbr2-toggle" id="toggle-copy" onclick="toggleAllCopy()" aria-label="Mostra/nascondi copy">
+            Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span>
+          </button>
         </div>
-
-        <!-- Colonna 2: Opzioni display -->
-        <div class="fpo-col" style="margin-left:auto;">
-          <div class="ctx-sec-lbl">Vista</div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()" aria-label="Mostra/nascondi date">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
-            <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()" aria-label="Mostra/nascondi copy">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
-          </div>
-          <div class="ctx-hint" style="margin-top:8px;">⠿ trascina · hover → opzioni</div>
+        <div class="fbr2-actions">
+          <button class="fbr2-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" aria-label="Profilo">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profilo
+          </button>
+          <button class="fbr2-btn" onclick="openEditorialModal()" aria-label="Card editoriale">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Card
+          </button>
+          <button class="fbr2-btn" onclick="addPendingSlot()" aria-label="Slot vuoto">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Slot
+          </button>
+          <span class="fbar-sep"></span>
+          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendario
+          </button>
+          <span class="fbr2-hint">⠿ trascina · hover → opzioni</span>
         </div>
-
       </div>
+
     </div><!-- /feed-ctx-bar -->
     <!-- Feed grid full width -->
     <div class="feed-grid-area">
