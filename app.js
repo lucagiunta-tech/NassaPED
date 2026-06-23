@@ -1573,7 +1573,7 @@ function renderFeedGrid(){
       const item=items[i],idx=i;
       if(item.type==='pending'){
         cell.classList.add('empty-slot');cell.style.overflow='hidden';
-        const bg=document.createElement('img');bg.className='picker-bg';bg.src=item.url;cell.appendChild(bg);
+        const bg=document.createElement('img');bg.className='picker-bg';bg.src=item.url;bg.alt='';bg.setAttribute('aria-hidden','true');cell.appendChild(bg);
         const pk=document.createElement('div');pk.className='type-picker';const lbl=document.createElement('div');lbl.className='type-picker-lbl';lbl.textContent='Tipo post';pk.appendChild(lbl);
         const btns=document.createElement('div');btns.className='type-btns';[['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>','Foto','image'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>','Reel','video'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>','Caros.','carousel']].forEach(([icon,label,type])=>{const b=document.createElement('button');b.className='type-btn';b.innerHTML=`<span class="ti">${icon}</span>${label}`;b.onclick=()=>setFeedItemType(idx,type);btns.appendChild(b);});pk.appendChild(btns);
         const rm=document.createElement('button');rm.className='picker-rm';rm.textContent='✕ rimuovi';rm.onclick=()=>removeFeedItem(idx);pk.appendChild(rm);cell.appendChild(pk);wrap.appendChild(cell);
@@ -1936,7 +1936,8 @@ function figSync(){
     if(oldImg) oldImg.remove();
     if(acc.profileImg){
       const img = document.createElement('img');
-      img.src = acc.profileImg; img.alt = '';
+      img.src = acc.profileImg; img.alt = acc.name+' — foto profilo';
+      img.loading = 'lazy';
       av.insertBefore(img, av.firstChild);
     }
   }
@@ -2015,7 +2016,7 @@ function feedProfileSync(){
       avatarEl.insertBefore(i,avatarEl.firstChild);
       if(svg)svg.style.display='none';
     } else {
-      img.src=acc.profileImg;
+      img.src=acc.profileImg;img.alt=acc.name||'Foto profilo';
       if(svg)svg.style.display='none';
     }
   } else {
@@ -2209,6 +2210,8 @@ function renderCThumbs(){
     left.style.cssText='flex-shrink:0;position:relative;width:56px;';
     const img=document.createElement('img');
     img.src=s.url||s.externalUrl||'';
+    img.alt=s.name||'Anteprima slide';
+    img.loading='lazy';
     img.style.cssText='width:56px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block;';
     const num=document.createElement('span');
     num.style.cssText='position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;';
@@ -2794,7 +2797,7 @@ function updateSbPreview(){
 
   // Immagine
   const ci=document.getElementById('sb-canvas-img');
-  if(ci){const src=sl.blobUrl||sl.url||'';if(src){ci.style.display='block';ci.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;"/>';}else{ci.style.display='none';}}
+  if(ci){const src=sl.blobUrl||sl.url||'';if(src){ci.style.display='block';ci.innerHTML='<img src="'+src+'" alt="Immagine slide" style="width:100%;height:100%;object-fit:cover;"/>';}else{ci.style.display='none';}}
 
   // Sfondo da SFONDI token (Gruppo A)
   const canvas=document.getElementById('sb-canvas');
@@ -3175,7 +3178,7 @@ function renderArchivioBozze() {
 
     row.innerHTML = `
       ${preview
-        ? `<img src="${preview.externalUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;border:1px solid var(--border);" loading="lazy"/>`
+        ? `<img src="${preview.externalUrl}" alt="Anteprima storyboard" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;border:1px solid var(--border);" loading="lazy"/>`
         : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`
       }
       <div style="flex:1;min-width:0;">
@@ -3515,6 +3518,7 @@ function renderPreview(){
       // Immagine slide
       const slideImg = document.createElement('img');
       slideImg.className = 'sb-player-img';
+      slideImg.alt = '';
 
       // Badge stato (bozza/approvare/approvato)
       const statoBadge = document.createElement('div');
@@ -3982,7 +3986,7 @@ function renderCalendar(){
           const typeLetter=ev.type==='feed'?'F':ev.type==='story'?'S':ev.type==='ped'?'U':ev.type==='ads'?'A':'E';
           if(thumbSrc){
             html+=`<div class="ctd-dot has-thumb" style="aspect-ratio:${isStory?'9/16':'4/5'}">
-              <img src="${thumbSrc}" onerror="this.parentElement.classList.add('no-thumb')" />
+              <img src="${thumbSrc}" alt="" loading="lazy" onerror="this.parentElement.classList.add('no-thumb')" />
               <span class="ctd-dot-type" style="background:${dotColor};">${typeLetter}</span>
             </div>`;
           } else {
@@ -4036,7 +4040,7 @@ function renderCalendar(){
             const contentLbl=ev.item?.copy?ev.item.copy.slice(0,35):(ev.item?.brief?ev.item.brief.slice(0,35):ev.label||'—');
             const thumb=ev.thumb||'';
             html+=`<div class="cal-year-event">`;
-            if(thumb) html+=`<img src="${thumb}" class="cal-year-thumb" onerror="this.style.display='none'" />`;
+            if(thumb) html+=`<img src="${thumb}" alt="" loading="lazy" class="cal-year-thumb" onerror="this.style.display='none'" />`;
             else html+=`<div class="cal-year-thumb-ph" style="background:${col}"></div>`;
             html+=`<div class="cal-year-event-info">
               <span class="cal-year-badge" style="background:${col}">${typeLbl}</span>
@@ -4072,7 +4076,7 @@ function renderCalendar(){
     html+='<div class="cal-week-events-list">';
     dayEvs.forEach((ev,ei)=>{
       const cls=ev.type==='feed'?'feed-post':ev.type==='story'?'story-item':ev.type==='ped'?(ev.pedType==='template'?'ped-template':'ped-autonoma'):ev.type==='ads'?'ads-item':'highlight-item';
-      const thumb=ev.thumb?`<img src="${ev.thumb}" class="cal-ev-thumb-week" onerror="this.style.display='none'" />`:'';
+      const thumb=ev.thumb?`<img src="${ev.thumb}" alt="" loading="lazy" class="cal-ev-thumb-week" onerror="this.style.display='none'" />`:'';
       const label=ev.label||'';
       const typeBadge=ev.type==='feed'?'Feed':ev.type==='story'?'Story':ev.type==='ped'?'UGC':ev.type==='ads'?'Ads':'';
       html+=`<div class="cal-week-ev-item ${cls}" onclick="openCalPanel('${ds}')">
@@ -4118,7 +4122,7 @@ function openCalPanel(dateStr){
   body.innerHTML='';
   if(!evs.length){body.innerHTML='<p style="font-size:12px;color:var(--text-3);text-align:center;padding:20px;">Nessun contenuto programmato.</p>';panel.classList.add('open');return;}
   const feeds_=evs.filter(e=>e.type==='feed');const stories_=evs.filter(e=>e.type==='story');const hl_=evs.filter(e=>e.type==='highlight');const pedAuto_=evs.filter(e=>e.type==='ped'&&e.pedType==='autonoma');const pedTmpl_=evs.filter(e=>e.type==='ped'&&e.pedType==='template');
-  const renderSection=(list,label,typeClass)=>{if(!list.length)return;const sec=document.createElement('div');const sl=document.createElement('div');sl.className='cal-panel-section';sl.textContent=label;sec.appendChild(sl);list.forEach(ev=>{const row=document.createElement('div');row.className='cal-panel-item';const thumb=document.createElement('div');thumb.className='cal-panel-thumb'+(typeClass==='story'?' story':'');if(ev.vidUrl){const v=document.createElement('video');v.src=ev.vidUrl;v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='width:100%;height:100%;object-fit:cover;';thumb.appendChild(v);}else if(ev.thumb){const img=document.createElement('img');img.src=ev.thumb;img.alt='';thumb.appendChild(img);}const info=document.createElement('div');info.className='cal-panel-info';const type_=document.createElement('div');type_.className=`cal-panel-type ${typeClass}`;type_.textContent=label.replace(/[📄📱⭐👤🎨] /,'');info.appendChild(type_);const cp=document.createElement('div');cp.className='cal-panel-copy';cp.textContent=ev.item.brief||ev.item.copy||ev.item.note||ev.item.name||ev.label||'—';info.appendChild(cp);if(ev.clientName){const cl_=document.createElement('div');cl_.style.cssText='font-size:10px;color:var(--text-3);margin-top:2px;';cl_.textContent=ev.clientName;info.appendChild(cl_);}if(ev.type==='feed'||ev.type==='story'||ev.type==='ped'){const tabDest=ev.type==='feed'?'feed':ev.type==='story'?'stories':'ped';const go=document.createElement('div');go.className='cal-panel-goto';go.innerHTML='→ Vai a '+(ev.type==='feed'?'Feed':ev.type==='story'?'Stories':'UGC');go.onclick=e=>{e.stopPropagation();switchTab(tabDest);closeCalPanel();};info.appendChild(go);}if(ev.type==='ped'&&ev.ugcStato){const UGC_STATI={raccolto:{l:'Raccolto',c:'#888'},selezionato:{l:'Selezionato',c:'#1D6FA8'},adattato:{l:'Adattato',c:'#d4a800'},approvato:{l:'Approvato',c:'#1a7a4a'}};const sc=UGC_STATI[ev.ugcStato]||UGC_STATI.raccolto;const sb=document.createElement('div');sb.style.cssText=`display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:600;color:${sc.c};margin-top:3px;`;sb.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${sc.c};flex-shrink:0;"></span>${sc.l}`;info.appendChild(sb);}row.appendChild(thumb);row.appendChild(info);if(ev.type==='feed'&&ev.item)row.onclick=()=>{openLb(0,[ev.item]);};sec.appendChild(row);});body.appendChild(sec);};
+  const renderSection=(list,label,typeClass)=>{if(!list.length)return;const sec=document.createElement('div');const sl=document.createElement('div');sl.className='cal-panel-section';sl.textContent=label;sec.appendChild(sl);list.forEach(ev=>{const row=document.createElement('div');row.className='cal-panel-item';const thumb=document.createElement('div');thumb.className='cal-panel-thumb'+(typeClass==='story'?' story':'');if(ev.vidUrl){const v=document.createElement('video');v.src=ev.vidUrl;v.muted=true;v.playsInline=true;v.preload='metadata';v.style.cssText='width:100%;height:100%;object-fit:cover;';thumb.appendChild(v);}else if(ev.thumb){const img=document.createElement('img');img.src=ev.thumb;img.alt=ev.label||ev.item?.name||'Anteprima';img.loading='lazy';thumb.appendChild(img);}const info=document.createElement('div');info.className='cal-panel-info';const type_=document.createElement('div');type_.className=`cal-panel-type ${typeClass}`;type_.textContent=label.replace(/[📄📱⭐👤🎨] /,'');info.appendChild(type_);const cp=document.createElement('div');cp.className='cal-panel-copy';cp.textContent=ev.item.brief||ev.item.copy||ev.item.note||ev.item.name||ev.label||'—';info.appendChild(cp);if(ev.clientName){const cl_=document.createElement('div');cl_.style.cssText='font-size:10px;color:var(--text-3);margin-top:2px;';cl_.textContent=ev.clientName;info.appendChild(cl_);}if(ev.type==='feed'||ev.type==='story'||ev.type==='ped'){const tabDest=ev.type==='feed'?'feed':ev.type==='story'?'stories':'ped';const go=document.createElement('div');go.className='cal-panel-goto';go.innerHTML='→ Vai a '+(ev.type==='feed'?'Feed':ev.type==='story'?'Stories':'UGC');go.onclick=e=>{e.stopPropagation();switchTab(tabDest);closeCalPanel();};info.appendChild(go);}if(ev.type==='ped'&&ev.ugcStato){const UGC_STATI={raccolto:{l:'Raccolto',c:'#888'},selezionato:{l:'Selezionato',c:'#1D6FA8'},adattato:{l:'Adattato',c:'#d4a800'},approvato:{l:'Approvato',c:'#1a7a4a'}};const sc=UGC_STATI[ev.ugcStato]||UGC_STATI.raccolto;const sb=document.createElement('div');sb.style.cssText=`display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:600;color:${sc.c};margin-top:3px;`;sb.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${sc.c};flex-shrink:0;"></span>${sc.l}`;info.appendChild(sb);}row.appendChild(thumb);row.appendChild(info);if(ev.type==='feed'&&ev.item)row.onclick=()=>{openLb(0,[ev.item]);};sec.appendChild(row);});body.appendChild(sec);};
   renderSection(feeds_,'Post feed','feed');renderSection(stories_,'Stories','story');renderSection(hl_,'In evidenza','highlight');renderSection(pedAuto_,'UGC Autonoma','feed');renderSection(pedTmpl_,'UGC Template','story');
   panel.classList.add('open');
 }
@@ -6669,7 +6673,7 @@ function openEditAdsCampaign(id){
     if(camp.creativeType==='video'){
       if(vid){vid.src=camp.creativeUrl;vid.style.display='block';}
     } else if(camp.creativeUrl){
-      if(img){img.src=camp.creativeUrl;img.style.display='block';}
+      if(img){img.src=camp.creativeUrl;img.alt=camp.name||'Creativo campagna';img.style.display='block';}
     }
     if(prev)prev.style.display='block';
     if(ph)ph.style.display='none';
@@ -7679,7 +7683,7 @@ function openVideoCoverModal(idx){
   const prev = document.getElementById('vcm-preview');
   if(prev){
     if(item.coverUrl){
-      prev.innerHTML = '<img src="'+item.coverUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rs);display:block;"/>';
+      prev.innerHTML = '<img src="'+item.coverUrl+'" alt="Anteprima bozza" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rs);display:block;"/>';
       prev.style.display = 'block';
     } else {
       prev.innerHTML = '';
