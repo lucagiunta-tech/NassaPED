@@ -4552,6 +4552,148 @@ function renderSbTabGrid(){
   });
 }
 
+/* Renderizza una slide del builder come PNG blob usando Canvas 2D.
+   Nessuna libreria esterna — puro Canvas API. */
+async function sbRenderSlideAsBlob(sl, fmt) {
+  // Dimensioni in pixel (2x per qualità)
+  const sizes = { stories:[1080,1920], feed:[1080,1350], square:[1080,1080] };
+  const [W, H] = sizes[fmt||'feed'] || sizes.feed;
+  const scale = 1; // 1x per velocità (abbastanza per preview)
+  const cw = W * scale, ch = H * scale;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = cw; canvas.height = ch;
+  const ctx = canvas.getContext('2d');
+
+  const sf = SFONDI[sl.sfondo||'Avorio'] || SFONDI['Avorio'];
+  const bg = sf.bg || '#F5F2EB';
+  const textCol = sf.text || '#2a2a2a';
+  const accCol = sl.color || '#2563eb';
+
+  // --- Sfondo ---
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, cw, ch);
+
+  // Righe di sfondo (se sfondo = Righe)
+  if(sl.sfondo === 'Righe' || sl.sfondo === 'Quadr.' || !sl.sfondo || sl.sfondo === 'Avorio') {
+    ctx.strokeStyle = 'rgba(0,100,200,0.08)';
+    ctx.lineWidth = scale;
+    const step = 20 * scale;
+    for(let y = step; y < ch; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y); ctx.stroke();
+    }
+    if(sl.sfondo === 'Quadr.') {
+      for(let x = step; x < cw; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ch); ctx.stroke();
+      }
+    }
+  }
+
+  // --- Binder (3 fori a sinistra) ---
+  const holeX = 22 * scale;
+  const holePositions = [ch * 0.25, ch * 0.5, ch * 0.75];
+  ctx.fillStyle = sf.bg === '#1a1a1a' ? '#333' : '#e0dbd0';
+  holePositions.forEach(hy => {
+    ctx.beginPath();
+    ctx.arc(holeX, hy, 8 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = sf.bg === '#1a1a1a' ? 'rgba(255,255,255,.15)' : 'rgba(0,0,0,.12)';
+    ctx.lineWidth = scale;
+    ctx.stroke();
+  });
+
+  const padL = 48 * scale;
+  const padR = 24 * scale;
+  const padT = 28 * scale;
+  const contentW = cw - padL - padR;
+
+  // --- Numero ---
+  const numText = sl.num || '1.';
+  ctx.font = `800 ${56 * scale}px Inter, system-ui, sans-serif`;
+  ctx.fillStyle = accCol;
+  ctx.fillText(numText, padL, padT + 50 * scale);
+
+  // --- Occhiello ---
+  if(sl.eye) {
+    ctx.font = `600 ${16 * scale}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = textCol;
+    ctx.globalAlpha = 0.45;
+    ctx.fillText(sl.eye.toUpperCase(), padL, padT + 82 * scale);
+    ctx.globalAlpha = 1;
+  }
+
+  // --- Titolo (word-wrap) ---
+  if(sl.title) {
+    ctx.font = `700 ${28 * scale}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = textCol;
+    const words = sl.title.split(' ');
+    let line = '', y = padT + 120 * scale;
+    const lineH = 36 * scale;
+    words.forEach(word => {
+      const test = line + (line ? ' ' : '') + word;
+      if(ctx.measureText(test).width > contentW && line) {
+        ctx.fillText(line, padL, y); y += lineH; line = word;
+      } else { line = test; }
+    });
+    if(line) ctx.fillText(line, padL, y);
+  }
+
+  // --- Separatore ---
+  const sepY = Math.min(padT + 220 * scale, ch * 0.45);
+  ctx.strokeStyle = textCol;
+  ctx.globalAlpha = 0.15;
+  ctx.lineWidth = scale;
+  ctx.beginPath(); ctx.moveTo(padL, sepY); ctx.lineTo(padL + 40 * scale, sepY); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // --- Copy/note ---
+  if(sl.note) {
+    ctx.font = `400 ${18 * scale}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = textCol;
+    ctx.globalAlpha = 0.6;
+    const words = sl.note.split(' ');
+    let line = '', y = sepY + 24 * scale;
+    const lineH = 26 * scale;
+    words.forEach(word => {
+      const test = line + (line ? ' ' : '') + word;
+      if(ctx.measureText(test).width > contentW && line) {
+        ctx.fillText(line, padL, y); y += lineH; line = word;
+      } else { line = test; }
+    });
+    if(line) ctx.fillText(line, padL, y);
+    ctx.globalAlpha = 1;
+  }
+
+  return new Promise(resolve => {
+    canvas.toBlob(resolve, 'image/png', 0.92);
+  });
+}
+
+/* Renderizza tutte le slide di uno storyboard come PNG e le carica su Dropbox.
+   Restituisce array di {url, name}. */
+async function sbRenderAndUploadSlides(sb) {
+  const slides = sb.slides || [];
+  const fmt = sb.sbFmt || 'feed';
+  const results = [];
+  showToast('⟳ Rendering ' + slides.length + ' slide…');
+  for(let i = 0; i < slides.length; i++) {
+    const sl = slides[i];
+    try {
+      const blob = await sbRenderSlideAsBlob(sl, fmt);
+      if(!blob) continue;
+      const fname = (sb.name||'slide').replace(/[^a-zA-Z0-9]/g,'_')+'_slide'+(i+1)+'.png';
+      const file = new File([blob], fname, {type:'image/png'});
+      const destPath = '/nassa/'+CLOUD.user+'/storyboard-export/'+Date.now()+'_'+fname;
+      showToast('⟳ Caricamento slide '+(i+1)+'/'+slides.length+'…');
+      const url = await DROPBOX.upload(file, destPath);
+      if(url) results.push({url, name:fname, type:'image'});
+    } catch(e) {
+      console.warn('[sbRender] Slide '+(i+1)+' failed:', e.message);
+    }
+  }
+  return results;
+}
+
 function sbTabMoveToFeed(sb, origIdx, key){
   const isStory = sb.sbFmt === 'stories';
   const acc = getAccount(sbTabClientIdx, sbTabAccountIdx);
@@ -4590,11 +4732,11 @@ function sbTabMoveToFeed(sb, origIdx, key){
       <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;">Come vuoi inserirlo?</div>
 
       <!-- Opzione A: Usa template -->
-      <button id="sbtm-template" class="btn sm" style="justify-content:flex-start;gap:8px;padding:10px 12px;border:1.5px solid ${hasTemplate?'var(--green)':'var(--border)'};border-radius:8px;opacity:${hasTemplate?1:0.45};background:${hasTemplate?'rgba(13,255,0,.04)':'var(--surface)'};cursor:${hasTemplate?'pointer':'default'};">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="${hasTemplate?'var(--green)':'var(--text-3)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <button id="sbtm-template" class="btn sm" style="justify-content:flex-start;gap:8px;padding:10px 12px;border:1.5px solid var(--green);border-radius:8px;background:rgba(13,255,0,.04);">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         <div style="text-align:left;">
           <div style="font-size:12px;font-weight:600;color:var(--text);">Usa template builder</div>
-          <div style="font-size:11px;color:var(--text-3);">${hasTemplate ? templateSlides.length+' slide con immagini già caricate' : 'Nessuna immagine caricata nelle slide'}</div>
+          <div style="font-size:11px;color:var(--text-3);">${hasTemplate ? templateSlides.length+' slide già caricate' : 'Renderizza il layout come PNG e carica'}</div>
         </div>
       </button>
 
@@ -4649,29 +4791,39 @@ function sbTabMoveToFeed(sb, origIdx, key){
     stories[skey] = arr;
   }
 
-  // OPZIONE A: usa le slide del template (immagini già su Dropbox)
-  overlay.querySelector('#sbtm-template').onclick = () => {
-    if(!hasTemplate){ showToast('Nessuna immagine nelle slide — carica prima le immagini nel builder','warn'); return; }
+  // OPZIONE A: usa le slide del template
+  // Se hanno già immagini su Dropbox → usa quelle
+  // Se non hanno immagini → renderizza il layout grafico come PNG e carica
+  overlay.querySelector('#sbtm-template').onclick = async () => {
     overlay.remove();
     const destMonth = getDestMonth();
 
+    let slides = templateSlides;
+
+    // Se non ci sono immagini Dropbox, renderizza le slide come PNG
+    if(!hasTemplate) {
+      const rendered = await sbRenderAndUploadSlides(sb);
+      if(!rendered.length){ showToast('Rendering fallito','warn'); return; }
+      slides = rendered.map(r=>({url:r.url, externalUrl:r.url, name:r.name, copy:'', note:''}));
+    }
+
     if(destIsStory){
-      const items = templateSlides.map(s=>({
+      const items = slides.map((s,i)=>({
         type:'image', url:s.externalUrl||s.url, externalUrl:s.externalUrl||s.url,
         isExternalLink:true, linkSource:'dropbox',
-        name:(sb.name||'Story')+' — '+(s.num||s.title||'slide'),
+        name:(sb.name||'Story')+' — '+(s.num||s.title||(i+1)),
         date:'', note:'', isStoryboard:false, slides:[]
       }));
       addToStories(items, destMonth);
     } else {
-      if(templateSlides.length === 1){
-        const s = templateSlides[0];
+      if(slides.length === 1){
+        const s = slides[0];
         const url = s.externalUrl||s.url;
         addToFeed([{type:'image',url,externalUrl:url,isExternalLink:true,linkSource:'dropbox',
           name:sb.name||'Post',date:'',showDate:false,copy:'',linkedStories:[],slides:[]}], destMonth);
       } else {
-        const coverUrl = templateSlides[0].externalUrl||templateSlides[0].url;
-        const carSlides = templateSlides.map(s=>({
+        const coverUrl = slides[0].externalUrl||slides[0].url;
+        const carSlides = slides.map(s=>({
           url:s.externalUrl||s.url, externalUrl:s.externalUrl||s.url,
           name:s.name||'', copy:s.copy||s.note||''
         }));
@@ -4682,7 +4834,7 @@ function sbTabMoveToFeed(sb, origIdx, key){
     }
     markPublished();
     clearTimeout(CLOUD._saveTimer);
-    CLOUD.saveNow(CLOUD.snapshot());
+    await CLOUD.saveNow(CLOUD.snapshot());
     renderSbTabGrid();
     showToast('✓ Template copiato in '+(destIsStory?'Stories':'Feed')+' — '+destMonth);
   };
