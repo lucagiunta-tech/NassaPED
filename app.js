@@ -810,6 +810,7 @@ function queueFeedFiles(files){
       showToast(total === 1 ? '✓ File caricato su Dropbox' : `✓ ${done} file caricati su Dropbox`);
       // Chiudi il pannello automaticamente dopo upload riuscito
       if(feedPanelOpen) toggleFeedPanel();
+      closeFeedUploadPanel();
     } else if(failed > 0 && done > 0){
       showToast(`⚠ ${done} ok, ${failed} falliti — ricarica i file mancanti`, 'warn');
     } else if(failed === total){
@@ -5995,31 +5996,43 @@ function renderPilastriContent(body,ci){
 let sidebarExpanded = localStorage.getItem('sb_expanded') === '1';
 let feedPanelOpen = false;
 function openFeedUploadPanel(){
-  // Apre il pannello se chiuso, poi evidenzia la drop zone
-  if(!feedPanelOpen) toggleFeedPanel();
-  // Piccolo delay per l'animazione apertura, poi scroll alla drop zone
+  const popover = document.getElementById('feed-ctx-panel');
+  const chevron = document.getElementById('feed-upload-chevron');
+  if(!popover) return;
+  const isOpen = popover.classList.contains('open');
+  if(isOpen){ closeFeedUploadPanel(); return; }
+  popover.classList.add('open');
+  if(chevron) chevron.style.transform = 'rotate(180deg)';
+  // Pulse la drop zone
   setTimeout(()=>{
     const dz = document.getElementById('feed-drop-zone');
-    if(dz){
-      dz.scrollIntoView({behavior:'smooth', block:'nearest'});
-      dz.classList.add('dz-highlight');
-      setTimeout(()=>dz.classList.remove('dz-highlight'), 1200);
-    }
-  }, 150);
+    if(dz){ dz.classList.add('dz-highlight'); setTimeout(()=>dz.classList.remove('dz-highlight'),1200); }
+  }, 100);
+  // Chiudi cliccando fuori
+  setTimeout(()=>{
+    document.addEventListener('click', _feedPopoverOutside, true);
+  }, 10);
+}
+
+function closeFeedUploadPanel(){
+  const popover = document.getElementById('feed-ctx-panel');
+  const chevron = document.getElementById('feed-upload-chevron');
+  if(popover) popover.classList.remove('open');
+  if(chevron) chevron.style.transform = '';
+  document.removeEventListener('click', _feedPopoverOutside, true);
+}
+
+function _feedPopoverOutside(e){
+  const anchor = document.getElementById('feed-upload-anchor');
+  if(anchor && !anchor.contains(e.target)) closeFeedUploadPanel();
 }
 
 function toggleFeedPanel(){
   feedPanelOpen=!feedPanelOpen;
-  const panel=document.getElementById('feed-ctx-panel');
+  const panel=document.getElementById('feed-ctx-panel-opts');
   const icon=document.getElementById('feed-expand-icon');
   const btn=document.getElementById('feed-expand-btn');
-  if(panel){
-    panel.classList.toggle('open',feedPanelOpen);
-    if(feedPanelOpen&&btn){
-      const r=btn.closest('.feed-ctx-bar').getBoundingClientRect();
-      panel.style.top=r.bottom+'px';
-    }
-  }
+  if(panel) panel.classList.toggle('open', feedPanelOpen);
   if(icon)icon.innerHTML=feedPanelOpen
     ?'<polyline points="18 15 12 9 6 15"/>'
     :'<polyline points="6 9 12 15 18 9"/>';

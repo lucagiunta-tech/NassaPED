@@ -1157,8 +1157,32 @@ tbody tr:hover .tr-actions{opacity:1;}
 .dz-highlight{border-color:var(--green)!important;animation:dz-pulse .6s ease 2;}
 
 /* Expandable panel */
-.feed-ctx-panel{display:none;position:fixed;left:0;right:0;padding:14px 16px;gap:20px;align-items:flex-start;border-top:.5px solid var(--border-lt);border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.1);}
-.feed-ctx-panel.open{display:flex;}
+.feed-ctx-panel{display:none;} /* legacy — kept for JS compat, replaced by popover */
+
+/* Popover upload — scende dal bottone + Carica */
+.feed-upload-popover{
+  display:none;
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  width:260px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.15);
+  padding:12px;
+  z-index:400;
+  flex-direction:column;
+  gap:10px;
+}
+.feed-upload-popover.open{display:flex;}
+.fup-divider{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);text-align:center;position:relative;}
+.fup-divider::before,.fup-divider::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--border-lt);}
+.fup-divider::before{left:0;} .fup-divider::after{right:0;}
+
+/* Pannello opzioni display (riepilogo, profilo, date/copy) */
+.feed-ctx-panel-opts{display:none;padding:12px 16px;gap:20px;align-items:flex-start;border-top:.5px solid var(--border-lt);border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;}
+.feed-ctx-panel-opts.open{display:flex;}
 .feed-dz{position:relative;border:1.5px dashed var(--border);border-radius:var(--r);padding:16px 20px;text-align:center;cursor:pointer;background:var(--surface);transition:all var(--t-base);min-width:200px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .feed-dz:hover,.feed-dz.drag-over{border-color:var(--green);background:var(--green-lt);}
 .feed-dz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
