@@ -1451,14 +1451,14 @@
       <button class="btn ghost sm icon" onclick="closeModal('add-client-modal')" aria-label="Chiudi">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" onkeydown="if(event.key==='Enter')addClient()"/></div>
-      <div class="field"><label>Pacchetto</label>
+      <div class="field" style="grid-column:1/-1;"><label for="nc-name">Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" onkeydown="if(event.key==='Enter')addClient()"/></div>
+      <div class="field"><label for="nc-pkg">Pacchetto</label>
         <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
       </div>
-      <div class="field"><label>Stato</label>
+      <div class="field"><label for="nc-status">Stato</label>
         <select id="nc-status"><option selected>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
       </div>
-      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0"/></div>
+      <div class="field"><label for="nc-revenue">€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0"/></div>
     </div>
     <div class="divider" style="margin:4px -18px;"></div>
     <div>
@@ -1535,13 +1535,13 @@
         <div class="field"><label>Occhiello</label>
           <input type="text" id="ed-eyebrow" placeholder="es. Insight · Cliente" oninput="renderEdPreview()"/></div>
         <div class="field"><label>Titolo *</label>
-          <input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
+          <label for="ed-title" class="sr-only">Titolo</label><input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
         <div class="field"><label>Parola colorata</label>
-          <input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
+          <label for="ed-accent" class="sr-only">Parola accentata</label><input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
         <div class="field"><label>Copy / sottotitolo</label>
-          <textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
+          <label for="ed-copy" class="sr-only">Copy</label><textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
         <div class="field"><label>Firma</label>
-          <input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
+          <label for="ed-author" class="sr-only">Autore</label><input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
       </div>
     </div>
     <div class="modal-actions">

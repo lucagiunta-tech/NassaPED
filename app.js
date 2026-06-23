@@ -4418,7 +4418,13 @@ function pedRenderDrawer(){
   body.innerHTML='';
   const sl=pedDrawerTmp;
   const mk=(tag,cls,style)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(style)el.style.cssText=style;return el;};
-  const addLabel=(text)=>{const l=mk('div','ped-field-label');l.textContent=text;body.appendChild(l);};
+  let _fieldId = 0;
+  const addLabel=(text,forId)=>{
+    const l=mk('label','ped-field-label');
+    l.textContent=text;
+    if(forId) l.htmlFor=forId;
+    body.appendChild(l);
+  };
   // Tipo chips
   addLabel('Tipo');
   const tipoWrap=mk('div','ped-tipo-chips');
@@ -4441,12 +4447,12 @@ function pedRenderDrawer(){
   });
   body.appendChild(statoWrap);
   // Brief
-  addLabel('Brief cliente');
-  const briefTA=mk('textarea','ped-field-ta');briefTA.rows=3;briefTA.placeholder='Brief per il creator…';briefTA.value=sl.brief||'';
+  addLabel('Brief cliente','ped-f-brief');
+  const briefTA=mk('textarea','ped-field-ta');briefTA.id='ped-f-brief';briefTA.rows=3;briefTA.placeholder='Brief per il creator…';briefTA.value=sl.brief||'';
   briefTA.oninput=e=>{pedDrawerTmp.brief=e.target.value;};body.appendChild(briefTA);
   // Creator
-  addLabel('Creator');
-  const creatorInp=mk('input','ped-field-inp');creatorInp.type='text';creatorInp.placeholder='Nome creator…';creatorInp.value=sl.creator||'';
+  addLabel('Creator','ped-f-creator');
+  const creatorInp=mk('input','ped-field-inp');creatorInp.id='ped-f-creator';creatorInp.type='text';creatorInp.placeholder='Nome creator…';creatorInp.value=sl.creator||'';
   creatorInp.oninput=e=>{pedDrawerTmp.creator=e.target.value;};body.appendChild(creatorInp);
   // Note regia collassabile
   const noteToggle=mk('button','ped-collapse-toggle');
@@ -4470,12 +4476,21 @@ function pedRenderDrawer(){
   body.appendChild(tmplToggle);body.appendChild(tmplBody);
   // Mostra il modal (non il drawer inline)
   const modal=document.getElementById('ped-slot-modal');
-  if(modal){modal.style.display='flex';}
+  if(modal){
+    modal.style.display='flex';
+    // Focus trap + focus sul primo campo
+    const box = modal.querySelector('div[style*="border-radius:14px"]');
+    FocusTrap.activate(box||modal);
+  }
 }
 
 function pedCloseDrawer(){
   const modal=document.getElementById('ped-slot-modal');
-  if(modal)modal.style.display='none';
+  if(modal){
+    const box = modal.querySelector('div[style*="border-radius:14px"]');
+    FocusTrap.deactivate(box||modal);
+    modal.style.display='none';
+  }
   // Legacy drawer compat
   const drawer=document.getElementById('ped-drawer');
   if(drawer)drawer.style.display='none';
