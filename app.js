@@ -4338,6 +4338,8 @@ function renderSbTab(){
   renderSbTabGrid();
   renderArchivioBozze();
 }
+
+function renderSbTabMonthPills(){
   const c=document.getElementById('sb-tab-month-pills');if(!c)return;c.innerHTML='';
   if(sbTabAccountIdx<0)return;
   MONTH_OPTIONS.forEach(m=>{
