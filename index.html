@@ -587,8 +587,18 @@
       </div>
     </div>
     <!-- Griglia storyboard -->
-    <div class="content-area" style="overflow-y:auto;flex:1;">
+    <div class="content-area" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:0;">
       <div id="sb-tab-grid" class="sb-tab-grid"></div>
+
+      <!-- Archivio Bozze -->
+      <div id="archivio-bozze-section" style="border-top:1px solid var(--border);margin-top:8px;padding:12px 16px 24px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;" onclick="toggleArchivioBozze()">
+          <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);">Archivio bozze</span>
+          <span id="archivio-bozze-count" style="font-size:11px;color:var(--text-3);"></span>
+          <svg id="archivio-bozze-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="archivio-bozze-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
     </div>
   </div>
 
@@ -1089,7 +1099,10 @@
         <div class="sb-tab-row">
           <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)" aria-label="Tab editor">Editor</button>
           <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)" aria-label="Tab parser note">Parser note</button>
-          <button class="sb-tab" id="sb-tab-cassetto" onclick="sbSwitchTab('cassetto',this)" aria-label="Tab cassetto">Cassetto</button>
+          <button class="btn ghost sm" onclick="sbSaveToArchivio()" style="margin-left:auto;font-size:11px;gap:4px;" title="Salva come bozza nell'Archivio">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Salva bozza
+          </button>
         </div>
         <!-- TAB: Editor -->
         <div class="sb-fields-scroll" id="sb-panel-editor">
@@ -1185,15 +1198,6 @@
           </div>
         </div>
 
-        <!-- TAB: Cassetto (bozze) -->
-        <div class="sb-fields-scroll" id="sb-panel-cassetto" style="display:none;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div class="sec-lbl">Bozze salvate</div>
-            <button class="btn sm" onclick="sbSaveToCassetto()">+ Salva corrente</button>
-          </div>
-          <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Salva lo storyboard corrente come bozza per riprenderlo dopo senza sovrascrivere le Stories.</p>
-          <div id="sb-cassetto-list"></div>
-        </div>
 
       </div><!-- end sb-fields -->
       <!-- COL 3: Live preview -->

@@ -311,7 +311,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, pilastri, adsCampaigns,
+      highlights, pedPlans, notesData, pilastri, adsCampaigns, sbBozze,
       meta: { showAllDates, showAllCopy, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -388,6 +388,7 @@ const CLOUD = {
     pedPlans   = data.pedPlans   || {};
     notesData  = data.notesData  || {};
     pilastri   = data.pilastri   || {};
+    sbBozze    = data.sbBozze    || {};
     if (data.meta) {
       showAllDates = data.meta.showAllDates !== false;
       showAllCopy  = data.meta.showAllCopy  !== false;
@@ -2485,7 +2486,7 @@ function openStoryboardModal(idx,presetFmt){
   sbFmt=st?.sbFmt||presetFmt||'feed';
   openModal('storyboard-modal');
   // Reset to editor tab
-  ['editor','parser','cassetto'].forEach(t=>{
+  ['editor','parser'].forEach(t=>{
     const p=document.getElementById('sb-panel-'+t);if(p)p.style.display=t==='editor'?'':'none';
   });
   document.querySelectorAll('.sb-tab').forEach(b=>b.classList.toggle('active',b.id==='sb-tab-editor'));
@@ -2743,12 +2744,11 @@ function renderSbSlides(){
 
 /* ══ SB TAB SWITCHER ══ */
 function sbSwitchTab(tab,el){
-  ['editor','parser','cassetto'].forEach(t=>{
+  ['editor','parser'].forEach(t=>{
     const panel=document.getElementById('sb-panel-'+t);
     if(panel)panel.style.display=t===tab?'':'none';
   });
   document.querySelectorAll('.sb-tab').forEach(b=>b.classList.toggle('active',b.id==='sb-tab-'+tab));
-  if(tab==='cassetto')renderSbCassetto();
 }
 
 /* ══ PARSER NOTE ══ */
@@ -2778,131 +2778,160 @@ function sbFillParserExample(){
   if(ta)ta.value='[NUM] 1.\n[OCCHIELLO] Strategia\n[TITOLO] Documenta tutto\n[COPY] Cattura screenshot, timestamp e file. La prova di quando hai creato è la tua difesa migliore.';
 }
 
-/* ══ CASSETTO (bozze storyboard) ══ */
-let sbCassetto=safeLocalJSON('sb_cassetto',[]);
-let cassettoRealizzati=safeLocalJSON('sb_realizzati',[]);
+/* ══ ARCHIVIO BOZZE STORYBOARD ══
+   Sostituisce il vecchio "Cassetto" (localStorage).
+   Le bozze sono salvate in Supabase dentro il JSON del progetto,
+   associate al cliente corrente (sbBozzeClientKey).
+   Struttura: sbBozze = { [clientName]: [ {id, name, savedAt, slides[]}, ... ] }
+════════════════════════════════════════════════════════════ */
+let sbBozze = {}; // caricato da CLOUD.apply()
 
-function sbSaveToCassetto(){
-  if(!sbTmpSlides.length){showToast('Nessuna slide da salvare','warn');return;}
-  const name=prompt('Nome bozza:','Bozza '+(sbCassetto.length+1));
-  if(!name)return;
-  const entry={id:Date.now(),name,savedAt:new Date().toISOString(),
-    slides:sbTmpSlides.map(s=>({num:s.num||'',eye:s.eye||'',title:s.title||'',note:s.note||'',url:s.url||'',sfondo:s.sfondo||SFONDI_DEFAULT,noteRegia:s.noteRegia||'',isPlaceholder:!!s.isPlaceholder}))};
-  sbCassetto.unshift(entry);
-  try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
-  renderSbCassetto();
-  showToast('✓ Bozza salvata nel cassetto');
+function sbBozzeClientKey() {
+  // Bozze per cliente (non per account — più flessibile)
+  if(typeof sbTabClientIdx !== 'undefined' && sbTabClientIdx >= 0 && clients[sbTabClientIdx])
+    return clients[sbTabClientIdx].name;
+  if(typeof feedClientIdx !== 'undefined' && feedClientIdx >= 0 && clients[feedClientIdx])
+    return clients[feedClientIdx].name;
+  return '__global__';
 }
 
-function sbLoadFromCassetto(id){
-  const entry=sbCassetto.find(e=>e.id===id);if(!entry)return;
+function sbGetBozze() {
+  return sbBozze[sbBozzeClientKey()] || [];
+}
+
+function sbSetBozze(arr) {
+  sbBozze[sbBozzeClientKey()] = arr;
+}
+
+// Chiamata dal bottone "Salva bozza" nel modal Slide Builder
+function sbSaveToArchivio() {
+  if(!sbTmpSlides.length){ showToast('Nessuna slide da salvare','warn'); return; }
+  const name = prompt('Nome bozza:', 'Bozza ' + (sbGetBozze().length + 1));
+  if(!name) return;
+  const entry = {
+    id: Date.now(),
+    name,
+    savedAt: new Date().toISOString(),
+    clientKey: sbBozzeClientKey(),
+    slides: sbTmpSlides.map(s=>({
+      num: s.num||'', eye: s.eye||'', title: s.title||'',
+      note: s.note||'', externalUrl: s.externalUrl||s.url||'',
+      sfondo: s.sfondo||'', noteRegia: s.noteRegia||'',
+      isPlaceholder: !!s.isPlaceholder
+    }))
+  };
+  const arr = sbGetBozze();
+  arr.unshift(entry);
+  sbSetBozze(arr);
+  autoSave();
+  renderArchivioBozze();
+  showToast('✓ Bozza salvata nell\'archivio');
+}
+
+// Carica una bozza nel Slide Builder
+function sbLoadBozza(id) {
+  const entry = sbGetBozze().find(e=>e.id===id);
+  if(!entry) return;
   showConfirm({
-    title:'Carica bozza',
-    body:'Le slide correnti verranno sostituite con questa bozza. Continui?',
-    okLabel:'Carica',
-    type:'warn',
-    onOk:()=>{
-  sbTmpSlides=entry.slides.map(s=>({...s,blobUrl:'',_file:null}));
-  sbCurSlide=0;
-  renderSbBuilder();
-  sbSwitchTab('editor',document.getElementById('sb-tab-editor'));
-  showToast('✓ Bozza caricata');
-  }});
-}
-
-function sbDeleteFromCassetto(id){
-  const entry=sbCassetto.find(e=>e.id===id);
-  const idx=sbCassetto.findIndex(e=>e.id===id);
-  sbCassetto=sbCassetto.filter(e=>e.id!==id);
-  try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
-  renderSbCassetto();
-  if(entry){
-    showUndoToast('Bozza eliminata',()=>{
-      sbCassetto.splice(idx,0,entry);
-      try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
-      renderSbCassetto();
-    });
-  }
-}
-
-let sbCasTab = 'bozze'; // 'bozze' | 'realizzati'
-
-function sbSwitchCasTab(tab){
-  sbCasTab = tab;
-  renderSbCassetto();
-}
-
-function renderSbCassetto(){
-  const c=document.getElementById('sb-cassetto-list');if(!c)return;
-
-  // Tab header
-  const tabHtml = `<div class="sb-cas-tabs">
-    <button class="sb-cas-tab${sbCasTab==='bozze'?' active':''}" onclick="sbSwitchCasTab('bozze')">Bozze</button>
-    <button class="sb-cas-tab${sbCasTab==='realizzati'?' active':''}" onclick="sbSwitchCasTab('realizzati')">Realizzati</button>
-  </div>`;
-
-  if(sbCasTab === 'bozze'){
-    if(!sbCassetto.length){
-      c.innerHTML=tabHtml+'<div class="sb-cass-empty">Nessuna bozza salvata.<br>Clicca "+ Salva corrente" per iniziare.</div>';return;
+    title: 'Carica bozza',
+    body: 'Le slide correnti verranno sostituite con "' + entry.name + '". Continui?',
+    okLabel: 'Carica',
+    type: 'warn',
+    onOk: () => {
+      sbTmpSlides = entry.slides.map(s=>({...s, url: s.externalUrl||'', blobUrl:'', _file:null}));
+      sbCurSlide = 0;
+      renderSbBuilder();
+      sbSwitchTab('editor', document.getElementById('sb-tab-editor'));
+      openModal('storyboard-modal');
+      showToast('✓ Bozza "' + entry.name + '" caricata');
     }
-    c.innerHTML=tabHtml;
-    sbCassetto.forEach(entry=>{
-      const d=document.createElement('div');d.className='sb-cassetto-item';
-      const dt=new Date(entry.savedAt);
-      const dateStr=dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'})+' '+dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-      d.innerHTML=`<div><div class="sb-cass-name">${entry.name}</div><div class="sb-cass-meta">${entry.slides.length} slide · ${dateStr}</div></div><div class="sb-cass-actions"><button class="sb-cass-btn" onclick="sbLoadFromCassetto(${entry.id})">Carica</button><button class="sb-cass-btn" style="color:var(--red);" onclick="showConfirm({title:'Elimina bozza',body:'La bozza verrà eliminata.',okLabel:'Elimina',type:'danger',onOk:()=>sbDeleteFromCassetto(${entry.id})})">✕</button></div>`;
-      c.appendChild(d);
-    });
-  } else {
-    // Tab Idee realizzate
-    if(!cassettoRealizzati.length){
-      c.innerHTML=tabHtml+'<div class="sb-cass-empty">Nessun template realizzato.<br>Appariranno qui quando il creator carica il video.</div>';return;
-    }
-    c.innerHTML=tabHtml;
-    cassettoRealizzati.forEach((entry,ri)=>{
-      const d=document.createElement('div');d.className='sb-cassetto-item';
-      const dt=entry.archiviatoAt ? new Date(entry.archiviatoAt) : null;
-      const dateStr=dt ? dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'}) : '—';
-      const nSlide = (entry.slides||[]).length;
-
-      // Miniatura con checkmark verde
-      const thumb=document.createElement('div');
-      thumb.className='sb-real-thumb';
-      thumb.innerHTML='<span class="sb-real-check">✓</span>';
-
-      const info=document.createElement('div');
-      info.style.cssText='flex:1;min-width:0;';
-      info.innerHTML=`<div class="sb-cass-name">${entry.name||'Template'}</div>`
-        +`<div class="sb-cass-meta">${nSlide} slide · ${dateStr}</div>`
-        +`<span class="sb-ugc-tag">UGC</span>`;
-
-      const riusaBtn=document.createElement('button');
-      riusaBtn.className='sb-riusa-btn';
-      riusaBtn.textContent='Riusa';
-      riusaBtn.onclick=()=>{
-        // Duplica il template come nuova bozza nel cassetto
-        const clone={
-          ...entry,
-          id: Date.now(),
-          name: (entry.name||'Template')+' (copia)',
-          salvatoAt: Date.now(),
-          slides: (entry.slides||[]).map(s=>({...s}))
-        };
-        // Rimuove campi specifici del "realizzato"
-        delete clone.archiviatoAt;
-        sbCassetto.unshift(clone);
-        try{localStorage.setItem('sb_cassetto',JSON.stringify(sbCassetto));}catch(e){}
-        showToast('✓ Template duplicato come nuova bozza');
-        sbSwitchCasTab('bozze');
-      };
-
-      d.appendChild(thumb);
-      d.appendChild(info);
-      d.appendChild(riusaBtn);
-      c.appendChild(d);
-    });
-  }
+  });
 }
+
+// Rinomina bozza inline
+function sbRenameBozza(id) {
+  const arr = sbGetBozze();
+  const entry = arr.find(e=>e.id===id);
+  if(!entry) return;
+  const name = prompt('Rinomina bozza:', entry.name);
+  if(!name || name === entry.name) return;
+  entry.name = name;
+  sbSetBozze(arr);
+  autoSave();
+  renderArchivioBozze();
+}
+
+// Elimina bozza con undo
+function sbDeleteBozza(id) {
+  const arr = sbGetBozze();
+  const idx = arr.findIndex(e=>e.id===id);
+  if(idx<0) return;
+  const entry = arr[idx];
+  arr.splice(idx,1);
+  sbSetBozze(arr);
+  autoSave();
+  renderArchivioBozze();
+  showUndoToast('Bozza "'+entry.name+'" eliminata', ()=>{
+    const cur = sbGetBozze();
+    cur.splice(idx, 0, entry);
+    sbSetBozze(cur);
+    autoSave();
+    renderArchivioBozze();
+  });
+}
+
+let _archivioBozzeOpen = true;
+
+function toggleArchivioBozze() {
+  _archivioBozzeOpen = !_archivioBozzeOpen;
+  const list = document.getElementById('archivio-bozze-list');
+  const chev = document.getElementById('archivio-bozze-chevron');
+  if(list) list.style.display = _archivioBozzeOpen ? '' : 'none';
+  if(chev) chev.style.transform = _archivioBozzeOpen ? '' : 'rotate(-90deg)';
+}
+
+function renderArchivioBozze() {
+  const list = document.getElementById('archivio-bozze-list');
+  const count = document.getElementById('archivio-bozze-count');
+  if(!list) return;
+  const bozze = sbGetBozze();
+  if(count) count.textContent = bozze.length ? '(' + bozze.length + ')' : '';
+
+  if(!bozze.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:8px 0;">Nessuna bozza salvata. Apri lo Slide Builder e clicca "Salva bozza".</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  bozze.forEach(entry => {
+    const dt = new Date(entry.savedAt);
+    const dateStr = dt.toLocaleDateString('it-IT',{day:'numeric',month:'short'})
+      + ' ' + dt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface);border-radius:8px;border:1px solid var(--border);';
+
+    // Icona
+    row.innerHTML = `
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(entry.name)}</div>
+        <div style="font-size:11px;color:var(--text-3);">${entry.slides.length} slide · ${dateStr}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button class="btn ghost sm" onclick="sbLoadBozza(${entry.id})" title="Carica nel builder" style="font-size:11px;padding:3px 8px;">Carica</button>
+        <button class="btn ghost sm" onclick="sbRenameBozza(${entry.id})" title="Rinomina" style="font-size:11px;padding:3px 6px;">✏︎</button>
+        <button class="btn ghost sm" onclick="sbDeleteBozza(${entry.id})" title="Elimina" style="font-size:11px;padding:3px 6px;color:var(--red);">✕</button>
+      </div>`;
+    list.appendChild(row);
+  });
+}
+
+// Compatibilità: mantieni alias vecchi nomi per non rompere eventuali call
+function sbSaveToCassetto(){ sbSaveToArchivio(); }
+function renderSbCassetto(){ renderArchivioBozze(); }
+
+
 
 /* HIGHLIGHT MODAL */
 function openHighlightModal(idx){hlEditIdx=idx;hlTmpCover=null;const hl=idx>=0?currentHighlights()[idx]:null;const nn=document.getElementById('hl-name');if(nn)nn.value=hl?hl.name:'';const ll=document.getElementById('hl-upload-lbl');if(ll)ll.innerHTML=hl?.coverUrl?'<strong>Clicca per cambiare copertina</strong>':'Carica copertina · <strong>clicca per sfogliare</strong>';openModal('highlight-modal');}
@@ -4250,9 +4279,8 @@ function renderSbTab(){
   if(titleEl&&sbTabClientIdx>=0)titleEl.textContent=clients[sbTabClientIdx].name+' — Storyboard';
   renderSbTabMonthPills();
   renderSbTabGrid();
+  renderArchivioBozze();
 }
-
-function renderSbTabMonthPills(){
   const c=document.getElementById('sb-tab-month-pills');if(!c)return;c.innerHTML='';
   if(sbTabAccountIdx<0)return;
   MONTH_OPTIONS.forEach(m=>{
@@ -5182,6 +5210,17 @@ async function loadFromCloud(){
   } else {
     CLOUD.setStatus('idle');
   }
+  // Migra vecchie bozze da localStorage → Supabase (una-tantum)
+  try {
+    const oldBozze = JSON.parse(localStorage.getItem('sb_cassetto')||'[]');
+    if(oldBozze.length && !Object.keys(sbBozze).length){
+      sbBozze['__migrated__'] = oldBozze;
+      localStorage.removeItem('sb_cassetto');
+      localStorage.removeItem('sb_realizzati');
+      autoSave();
+      console.log('[NassaPED] Migrate: '+oldBozze.length+' bozze da localStorage → Supabase');
+    }
+  } catch(_){}
   CLOUD._booting=false;
   showBootOverlay(false);
   routerRestore();
@@ -6971,17 +7010,8 @@ function archiviaTemplate(sbId){
   });
   if(!found) return;
   found.fileCaricato = true;
-  // Archivia nel cassetto realizzati
-  const entry = {
-    ...found,
-    archiviatoAt: new Date().toISOString(),
-    nomeCreator: '',
-  };
-  cassettoRealizzati.unshift(entry);
-  try{ localStorage.setItem('sb_realizzati', JSON.stringify(cassettoRealizzati)); }catch(e){}
   autoSave();
-  renderSbCassetto();
-  showToast('✓ Template archiviato come realizzato');
+  showToast('✓ File caricato — lo storyboard è pronto');
 }
 
 
