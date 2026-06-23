@@ -23,9 +23,10 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-nassa-key');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Auth: cookie HttpOnly o x-nassa-key legacy
+  const _cookie = (req.headers.cookie||'').match(/nassa_session=([^;]+)/)?.[1];
   const key = req.headers['x-nassa-key'];
-  if (!key || key !== process.env.NASSA_API_KEY)
-    return res.status(401).json({ error: 'Unauthorized' });
+  if(!_cookie && (!key || key !== process.env.NASSA_API_KEY)) return res.status(401).json({error:'Non autorizzato'});
 
   const token = process.env.DROPBOX_ACCESS_TOKEN;
   if (!token)

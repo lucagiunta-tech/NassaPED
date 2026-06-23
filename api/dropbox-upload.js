@@ -107,8 +107,10 @@ export default async function handler(req, res) {
   res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Auth: cookie HttpOnly o x-nassa-key legacy
+  const _cookie = (req.headers.cookie||'').match(/nassa_session=([^;]+)/)?.[1];
   const key = req.headers['x-nassa-key'];
-  if (!key || key !== process.env.NASSA_API_KEY) return res.status(401).json({ error: 'Unauthorized' });
+  if(!_cookie && (!key || key !== process.env.NASSA_API_KEY)) return res.status(401).json({error:'Non autorizzato'});
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   let file = null;

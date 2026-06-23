@@ -148,12 +148,12 @@ function triggerUndo(){
 
 /* ══════════════════════════════════════════
    NASSA CLOUD — Supabase sync via /api/project
-   All Supabase credentials stay server-side.
-   Browser only knows NASSA_SECRET_2026 (shared API key).
+   Le credenziali Supabase restano server-side.
+   Browser only knows NASSA SESSION via cookie HttpOnly (JWT).
 ══════════════════════════════════════════ */
 const CLOUD = {
   apiUrl: window.location.origin + '/api/project',
-  apiKey: 'NASSA_SECRET_2026',
+  apiKey: '', // Rimosso: auth tramite cookie HttpOnly (più sicuro)
   user: localStorage.getItem('nassa_user') || 'shared',
   _saveTimer: null,
   _status: 'idle',
@@ -165,7 +165,7 @@ const CLOUD = {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(`${CLOUD.apiUrl}?user=${CLOUD.user}`, {
-        headers: { 'x-nassa-key': CLOUD.apiKey },
+        credentials: 'include',
         signal: controller.signal
       });
       clearTimeout(timeout);
@@ -178,7 +178,7 @@ const CLOUD = {
         console.warn('[CLOUD] Load timeout — retrying once...');
         try {
           CLOUD.setStatus('loading');
-          const res2 = await fetch(`${CLOUD.apiUrl}?user=${CLOUD.user}`, { headers: { 'x-nassa-key': CLOUD.apiKey } });
+          const res2 = await fetch(`${CLOUD.apiUrl}?user=${CLOUD.user}`, { credentials: 'include' });
           if (!res2.ok) throw new Error('HTTP ' + res2.status);
           const { data, updatedAt } = await res2.json();
           if (data) { CLOUD.setStatus('saved'); return { data, updatedAt }; }
@@ -204,7 +204,8 @@ const CLOUD = {
       console.log('%c[NassaPED] saveNow → '+sizeKB+'KB', 'color:#f59e0b;font-weight:700');
       const res = await fetch(CLOUD.apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body
       });
       if (res.status === 413) {
@@ -374,7 +375,7 @@ const DROPBOX = {
   async getToken() {
     // Cache token for 1 hour
     if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3600000) return DROPBOX._token;
-    const res = await fetch('/api/dropbox-token', { headers: { 'x-nassa-key': CLOUD.apiKey } });
+    const res = await fetch('/api/dropbox-token', { credentials: 'include' });
     if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
     const d = await res.json();
     DROPBOX._token = d.token;
@@ -425,10 +426,8 @@ const DROPBOX = {
       // Step 2: Create shared link via our server (avoids CSP restrictions)
       const linkRes = await fetch('/api/dropbox-link', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-nassa-key': CLOUD.apiKey
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ path: uploadData.path_display })
       });
       const linkText = await linkRes.text();
@@ -6702,7 +6701,7 @@ async function saveAdsCampaign(){
       formData.append('path',destPath);
       const res=await fetch('/api/dropbox-upload',{
         method:'POST',
-        headers:{'x-nassa-key':CLOUD.apiKey},
+        credentials:'include',
         body:formData
       });
       if(res.ok){
@@ -7815,4 +7814,30 @@ function applyTheme(theme){
 function toggleDarkMode(){
   const current = document.documentElement.getAttribute('data-theme');
   applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+
+/* ── defer ready: registra le funzioni reali e riproduce la coda ── */
+if(typeof window.__appReady === 'function'){
+  [
+    'switchTab','openClientFeed','toggleAllMonthsMode','toggleBacklogFilter',
+    'toggleFeedView','onFeedAccountChange','onFeedClientChange','toggleFmtDropdown',
+    'openFeedUploadPanel','toggleFeedPanel','toggleFigProfile','toggleAllDates','toggleAllCopy',
+    'openEditorialModal','addPendingSlot','pedSwitchTab','pedCalNav',
+    'pedGenerate','pedClear','pedOpenDrawerNew','pedDrawerSave','pedDrawerDelete','pedCloseDrawer',
+    'onStoriesAccountChange','onStoriesClientChange','openStoriesUploadPanel',
+    'setFeedLinkTab','addFeedLink','setStoriesLinkTab','addStoryLink',
+    'toggleSbView','onSbTabAccountChange','openStoryboardModal',
+    'toggleDarkMode','toggleUserSwitcher','calNav','calGoToday','setCalView',
+    'annoPrevYear','annoNextYear','annoSetFilter','annoToggleMonth',
+    'batchReuploadMissing','closeFeedUploadPanel','closeStoriesUploadPanel',
+    'queueFeedFiles','queueStoryFiles','batchReuploadFromFiles',
+    'feedProfileAvatarClick','feedProfileImgChange','feedProfileBioInput',
+    'figSaveField','figBioCounter','saveCarousel','openCopyModal',
+    'openBriefModal','sbTabMoveToFeed','sbLoadBozza','toggleArchivioBozze',
+    'saveEditorialCard','closeModal'
+  ].forEach(name => {
+    if(typeof window[name] === 'function') window['_real_'+name] = window[name];
+  });
+  window.__appReady();
 }

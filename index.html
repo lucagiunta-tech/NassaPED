@@ -3,6 +3,50 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+
+<!-- Early init: proxy per le funzioni chiamate dagli onclick inline
+     prima che app.js (defer) sia pronto. Le chiamate vengono accodate
+     e riprodotte subito dopo DOMContentLoaded. -->
+<script>
+(function(){
+  var _queue = [];
+  var _ready = false;
+  // Lista di funzioni esposte globalmente da app.js
+  var FNS = [
+    'switchTab','openClientFeed','toggleAllMonthsMode','toggleBacklogFilter',
+    'toggleFeedView','onFeedAccountChange','onFeedClientChange','toggleFmtDropdown',
+    'openFeedUploadPanel','toggleFeedPanel','toggleFigProfile','toggleAllDates','toggleAllCopy',
+    'openEditorialModal','addPendingSlot','switchTab','pedSwitchTab','pedCalNav',
+    'pedGenerate','pedClear','pedOpenDrawerNew','pedDrawerSave','pedDrawerDelete','pedCloseDrawer',
+    'onStoriesAccountChange','onStoriesClientChange','openStoriesUploadPanel',
+    'setFeedLinkTab','addFeedLink','setStoriesLinkTab','addStoryLink',
+    'toggleSbView','onSbTabAccountChange','openStoryboardModal',
+    'toggleDarkMode','toggleUserSwitcher','calNav','calGoToday','setCalView',
+    'annoPrevYear','annoNextYear','annoSetFilter','annoToggleMonth',
+    'batchReuploadMissing','closeFeedUploadPanel','closeStoriesUploadPanel',
+    'queueFeedFiles','queueStoryFiles','batchReuploadFromFiles',
+    'feedProfileAvatarClick','feedProfileImgChange','feedProfileBioInput',
+    'figSaveField','figBioCounter','saveCarousel','openCopyModal',
+    'openBriefModal','sbTabMoveToFeed','sbLoadBozza','toggleArchivioBozze',
+    'saveEditorialCard','closeModal'
+  ];
+  FNS.forEach(function(name){
+    window[name] = function(){
+      var args = arguments;
+      if(_ready){ return window['_real_'+name]&&window['_real_'+name].apply(this,args); }
+      _queue.push({name:name,args:args});
+    };
+  });
+  window.__appReady = function(){
+    _ready = true;
+    FNS.forEach(function(name){
+      if(window['_real_'+name]) window[name] = window['_real_'+name];
+    });
+    _queue.forEach(function(c){ window[c.name]&&window[c.name].apply(null,c.args); });
+    _queue = [];
+  };
+})();
+</script>
 <title>Nassa Studio</title>
   <meta name="description" content="Nassa Studio — piattaforma interna di pianificazione contenuti social">
   <meta name="robots" content="noindex, nofollow">
@@ -1439,7 +1483,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782171720"></script>
+<script src="/app.js?v=1782171720" defer></script>
 
 <!-- ══ MODAL CARD EDITORIALE ══ -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
