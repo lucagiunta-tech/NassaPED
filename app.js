@@ -6117,7 +6117,14 @@ function _feedPopoverOutside(e){
 }
 
 function toggleFeedPanel(){
-  /* Pannello opzioni rimosso — le funzioni sono ora inline nella riga 2 */
+  feedPanelOpen=!feedPanelOpen;
+  const panel=document.getElementById('feed-ctx-panel-opts');
+  const icon=document.getElementById('feed-expand-icon');
+  const btn=document.getElementById('feed-expand-btn');
+  if(panel) panel.classList.toggle('open', feedPanelOpen);
+  if(icon)icon.innerHTML=feedPanelOpen
+    ?'<polyline points="18 15 12 9 6 15"/>'
+    :'<polyline points="6 9 12 15 18 9"/>';
 }
 
 function toggleSidebar(){
