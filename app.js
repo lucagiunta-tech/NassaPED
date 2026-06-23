@@ -4070,13 +4070,32 @@ function renderCalendar(){
     const HOURS=[];for(let h=8;h<=22;h++)HOURS.push(h);
     const weekEvMap={};weekDays.forEach(d=>{const ds=isoDate(d.getFullYear(),d.getMonth()+1,d.getDate());weekEvMap[ds]=events[ds]||[];});
     html+='<div class="cal-time-col">';HOURS.forEach(h=>{html+=`<div class="cal-time-slot"><span class="cal-time-label">${h}:00</span></div>`;});html+='</div>';
-    weekDays.forEach(d=>{const ds=isoDate(d.getFullYear(),d.getMonth()+1,d.getDate());const dayEvs=weekEvMap[ds]||[];html+='<div class="cal-week-col">';HOURS.forEach(()=>{html+='<div class="cal-week-slot"></div>';});dayEvs.forEach((ev,ei)=>{
-  const top=4+ei*40;
-  const cls=ev.type==='feed'?'feed-post':ev.type==='story'?'story-item':ev.type==='ped'?(ev.pedType==='template'?'ped-template':'ped-autonoma'):'highlight-item';
-  const dot=ev.type==='ped'?(ev.pedType==='template'?'🎨':'👤'):'';
-  const thumbHtml=ev.thumb?`<img src="${ev.thumb}" class="cal-ev-thumb-week" onerror="this.style.display='none'" />`:(dot?`<span>${dot}</span>`:`<span>${ev.type==='feed'?'🖼':''}</span>`);
-  html+=`<div class="cal-week-event ${cls}" style="top:${top}px;height:34px;" onclick="openCalPanel('${ds}')">${thumbHtml}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${ev.clientName.split(' — ')[0]}: ${ev.label}</span></div>`;
-});html+='</div>';});
+    weekDays.forEach(d=>{
+  const ds=isoDate(d.getFullYear(),d.getMonth()+1,d.getDate());
+  const dayEvs=weekEvMap[ds]||[];
+  html+='<div class="cal-week-col">';
+  HOURS.forEach(()=>{html+='<div class="cal-week-slot"></div>';});
+  // Contenitore eventi — non usa position:absolute per slot orari
+  // ma una lista scroll verticale sopra la griglia
+  if(dayEvs.length){
+    html+='<div class="cal-week-events-list">';
+    dayEvs.forEach((ev,ei)=>{
+      const cls=ev.type==='feed'?'feed-post':ev.type==='story'?'story-item':ev.type==='ped'?(ev.pedType==='template'?'ped-template':'ped-autonoma'):ev.type==='ads'?'ads-item':'highlight-item';
+      const thumb=ev.thumb?`<img src="${ev.thumb}" class="cal-ev-thumb-week" onerror="this.style.display='none'" />`:'';
+      const label=ev.label||'';
+      const typeBadge=ev.type==='feed'?'Feed':ev.type==='story'?'Story':ev.type==='ped'?'UGC':ev.type==='ads'?'Ads':'';
+      html+=`<div class="cal-week-ev-item ${cls}" onclick="openCalPanel('${ds}')">
+        ${thumb}
+        <div class="cwi-body">
+          <span class="cwi-type">${typeBadge}</span>
+          <span class="cwi-label">${label}</span>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+});
     html+='</div>';body.innerHTML=html;
   }
 }
