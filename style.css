@@ -57,6 +57,80 @@
   /* Altezza max cella: 40% dello spazio disponibile = ~2.5 righe visibili */
   --cell-max-h: calc((100dvh - var(--chrome-h)) * 0.62);
 }
+/* ══ DARK MODE ══ */
+[data-theme="dark"]{
+  --bg:#0f0f11;
+  --surface:#1a1a1e;
+  --border:#2a2a30;
+  --border-lt:#222228;
+  --text:#f0f0f2;
+  --text-2:#9ca3af;
+  --text-3:#6b7280;
+  --green-lt:#0d2b0c;
+  --green-mid:#1a4d18;
+  --green-text:#0dff00;
+  --teal-lt:#0a1f1e;
+  --amber:#3a3500;
+  --amber-lt:#2a2800;
+  --amber-dk:#f0d060;
+  --red-lt:#2a0a0a;
+  --blue-lt:#0a1020;
+  --chip-feed-bg:#0d2b0c;--chip-feed-text:#4ade80;
+  --chip-story-bg:#0a1628;--chip-story-text:#60a5fa;
+  --chip-highlight-bg:#2a2000;--chip-highlight-text:#fbbf24;
+  --warning-bg:#1a1400;--warning-border:#3a2800;--warning-text:#fbbf24;
+  --danger-bg:#1a0a0a;--danger-border:#5a1a1a;
+  --cell-bg:#252528;
+  --placeholder:#374151;
+  --overlay-dark:rgba(0,0,0,.75);
+  --overlay-light:rgba(26,26,30,.95);
+}
+
+/* Dark — aggiustamenti specifici per elementi che usano #fff / #111 hardcoded */
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .subtopbar,
+[data-theme="dark"] .feed-ctx-bar,
+[data-theme="dark"] .feed-ig-profile,
+[data-theme="dark"] .modal-overlay .modal,
+[data-theme="dark"] .feed-upload-popover,
+[data-theme="dark"] .cal-day-panel,
+[data-theme="dark"] .sb-modal,
+[data-theme="dark"] .toast{
+  background:var(--surface);
+  color:var(--text);
+}
+[data-theme="dark"] .feed-bar-r2,
+[data-theme="dark"] .cal-toolbar,
+[data-theme="dark"] .anno-page{
+  background:var(--bg);
+}
+[data-theme="dark"] .cal-teatro-day,
+[data-theme="dark"] .feed-card,
+[data-theme="dark"] .story-card{
+  background:var(--surface);
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea{
+  background:var(--surface);
+  color:var(--text);
+  border-color:var(--border);
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder{
+  color:var(--text-3);
+}
+/* Green badge text fix — su sfondo verde il testo deve essere scuro */
+[data-theme="dark"] .feed-upload-quick-btn,
+[data-theme="dark"] .fbar-pill.active,
+[data-theme="dark"] .month-pill.active{
+  color:#0a1a00;
+}
+/* Scrollbar dark */
+[data-theme="dark"] ::-webkit-scrollbar-track{ background:var(--bg); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb{ background:var(--border); }
+
+
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:var(--fs-base);-webkit-font-smoothing:antialiased;}
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}

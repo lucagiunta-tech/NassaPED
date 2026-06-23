@@ -7780,3 +7780,22 @@ document.addEventListener('DOMContentLoaded',async()=>{
   init();const av=document.getElementById('user-avatar');if(av)av.textContent=CLOUD.user.slice(0,2).toUpperCase();
   await loadFromCloud();
 });
+
+
+/* ══ DARK MODE ══ */
+(function initTheme(){
+  const saved = localStorage.getItem('nassa_theme');
+  if(saved === 'dark') applyTheme('dark');
+})();
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if(btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('nassa_theme', theme);
+}
+
+function toggleDarkMode(){
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
