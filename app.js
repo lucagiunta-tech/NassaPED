@@ -186,7 +186,25 @@ const CLOUD = {
           CLOUD.setStatus('idle'); return null;
         } catch(e2) { CLOUD.setStatus('error'); return null; }
       }
-      if (!e.message.includes('404')) console.warn('[CLOUD] Load failed:', e.message);
+      if(e.name !== 'AbortError'){
+        console.warn('[CLOUD] Load failed:', e.message);
+        CLOUD.setStatus('error');
+        // Mostra snapshot locale se disponibile
+        const local = localStorage.getItem('nassa_offline_snapshot');
+        if(local){
+          try {
+            const {data, ts} = JSON.parse(local);
+            const age = Math.round((Date.now()-ts)/60000);
+            showToast('⚠ Caricamento dal server fallito. Mostro dati locali ('+(age<1?'<1':age)+' min fa).','warn');
+            return {data, updatedAt: new Date(ts).toISOString(), fromLocalCache: true};
+          } catch(pe){}
+        } else {
+          if(!navigator.onLine)
+            showToast('⚠ Nessuna connessione. Riconnettiti per caricare i dati.','warn');
+          else
+            showToast('⚠ Impossibile caricare i dati dal server. Riprova tra qualche secondo.','warn');
+        }
+      }
       CLOUD.setStatus('error'); return null;
     }
   },
@@ -218,10 +236,27 @@ const CLOUD = {
       }
       if (!res.ok) throw new Error('HTTP ' + res.status);
       CLOUD.setStatus('saved');
+      // Rimuovi snapshot locale — il server ha i dati aggiornati
+      localStorage.removeItem('nassa_offline_snapshot');
       console.log('%c[NassaPED] saveNow ✅ saved ('+sizeKB+'KB)', 'color:#22c97a;font-weight:700');
     } catch(e) {
       console.warn('[CLOUD] Save failed:', e.message);
       CLOUD.setStatus('error');
+      // Salva in localStorage come backup locale
+      try {
+        localStorage.setItem('nassa_offline_snapshot', JSON.stringify({
+          data: projectData,
+          ts: Date.now(),
+          user: CLOUD.user
+        }));
+        console.log('[CLOUD] Snapshot saved to localStorage as fallback');
+      } catch(le) { /* localStorage pieno */ }
+      // Toast con info + retry
+      const isOffline = !navigator.onLine;
+      const msg = isOffline
+        ? '⚠ Nessuna connessione — dati salvati localmente. Verranno sincronizzati al ritorno online.'
+        : '⚠ Salvataggio fallito ('+e.message+'). I dati sono salvati localmente.';
+      showToast(msg, 'warn');
     }
   },
 
@@ -234,10 +269,18 @@ const CLOUD = {
       pending: { text: '✎ Modificato', cls: 'cloud-pending' },
       saving:  { text: '⟳ Salvo…', cls: 'cloud-saving' },
       saved:   { text: '✓ Salvato', cls: 'cloud-saved' },
-      error:   { text: '⚠ Offline', cls: 'cloud-error' },
+      error:   { text: '⚠ Offline — clicca per riprovare', cls: 'cloud-error' },
     };
     const m = map[s] || map.idle;
     el.textContent = m.text; el.className = 'cloud-badge ' + m.cls;
+    // Badge errore cliccabile per retry
+    if(s === 'error'){
+      el.style.cursor = 'pointer';
+      el.title = 'Clicca per riprovare la sincronizzazione';
+      el.onclick = ()=>{ el.onclick=null; el.style.cursor=''; loadFromCloud(); };
+    } else {
+      el.onclick = null; el.style.cursor = '';
+    }
   },
 
   snapshot() {
@@ -7867,6 +7910,34 @@ window.addEventListener('beforeunload',e=>{
     e.preventDefault();
     e.returnValue='Ci sono '+DROPBOX.uploading+' file ancora in caricamento su Dropbox. Uscire ora li perderai.';
   }
+});
+
+
+/* ── Auto-sync quando torna la connessione ── */
+window.addEventListener('online', async () => {
+  console.log('[CLOUD] Back online — checking for pending local snapshot');
+  const local = localStorage.getItem('nassa_offline_snapshot');
+  if(local){
+    try {
+      const {data, user} = JSON.parse(local);
+      if(user === CLOUD.user){
+        showToast('🔄 Connessione ripristinata — sincronizzazione in corso…');
+        await CLOUD.saveNow(data);
+        if(CLOUD._status === 'saved'){
+          localStorage.removeItem('nassa_offline_snapshot');
+          showToast('✓ Dati sincronizzati con il server');
+        }
+      }
+    } catch(e){ console.warn('[CLOUD] Auto-sync failed:', e.message); }
+  } else {
+    showToast('✓ Connessione ripristinata');
+    loadFromCloud();
+  }
+});
+
+window.addEventListener('offline', () => {
+  CLOUD.setStatus('error');
+  showToast('⚠ Connessione persa — le modifiche vengono salvate localmente', 'warn');
 });
 
 document.addEventListener('DOMContentLoaded',async()=>{
