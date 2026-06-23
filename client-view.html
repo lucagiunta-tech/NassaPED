@@ -425,6 +425,19 @@ function cvRenderPreview() {
     if(item.copy?.trim()) {
       const cd = document.createElement('div'); cd.className='cv-copy'; cd.textContent=item.copy; post.appendChild(cd);
     }
+    // Per carousel: show per-slide copy if present
+    if(item.type==='carousel' && item.slides?.some(s=>s.copy?.trim())) {
+      const slideCopies = document.createElement('div');
+      slideCopies.style.cssText='border-top:1px solid var(--border-lt);';
+      item.slides.forEach((s,si)=>{
+        if(!s.copy?.trim()) return;
+        const sc=document.createElement('div');
+        sc.style.cssText='padding:6px 10px;font-size:11px;color:var(--text-2);line-height:1.4;border-bottom:1px solid var(--border-lt);display:flex;gap:6px;';
+        sc.innerHTML=`<span style="font-weight:700;color:var(--text-3);flex-shrink:0;">${si+1}.</span><span>${s.copy}</span>`;
+        slideCopies.appendChild(sc);
+      });
+      post.appendChild(slideCopies);
+    }
     // Show revision note if present
     if(item.clientNote?.trim()) {
       const noteEl = document.createElement('div');

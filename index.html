@@ -995,7 +995,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
           <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="ec-new-acc-name" placeholder="Es: Modica IG"/></div>
           <div class="field" style="margin:0;"><label>Piattaforma</label>
-            <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
+            <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Altro</option></select>
           </div>
           <button class="btn primary sm" onclick="ecAddAccount()" style="margin-bottom:1px;">+</button>
         </div>
@@ -1054,9 +1054,9 @@
 
 <!-- CAROUSEL MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="carousel-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:540px;width:95vw;">
     <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')" aria-label="Chiudi">✕</button></div>
-    <p class="modal-hint">La prima slide appare nella griglia.</p>
+    <p class="modal-hint">La prima slide appare nella griglia. Ogni slide può avere un copy dedicato.</p>
     <div class="c-upload-zone" id="c-upload-zone">
       <input type="file" id="c-file-input" accept="image/*" multiple onchange="addCarouselFiles(this.files)"/>
       <p>Trascina immagini o <strong>clicca per sfogliare</strong></p>
@@ -1314,7 +1314,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
         <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="nc-acc-name" placeholder="Es: Modica IG"/></div>
         <div class="field" style="margin:0;"><label>Piattaforma</label>
-          <select id="nc-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Altro</option></select>
+          <select id="nc-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Altro</option></select>
         </div>
       </div>
       <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Puoi aggiungere altri account dopo dalla scheda cliente.</div>
