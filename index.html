@@ -575,8 +575,12 @@
         </div>
         <div class="ped-cal-toolbar-right">
           <div class="freq-days-mini" id="ped-freq-days"></div>
-          <button class="btn sm primary" onclick="pedGenerate()">Genera piano</button>
-          <button class="btn sm" onclick="pedClear()">Svuota</button>
+          <button class="btn sm primary" onclick="pedOpenDrawerNew()" style="gap:5px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Aggiungi slot
+          </button>
+          <button class="btn sm ghost" onclick="pedGenerate()">Genera piano</button>
+          <button class="btn sm ghost" onclick="pedClear()">Svuota</button>
         </div>
       </div>
       <!-- Empty state -->
@@ -590,18 +594,7 @@
           <div class="ped-cal-head" id="ped-cal-head"></div>
           <div class="ped-cal-grid" id="ped-cal-grid"></div>
         </div>
-        <!-- Slot Drawer (pannello laterale inline) -->
-        <div class="ped-drawer" id="ped-drawer" style="display:none;">
-        <div class="ped-drawer-head">
-          <span class="ped-drawer-date" id="ped-drawer-date">—</span>
-          <button class="btn ghost sm icon" onclick="pedCloseDrawer()" aria-label="Chiudi">✕</button>
-        </div>
-        <div class="ped-drawer-body" id="ped-drawer-body"></div>
-        <div class="ped-drawer-footer">
-          <button class="btn sm danger" id="ped-drawer-del" onclick="pedDrawerDelete()">Elimina</button>
-          <button class="btn sm primary" id="ped-drawer-save" onclick="pedDrawerSave()">Salva</button>
-        </div>
-        </div><!-- /ped-drawer -->
+        <!-- UGC Slot Modal (popover centrato) — fuori dal flow della griglia -->
       </div><!-- /ped-cal-row -->
     </div>
     <!-- Tab Piano -->
@@ -847,6 +840,23 @@
 
 >
 </div><!-- /app -->
+
+<!-- UGC SLOT MODAL -->
+<div id="ped-slot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseDrawer()">
+  <div style="background:var(--surface);border-radius:14px;width:360px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
+    <div class="ped-drawer-head">
+      <span class="ped-drawer-date" id="ped-drawer-date">—</span>
+      <button class="btn ghost sm icon" onclick="pedCloseDrawer()" aria-label="Chiudi">✕</button>
+    </div>
+    <div class="ped-drawer-body" id="ped-drawer-body" style="overflow-y:auto;flex:1;"></div>
+    <div class="ped-drawer-footer">
+      <button class="btn sm danger" id="ped-drawer-del" onclick="pedDrawerDelete()">Elimina</button>
+      <div style="flex:1;"></div>
+      <button class="btn sm ghost" onclick="pedCloseDrawer()">Annulla</button>
+      <button class="btn sm primary" id="ped-drawer-save" onclick="pedDrawerSave()">Salva</button>
+    </div>
+  </div>
+</div>
 
 <!-- VIDEO COVER MODAL -->
 <div id="video-cover-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeVideoCoverModal()">

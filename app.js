@@ -4303,6 +4303,13 @@ function renderPEDCal(){
 }
 
 /* ── Drawer: slot esistente ── */
+
+/* UGC modal keyboard handler */
+function _pedModalKeyHandler(e){
+  if(e.key==='Escape') pedCloseDrawer();
+}
+document.addEventListener('keydown',_pedModalKeyHandler);
+
 function pedOpenDrawer(slotId,dateStr){
   const plan=currentPedPlan();
   const sl=plan.find(s=>s.id===slotId);
@@ -4315,8 +4322,14 @@ function pedOpenDrawer(slotId,dateStr){
 
 /* ── Drawer: nuovo slot ── */
 function pedOpenDrawerNew(dateStr){
-  pedDrawerSlotId=null;pedDrawerIsNew=true;pedDrawerDate=dateStr;
-  pedDrawerTmp={date:dateStr,type:'autonoma',ugcStato:'autonoma',brief:'',templateRef:'',creator:'',noteRegia:'',id:pedUID()};
+  pedDrawerSlotId=null;pedDrawerIsNew=true;
+  // Se non c'è data, usa oggi in formato ISO
+  if(!dateStr){
+    const now=new Date();
+    dateStr=now.getFullYear()+'-'+(String(now.getMonth()+1).padStart(2,'0'))+'-'+(String(now.getDate()).padStart(2,'0'));
+  }
+  pedDrawerDate=dateStr;
+  pedDrawerTmp={date:dateStr,type:'autonoma',ugcStato:'raccolto',brief:'',templateRef:'',creator:'',noteRegia:'',id:pedUID()};
   pedRenderDrawer();
 }
 
@@ -4381,10 +4394,15 @@ function pedRenderDrawer(){
   tmplBody.appendChild(tmplInp);
   tmplToggle.onclick=()=>{pedDrawerTmp._tmplOpen=!pedDrawerTmp._tmplOpen;pedRenderDrawer();};
   body.appendChild(tmplToggle);body.appendChild(tmplBody);
-  drawer.style.display='flex';
+  // Mostra il modal (non il drawer inline)
+  const modal=document.getElementById('ped-slot-modal');
+  if(modal){modal.style.display='flex';}
 }
 
 function pedCloseDrawer(){
+  const modal=document.getElementById('ped-slot-modal');
+  if(modal)modal.style.display='none';
+  // Legacy drawer compat
   const drawer=document.getElementById('ped-drawer');
   if(drawer)drawer.style.display='none';
   pedDrawerSlotId=null;pedDrawerIsNew=false;pedDrawerTmp={};
