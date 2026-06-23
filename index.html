@@ -383,38 +383,57 @@
         </button>
       </div>
 
-      <!-- Pannello opzioni (date, copy, profilo, riepilogo) — separato dal popover upload -->
+      <!-- Pannello opzioni (riepilogo, profilo, date/copy) -->
       <div class="feed-ctx-panel-opts" id="feed-ctx-panel-opts">
-        <!-- Stats -->
-        <div class="feed-ctx-section">
+
+        <!-- Colonna 1: Riepilogo -->
+        <div class="fpo-col">
           <div class="ctx-sec-lbl">Riepilogo</div>
           <div class="ctx-stats">
             <div class="ctx-stat"><div class="cs-n" id="stat-tot">0</div><div class="cs-l">Post</div></div>
             <div class="ctx-stat"><div class="cs-n" id="stat-vid">0</div><div class="cs-l">Reel</div></div>
             <div class="ctx-stat"><div class="cs-n" id="stat-car">0</div><div class="cs-l">Caros.</div></div>
             <div class="ctx-stat"><div class="cs-n" id="stat-stories">0</div><div class="cs-l">Stories</div></div>
-            <div class="ctx-stat"><div class="cs-n" id="stat-hl">0</div><div class="cs-l">Evidenze</div></div>
+            <div class="ctx-stat"><div class="cs-n" id="stat-hl">0</div><div class="cs-l">Evid.</div></div>
+          </div>
+          <!-- Media mancanti -->
+          <div id="batch-reupload-wrap" style="display:none;margin-top:8px;">
+            <button class="btn sm" id="batch-reupload-btn" onclick="batchReuploadMissing()" style="gap:5px;background:#f59e0b;color:#111;border:none;font-size:11px;">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+              <span id="batch-reupload-label">Ricarica mancanti</span>
+            </button>
+            <input type="file" id="batch-reupload-input" accept="image/*,video/*" multiple style="display:none;" onchange="batchReuploadFromFiles(this.files)"/>
           </div>
         </div>
-        <!-- Profilo account -->
-        <div class="feed-ctx-section" id="feed-profile-section" style="display:none;">
-          <div class="ctx-sec-lbl">Profilo</div>
-          <div class="feed-profile-row">
+
+        <!-- Divisore verticale -->
+        <div class="fpo-divider"></div>
+
+        <!-- Colonna 2: Profilo -->
+        <div class="fpo-col fpo-profile" id="feed-profile-section" style="display:none;">
+          <div class="ctx-sec-lbl">Profilo account</div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
             <div class="feed-profile-avatar" id="feed-profile-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               <input type="file" id="feed-profile-img-inp" accept="image/*" style="display:none;" onchange="feedProfileImgChange(this.files)"/>
             </div>
-            <textarea id="feed-profile-bio" class="feed-profile-bio" rows="2" placeholder="Bio del profilo…" oninput="feedProfileBioInput(this.value)"></textarea>
+            <textarea id="feed-profile-bio" class="feed-profile-bio" rows="3" placeholder="Bio del profilo…" oninput="feedProfileBioInput(this.value)"></textarea>
           </div>
         </div>
-        <div class="feed-ctx-section" style="margin-left:auto;">
-          <div class="ctx-sec-lbl">Opzioni</div>
-          <div style="display:flex;flex-direction:column;gap:5px;">
+
+        <!-- Divisore verticale (solo se profilo visibile) -->
+        <div class="fpo-divider fpo-divider-profile" id="fpo-div-profile" style="display:none;"></div>
+
+        <!-- Colonna 3: Opzioni display -->
+        <div class="fpo-col" style="margin-left:auto;">
+          <div class="ctx-sec-lbl">Vista</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
             <button class="gtoggle" id="toggle-dates" onclick="toggleAllDates()" aria-label="Mostra/nascondi date">📅 Date <span class="gtoggle-chip" id="toggle-dates-chip">ON</span></button>
             <button class="gtoggle" id="toggle-copy" onclick="toggleAllCopy()" aria-label="Mostra/nascondi copy">📝 Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span></button>
           </div>
-          <div class="ctx-hint">⠿ trascina · hover → opzioni</div>
+          <div class="ctx-hint" style="margin-top:8px;">⠿ trascina · hover → opzioni</div>
         </div>
+
       </div>
     <!-- Feed grid full width -->
     <div class="feed-grid-area">

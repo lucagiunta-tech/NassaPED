@@ -1918,8 +1918,15 @@ function feedProfileSync(){
   const bioEl=document.getElementById('feed-profile-bio');
   const section=document.getElementById('feed-profile-section');
   if(!avatarEl||!bioEl)return;
-  if(!acc){if(section)section.style.display='none';return;}
+  if(!acc){
+    if(section)section.style.display='none';
+    const div=document.getElementById('fpo-div-profile');
+    if(div)div.style.display='none';
+    return;
+  }
   if(section)section.style.display='';
+  const div=document.getElementById('fpo-div-profile');
+  if(div)div.style.display='';
   // Avatar
   const img=avatarEl.querySelector('img');
   const svg=avatarEl.querySelector('svg');
