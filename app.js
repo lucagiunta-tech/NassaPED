@@ -5486,236 +5486,58 @@ function renderNotesMonthPillsForYear(yr){
 }
 
 function rebuildNotesSelects(){
-  // Sync notesClientIdx from globalClientIdx
-  if(notesClientIdx<0&&globalClientIdx>=0) notesClientIdx=globalClientIdx;
-  // Hidden selects compat
+  // Sync notesClientIdx from globalClientIdx if not set
+  if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;
+  // Hidden select for JS compat only
   const csel=document.getElementById('notes-client-sel');
-  if(csel){
-    csel.innerHTML='<option value="">—</option>';
-    clients.forEach((cl,i)=>{
-      const o=document.createElement('option');
-      o.value=i; o.textContent=cl.name; csel.appendChild(o);
-    });
-    if(notesClientIdx>=0) csel.value=notesClientIdx;
-  }
-  renderNotesDocList();
+  if(csel){csel.innerHTML='<option value="">—</option>';clients.forEach((cl,i)=>{const o=document.createElement('option');o.value=i;o.textContent=cl.name;csel.appendChild(o);});if(notesClientIdx>=0)csel.value=notesClientIdx;}
+  const msel=document.getElementById('notes-month-sel');if(!msel)return;if(notesClientIdx<0){msel.style.display='none';renderNotesMonthPills();return;}
+  msel.style.display='';const prevM=msel.value;msel.innerHTML='';
+  // Build month list from actual notesData keys + current MONTH_OPTIONS
+  const cl=clients[notesClientIdx];
+  const notesMonths=cl?Object.keys(notesData).filter(k=>k.startsWith(cl.name+'|||')&&notesData[k]).map(k=>k.split('|||')[1]):[];
+  const allMonths=[...new Set([...notesMonths,...MONTH_OPTIONS])].sort((a,b)=>{const pa=a.split(' '),pb=b.split(' ');const ya=parseInt(pa[1])||0,yb=parseInt(pb[1])||0;if(ya!==yb)return ya-yb;return MONTHS.indexOf(pa[0])-MONTHS.indexOf(pb[0]);});
+  allMonths.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;msel.appendChild(o);});
+  if(prevM&&allMonths.includes(prevM))msel.value=prevM;else if(notesMonth&&allMonths.includes(notesMonth))msel.value=notesMonth;else{msel.value=MONTH_OPTIONS[new Date().getMonth()];notesMonth=msel.value;}
+  // Aggiorna le pill mese visive
+  renderNotesMonthPills();
 }
-
-function onNotesClientChange(){
-  const v=document.getElementById('notes-client-sel').value;
-  notesClientIdx=v===''?-1:parseInt(v);
-  currentDocId=null;
-  rebuildNotesSelects();
-}
-
-// ── DOCUMENTO CORRENTE ──
-let currentDocId = null; // null = nessun doc aperto
-
-// Chiave storage per un documento: "cliente|||doc|||id"
-function _docKey(clientName, id){ return clientName+'|||doc|||'+id; }
-
-// Lista documenti di un cliente
-function getClientDocs(clientName){
-  const prefix = clientName+'|||doc|||';
-  const docs = [];
-  Object.keys(notesData).forEach(k=>{
-    if(k.startsWith(prefix)){
-      const raw = notesData[k];
-      if(raw && typeof raw === 'object'){
-        docs.push({id: k.replace(prefix,''), ...raw});
-      }
-    }
-  });
-  // Sort by updated desc
-  docs.sort((a,b)=>(b.updated||0)-(a.updated||0));
-  return docs;
-}
-
-// Crea nuovo documento
-function notesNewDoc(){
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!cl){ showToast('Seleziona un cliente prima','warn'); return; }
-  const id = 'doc_'+Date.now().toString(36);
-  const key = _docKey(cl.name, id);
-  notesData[key] = { title:'Nuovo documento', content:'', created: Date.now(), updated: Date.now() };
-  autoSave();
-  renderNotesDocList();
-  openDoc(id);
-  // Focus sul titolo subito
-  setTimeout(()=>{
-    const inp = document.getElementById('notes-doc-title-inp');
-    if(inp){ inp.focus(); inp.select(); }
-  }, 50);
-}
-
-// Apre un documento
-function openDoc(id){
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!cl) return;
-  const key = _docKey(cl.name, id);
-  const doc = notesData[key];
-  if(!doc) return;
-
-  currentDocId = id;
-
-  // Mostra editor, nascondi empty state
-  const ta  = document.getElementById('notes-editor');
-  const em  = document.getElementById('notes-empty');
-  const pv  = document.getElementById('notes-preview');
-  const ti  = document.getElementById('notes-doc-title-inp');
-  if(ta){ ta.style.display=''; ta.value = doc.content||''; }
-  if(em) em.style.display='none';
-  if(pv) pv.style.display='none';
-  if(ti) ti.value = doc.title||'';
-
-  // Reset preview mode
-  notesPreviewMode = false;
-  const pb = document.getElementById('notes-preview-btn');
-  if(pb) pb.classList.remove('active');
-
-  // Update TOC, wc, doc list highlight
-  updateNotesToc(); updateNotesWc();
-  renderNotesDocList();
-}
-
-// Aggiorna titolo documento
-function notesUpdateDocTitle(val){
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!cl||!currentDocId) return;
-  const key = _docKey(cl.name, currentDocId);
-  if(!notesData[key]) return;
-  notesData[key].title = val||'Senza titolo';
-  notesData[key].updated = Date.now();
-  // Aggiorna nome nella lista senza re-render completo
-  const item = document.querySelector(`.notes-doc-item[data-id="${currentDocId}"] .ndoc-title`);
-  if(item) item.textContent = val||'Senza titolo';
-  autoSave();
-}
-
-// Elimina documento
-function notesDeleteDoc(id, e){
-  if(e){ e.stopPropagation(); }
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!cl) return;
-  if(!confirm('Eliminare questo documento?')) return;
-  const key = _docKey(cl.name, id);
-  delete notesData[key];
-  if(currentDocId === id){
-    currentDocId = null;
-    const ta = document.getElementById('notes-editor');
-    const em = document.getElementById('notes-empty');
-    const ti = document.getElementById('notes-doc-title-inp');
-    if(ta){ ta.style.display='none'; ta.value=''; }
-    if(em) em.style.display='';
-    if(ti) ti.value='';
-  }
-  autoSave();
-  renderNotesDocList();
-}
-
-// Renderizza la lista documenti nella sidebar
-function renderNotesDocList(){
-  const el = document.getElementById('notes-doclist-items');
-  if(!el) return;
-
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!cl){
-    el.innerHTML='<div class="ndoc-empty">Seleziona un cliente</div>';
-    return;
-  }
-
-  const docs = getClientDocs(cl.name);
-
-  // Migra eventuali vecchi dati mensili come documenti
-  _migrateOldNotes(cl.name);
-
-  if(!docs.length){
-    el.innerHTML=`<div class="ndoc-empty">
-      <span style="font-size:24px;display:block;margin-bottom:8px;">📄</span>
-      Nessun documento.<br>
-      <button class="btn sm primary" style="margin-top:10px;" onclick="notesNewDoc()">+ Crea il primo</button>
-    </div>`;
-    return;
-  }
-
-  el.innerHTML = docs.map(doc=>{
-    const active = doc.id === currentDocId;
-    const date = doc.updated ? new Date(doc.updated).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}) : '';
-    const preview = (doc.content||'').replace(/^#+\s*/gm,'').replace(/\*+/g,'').trim().slice(0,60);
-    return `<div class="notes-doc-item${active?' active':''}" data-id="${doc.id}" onclick="openDoc('${doc.id}')">
-      <div class="ndoc-title">${esc(doc.title||'Senza titolo')}</div>
-      ${preview ? `<div class="ndoc-preview">${esc(preview)}</div>` : ''}
-      <div class="ndoc-meta">
-        <span>${date}</span>
-        <button class="ndoc-del" onclick="notesDeleteDoc('${doc.id}',event)" title="Elimina" aria-label="Elimina documento">
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Migrazione vecchi dati mensili → documenti
-function _migrateOldNotes(clientName){
-  // SAFE: legge le chiavi mensili ma NON le cancella mai
-  // Crea doc paralleli senza distruggere i dati originali
-  const monthPrefix = clientName+'|||';
-  const docPrefix   = clientName+'|||doc|||';
-  let migrated = false;
-  Object.keys(notesData).forEach(k=>{
-    if(k.startsWith(monthPrefix) && !k.startsWith(docPrefix) && typeof notesData[k]==='string' && notesData[k].trim()){
-      const month = k.replace(monthPrefix,'');
-      const newId = 'migrated_'+month.replace(/[^a-zA-Z0-9]/g,'_');
-      const newKey = _docKey(clientName, newId);
-      if(!notesData[newKey]){
-        notesData[newKey] = { title:'Piano '+month, content:notesData[k],
-          created:Date.now(), updated:Date.now(), _migratedFrom:month };
-        migrated = true;
-      }
-      // NON delete notesData[k] — chiave originale resta intatta come backup
-    }
-  });
-  if(migrated) setTimeout(()=>autoSave(), 2000);
-}
+function onNotesClientChange(){const v=document.getElementById('notes-client-sel').value;notesClientIdx=v===''?-1:parseInt(v);notesMonth=MONTH_OPTIONS[new Date().getMonth()];rebuildNotesSelects();renderNotesEditor();}
 
 function renderNotesEditor(){
-  // Compat: apre il primo doc se nessuno aperto
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!cl) return;
-  _migrateOldNotes(cl.name);
-  renderNotesDocList();
-  if(!currentDocId){
-    const docs = getClientDocs(cl.name);
-    if(docs.length) openDoc(docs[0].id);
-  }
+  const msel=document.getElementById('notes-month-sel');if(msel&&msel.value)notesMonth=msel.value;
+  const ed=document.getElementById('notes-editor');if(!ed)return;
+  if(notesClientIdx<0){ed.value='';return;}
+  // FIX 6: guard — notesClientIdx may be stale after removeClient
+  if(notesClientIdx>=clients.length)notesClientIdx=clients.length>0?clients.length-1:-1;
+  const cl=clients[notesClientIdx];if(!cl){ed.value='';return;}
+  const key=cl.name+'|||'+notesMonth;
+  ed.value=notesData[key]||'';
+  // Update status bar
+  const cs=document.getElementById('notes-client-status');if(cs)cs.textContent=cl.name;
+  const ms=document.getElementById('notes-month-status');if(ms)ms.textContent=notesMonth;
+  updateNotesToc();updateNotesWc();
 }
 
-function renderNotesMonthPills(){ /* stub — non più usato */ }
-
+// FIX 3: debounce timer — prevent cloud save on every keystroke
 let _notesSaveTimer=null;
 function saveNotesText(){
-  const ta = document.getElementById('notes-editor');
-  const cl = notesClientIdx>=0 ? clients[notesClientIdx] : null;
-  if(!ta||!cl||!currentDocId) return;
-  const key = _docKey(cl.name, currentDocId);
-  if(!notesData[key]) return;
-  notesData[key].content = ta.value;
-  notesData[key].updated = Date.now();
-  // Aggiorna preview nella lista
-  const item = document.querySelector(`.notes-doc-item[data-id="${currentDocId}"] .ndoc-preview`);
-  if(item){
-    const preview = ta.value.replace(/^#+\s*/gm,'').replace(/\*+/g,'').trim().slice(0,60);
-    item.textContent = preview;
-  }
+  const ed=document.getElementById('notes-editor');if(!ed||notesClientIdx<0)return;
+  const cl=clients[notesClientIdx];if(!cl)return;
+  const msel=document.getElementById('notes-month-sel');if(msel&&msel.value)notesMonth=msel.value;
+  const key=cl.name+'|||'+notesMonth;
+  notesData[key]=ed.value; // update in-memory immediately
+  // Debounce: save to cloud max once per 1.5s
   clearTimeout(_notesSaveTimer);
   _notesSaveTimer=setTimeout(()=>{
     autoSave();
     const ss=document.getElementById('notes-saved-status');
-    if(ss){ss.textContent='✓ Salvato';ss.style.color='var(--green)';setTimeout(()=>{if(ss){ss.textContent='';ss.style.color='';}},2000);}
-  },1000);
+    if(ss){ss.textContent='✓ Salvato';setTimeout(()=>{if(ss)ss.textContent='';},2000);}
+  },1500);
 }
 
 let notesPreviewMode=false;
+let notesViewMode='edit';
 function setNotesViewMode(){}
 function updateNotesLivePreview(){}
 function toggleNotesPreview(){
@@ -5728,298 +5550,2692 @@ function toggleNotesPreview(){
     pv.innerHTML='<div class="notes-preview-inner">'+renderMarkdown(ta.value)+'</div>';
     pv.style.display='block';ta.style.display='none';
     if(btn)btn.classList.add('active');
-  }else{
+  } else {
     pv.style.display='none';ta.style.display='';
     if(btn)btn.classList.remove('active');
   }
 }
 
-
-/* ══ NOTES — DROPBOX FILE BROWSER PANEL ══ */
-let dbxCurrentPath = '/nassa';
-let _dbxSearchTimer = null;
-let _dbxSearchMode = false;
-
-function toggleDbxPanel(){
-  const panel = document.getElementById('notes-dbx-panel');
-  const btn   = document.getElementById('notes-dbx-btn');
-  if(!panel) return;
-  const open = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = open ? 'flex' : 'none';
-  if(btn) btn.classList.toggle('active', open);
-  if(open) dbxNavigate(dbxCurrentPath);
+function renderMarkdown(md){
+  if(!md)return'';
+  const lines=md.split('\n');
+  let html='';let inUl=false;let inOl=false;let inP=false;
+  const closeP=()=>{if(inP){html+='</p>';inP=false;}};
+  const closeUl=()=>{if(inUl){html+='</ul>';inUl=false;}};
+  const closeOl=()=>{if(inOl){html+='</ol>';inOl=false;}};
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline=s=>esc(s)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;margin:6px 0;"/>');
+  lines.forEach(line=>{
+    if(/^### /.test(line)){closeP();closeUl();closeOl();html+='<h3>'+inline(line.slice(4))+'</h3>';}
+    else if(/^## /.test(line)){closeP();closeUl();closeOl();html+='<h2>'+inline(line.slice(3))+'</h2>';}
+    else if(/^# /.test(line)){closeP();closeUl();closeOl();html+='<h1>'+inline(line.slice(2))+'</h1>';}
+    else if(/^---$/.test(line)){closeP();closeUl();closeOl();html+='<hr/>';}
+    else if(/^> /.test(line)){closeP();closeUl();closeOl();html+='<blockquote>'+inline(line.slice(2))+'</blockquote>';}
+    else if(/^- /.test(line)){closeP();closeOl();if(!inUl){html+='<ul>';inUl=true;}html+='<li>'+inline(line.slice(2))+'</li>';}
+    else if(/^\d+\. /.test(line)){closeP();closeUl();if(!inOl){html+='<ol>';inOl=true;}html+='<li>'+inline(line.replace(/^\d+\. /,''))+'</li>';}
+    else if(line.trim()===''){closeUl();closeOl();closeP();}
+    else{closeUl();closeOl();if(!inP){html+='<p>';inP=true;}else html+=' ';html+=inline(line);}
+  });
+  closeP();closeUl();closeOl();
+  return html;
 }
 
-async function dbxNavigate(path){
-  _dbxSearchMode = false;
-  dbxCurrentPath = path;
-  const list = document.getElementById('notes-dbx-list');
-  const bc   = document.getElementById('notes-dbx-breadcrumb');
-  if(!list) return;
+function updateNotesToc(){
+  const ed=document.getElementById('notes-editor');
+  const list=document.getElementById('notes-toc-list');
+  if(!ed||!list)return;
+  const lines=ed.value.split('\n');
+  list.innerHTML='';
+  lines.forEach((line,i)=>{
+    const h1=line.match(/^# (.+)/);
+    const h2=line.match(/^## (.+)/);
+    const h3=line.match(/^### (.+)/);
+    const match=h3||h2||h1;if(!match)return;
+    const lvl=h3?'toc-h3':h2?'toc-h2':'toc-h1';
+    const item=document.createElement('div');
+    item.className='notes-toc-item '+lvl;
+    item.textContent=match[1];
+    item.dataset.line=i;
+    item.onclick=()=>{
+      if(notesPreviewMode){
+        const headers=document.getElementById('notes-preview')?.querySelectorAll('h1,h2,h3');
+        let idx=0;
+        document.getElementById('notes-preview')?.querySelectorAll('h1,h2,h3').forEach((el,j)=>{
+          if(el.textContent===match[1]&&j===idx){el.scrollIntoView({behavior:'smooth'});idx++;}
+        });
+      } else {
+        const ta=document.getElementById('notes-editor');if(!ta)return;
+        // Calculate char position of the line
+        const pos=lines.slice(0,i).join('\n').length+(i>0?1:0);
+        ta.focus();ta.setSelectionRange(pos,pos);
+        // Scroll textarea to line
+        const lineH=ta.scrollHeight/lines.length;
+        ta.scrollTop=i*lineH-80;
+      }
+      // Highlight active
+      list.querySelectorAll('.notes-toc-item').forEach(el=>el.classList.remove('active'));
+      item.classList.add('active');
+    };
+    list.appendChild(item);
+  });
+}
 
-  // Breadcrumb
-  if(bc){
-    const parts = path.split('/').filter(Boolean);
-    let html = `<span class="dbx-bc-item" onclick="dbxNavigate('/nassa')">nassa</span>`;
-    let cur = '';
-    parts.forEach((p,i) => {
-      if(p === 'nassa' && i === 0) return;
-      cur += '/' + p;
-      const fullPath = '/nassa' + cur.replace(/^\/nassa/,'');
-      html += `<span class="dbx-bc-sep">›</span><span class="dbx-bc-item" onclick="dbxNavigate('${fullPath.replace(/'/g,"\'")}')">${p}</span>`;
-    });
-    bc.innerHTML = html;
+function updateNotesWc(){
+  const ed=document.getElementById('notes-editor');
+  const wc=document.getElementById('notes-wc');
+  if(!ed||!wc)return;
+  const words=ed.value.trim().split(/\s+/).filter(w=>w.length>0).length;
+  const lines=ed.value.split('\n').length;
+  wc.textContent=words+' parole · '+lines+' righe';
+}
+
+function notesInsert(type){
+  const ta=document.getElementById('notes-editor');if(!ta)return;
+  const start=ta.selectionStart,end=ta.selectionEnd;
+  const sel=ta.value.substring(start,end);
+  const before=ta.value.substring(0,start);
+  const after=ta.value.substring(end);
+  const lineStart=before.lastIndexOf('\n')+1;
+  const linePrefix=before.substring(lineStart);
+  let ins='',cur=start;
+
+  if(type==='h1'){ins='\n# '+sel;cur=start+ins.length;}
+  else if(type==='h2'){ins='\n## '+sel;cur=start+ins.length;}
+  else if(type==='h3'){ins='\n### '+sel;cur=start+ins.length;}
+  else if(type==='bold'){ins='**'+(sel||'testo')+'**';cur=start+(sel?ins.length:3);}
+  else if(type==='italic'){ins='*'+(sel||'testo')+'*';cur=start+(sel?ins.length:1);}
+  else if(type==='ul'){ins='\n- '+(sel||'elemento');cur=start+ins.length;}
+  else if(type==='ol'){ins='\n1. '+(sel||'elemento');cur=start+ins.length;}
+  else if(type==='quote'){ins='\n> '+(sel||'citazione');cur=start+ins.length;}
+  else if(type==='hr'){ins='\n---\n';cur=start+ins.length;}
+  else if(type==='link'){
+    const url=prompt('URL link:','https://');
+    if(!url)return;
+    const label=sel||prompt('Testo del link:','Link')||'Link';
+    ins='['+label+']('+url+')';cur=start+ins.length;
+  }
+  else if(type==='media'){
+    // Open image input modal (file picker + URL + dropbox)
+    openNotesImageModal();
+    return; // modal handles insertion async
   }
 
-  list.innerHTML = '<div class="notes-dbx-loading"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg> Caricamento…</div>';
+  ta.value=before+ins+after;
+  ta.focus();ta.setSelectionRange(cur,cur);
+  saveNotesText();updateNotesToc();updateNotesWc();
+}
 
-  try {
-    const res = await fetch('/api/dropbox-list?path='+encodeURIComponent(path), {
-      headers: { 'x-nassa-key': CLOUD.apiKey },
-      credentials: 'include'
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Errore');
-    dbxRenderList(data.entries || []);
-  } catch(e) {
-    list.innerHTML = `<div class="notes-dbx-empty">⚠ ${e.message}</div>`;
+
+/* ══════════════════════════════════════════
+   NOTES EDITOR — IMAGE INSERTION SYSTEM
+   Supports: file picker, paste, drag&drop, URL
+══════════════════════════════════════════ */
+
+// Insert image markdown at cursor in notes editor
+function notesInsertImage(url, alt) {
+  const ta = document.getElementById('notes-editor');
+  if(!ta || !url) return;
+  const start = ta.selectionStart;
+  const before = ta.value.substring(0, start);
+  const after  = ta.value.substring(start);
+  const ins = '\n![' + (alt||'') + '](' + url + ')\n';
+  ta.value = before + ins + after;
+  ta.focus();
+  ta.setSelectionRange(start + ins.length, start + ins.length);
+  saveNotesText(); updateNotesToc(); updateNotesWc();
+}
+
+// Upload image file to Dropbox then insert into notes
+async function notesUploadAndInsert(file) {
+  if(!file || !file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+    showToast('Solo immagini o video', 'warn'); return;
+  }
+  showToast('⬆ Caricamento immagine…');
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = '/nassa/notes/' + Date.now() + '.' + ext;
+  const url = await DROPBOX.upload(file, path);
+  if(url) {
+    notesInsertImage(url, file.name.replace(/\.[^.]+$/, ''));
+    showToast('✓ Immagine inserita');
+  } else {
+    showToast('Errore caricamento', 'warn');
   }
 }
 
-function dbxSearch(query){
-  clearTimeout(_dbxSearchTimer);
-  if(!query.trim()){ dbxNavigate(dbxCurrentPath); return; }
-  _dbxSearchTimer = setTimeout(async()=>{
-    _dbxSearchMode = true;
-    const list = document.getElementById('notes-dbx-list');
-    const bc   = document.getElementById('notes-dbx-breadcrumb');
-    if(bc) bc.innerHTML = '<span class="dbx-bc-item">Risultati ricerca</span>';
-    list.innerHTML = '<div class="notes-dbx-loading">Ricerca…</div>';
-    try {
-      const res = await fetch('/api/dropbox-list?search='+encodeURIComponent(query), {
-        headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include'
-      });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.error || 'Errore');
-      dbxRenderList(data.entries || []);
-    } catch(e) {
-      list.innerHTML = `<div class="notes-dbx-empty">⚠ ${e.message}</div>`;
+// Open the notes image modal
+function openNotesImageModal() {
+  let modal = document.getElementById('notes-img-modal');
+  if(!modal) {
+    modal = document.createElement('div');
+    modal.id = 'notes-img-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;display:flex;align-items:center;justify-content:center;';
+    modal.onclick = e => { if(e.target===modal) modal.remove(); };
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.15);padding:20px;width:min(420px,92vw);display:flex;flex-direction:column;gap:14px;';
+
+    // Title
+    const title = document.createElement('div');
+    title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+    title.innerHTML = '<span style="font-size:15px;font-weight:700;color:var(--text);">Inserisci immagine</span>';
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕'; closeBtn.style.cssText = 'background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-2);padding:4px;';
+    closeBtn.onclick = () => modal.remove();
+    title.appendChild(closeBtn);
+    box.appendChild(title);
+
+    // Drop zone
+    const dropZone = document.createElement('div');
+    dropZone.id = 'notes-img-drop';
+    dropZone.style.cssText = 'border:2px dashed var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg);';
+    dropZone.innerHTML = '<div style="font-size:24px;margin-bottom:8px;">🖼</div><div style="font-size:13px;font-weight:600;color:var(--text);">Trascina un\'immagine qui</div><div style="font-size:11px;color:var(--text-3);margin-top:4px;">oppure clicca per scegliere un file</div>';
+    dropZone.onclick = () => { document.getElementById('notes-img-file-inp').click(); };
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--green)'; dropZone.style.background='var(--green-lt)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor='var(--border)'; dropZone.style.background='var(--bg)'; });
+    dropZone.addEventListener('drop', async e => {
+      e.preventDefault(); dropZone.style.borderColor='var(--border)'; dropZone.style.background='var(--bg)';
+      const file = e.dataTransfer.files[0];
+      if(file) { modal.remove(); await notesUploadAndInsert(file); }
+    });
+
+    // Hidden file input
+    const fileInp = document.createElement('input');
+    fileInp.type = 'file'; fileInp.id = 'notes-img-file-inp';
+    fileInp.accept = 'image/*,video/*'; fileInp.style.display = 'none';
+    fileInp.onchange = async () => {
+      const file = fileInp.files[0];
+      if(file) { modal.remove(); await notesUploadAndInsert(file); }
+    };
+    box.appendChild(fileInp);
+
+    // Separator
+    const sep = document.createElement('div');
+    sep.style.cssText = 'display:flex;align-items:center;gap:8px;color:var(--text-3);font-size:11px;';
+    sep.innerHTML = '<div style="flex:1;height:1px;background:var(--border);"></div>oppure incolla un URL<div style="flex:1;height:1px;background:var(--border);"></div>';
+
+    // URL input
+    const urlRow = document.createElement('div');
+    urlRow.style.cssText = 'display:flex;gap:8px;';
+    const urlInp = document.createElement('input');
+    urlInp.type = 'text'; urlInp.placeholder = 'https://dl.dropboxusercontent.com/…';
+    urlInp.style.cssText = 'flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;';
+    urlInp.onfocus = () => urlInp.style.borderColor = 'var(--green)';
+    urlInp.onblur  = () => urlInp.style.borderColor = 'var(--border)';
+    urlInp.onkeydown = e => { if(e.key==='Enter') insertUrlBtn.click(); };
+    const insertUrlBtn = document.createElement('button');
+    insertUrlBtn.textContent = 'Inserisci';
+    insertUrlBtn.style.cssText = 'padding:8px 14px;background:var(--green);border:none;border-radius:var(--rs);font-size:13px;font-family:var(--font);font-weight:600;cursor:pointer;color:#111;white-space:nowrap;';
+    insertUrlBtn.onclick = () => {
+      const url = urlInp.value.trim();
+      if(!url) { urlInp.focus(); return; }
+      modal.remove();
+      notesInsertImage(url, '');
+    };
+    urlRow.appendChild(urlInp);
+    urlRow.appendChild(insertUrlBtn);
+
+    box.appendChild(dropZone);
+    box.appendChild(sep);
+    box.appendChild(urlRow);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+    setTimeout(() => urlInp.focus(), 50);
+  } else {
+    modal.style.display = 'flex';
+  }
+}
+
+// PASTE handler — intercept paste on notes editor
+function notesHandlePaste(e) {
+  const items = e.clipboardData?.items;
+  if(!items) return;
+  for(const item of items) {
+    if(item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if(file) notesUploadAndInsert(file);
+      return;
     }
-  }, 400);
+  }
+  // No image in clipboard — let default text paste happen
 }
 
-function dbxRenderList(entries){
-  const list = document.getElementById('notes-dbx-list');
-  if(!list) return;
-  if(!entries.length){
-    list.innerHTML = '<div class="notes-dbx-empty">Nessun file trovato</div>';
+// DRAG & DROP handler on the textarea itself
+function notesHandleDrop(e) {
+  const file = e.dataTransfer?.files?.[0];
+  if(file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
+    e.preventDefault();
+    notesUploadAndInsert(file);
+  }
+  // else: let default text drop happen
+}
+
+/* DATE FORMAT */
+function fmtDate(iso){if(!iso)return'';const[y,m,d]=iso.split('-');if(!y||!m||!d)return iso;const giorni=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];const mesi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];const dt=new Date(parseInt(y),parseInt(m)-1,parseInt(d));return giorni[dt.getDay()]+' '+parseInt(d)+' '+mesi[parseInt(m)-1];}
+function formatItalianDate(year,month,day){const weekdays=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];const months=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];const dow=new Date(year,month,day).getDay();return weekdays[dow]+' '+day+' '+months[month];}
+function parseItalianDate(str){if(!str)return null;const iso=str.match(/(\d{4})-(\d{2})-(\d{2})/);if(iso)return new Date(parseInt(iso[1]),parseInt(iso[2])-1,parseInt(iso[3]));return null;}
+
+function italianToISO(str){
+  // Handles both "Lun 7 luglio" and "Lun 7 giugno 2026" and ISO "2026-06-07"
+  if(!str)return null;
+  // Already ISO
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  const mesiMap={gennaio:1,febbraio:2,marzo:3,aprile:4,maggio:5,giugno:6,luglio:7,agosto:8,settembre:9,ottobre:10,novembre:11,dicembre:12};
+  const lower=str.toLowerCase();
+  // Try "Lun 7 giugno 2026" or "7 giugno 2026"
+  const m1=lower.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)\s+(\d{4})$/);
+  if(m1){const mo=mesiMap[m1[2]];if(mo)return isoDate(parseInt(m1[3]),mo,parseInt(m1[1]));}
+  // Try "Lun 7 giugno" (no year) — use feedMonth year or current year
+  const m2=lower.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)$/);
+  if(m2){const mo=mesiMap[m2[2]];if(mo){
+    // Try to infer year from feedMonth
+    let y=new Date().getFullYear();
+    if(feedMonth){const fy=parseInt(feedMonth.split(' ').pop());if(!isNaN(fy))y=fy;}
+    return isoDate(y,mo,parseInt(m2[1]));
+  }}
+  return null;
+}
+
+/* DATE PICKER */
+let dpOpenIdx=null,dpYear=new Date().getFullYear(),dpMonth=new Date().getMonth();
+const WEEKDAYS=['L','M','M','G','V','S','D'];
+
+function openDatePicker(idx,anchorEl){
+  closeDatePicker();dpOpenIdx=idx;
+  const item=currentFeedItems()[idx];
+  const fm=feedMonth?feedMonth.split(' '):null;
+  if(fm){dpMonth=MONTHS.indexOf(fm[0]);dpYear=parseInt(fm[1]);if(dpMonth<0){dpMonth=new Date().getMonth();dpYear=new Date().getFullYear();}}
+  else{dpMonth=new Date().getMonth();dpYear=new Date().getFullYear();}
+  if(item.date){const parsed=parseItalianDate(item.date);if(parsed){dpMonth=parsed.getMonth();dpYear=parsed.getFullYear();}}
+  // Overlay mobile — crea se non esiste (indipendente dal popup)
+  if(!document.getElementById('dp-mobile-overlay')){
+    const ov=document.createElement('div');
+    ov.id='dp-mobile-overlay';
+    ov.style.cssText='display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.35);touch-action:none;';
+    ov.onclick=()=>closeDatePicker();
+    document.body.appendChild(ov);
+  }
+  let popup=document.getElementById('global-date-picker');
+  if(!popup){
+    popup=document.createElement('div');
+    popup.id='global-date-picker';
+    popup.className='date-picker-popup';
+    document.body.appendChild(popup);
+  }
+  const isMobile = window.innerWidth <= 744;
+  renderDatePickerContent(idx,popup);
+
+  // Overlay — cerca sempre, non solo alla prima creazione
+  const overlay = document.getElementById('dp-mobile-overlay');
+
+  if(isMobile){
+    // BOTTOM SHEET — resetta posizione, poi anima con rAF
+    popup.classList.add('mobile-sheet');
+    popup.classList.remove('open');
+    popup.style.top=''; popup.style.left=''; popup.style.width='';
+    if(overlay) overlay.style.display='block';
+    // Forza un reflow poi aggiungi .open per triggerare la transizione
+    popup.style.display='flex';
+    popup.offsetHeight; // reflow
+    requestAnimationFrame(()=>{
+      popup.classList.add('open');
+    });
+  } else {
+    // POPUP normale su desktop/tablet
+    popup.classList.remove('mobile-sheet');
+    if(overlay) overlay.style.display='none';
+    const rect=anchorEl.getBoundingClientRect();
+    popup.style.width=Math.max(rect.width,240)+'px';
+    const vw=window.innerWidth; const vh=window.innerHeight;
+    const popH=popup.offsetHeight||300; const popW=popup.offsetWidth||240;
+    const topAbove=rect.top-popH-6;
+    const topBelow=rect.bottom+6;
+    popup.style.top=(topAbove>8 ? topAbove : Math.min(topBelow, vh-popH-8))+'px';
+    popup.style.left=Math.max(8, Math.min(rect.left, vw-popW-8))+'px';
+    popup.classList.add('open');
+  }
+}
+function closeDatePicker(){
+  const p=document.getElementById('global-date-picker');
+  if(p){ p.classList.remove('open'); dpOpenIdx=null; }
+  const ov=document.getElementById('dp-mobile-overlay');
+  if(ov) ov.style.display='none';
+}
+function renderDatePickerContent(idx,popup){
+  popup.innerHTML='';
+  // Header mobile: titolo + chiudi
+  if(popup.classList.contains('mobile-sheet')){
+    const mhdr=document.createElement('div');
+    mhdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px;';
+    mhdr.innerHTML='<span style="font-size:13px;font-weight:600;color:var(--text);">Seleziona data</span>'
+      +'<button onclick="closeDatePicker()" style="background:none;border:none;font-size:20px;color:var(--text-2);cursor:pointer;padding:4px 8px;min-width:36px;min-height:36px;">✕</button>';
+    popup.appendChild(mhdr);
+  }
+  const hdr=document.createElement('div');hdr.className='dp-header';
+  const prev=document.createElement('button');prev.className='dp-nav';prev.textContent='‹';prev.setAttribute('aria-label','Mese precedente');prev.onclick=e=>{e.stopPropagation();dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}renderDatePickerContent(idx,popup);};
+  const lbl=document.createElement('div');lbl.className='dp-header-label';lbl.textContent=MONTHS[dpMonth]+' '+dpYear;
+  const next=document.createElement('button');next.className='dp-nav';next.textContent='›';next.setAttribute('aria-label','Mese successivo');next.onclick=e=>{e.stopPropagation();dpMonth++;if(dpMonth>11){dpMonth=0;dpYear++;}renderDatePickerContent(idx,popup);};
+  hdr.appendChild(prev);hdr.appendChild(lbl);hdr.appendChild(next);popup.appendChild(hdr);
+  const wds=document.createElement('div');wds.className='dp-weekdays';WEEKDAYS.forEach(d=>{const wd=document.createElement('div');wd.className='dp-wd';wd.textContent=d;wds.appendChild(wd);});popup.appendChild(wds);
+  const grid=document.createElement('div');grid.className='dp-days';
+  const firstDay=new Date(dpYear,dpMonth,1).getDay();const daysInMonth=new Date(dpYear,dpMonth+1,0).getDate();const offset=firstDay===0?6:firstDay-1;const today=new Date();const item=currentFeedItems()[idx];const selectedDate=item.date?item.date:null;
+  for(let i=0;i<offset;i++){const emp=document.createElement('button');emp.className='dp-day empty';emp.disabled=true;grid.appendChild(emp);}
+  for(let d=1;d<=daysInMonth;d++){
+    const btn=document.createElement('button');btn.className='dp-day';btn.textContent=d;
+    const italianStr=formatItalianDate(dpYear,dpMonth,d);
+    if(today.getDate()===d&&today.getMonth()===dpMonth&&today.getFullYear()===dpYear)btn.classList.add('today');
+    if(selectedDate===italianStr)btn.classList.add('selected');
+    btn.onclick=e=>{
+      e.stopPropagation();const items=currentFeedItems();const item=items[idx];item.date=italianStr;item.showDate=true;
+      const dateMese=MONTHS[dpMonth]+' '+dpYear;
+      if(dateMese!==feedMonth&&feedMonth){const destKey=accountId(feedClientIdx,feedAccountIdx)+'|||'+dateMese;if(!feeds[destKey])feeds[destKey]=[];feeds[destKey]=[{...item},...(feeds[destKey]||[])];items.splice(idx,1);setFeedItems(items);closeDatePicker();renderFeedGrid();showToast('✓ Post spostato in '+dateMese);}else{setFeedItems(items);closeDatePicker();renderFeedGrid();renderDatePickerContent(idx,document.getElementById('global-date-picker'));}
+      autoSave();
+    };
+    grid.appendChild(btn);
+  }
+  popup.appendChild(grid);
+  const clear=document.createElement('button');clear.className='dp-clear';clear.textContent='✕ Rimuovi data';clear.onclick=e=>{e.stopPropagation();const items=currentFeedItems();items[idx].date='';items[idx].showDate=false;setFeedItems(items);popup.classList.remove('open');dpOpenIdx=null;renderFeedGrid();};popup.appendChild(clear);
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#global-date-picker')&&!e.target.closest('.dp-trigger-btn')&&!e.target.closest('.date-input'))closeDatePicker();},true);
+
+// Close datepicker on scroll so it doesn't float away from the post
+document.addEventListener('scroll',()=>closeDatePicker(),true);
+
+/* EDIT CLIENT */
+function openEditClientModal(ci){
+  ecEditIdx=ci;const cl=clients[ci];if(!cl)return;
+  document.getElementById('ec-name').value=cl.name;
+  document.getElementById('ec-pkg').value=cl.pkg;
+  document.getElementById('ec-status').value=cl.status;
+  document.getElementById('ec-revenue').value=cl.revenue||'';
+  document.getElementById('edit-client-title').textContent='Modifica — '+cl.name;
+  ecTmpAccounts=(cl.accounts||[]).map(a=>({...a}));
+  // Load brand palette
+  const b=cl.brand||{primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
+  ['primary','secondary','bg','text'].forEach(k=>{
+    const inp=document.getElementById('ec-pal-'+k);if(inp)inp.value=b[k]||'';
+    ecPalUpdate(k);
+  });
+  renderEcAccounts();openModal('edit-client-modal');
+}
+function renderEcAccounts(){
+  const list=document.getElementById('ec-accounts-list');if(!list)return;list.innerHTML='';
+  if(!ecTmpAccounts.length){list.innerHTML='<div style="font-size:11px;color:var(--text-3);padding:4px 0;">Nessun account. Aggiungine uno sotto.</div>';return;}
+  ecTmpAccounts.forEach((acc,i)=>{
+    const row=document.createElement('div');row.className='ec-acc-row';const main=document.createElement('div');main.className='ec-acc-main';
+    const nameInp=document.createElement('input');nameInp.className='ec-acc-name-inp';nameInp.value=acc.name;nameInp.placeholder='Nome account';nameInp.oninput=e=>{ecTmpAccounts[i].name=e.target.value;};
+    const platSel=document.createElement('select');platSel.className='ec-acc-plat-inp';['Instagram','Facebook','TikTok','LinkedIn','YouTube','Altro'].forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;if(p===acc.platform)o.selected=true;platSel.appendChild(o);});platSel.onchange=e=>{ecTmpAccounts[i].platform=e.target.value;};
+    main.appendChild(nameInp);main.appendChild(platSel);
+    // ── Foto profilo + bio (riga espansa) ──
+    const extra=document.createElement('div');extra.className='ec-acc-extra';
+    // Foto profilo
+    const avatarWrap=document.createElement('div');avatarWrap.className='ec-acc-avatar-wrap';
+    const avatarImg=document.createElement('div');avatarImg.className='ec-acc-avatar';
+    avatarImg.style.cssText='width:44px;height:44px;border-radius:50%;overflow:hidden;background:var(--cell-bg);cursor:pointer;flex-shrink:0;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;';
+    if(acc.profileImg){
+      avatarImg.innerHTML=`<img src="${acc.profileImg}" style="width:100%;height:100%;object-fit:cover;" alt="Foto profilo"/>`;
+    } else {
+      avatarImg.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
+    const avatarInp=document.createElement('input');avatarInp.type='file';avatarInp.accept='image/*';avatarInp.style.display='none';
+    avatarInp.onchange=async e=>{
+      const file=e.target.files[0]; if(!file) return;
+      showToast('⟳ Caricamento foto profilo…');
+      const destPath='/nassa/'+CLOUD.user+'/profiles/'+file.name;
+      const url=await DROPBOX.upload(file,destPath);
+      if(url){
+        ecTmpAccounts[i].profileImg=url;
+        avatarImg.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;" alt="Foto profilo"/>`;
+        showToast('✓ Foto profilo aggiornata');
+      } else {
+        // fallback blob
+        const blobUrl=URL.createObjectURL(file);
+        ecTmpAccounts[i].profileImg=blobUrl;
+        avatarImg.innerHTML=`<img src="${blobUrl}" style="width:100%;height:100%;object-fit:cover;" alt="Foto profilo"/>`;
+      }
+    };
+    avatarImg.onclick=()=>avatarInp.click();
+    avatarImg.title='Clicca per cambiare foto profilo';
+    avatarWrap.appendChild(avatarImg);avatarWrap.appendChild(avatarInp);
+    // Bio
+    const bioWrap=document.createElement('div');bioWrap.style.cssText='flex:1;';
+    const bioLbl=document.createElement('div');bioLbl.style.cssText='font-size:10px;color:var(--text-3);margin-bottom:3px;font-family:var(--font);font-weight:600;letter-spacing:.04em;text-transform:uppercase;';bioLbl.textContent='Bio';
+    const bioInp=document.createElement('textarea');bioInp.className='ec-acc-bio';bioInp.rows=2;bioInp.placeholder='Scrivi la bio del profilo…';bioInp.value=acc.bio||'';
+    bioInp.oninput=e=>{ecTmpAccounts[i].bio=e.target.value;};
+    bioWrap.appendChild(bioLbl);bioWrap.appendChild(bioInp);
+    extra.appendChild(avatarWrap);extra.appendChild(bioWrap);
+    const del=document.createElement('button');del.className='ec-acc-del';del.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';del.title='Rimuovi account';
+    // Inserisci extra (foto+bio) prima del bottone delete
+    row.appendChild(main);row.appendChild(extra);row.appendChild(del);
+    del.onclick=()=>{showConfirm({
+    title:'Rimuovi account',
+    body:`Rimuovere l'account <strong>${esc(acc.name)}</strong>? I dati feed e stories associati saranno eliminati.`,
+    okLabel:'Rimuovi',
+    type:'danger',
+    onOk:()=>{ecTmpAccounts.splice(i,1);renderEcAccounts();}
+  });};
+    list.appendChild(row);
+  });
+}
+function ecPalUpdate(key){
+  const inp=document.getElementById('ec-pal-'+key);if(!inp)return;
+  const val=inp.value.trim();
+  const hex=/^#[0-9a-fA-F]{6}$/.test(val)?val:'';
+  const preview=document.getElementById('ec-pal-preview-'+key);
+  const swatch=document.getElementById('ec-pal-swatch-'+key);
+  if(preview)preview.style.background=hex||'#eee';
+  if(swatch)swatch.style.background=hex||'#eee';
+  ecPalLivePreview();
+}
+function ecPalLivePreview(){
+  const get=k=>{const v=document.getElementById('ec-pal-'+k)?.value.trim();return /^#[0-9a-fA-F]{6}$/.test(v)?v:null;};
+  const bg=get('bg')||'#f5f0e8',primary=get('primary')||'#1a3c5e',secondary=get('secondary')||'#c8a96e',text=get('text')||'#111';
+  const cl=ecEditIdx>=0?clients[ecEditIdx]:null;const cname=cl?cl.name.split(' ')[0]:'Cliente';
+  // Feed preview
+  const feed=document.getElementById('ec-pal-card-feed');
+  if(feed){feed.style.background=bg;feed.style.color=text;
+    feed.innerHTML=`<div style="font-size:6px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.5;margin-bottom:5px;">Insight · ${cname}</div><div style="font-size:10px;font-weight:800;line-height:1.1;flex:1;letter-spacing:-.3px;">"Al centro di ogni progetto c'è <span style='color:${secondary};'>${cname}.</span>"</div><div style="height:1px;background:currentColor;opacity:.15;margin:4px 0;"></div><div style="font-size:6px;opacity:.55;line-height:1.4;">La qualità è ascolto e dedizione.</div><div style="font-size:6px;font-weight:700;opacity:.6;margin-top:5px;">${cname} · 2026</div>`;
+  }
+  // Story preview
+  const story=document.getElementById('ec-pal-card-story');
+  if(story){story.style.background=primary;story.style.color=bg;
+    story.innerHTML=`<div style="font-size:5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${secondary};margin-bottom:6px;">UGC</div><div style="font-size:8px;font-weight:800;line-height:1.1;flex:1;">"Finalmente un'azienda che <span style='color:${secondary};'>mantiene</span> le promesse."</div><div style="height:1px;background:${bg};opacity:.2;margin:4px 0;"></div><div style="font-size:5px;opacity:.7;margin-top:auto;">${cname}</div>`;
+  }
+}
+
+function ecAddAccount(){
+  const name=document.getElementById('ec-new-acc-name').value.trim();
+  const platform=document.getElementById('ec-new-acc-platform').value;
+  if(!name){document.getElementById('ec-new-acc-name').focus();return;}
+  // Block duplicate platform
+  if(ecTmpAccounts.some(a=>a.platform===platform)){
+    showToast('Esiste già un account '+platform+' per questo cliente','warn');
+    return;
+  }
+  ecTmpAccounts.push({id:'a_'+Date.now(),name,platform});
+  document.getElementById('ec-new-acc-name').value='';
+  renderEcAccounts();
+}
+function ecSave(){
+  if(ecEditIdx<0)return;const name=document.getElementById('ec-name').value.trim();if(!name){document.getElementById('ec-name').focus();return;}
+  const cl=clients[ecEditIdx];const oldName=cl.name;cl.name=name;cl.pkg=document.getElementById('ec-pkg').value;cl.status=document.getElementById('ec-status').value;cl.revenue=parseFloat(document.getElementById('ec-revenue').value)||0;
+  const oldAccIds=new Set((cl.accounts||[]).map(a=>a.id));const newAccIds=new Set(ecTmpAccounts.map(a=>a.id));
+  oldAccIds.forEach(aid=>{if(!newAccIds.has(aid)){
+    // Delete ALL years of data, not just current MONTH_OPTIONS
+    Object.keys(feeds).filter(k=>k.startsWith(aid+'|||')).forEach(k=>delete feeds[k]);
+    Object.keys(stories).filter(k=>k.startsWith(aid+'|||')).forEach(k=>delete stories[k]);
+    delete highlights[aid];
+  }});
+  cl.accounts=ecTmpAccounts.map(a=>({...a}));
+  // Save brand palette
+  const getPal=k=>{const v=document.getElementById('ec-pal-'+k)?.value.trim();return /^#[0-9a-fA-F]{6}$/.test(v)?v:null;};
+  cl.brand={
+    primary:getPal('primary')||'#1a3c5e',
+    secondary:getPal('secondary')||'#c8a96e',
+    bg:getPal('bg')||'#f5f0e8',
+    text:getPal('text')||'#111111'
+  };
+  if(oldName!==name){
+    // Rename across ALL years in pedPlans
+    Object.keys(pedPlans).filter(k=>k.startsWith(oldName+'|||')).forEach(k=>{
+      const newKey=name+'|||'+k.slice(oldName.length+3);
+      pedPlans[newKey]=pedPlans[k];delete pedPlans[k];
+    });
+    // Rename across ALL years in notesData
+    Object.keys(notesData).filter(k=>k.startsWith(oldName+'|||')).forEach(k=>{
+      const newKey=name+'|||'+k.slice(oldName.length+3);
+      notesData[newKey]=notesData[k];delete notesData[k];
+    });
+  }
+  if(globalClientIdx===ecEditIdx){feedClientIdx=ecEditIdx;feedAccountIdx=cl.accounts.length>0?Math.min(feedAccountIdx,cl.accounts.length-1):-1;storiesClientIdx=ecEditIdx;storiesAccountIdx=feedAccountIdx;updateGlobalClientUI();}
+  closeModal('edit-client-modal');renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();showToast('✓ Cliente aggiornato');autoSave();
+}
+function ecDeleteClient(){
+  if(ecEditIdx<0)return;
+  const cl=clients[ecEditIdx];
+  showConfirm({
+    title:'Elimina cliente',
+    body:`Eliminare <strong>${esc(cl.name)}</strong> e tutti i suoi dati? Questa azione è irreversibile.`,
+    okLabel:'Elimina definitivamente',
+    type:'danger',
+    onOk:()=>{closeModal('edit-client-modal');removeClient(ecEditIdx);}
+  });
+}
+
+/* EXPORT / IMPORT */
+function exportProject(){
+  function san(arr){return(arr||[]).map(item=>({type:item.type,name:item.name||'',date:item.date||'',showDate:item.showDate||false,copy:item.copy||'',linkedStories:item.linkedStories||[],isStoryboard:item.isStoryboard||false,isExternalLink:item.isExternalLink||false,linkSource:item.linkSource||'',externalUrl:item.externalUrl||'',url:(item.externalUrl&&item.externalUrl.startsWith('http'))?item.externalUrl:'',coverUrl:item.coverUrl||'',slides:(item.slides||[]).map(s=>({title:s.title||'',note:s.note||'',copy:s.copy||'',name:s.name||'',externalUrl:s.externalUrl||'',url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))}));}
+  function sanSt(arr){return(arr||[]).map(st=>({type:st.type,name:st.name||'',date:st.date||'',note:st.note||'',isStoryboard:st.isStoryboard||false,isExternalLink:st.isExternalLink||false,linkSource:st.linkSource||'',externalUrl:st.externalUrl||'',briefInviato:st.briefInviato||false,fileCaricato:st.fileCaricato||false,slides:(st.slides||[]).map(s=>({title:s.title||'',eye:s.eye||'',num:s.num||'',note:s.note||'',noteRegia:s.noteRegia||'',sfondo:s.sfondo||'',name:s.name||'',externalUrl:s.externalUrl||'',url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:(s.url&&!s.url.startsWith('blob:'))?s.url:''}))}));}
+  const ef={};Object.keys(feeds).forEach(k=>{ef[k]=san(feeds[k]);});const es={};Object.keys(stories).forEach(k=>{es[k]=sanSt(stories[k]);});
+  const eh={};Object.keys(highlights).forEach(k=>{eh[k]=(highlights[k]||[]).map(h=>({name:h.name,coverUrl:(h.coverUrl&&h.coverUrl.startsWith('http'))?h.coverUrl:''}));});
+  const data={version:'2.0',exportedAt:new Date().toISOString(),clients,feeds:ef,stories:es,highlights:eh,pedPlans,notesData,pilastri,meta:{showAllDates,showAllCopy,pedFreqDays:Array.from(pedFreqDays)}};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='nassa-progetto-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);showToast('✓ Progetto esportato');
+}
+function importProject(){document.getElementById('import-input').click();}
+function loadProjectFile(input){
+  const file=input.files[0];if(!file)return;const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);if(!data.version||!data.clients)throw new Error('File non valido');
+      clients=data.clients||[];clients.forEach(c=>{if(!c.accounts)c.accounts=[];if(!c.id)c.id='c_'+Date.now()+'_'+Math.random();});
+      feeds={};Object.keys(data.feeds||{}).forEach(k=>{feeds[k]=(data.feeds[k]||[]).map(item=>{const hasUrl=item.externalUrl&&item.externalUrl.startsWith('http');return{...item,type:(item.type==='pending'&&hasUrl)?'image':item.type,url:hasUrl?item.externalUrl:'',needsReload:!hasUrl&&!!item.name,slides:(item.slides||[]).map(s=>({...s,url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))};})});
+      stories={};Object.keys(data.stories||{}).forEach(k=>{stories[k]=(data.stories[k]||[]).map(st=>({...st,url:(st.externalUrl&&st.externalUrl.startsWith('http'))?st.externalUrl:'',needsReload:!(st.externalUrl&&st.externalUrl.startsWith('http'))&&!!st.name,slides:(st.slides||[]).map(s=>({...s,url:(s.externalUrl&&s.externalUrl.startsWith('http'))?s.externalUrl:''}))}))}); 
+      highlights={};Object.keys(data.highlights||{}).forEach(k=>{highlights[k]=(data.highlights[k]||[]).map(h=>({name:h.name,coverUrl:(h.coverUrl&&h.coverUrl.startsWith('http'))?h.coverUrl:''}));});
+      pedPlans={};Object.keys(data.pedPlans||{}).forEach(k=>{pedPlans[k]=data.pedPlans[k]||[];});
+      notesData=data.notesData||{};
+      pilastri=data.pilastri||{};
+      // FIX QA: ripristina campagne Ads (aggiunto dopo il codice di import originale)
+      adsCampaigns=data.adsCampaigns||{};
+      adsCampaigns=migrateAdsCampaignsKeys(adsCampaigns,clients);
+      // FIX 1: restore brand palette per client (was missing from import)
+      clients.forEach(c=>{ if(!c.brand) c.brand={primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'}; });
+      if(data.meta){showAllDates=data.meta.showAllDates!==false;showAllCopy=data.meta.showAllCopy!==false;if(Array.isArray(data.meta.pedFreqDays))pedFreqDays=new Set(data.meta.pedFreqDays);}
+      feedClientIdx=-1;feedAccountIdx=-1;feedMonth='';storiesClientIdx=-1;storiesAccountIdx=-1;storiesMonth='';previewClientIdx=-1;previewAccountIdx=-1;previewMonth='';
+      renderStudio();rebuildAllSelects();rebuildNotesSelects();rebuildGlobalClientSelect();renderFeedGrid();renderStoriesGrid();updateFeedHeader();updateStoriesHeader();
+      showToast('✓ Importato — '+clients.length+' client'+(clients.length===1?'e':'i'));
+    }catch(err){alert('Errore importazione: '+err.message);}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+/* TOAST */
+function showToast(msg,type){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.className='toast'+(type==='warn'?' warn':'');setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>t.classList.remove('show'),2800);}
+
+/* GLOBAL CLIENT SELECTION */
+function setGlobalClient(val){
+  globalClientIdx=val===''?-1:parseInt(val);
+  if(globalClientIdx<0){feedClientIdx=-1;feedAccountIdx=-1;storiesClientIdx=-1;storiesAccountIdx=-1;notesClientIdx=-1;updateGlobalClientUI();return;}
+  const cl=clients[globalClientIdx];if(!cl)return;
+  const defaultAccIdx=cl.accounts?.length>=1?0:-1;
+  feedClientIdx=globalClientIdx;feedAccountIdx=defaultAccIdx;if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];
+  storiesClientIdx=globalClientIdx;storiesAccountIdx=defaultAccIdx;if(!storiesMonth)storiesMonth=feedMonth;
+  sbTabClientIdx=globalClientIdx;sbTabAccountIdx=defaultAccIdx;if(!sbTabMonth)sbTabMonth=feedMonth;
+  notesClientIdx=globalClientIdx;if(!notesMonth)notesMonth=feedMonth;
+  updateGlobalClientUI();
+  if(currentTab==='feed'){rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
+  else if(currentTab==='stories'){rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
+  else if(currentTab==='notes'){rebuildNotesSelects();renderNotesEditor();}
+  else if(currentTab==='ped'){if(typeof renderPED==='function')renderPED();}
+  else if(currentTab==='cal'){if(typeof renderCalendar==='function')renderCalendar();}
+  else if(currentTab==='preview'){previewClientIdx=globalClientIdx;previewAccountIdx=defaultAccIdx;syncPreviewSelectors();renderPreview();}
+}
+
+function updateGlobalClientUI(){
+  const cl=globalClientIdx>=0?clients[globalClientIdx]:null;
+  const subt=document.getElementById('subtopbar');const nameEl=document.getElementById('subtopbar-name');const pkgEl=document.getElementById('subtopbar-pkg');
+  // Topbar unificata: mostra sezione cliente se c'è un cliente selezionato
+  const _cs=document.getElementById('topbar-client-section');
+  if(_cs) _cs.style.display = (!!cl && currentTab!=='studio') ? 'contents' : 'none';if(nameEl)nameEl.textContent=cl?cl.name:'—';if(pkgEl)pkgEl.innerHTML=cl?pkgBadge(cl.pkg):'';
+  renderAccSwitcher();
+}
+
+function renderAccSwitcher(){
+  // Account switching is handled by the format badge dropdown — hide the subtopbar buttons
+  const sw=document.getElementById('acc-switcher');
+  if(sw) sw.style.display='none';
+}
+
+function switchAccount(accountIdx){
+  if(globalClientIdx<0)return;feedAccountIdx=accountIdx;storiesAccountIdx=accountIdx;renderAccSwitcher();routerUpdate();
+  if(currentTab==='feed'){rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();}
+  else if(currentTab==='stories'){rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();}
+  else if(currentTab==='preview'){previewAccountIdx=accountIdx;syncPreviewSelectors();renderPreview();}
+  showToast('Account: '+clients[globalClientIdx].accounts[accountIdx].name);
+}
+
+function rebuildGlobalClientSelect(){updateGlobalClientUI();}
+
+/* CLOUD SYNC UI */
+function toggleUserSwitcher(){const sw=document.getElementById('user-switcher');if(!sw)return;sw.classList.toggle('open');sw.querySelectorAll('.user-btn').forEach(b=>{b.classList.toggle('active',b.getAttribute('onclick').includes("'"+CLOUD.user+"'"));});}
+document.addEventListener('click',e=>{const sw=document.getElementById('user-switcher');if(sw&&!e.target.closest('#user-switcher')&&!e.target.closest('#user-avatar'))sw.classList.remove('open');});
+
+async function switchUser(username){CLOUD.user=username;localStorage.setItem('nassa_user',username);const av=document.getElementById('user-avatar');if(av)av.textContent=username.slice(0,2).toUpperCase();document.getElementById('user-switcher')?.classList.remove('open');await loadFromCloud();}
+
+async function loadFromCloud(){
+  // Show loading overlay during boot
+  CLOUD._booting=true;
+  showBootOverlay(true);
+  const result=await CLOUD.load();
+  if(result?.data){
+    CLOUD.apply(result.data);
+    // Reset ALL client state to avoid bleed between users
+    globalClientIdx=-1;previewActiveAcc=0;
+    feedClientIdx=-1;feedAccountIdx=-1;feedMonth='';
+    storiesClientIdx=-1;storiesAccountIdx=-1;storiesMonth='';
+    previewClientIdx=-1;previewAccountIdx=-1;previewMonth='';
+    notesClientIdx=-1;notesMonth='';
+    updateGlobalClientUI();
+    renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();
+    renderFeedGrid();renderStoriesGrid();updateFeedHeader();updateStoriesHeader();
+    showToast('✓ Dati caricati dal cloud');
+  } else {
+    CLOUD.setStatus('idle');
+  }
+  // Migra vecchie bozze da localStorage → Supabase (una-tantum)
+  try {
+    const oldBozze = JSON.parse(localStorage.getItem('sb_cassetto')||'[]');
+    if(oldBozze.length && !Object.keys(sbBozze).length){
+      sbBozze['__migrated__'] = oldBozze;
+      localStorage.removeItem('sb_cassetto');
+      localStorage.removeItem('sb_realizzati');
+      autoSave();
+      console.log('[NassaPED] Migrate: '+oldBozze.length+' bozze da localStorage → Supabase');
+    }
+  } catch(_){}
+  _initFeedUIDs(); // assegna _uid a tutti gli item caricati dal cloud
+  CLOUD._booting=false;
+  showBootOverlay(false);
+  routerRestore();
+}
+
+function showBootOverlay(show){
+  let ov=document.getElementById('boot-overlay');
+  if(show){
+    if(!ov){
+      ov=document.createElement('div');ov.id='boot-overlay';
+      ov.style.cssText='position:fixed;inset:0;background:var(--bg,#f5f5f7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .3s;';
+      const logo=document.createElement('div');logo.style.cssText='width:48px;height:48px;background:#0dff00;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#111;font-size:22px;font-weight:700;';logo.textContent='N';
+      const txt=document.createElement('div');txt.style.cssText='font-size:13px;color:#6b6b6b;font-family:Inter,sans-serif;';txt.textContent='Caricamento dati…';
+      const dot=document.createElement('div');dot.style.cssText='display:flex;gap:6px;';
+      for(let i=0;i<3;i++){const d=document.createElement('div');d.style.cssText='width:7px;height:7px;border-radius:50%;background:#0dff00;opacity:.3;animation:bounce .8s ease-in-out '+(i*0.15)+'s infinite alternate;';dot.appendChild(d);}
+      const style=document.createElement('style');style.textContent='@keyframes bounce{to{opacity:1;transform:translateY(-4px)}}';
+      ov.appendChild(style);ov.appendChild(logo);ov.appendChild(txt);ov.appendChild(dot);
+      document.body.appendChild(ov);
+    }
+    ov.style.opacity='1';ov.style.pointerEvents='all';
+  } else {
+    if(ov){ov.style.opacity='0';ov.style.pointerEvents='none';setTimeout(()=>ov?.remove(),350);}
+  }
+}
+
+/* ════════ CARD EDITORIALE ════════ */
+let edTheme='light', edFmt='feed';
+
+function addPendingSlot(){
+  if(feedAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
+  const items=currentFeedItems();
+  items.unshift({type:'pending',url:'',name:'',date:'',showDate:false,copy:'',linkedStories:[],slides:[]});
+  setFeedItems(items);refreshFeed();autoSave();showToast('✓ Slot aggiunto');
+}
+
+function openEditorialModal(){
+  // Chiudi il pannello filtri se aperto
+  const ctxPanel=document.getElementById('feed-ctx-panel');
+  if(ctxPanel&&ctxPanel.classList.contains('open')){
+    ctxPanel.classList.remove('open');
+    const icon=document.getElementById('feed-expand-icon');
+    if(icon)icon.innerHTML='<polyline points="6 9 12 15 18 9"/>';
+  }
+  // Pre-fill client name in eyebrow
+  const cl=clients[globalClientIdx>=0?globalClientIdx:0];
+  if(cl){
+    const inp=document.getElementById('ed-eyebrow');
+    if(inp&&!inp.value)inp.value='Insight · '+cl.name.split(' ')[0];
+  }
+  document.getElementById('ed-title').value='';
+  document.getElementById('ed-accent').value='';
+  document.getElementById('ed-copy').value='';
+  document.getElementById('ed-author').value='';
+  edTheme='light';edFmt='feed';
+  document.querySelectorAll('.ed-theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme==='light'));
+  document.querySelectorAll('.ed-fmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.fmt==='feed'));
+  // Badge con iniziali cliente
+  const badge=document.getElementById('ed-prev-badge');
+  if(badge){
+    const cl2=clients[globalClientIdx>=0?globalClientIdx:0];
+    const initials=cl2?cl2.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'N';
+    badge.textContent=initials;
+  }
+  openModal('editorial-modal');
+  // Render DOPO che il modal è visibile nel DOM
+  setTimeout(()=>renderEdPreview(), 30);
+}
+
+function setEdTheme(t){
+  edTheme=t;
+  document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));
+  renderEdPreview();
+}
+function setEdFmt(f){
+  edFmt=f;
+  document.querySelectorAll('[data-fmt]').forEach(b=>b.classList.toggle('active',b.dataset.fmt===f));
+  renderEdPreview();
+}
+
+function getEdColors(){
+  const cl=clients[globalClientIdx>=0?globalClientIdx:0];
+  const brand=cl?.brand||{primary:'#1a3c5e',secondary:'#c8a96e',bg:'#f5f0e8',text:'#111111'};
+  if(edTheme==='dark')  return {bg:'#111',text:'#f5f0e8',accent:brand.secondary||'#0dff00',logo:'#0dff00',logoText:'#111'};
+  if(edTheme==='brand') return {bg:brand.primary,text:brand.bg||'#f5f0e8',accent:brand.secondary,logo:brand.bg,logoText:brand.primary};
+  return {bg:brand.bg||'#f5f0e8',text:brand.text||'#111',accent:brand.primary,logo:'#0dff00',logoText:'#111'};
+}
+
+function renderEdPreview(){
+  const wrap=document.getElementById('ed-preview-wrap');
+  const card=document.getElementById('ed-card-preview');
+  if(!card)return;
+  const cols=getEdColors();
+  const eyebrow=document.getElementById('ed-eyebrow')?.value||'Insight';
+  const titleRaw=document.getElementById('ed-title')?.value||'"Il tuo titolo grande qui."';
+  const accentWord=document.getElementById('ed-accent')?.value?.trim();
+  const copy=document.getElementById('ed-copy')?.value||'Il testo descrittivo appare qui sotto il titolo.';
+  const author=document.getElementById('ed-author')?.value||'Firma · 2026';
+  // Highlight accent word in title
+  const titleHtml=accentWord&&titleRaw.includes(accentWord)
+    ?titleRaw.replace(accentWord,`<span style="color:${cols.accent};">${accentWord}</span>`)
+    :titleRaw;
+  card.className='ed-card-preview '+(edFmt==='story'?'story-fmt':'feed-fmt');
+  card.style.cssText=`background:${cols.bg};color:${cols.text};`;
+  const titleSize=edFmt==='story'?'14px':'22px';
+  const copySize=edFmt==='story'?'7px':'8px';
+  card.innerHTML=`
+    <div class="ecp-eyebrow" style="color:${cols.text};">${eyebrow}</div>
+    <div class="ecp-title" style="font-size:${titleSize};flex:1;">${titleHtml}</div>
+    <div class="ecp-div"></div>
+    <div class="ecp-copy" style="font-size:${copySize};">${copy}</div>
+    <div class="ecp-footer">
+      <div class="ecp-author">${author}</div>
+      <div class="ecp-logo" style="background:${cols.logo};color:${cols.logoText};">N</div>
+    </div>`;
+}
+
+function saveEditorialCard(){
+  const eyebrow=document.getElementById('ed-eyebrow')?.value||'';
+  const title=document.getElementById('ed-title')?.value||'';
+  const accent=document.getElementById('ed-accent')?.value||'';
+  const copy=document.getElementById('ed-copy')?.value||'';
+  const author=document.getElementById('ed-author')?.value||'';
+  if(!title){document.getElementById('ed-title').focus();showToast('Aggiungi un titolo','warn');return;}
+  const cols=getEdColors();
+  const item={
+    type:'editorial',
+    editorialTheme:edTheme,
+    editorialFmt:edFmt,
+    editorialEyebrow:eyebrow,
+    editorialTitle:title,
+    editorialAccent:accent,
+    editorialCopy:copy,
+    editorialAuthor:author,
+    editorialColors:cols,
+    copy:title,
+    date:'',
+    showDate:false,
+    url:'',
+    name:'Card: '+title.slice(0,20),
+  };
+  if(edFmt==='feed'){
+    const items=currentFeedItems();items.push(item);setFeedItems(items);
+    closeModal('editorial-modal');refreshFeed();showToast('✓ Card aggiunta al feed');
+    switchTab('feed');
+  } else {
+    const st={...item,isStoryboard:false,date:'',note:''};
+    const arr=currentStoryItems();arr.push(st);setStoryItems(arr);
+    closeModal('editorial-modal');refreshStories();showToast('✓ Card aggiunta alle stories');
+    switchTab('stories');
+  }
+}
+
+/* ════════ PILASTRI CONTENUTO ════════ */
+// Default pillars — per client, stored in pilastri object
+// pilastri = { clientName: [{id, name, color, description, postIds:[]}] }
+let pilastri = {};
+
+const PILASTRI_COLORS = [
+  '#b2ebf2', // turchese — Foto
+  '#b2dfdb', // verde acqua — Reel
+  '#f0f4b2', // giallo lime — Carosello
+  '#0dff00', // verde brand
+  '#ffb2b2', // rosso soft
+  '#c8b2f2', // viola soft
+  '#ffd6b2', // arancio soft
+  '#b2d4f2', // blu soft
+];
+// Text colors paired with each background
+const PILASTRI_TEXT = {
+  '#b2ebf2':'#006064',
+  '#b2dfdb':'#004d40',
+  '#f0f4b2':'#616100',
+  '#0dff00':'#111',
+  '#ffb2b2':'#7f0000',
+  '#c8b2f2':'#3d0080',
+  '#ffd6b2':'#7a3500',
+  '#b2d4f2':'#003d80',
+};
+const PILASTRI_DEFAULT = [
+  {name:'Educativo',    color:'#b2ebf2', description:'Tutorial, spiegazioni, come funziona'},
+  {name:'Istituzionale',color:'#b2dfdb', description:'Azienda, team, valori, storia'},
+  {name:'Promozionale', color:'#f0f4b2', description:'Offerte, prodotti, servizi'},
+  {name:'Ispirazionale',color:'#0dff00', description:'Citazioni, storie, emozioni'},
+];
+
+function getPilastri(clientName){
+  if(!pilastri[clientName]){
+    pilastri[clientName]=PILASTRI_DEFAULT.map((p,i)=>({
+      id:'p_'+Date.now()+'_'+i,
+      name:p.name,color:p.color,
+      description:p.description,
+      postIds:[]
+    }));
+  }
+  return pilastri[clientName];
+}
+
+function renderPilastri(){
+  const body=document.getElementById('pilastri-body');if(!body)return;
+  body.innerHTML='';
+
+  // Header — client from global context, shown in subtopbar
+  const header=document.createElement('div');header.className='pilastri-header';
+  const title=document.createElement('h2');title.className='pilastri-title';title.textContent='Pilastri contenuto';
+  header.appendChild(title);
+  body.appendChild(header);
+
+  const content=document.createElement('div');content.id='pilastri-content';body.appendChild(content);
+
+  const ci=globalClientIdx>=0?globalClientIdx:(clients.length>0?0:-1);
+  if(ci>=0){renderPilastriContent(body,ci);}
+  else{content.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-3);font-size:13px;">Aggiungi un cliente per configurare i pilastri.</div>';}
+}
+
+function renderPilastriContent(body,ci){
+  const content=document.getElementById('pilastri-content');if(!content)return;content.innerHTML='';
+  const cl=clients[ci];if(!cl)return;
+  const pils=getPilastri(cl.name);
+
+  // Stats bar
+  const statsBar=document.createElement('div');statsBar.className='pilastri-stats-bar';
+  // Count posts per pillar across all months
+  const allPosts=[];
+  Object.keys(feeds).filter(k=>cl.accounts?.some(a=>k.startsWith(a.id+'|||'))).forEach(k=>{
+    (feeds[k]||[]).filter(it=>it.type!=='pending').forEach(it=>allPosts.push(it));
+  });
+  const total=allPosts.length;
+  pils.forEach(p=>{
+    const count=allPosts.filter(it=>it.pillarId===p.id).length;
+    const pct=total>0?Math.round(count/total*100):0;
+    const chip=document.createElement('div');chip.className='pilastri-stat-chip';
+    chip.innerHTML=`<span class="ps-dot" style="background:${p.color}"></span><span class="ps-name">${p.name}</span><span class="ps-count">${count} post (${pct}%)</span>`;
+    statsBar.appendChild(chip);
+  });
+  const unassigned=allPosts.filter(it=>!it.pillarId).length;
+  if(unassigned>0){const chip=document.createElement('div');chip.className='pilastri-stat-chip';chip.innerHTML=`<span class="ps-dot" style="background:#aaa"></span><span class="ps-name" style="color:var(--text-3)">Non assegnati</span><span class="ps-count" style="color:var(--text-3)">${unassigned}</span>`;statsBar.appendChild(chip);}
+  content.appendChild(statsBar);
+
+  // Distribution bar
+  if(total>0){
+    const distBar=document.createElement('div');distBar.className='pilastri-dist-bar';
+    pils.forEach(p=>{
+      const count=allPosts.filter(it=>it.pillarId===p.id).length;
+      const pct=count/total*100;
+      if(pct>0){const seg=document.createElement('div');seg.className='dist-seg';seg.style.cssText=`width:${pct}%;background:${p.color};`;seg.title=`${p.name}: ${Math.round(pct)}%`;distBar.appendChild(seg);}
+    });
+    const unPct=unassigned/total*100;
+    if(unPct>0){const seg=document.createElement('div');seg.className='dist-seg';seg.style.cssText=`width:${unPct}%;background:#ddd;`;seg.title=`Non assegnati: ${Math.round(unPct)}%`;distBar.appendChild(seg);}
+    content.appendChild(distBar);
+  }
+
+  // Pillar cards grid
+  const grid=document.createElement('div');grid.className='pilastri-grid';
+
+  pils.forEach((p,pi)=>{
+    const card=document.createElement('div');card.className='pilastri-card';
+    card.style.borderTopColor=p.color;card.dataset.textColor=PILASTRI_TEXT[p.color]||'#111';
+
+    // Card header
+    const cardHead=document.createElement('div');cardHead.className='pilastri-card-head';
+    const colorDot=document.createElement('div');colorDot.className='p-color-dot';colorDot.style.background=p.color;colorDot.style.border='.5px solid '+(PILASTRI_TEXT[p.color]||'#111');
+    const nameInp=document.createElement('input');nameInp.className='p-name-inp';nameInp.value=p.name;
+    nameInp.oninput=e=>{pils[pi].name=e.target.value;autoSave();};
+    const colorSel=document.createElement('div');colorSel.className='p-color-sel';
+    PILASTRI_COLORS.forEach(col=>{const dot=document.createElement('div');dot.className='p-color-opt'+(col===p.color?' active':'');dot.style.background=col;dot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');dot.onclick=()=>{pils[pi].color=col;card.style.borderTopColor=col;colorDot.style.background=col;colorDot.style.border='.5px solid '+(PILASTRI_TEXT[col]||'#111');colorSel.querySelectorAll('.p-color-opt').forEach(d=>d.classList.remove('active'));dot.classList.add('active');autoSave();};colorSel.appendChild(dot);});
+    const delBtn=document.createElement('button');delBtn.className='p-del-btn';delBtn.setAttribute('aria-label','Elimina pilastro');delBtn.textContent='✕';delBtn.title='Elimina pilastro';
+    delBtn.onclick=()=>{showConfirm({
+    title:'Elimina pilastro',
+    body:`Eliminare il pilastro <strong>${esc(p.name)}</strong>? I post associati non saranno eliminati.`,
+    okLabel:'Elimina',
+    type:'danger',
+    onOk:()=>{pils.splice(pi,1);pilastri[cl.name]=pils;autoSave();renderPilastriContent(body,ci);}
+  });};
+    cardHead.appendChild(colorDot);cardHead.appendChild(nameInp);cardHead.appendChild(delBtn);
+
+    const descInp=document.createElement('input');descInp.className='p-desc-inp';descInp.placeholder='Descrizione breve…';descInp.value=p.description||'';
+    descInp.oninput=e=>{pils[pi].description=e.target.value;autoSave();};
+
+    // Posts assigned to this pillar
+    const postsWrap=document.createElement('div');postsWrap.className='p-posts-wrap';
+    const pillarPosts=allPosts.filter(it=>it.pillarId===p.id);
+    if(pillarPosts.length){
+      const postsGrid=document.createElement('div');postsGrid.className='p-posts-mini';
+      pillarPosts.slice(0,6).forEach(it=>{
+        const th=document.createElement('div');th.className='p-post-th';
+        const coverUrl=it.type==='carousel'&&it.slides?.[0]?it.slides[0].url:it.url;
+        if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:3px;';th.appendChild(img);}
+        else{th.style.background='#ddd';th.innerHTML=`<span style="font-size:10px;">${it.type==='video'?'':'🖼'}</span>`;}
+        // Click to unassign
+        th.title='Clicca per rimuovere';th.onclick=()=>{it.pillarId=null;autoSave();renderPilastriContent(body,ci);};
+        postsGrid.appendChild(th);
+      });
+      if(pillarPosts.length>6){const more=document.createElement('div');more.className='p-post-th more';more.innerHTML=`+${pillarPosts.length-6}`;postsGrid.appendChild(more);}
+      postsWrap.appendChild(postsGrid);
+    } else {
+      postsWrap.innerHTML='<div class="p-posts-empty">Nessun post assegnato</div>';
+    }
+
+    // Assign posts dropdown
+    const assignWrap=document.createElement('div');assignWrap.className='p-assign-wrap';
+    const unassignedPosts=allPosts.filter(it=>!it.pillarId);
+    if(unassignedPosts.length){
+      const assignLbl=document.createElement('div');assignLbl.className='p-assign-lbl';assignLbl.textContent='+ Assegna post:';
+      const assignSel=document.createElement('select');assignSel.className='p-assign-sel';
+      assignSel.innerHTML='<option value="">— seleziona post —</option>';
+      unassignedPosts.forEach((it,ii)=>{const o=document.createElement('option');o.value=ii;o.textContent=(it.copy?it.copy.slice(0,30)+'…':it.name||'Post '+(ii+1));assignSel.appendChild(o);});
+      assignSel.onchange=e=>{if(e.target.value==='')return;const idx=parseInt(e.target.value);unassignedPosts[idx].pillarId=p.id;autoSave();renderPilastriContent(body,ci);};
+      assignWrap.appendChild(assignLbl);assignWrap.appendChild(assignSel);
+    }
+
+    card.appendChild(cardHead);card.appendChild(colorSel);card.appendChild(descInp);card.appendChild(postsWrap);card.appendChild(assignWrap);
+    grid.appendChild(card);
+  });
+
+  // Add pillar button
+  const addCard=document.createElement('div');addCard.className='pilastri-card add-pillar';
+  addCard.innerHTML='<div style="font-size:24px;color:var(--text-3);">+</div><div style="font-size:12px;color:var(--text-3);margin-top:6px;">Aggiungi pilastro</div>';
+  addCard.onclick=()=>{
+    pils.push({id:'p_'+Date.now(),name:'Nuovo pilastro',color:PILASTRI_COLORS[pils.length%PILASTRI_COLORS.length],description:'',postIds:[]});
+    pilastri[cl.name]=pils;autoSave();renderPilastriContent(body,ci);
+  };
+  grid.appendChild(addCard);
+  content.appendChild(grid);
+}
+
+/* SIDEBAR TOGGLE */
+let sidebarExpanded = localStorage.getItem('sb_expanded') === '1';
+let feedPanelOpen = false;
+function openFeedUploadPanel(){
+  const popover = document.getElementById('feed-ctx-panel');
+  const chevron = document.getElementById('feed-upload-chevron');
+  if(!popover) return;
+  const isOpen = popover.classList.contains('open');
+  if(isOpen){ closeFeedUploadPanel(); return; }
+  popover.classList.add('open');
+  if(chevron) chevron.style.transform = 'rotate(180deg)';
+  // Pulse la drop zone
+  setTimeout(()=>{
+    const dz = document.getElementById('feed-drop-zone');
+    if(dz){ dz.classList.add('dz-highlight'); setTimeout(()=>dz.classList.remove('dz-highlight'),1200); }
+  }, 100);
+  // Chiudi cliccando fuori
+  setTimeout(()=>{
+    document.addEventListener('click', _feedPopoverOutside, true);
+  }, 10);
+}
+
+function closeFeedUploadPanel(){
+  const popover = document.getElementById('feed-ctx-panel');
+  const chevron = document.getElementById('feed-upload-chevron');
+  if(popover) popover.classList.remove('open');
+  if(chevron) chevron.style.transform = '';
+  document.removeEventListener('click', _feedPopoverOutside, true);
+}
+
+function _feedPopoverOutside(e){
+  const anchor = document.getElementById('feed-upload-anchor');
+  if(anchor && !anchor.contains(e.target)) closeFeedUploadPanel();
+}
+
+function toggleFeedPanel(){
+  feedPanelOpen=!feedPanelOpen;
+  const panel=document.getElementById('feed-ctx-panel-opts');
+  const icon=document.getElementById('feed-expand-icon');
+  const btn=document.getElementById('feed-expand-btn');
+  if(panel) panel.classList.toggle('open', feedPanelOpen);
+  if(icon)icon.innerHTML=feedPanelOpen
+    ?'<polyline points="18 15 12 9 6 15"/>'
+    :'<polyline points="6 9 12 15 18 9"/>';
+}
+
+function toggleSidebar(){
+  sidebarExpanded = !sidebarExpanded;
+  localStorage.setItem('sb_expanded', sidebarExpanded ? '1' : '0');
+  applySidebarState();
+}
+function applySidebarState(){
+  const sb=document.getElementById('sidebar');
+  const tbBrand=document.getElementById('topbar-brand');
+  const icon=document.getElementById('sb-toggle-icon');
+  if(!sb)return;
+  if(sidebarExpanded){
+    sb.classList.add('sb-expanded');
+    if(tbBrand)tbBrand.classList.add('expanded');
+    if(icon)icon.innerHTML='<polyline points="15 18 9 12 15 6"/>';
+  } else {
+    sb.classList.remove('sb-expanded');
+    if(tbBrand)tbBrand.classList.remove('expanded');
+    if(icon)icon.innerHTML='<polyline points="9 18 15 12 9 6"/>';
+  }
+}
+
+function autoSave(){if(CLOUD._booting)return;CLOUD.scheduleSave(()=>CLOUD.snapshot());}
+
+
+
+/* ══ ADS GANTT ══ */
+const ADS_PLAT_COLORS={instagram:'#378ADD',facebook:'#7F77DD',meta:'#7F77DD',linkedin:'#1D9E75',google:'#BA7517'};
+
+function adsGanttPrevMonth(){
+  adsGanttMonth--;
+  if(adsGanttMonth<0){adsGanttMonth=11;adsGanttYear--;}
+  renderAdsMonthPills();renderAdsGantt();
+}
+function adsGanttNextMonth(){
+  adsGanttMonth++;
+  if(adsGanttMonth>11){adsGanttMonth=0;adsGanttYear++;}
+  renderAdsMonthPills();renderAdsGantt();
+}
+
+function renderAdsMonthPills(){
+  const c=document.getElementById('ads-month-pills');
+  if(!c)return;
+  c.innerHTML='';
+
+  // Year nav
+  const ynav=document.createElement('div');
+  ynav.className='year-nav';
+  ynav.style.marginBottom='0';
+  const prev=document.createElement('button');
+  prev.className='year-nav-btn';prev.textContent='‹';prev.setAttribute('aria-label','Anno precedente');
+  prev.onclick=()=>{adsGanttYear--;renderAdsMonthPills();renderAdsGantt();};
+  const lbl=document.createElement('span');
+  lbl.className='year-label';lbl.textContent=adsGanttYear;
+  const next=document.createElement('button');
+  next.className='year-nav-btn';next.textContent='›';next.setAttribute('aria-label','Anno successivo');
+  next.onclick=()=>{adsGanttYear++;renderAdsMonthPills();renderAdsGantt();};
+  ynav.appendChild(prev);ynav.appendChild(lbl);ynav.appendChild(next);
+  c.appendChild(ynav);
+
+  // Month pills
+  const pillsWrap=document.createElement('div');
+  pillsWrap.style.cssText='display:flex;gap:3px;overflow-x:auto;flex-wrap:nowrap;';
+  const mShort=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  mShort.forEach((m,i)=>{
+    const p=document.createElement('button');
+    p.className='month-pill'+(i===adsGanttMonth?' active':'');
+    p.textContent=m;
+    p.onclick=()=>{adsGanttMonth=i;renderAdsMonthPills();renderAdsGantt();};
+    pillsWrap.appendChild(p);
+  });
+  c.appendChild(pillsWrap);
+}
+
+function adsAutoSpends(camp, days){
+  // Distribute spent evenly across campaign days, 3-5 milestones
+  const start=Math.max(1,camp.startDay||1);
+  const end=Math.min(days,camp.endDay||days);
+  const dur=end-start+1;
+  if(!camp.spent||dur<=0)return[];
+  const pts=Math.min(5,Math.max(2,Math.floor(dur/5)));
+  const step=Math.floor(dur/(pts+1));
+  const amtEach=Math.round(camp.spent/pts);
+  return Array.from({length:pts},(_,i)=>({
+    day:start+step*(i+1),
+    amt:i===pts-1?camp.spent-(amtEach*(pts-1)):amtEach
+  })).filter(s=>s.day>=1&&s.day<=days);
+}
+
+function renderAdsGantt(){
+  const el=id=>document.getElementById(id);
+  const ganttEl=el('ads-gantt');
+  if(!ganttEl)return;
+
+  const days=new Date(adsGanttYear,adsGanttMonth+1,0).getDate();
+  const today=new Date();
+  const isNow=today.getFullYear()===adsGanttYear&&today.getMonth()===adsGanttMonth;
+  const todayDay=isNow?today.getDate():-1;
+
+
+  const camps=currentAdsCampaigns().filter(c=>c.startDay&&c.endDay);
+  const LABEL_W=130;
+
+  ganttEl.innerHTML='';
+
+  if(!camps.length){
+    ganttEl.innerHTML='<div class="ads-gantt-empty">Nessuna campagna con date impostate. Modifica una campagna e aggiungi giorno di inizio e fine.</div>';
     return;
   }
 
-  const ICONS = {
-    folder: '📁',
-    pdf:'📄', doc:'📝', docx:'📝',
-    xls:'📊', xlsx:'📊', csv:'📊',
-    ppt:'📊', pptx:'📊',
-    png:'🖼', jpg:'🖼', jpeg:'🖼', gif:'🖼', webp:'🖼',
-    mp4:'🎬', mov:'🎬', avi:'🎬',
-    mp3:'🎵', wav:'🎵',
-    zip:'📦', rar:'📦',
-    txt:'📄', md:'📄',
-  };
+  // Header
+  const hdr=document.createElement('div');
+  hdr.className='ads-gantt-hdr';
+  hdr.style.gridTemplateColumns=`${LABEL_W}px 1fr`;
+  const hdrLbl=document.createElement('div');
+  hdrLbl.className='ads-gantt-hdr-lbl';
+  hdrLbl.textContent='Campagna';
+  hdr.appendChild(hdrLbl);
 
-  list.innerHTML = entries.filter(Boolean).map(e => {
-    const icon = e.type === 'folder' ? ICONS.folder : (ICONS[e.ext] || '📄');
-    const size = e.size ? dbxFormatSize(e.size) : '';
-    const date = e.modified ? new Date(e.modified).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}) : '';
-    const meta = [size, date].filter(Boolean).join(' · ');
+  const dayWrap=document.createElement('div');
+  dayWrap.className='ads-gantt-days';
+  // Show every 5th day
+  for(let d=1;d<=days;d++){
+    const dl=document.createElement('div');
+    dl.className='ads-gantt-day'+(d===todayDay?' today':'');
+    dl.textContent=(d===1||d%5===0||d===days)?d:'';
+    dayWrap.appendChild(dl);
+  }
+  hdr.appendChild(dayWrap);
+  ganttEl.appendChild(hdr);
 
-    if(e.type === 'folder'){
-      return `<div class="dbx-item dbx-folder" onclick="dbxNavigate('${e.path.replace(/'/g,"\'")}')">
-        <span class="dbx-icon">${icon}</span>
-        <div class="dbx-info"><div class="dbx-name">${esc(e.name)}</div></div>
-        <span class="dbx-chevron">›</span>
-      </div>`;
+  // Rows
+  camps.forEach(camp=>{
+    const row=document.createElement('div');
+    row.className='ads-gantt-row';
+    row.style.gridTemplateColumns=`${LABEL_W}px 1fr`;
+
+    // Label
+    const lbl=document.createElement('div');
+    lbl.className='ads-gantt-lbl';
+    // FIX QA: esc() su camp.name e camp.status — previene XSS da nomi campagna
+    lbl.innerHTML=`<div class="ads-gantt-lbl-name">${esc(camp.name)}</div>
+      <div class="ads-gantt-lbl-sub">${esc({active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status)}</div>`;
+    row.appendChild(lbl);
+
+    // Timeline
+    const tl=document.createElement('div');
+    tl.className='ads-gantt-tl';
+
+    // Today line
+    if(todayDay>0){
+      const tline=document.createElement('div');
+      tline.className='ads-gantt-today';
+      tline.style.left=((todayDay-0.5)/days*100)+'%';
+      tl.appendChild(tline);
     }
-    return `<div class="dbx-item dbx-file" onclick="dbxInsertFile('${e.path.replace(/'/g,"\'")}','${e.name.replace(/'/g,"\'")}')">
-      <span class="dbx-icon">${icon}</span>
-      <div class="dbx-info">
-        <div class="dbx-name">${esc(e.name)}</div>
-        ${meta ? `<div class="dbx-meta">${meta}</div>` : ''}
+
+    // Bar
+    const s=Math.max(1,camp.startDay), e=Math.min(days,camp.endDay);
+    if(s<=days&&e>=1){
+      const left=((s-1)/days*100).toFixed(2)+'%';
+      const width=((e-s+1)/days*100).toFixed(2)+'%';
+      const color=ADS_PLAT_COLORS[camp.platform]||'#888';
+      const bar=document.createElement('div');
+      bar.className='ads-gantt-bar'+(camp.status!=='active'?' '+camp.status:'');
+      bar.style.cssText=`left:${left};width:${width};background:${color};`;
+      // Label: spent/budget
+      const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
+      bar.textContent=`€${(camp.spent||0).toLocaleString('it')} (${pct}%)`;
+      bar.title=`${camp.name} — ${s}→${e} ${MONTHS[adsGanttMonth]}
+Budget: €${camp.budget} | Speso: €${camp.spent||0} | ROAS: ${camp.roas||'—'}×`;
+      tl.appendChild(bar);
+    }
+
+    // Auto spend dots
+    adsAutoSpends(camp, days).forEach(sp=>{
+      const dot=document.createElement('div');
+      dot.className='ads-gantt-spend-dot';
+      dot.style.left=((sp.day-0.5)/days*100).toFixed(2)+'%';
+      dot.title=`Spesa stimata giorno ${sp.day}: €${sp.amt}`;
+      tl.appendChild(dot);
+    });
+
+    row.appendChild(tl);
+    ganttEl.appendChild(row);
+  });
+}
+
+/* ════ ADS TAB ════ */
+
+/* ══ MIGRATION: adsCampaigns clientName → client.id ══
+ * Converte le chiavi legacy (nome cliente) in client.id stabile.
+ * Sicura da chiamare più volte — salta chiavi già nel formato corretto.
+ */
+function migrateAdsCampaignsKeys(adsData, clientList){
+  if(!adsData||!clientList) return adsData||{};
+  const result={};
+  const clientIds=new Set(clientList.map(c=>c.id));
+  
+  Object.keys(adsData).forEach(key=>{
+    if(clientIds.has(key)){
+      // Chiave già in formato id — copia diretta
+      result[key]=(result[key]||[]).concat(adsData[key]);
+    } else {
+      // Chiave legacy (nome) — cerca il client corrispondente
+      const match=clientList.find(c=>c.name===key);
+      if(match){
+        // Migra alla chiave id
+        result[match.id]=(result[match.id]||[]).concat(adsData[key]);
+        console.log('[ADS] Migrated adsCampaigns key:',key,'→',match.id);
+      } else {
+        // Cliente non trovato — mantieni la chiave (potrebbe essere dato orfano)
+        result[key]=adsData[key];
+      }
+    }
+  });
+  return result;
+}
+
+let adsCampaigns = {};
+let adsGanttYear = new Date().getFullYear();
+let annoYear = new Date().getFullYear();
+let annoFilterTag = null;
+let annoSelectedEv = null;
+let annoExpanded = {};
+let adsGanttMonth = new Date().getMonth(); // 0-indexed // key: clientName, value: [{id,name,platform,budget,spent,roas,roasTarget,cpc,impressions,status,creativeUrl,creativeType}]
+let _adsCreativeFile = null; // temp file object for upload
+let adsEditId = null;
+let adsFilter = 'all';
+
+const ADS_PLATFORM_LABELS = {
+  instagram:'Instagram', facebook:'Facebook', meta:'Meta (IG+FB)',
+  linkedin:'LinkedIn', google:'Google'
+};
+const ADS_PLATFORM_COLORS = {
+  instagram:'ig', facebook:'fb', meta:'meta', linkedin:'li', google:'gg'
+};
+
+function currentAdsKey(){
+  // FIX: usa client.id stabile — immune a rename del cliente
+  if(globalClientIdx<0)return null;
+  return clients[globalClientIdx]?.id||null;
+}
+
+function currentAdsCampaigns(){
+  const k=currentAdsKey();return k?(adsCampaigns[k]||[]):[];
+}
+
+function renderAdsTab(){
+  const camps=currentAdsCampaigns();
+  const cl=globalClientIdx>=0?clients[globalClientIdx]:null;
+  const el=id=>document.getElementById(id);
+
+  if(el('ads-page-title'))el('ads-page-title').textContent=(cl?cl.name+' — ':''  )+'Performance Ads';
+
+  // Metrics
+  const active=camps.filter(c=>c.status==='active');
+  const totalBudget=camps.reduce((s,c)=>s+(c.budget||0),0);
+  const totalSpent=camps.reduce((s,c)=>s+(c.spent||0),0);
+  const avgRoas=active.length?
+    (active.reduce((s,c)=>s+(c.roas||0),0)/active.length).toFixed(1):0;
+  const totalImp=camps.reduce((s,c)=>s+(c.impressions||0),0);
+
+  const metrics=el('ads-metrics');
+  if(metrics){
+    metrics.innerHTML=[
+      {lbl:'Budget totale',val:'€'+totalBudget.toLocaleString('it'),sub:totalSpent?'€'+totalSpent.toLocaleString('it')+' spesi':'—'},
+      {lbl:'ROAS medio',val:avgRoas+'×',sub:active.length+' camp. attive',cls:parseFloat(avgRoas)>=4?'up':parseFloat(avgRoas)>0&&parseFloat(avgRoas)<3?'dn':''},
+      {lbl:'CPC medio',val:active.length?'€'+(active.reduce((s,c)=>s+(c.cpc||0),0)/active.length).toFixed(2):'—',sub:''},
+      {lbl:'Impression tot.',val:totalImp>=1000?(totalImp/1000).toFixed(1)+'K':totalImp||'—',sub:''},
+      {lbl:'Campagne',val:active.length+'/'+camps.length,sub:'attive / totali'}
+    ].map(m=>`<div class="ads-metric">
+      <div class="ads-metric-lbl">${m.lbl}</div>
+      <div class="ads-metric-val">${m.val}</div>
+      ${m.sub?`<div class="ads-metric-sub ${m.cls||''}">${m.sub}</div>`:''}
+    </div>`).join('');
+  }
+
+  // Alert: ROAS below target
+  const alert=el('ads-alert');
+  if(alert){
+    const under=camps.filter(c=>c.status==='active'&&c.roas>0&&c.roasTarget>0&&c.roas<c.roasTarget);
+    if(under.length){
+      const names=under.map(c=>'"'+c.name+'" ('+c.roas+'× vs target '+c.roasTarget+'×)').join(', ');
+      alert.style.display='flex';
+      alert.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      ROAS sotto target: ${names}`;
+    } else {
+      alert.style.display='none';
+    }
+  }
+
+  // Chart bars per platform
+  const bars=el('ads-bars');
+  if(bars){
+    const byPlatform={};
+    camps.forEach(c=>{const p=c.platform||'altro';byPlatform[p]=(byPlatform[p]||0)+(c.spent||0);});
+    const maxSpent=Math.max(...Object.values(byPlatform),1);
+    const colors={instagram:'#3b82f6',facebook:'#8b5cf6',meta:'#7c3aed',linkedin:'#22c55e',google:'#f59e0b'};
+    bars.innerHTML=Object.entries(byPlatform).sort((a,b)=>b[1]-a[1]).map(([p,s])=>`
+      <div class="ads-bar-row">
+        <span class="ads-bar-lbl">${ADS_PLATFORM_LABELS[p]||p}</span>
+        <div class="ads-bar-track"><div class="ads-bar-fill" style="width:${Math.round(s/maxSpent*100)}%;background:${colors[p]||'#888'};"></div></div>
+        <span class="ads-bar-val">€${s.toLocaleString('it')}</span>
+      </div>`).join('');
+    if(!Object.keys(byPlatform).length)bars.innerHTML='<div style="font-size:11px;color:var(--text-3);text-align:center;padding:12px 0;">Nessun dato di spesa</div>';
+  }
+
+  // Filter buttons
+  const filterRow=el('ads-filter-row');
+  if(filterRow){
+    const platforms=['all',...new Set(camps.map(c=>c.platform))];
+    filterRow.innerHTML=platforms.map(p=>`
+      <button class="ads-filt${adsFilter===p?' active':''}" onclick="adsSetFilter('${p}',this)">
+        ${p==='all'?'Tutte':ADS_PLATFORM_LABELS[p]||p}
+      </button>`).join('');
+  }
+
+  renderAdsCampList(camps);
+  renderAdsMonthPills();
+  renderAdsGantt();
+}
+
+function renderAdsCampList(camps){
+  const el=id=>document.getElementById(id);
+  const list=el('ads-camp-list');if(!list)return;
+
+  const filtered=adsFilter==='all'?camps:camps.filter(c=>c.platform===adsFilter);
+
+  if(!filtered.length){
+    list.innerHTML='<div class="ads-empty">Nessuna campagna. Clicca "+ Nuova campagna" per aggiungere.</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map(camp=>{
+    const pct=camp.budget>0?Math.round((camp.spent||0)/camp.budget*100):0;
+    const roasCls=camp.roas>=4?'good':camp.roas>0&&camp.roas<3?'warn':'';
+    const cpcCls=camp.cpc>0&&camp.cpc>1?'warn':'';
+    const platCls=ADS_PLATFORM_COLORS[camp.platform]||'ig';
+    const thumb=camp.creativeUrl?`
+      ${camp.creativeType==='video'
+        ?`<video src="${camp.creativeUrl}" class="ads-creative-thumb-vid" muted playsinline preload="metadata"></video>`
+        :`<img src="${camp.creativeUrl}" class="ads-creative-thumb" alt="creativo"/>`
+      }` : '';
+    return `<div class="ads-camp">
+      ${thumb?`<div style="flex-shrink:0;">${thumb}<div class="ads-creative-badge">${camp.creativeType==='video'?'Reel':'Foto'}</div></div>`:''}
+      <div style="flex:1;min-width:0;">
+        <div class="ads-camp-name">${esc(camp.name)}</div>
+        <div class="ads-camp-meta">
+          <span class="ads-plat ${platCls}">${ADS_PLATFORM_LABELS[camp.platform]||camp.platform}</span>
+          <span class="ads-status ${camp.status}">${{active:'Attiva',paused:'In pausa',draft:'Bozza',ended:'Terminata'}[camp.status]||camp.status}</span>
+          <span style="font-size:10px;color:var(--text-3);">€${(camp.spent||0).toLocaleString('it')} / €${(camp.budget||0).toLocaleString('it')} (${pct}%)</span>
+        </div>
       </div>
-      <button class="dbx-insert-btn" title="Inserisci link">+</button>
+      <div class="ads-camp-kpis">
+        <div class="ads-kpi"><div class="ads-kpi-val ${roasCls}">${camp.roas?camp.roas+'×':'—'}</div><div class="ads-kpi-lbl">ROAS</div></div>
+        <div class="ads-div"></div>
+        <div class="ads-kpi"><div class="ads-kpi-val ${cpcCls}">€${camp.cpc?(camp.cpc).toFixed(2):'—'}</div><div class="ads-kpi-lbl">CPC</div></div>
+        <div class="ads-div"></div>
+        <div class="ads-kpi"><div class="ads-kpi-val">${camp.impressions>=1000?(camp.impressions/1000).toFixed(1)+'K':camp.impressions||'—'}</div><div class="ads-kpi-lbl">Impression</div></div>
+        <div class="ads-div"></div>
+        <button class="btn sm" onclick="openEditAdsCampaign('${camp.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="ads-camp-del" onclick="deleteAdsCampaign('${camp.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
     </div>`;
   }).join('');
 }
 
-async function dbxInsertFile(path, name){
-  showToast('⟳ Ottengo link…');
-  try {
-    const res = await fetch('/api/dropbox-link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
-      credentials: 'include',
-      body: JSON.stringify({ path })
-    });
-    const data = await res.json();
-    if(!res.ok || !data.url) throw new Error(data.error || 'Nessun URL ricevuto');
-
-    const url = data.url;
-    const ext = name.split('.').pop().toLowerCase();
-    const ICONS = {pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',
-                   ppt:'📊',pptx:'📊',png:'🖼',jpg:'🖼',jpeg:'🖼',
-                   mp4:'🎬',mov:'🎬',zip:'📦',txt:'📄',csv:'📊',
-                   paper:'📄'};
-    const icon = ICONS[ext] || '📎';
-    notesInsertAtCursor(`
-${icon} [${name}](${url})
-`);
-    showToast(`✓ "${name}" inserito`);
-  } catch(e) {
-    showToast('⚠ ' + e.message, 'warn');
+function adsPreviewCreative(inp){
+  const file=inp.files[0];if(!file)return;
+  _adsCreativeFile=file;
+  const url=URL.createObjectURL(file);
+  const isVideo=file.type.startsWith('video');
+  const ph=document.getElementById('adm-creative-placeholder');
+  const prev=document.getElementById('adm-creative-preview');
+  const img=document.getElementById('adm-creative-img');
+  const vid=document.getElementById('adm-creative-vid');
+  if(ph)ph.style.display='none';
+  if(prev)prev.style.display='block';
+  if(isVideo){
+    if(vid){vid.src=url;vid.style.display='block';}
+    if(img)img.style.display='none';
+  } else {
+    if(img){img.src=url;img.style.display='block';}
+    if(vid)vid.style.display='none';
   }
 }
 
-function dbxFormatSize(bytes){
-  if(bytes < 1024) return bytes+'B';
-  if(bytes < 1024*1024) return (bytes/1024).toFixed(0)+'KB';
-  return (bytes/1024/1024).toFixed(1)+'MB';
+function adsClearCreative(){
+  _adsCreativeFile=null;
+  const inp=document.getElementById('adm-creative-inp');
+  if(inp)inp.value='';
+  const ph=document.getElementById('adm-creative-placeholder');
+  const prev=document.getElementById('adm-creative-preview');
+  const img=document.getElementById('adm-creative-img');
+  const vid=document.getElementById('adm-creative-vid');
+  if(ph)ph.style.display='flex';
+  if(prev)prev.style.display='none';
+  if(img){img.src='';img.style.display='none';}
+  if(vid){vid.src='';vid.style.display='none';}
+  document.getElementById('adm-creative-url').value='';
 }
 
-/* ══ NOTES — ALLEGATI E LINK DROPBOX PAPER ══ */
-
-// Apre il file picker per allegati
-function notesAttachFile(){
-  const inp = document.getElementById('notes-attach-input');
-  if(inp) inp.click();
+function adsSetFilter(f,el){
+  adsFilter=f;
+  document.querySelectorAll('.ads-filt').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAdsCampList(currentAdsCampaigns());
 }
 
-// Carica file su Dropbox e inserisce link markdown nell'editor
-async function notesUploadAttachment(files){
-  if(!files || !files.length) return;
-  const cl = notesClientIdx >= 0 ? clients[notesClientIdx] : null;
-  if(!cl){ showToast('Seleziona un cliente prima di allegare file','warn'); return; }
+function openAddAdsCampaignModal(){
+  adsEditId=null;
+  _adsCreativeFile=null;
+  const el=id=>document.getElementById(id);
+  el('ads-modal-title').textContent='Nuova campagna Ads';
+  el('adm-name').value='';
+  el('adm-platform').value='instagram';
+  el('adm-budget').value='';
+  el('adm-spent').value='';
+  el('adm-roas').value='';
+  el('adm-cpc').value='';
+  el('adm-imp').value='';
+  el('adm-status').value='active';
+  el('adm-roas-target').value='';
+  el('adm-start').value='';
+  el('adm-end').value='';
+  el('adm-creative-url').value='';
+  adsClearCreative();
+  openModal('ads-camp-modal');
+}
 
-  for(const file of Array.from(files)){
-    // Validazione dimensione (max 50MB)
-    if(file.size > 50 * 1024 * 1024){
-      showToast(`⚠ File troppo grande: ${file.name} (max 50MB)`, 'warn');
-      continue;
+function openEditAdsCampaign(id){
+  const camp=currentAdsCampaigns().find(c=>c.id===id);
+  if(!camp)return;
+  adsEditId=id;
+  const el=i=>document.getElementById(i);
+  el('ads-modal-title').textContent='Modifica campagna';
+  el('adm-name').value=camp.name||'';
+  el('adm-platform').value=camp.platform||'instagram';
+  el('adm-budget').value=camp.budget||'';
+  el('adm-spent').value=camp.spent||'';
+  el('adm-roas').value=camp.roas||'';
+  el('adm-cpc').value=camp.cpc||'';
+  el('adm-imp').value=camp.impressions||'';
+  el('adm-status').value=camp.status||'active';
+  el('adm-roas-target').value=camp.roasTarget||'';
+  el('adm-start').value=camp.startDay||'';
+  el('adm-end').value=camp.endDay||'';
+  // Load creative
+  adsClearCreative();
+  if(camp.creativeUrl){
+    const urlInp=el('adm-creative-url');
+    if(urlInp)urlInp.value=camp.creativeUrl;
+    // Show preview if it's a stored URL
+    const prev=el('adm-creative-preview');
+    const ph=el('adm-creative-placeholder');
+    const img=el('adm-creative-img');
+    const vid=el('adm-creative-vid');
+    if(camp.creativeType==='video'){
+      if(vid){vid.src=camp.creativeUrl;vid.style.display='block';}
+    } else if(camp.creativeUrl){
+      if(img){img.src=camp.creativeUrl;img.alt=camp.name||'Creativo campagna';img.style.display='block';}
     }
+    if(prev)prev.style.display='block';
+    if(ph)ph.style.display='none';
+  }
+  openModal('ads-camp-modal');
+}
 
-    showToast(`⟳ Caricamento ${file.name}…`);
+async function saveAdsCampaign(){
+  const g=id=>document.getElementById(id)?.value.trim()||'';
+  const name=g('adm-name');
+  if(!name){showToast('Inserisci il nome','warn');return;}
+  const k=currentAdsKey();
+  if(!k){showToast('Nessun cliente selezionato','warn');return;}
+  if(!adsCampaigns[k])adsCampaigns[k]=[];
 
-    const destPath = '/nassa/' + CLOUD.user + '/documenti/' + cl.name.replace(/[^a-zA-Z0-9]/g,'_') + '/' + file.name;
+  const campId=adsEditId||('ads_'+Date.now());
+  let creativeUrl=g('adm-creative-url');
+  let creativeType='image';
 
-    try {
-      const sharedUrl = await DROPBOX.upload(file, destPath);
-      if(sharedUrl){
-        // Inserisce link markdown nell'editor
-        const ext = file.name.split('.').pop().toLowerCase();
-        const icon = {
-          pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊',
-          ppt:'📊', pptx:'📊', csv:'📊', zip:'📦',
-          png:'🖼', jpg:'🖼', jpeg:'🖼', txt:'📄'
-        }[ext] || '📎';
-        const mdLink = `
-${icon} [${file.name}](${sharedUrl})
-`;
-        notesInsertAtCursor(mdLink);
-        showToast(`✓ ${file.name} allegato`);
-      } else {
-        showToast(`⚠ Upload fallito: ${file.name}`, 'warn');
+  // Upload file to Dropbox if a new file was selected
+  if(_adsCreativeFile){
+    showToast('⟳ Caricamento creativo…');
+    try{
+      const file=_adsCreativeFile;
+      creativeType=file.type.startsWith('video')?'video':'image';
+      const ext=file.name.split('.').pop();
+      const destPath='/nassa/'+(CLOUD.user||'shared')+'/ads/'+campId+'.'+ext;
+      const formData=new FormData();
+      formData.append('file',file);
+      formData.append('path',destPath);
+      const res=await fetch('/api/dropbox-upload',{
+        method:'POST',
+        headers:{'x-nassa-key':CLOUD.apiKey},
+        credentials:'include',
+        body:formData
+      });
+      if(res.ok){
+        const data=await res.json();
+        creativeUrl=data.url||data.link||creativeUrl;
+        URL.revokeObjectURL(_adsCreativeFile._blobUrl||'');
       }
-    } catch(e) {
-      showToast(`⚠ Errore upload: ${e.message}`, 'warn');
-    }
+    }catch(e){console.warn('Creative upload failed',e);}
+    _adsCreativeFile=null;
   }
-  // Reset input
-  const inp = document.getElementById('notes-attach-input');
-  if(inp) inp.value = '';
+
+  const entry={
+    id:campId,
+    name, platform:g('adm-platform'),
+    budget:parseFloat(g('adm-budget'))||0,
+    spent:parseFloat(g('adm-spent'))||0,
+    roas:parseFloat(g('adm-roas'))||0,
+    roasTarget:parseFloat(g('adm-roas-target'))||0,
+    cpc:parseFloat(g('adm-cpc'))||0,
+    impressions:parseInt(g('adm-imp'))||0,
+    status:g('adm-status')||'active',
+    startDay:parseInt(g('adm-start'))||1,
+    endDay:parseInt(g('adm-end'))||new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate(),
+    creativeUrl, creativeType,
+    updatedAt:new Date().toISOString()
+  };
+  if(adsEditId){
+    const idx=adsCampaigns[k].findIndex(c=>c.id===adsEditId);
+    if(idx>=0)adsCampaigns[k][idx]=entry;
+  } else {
+    adsCampaigns[k].push(entry);
+  }
+  closeModal('ads-camp-modal');
+  autoSave();
+  renderAdsTab();
+  showToast(adsEditId?'✓ Campagna aggiornata':'✓ Campagna aggiunta');
 }
 
-// Inserisce link a Dropbox Paper (tramite dialog)
-function notesInsertPaperLink(){
-  // Crea un mini dialog per inserire il link
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:flex;align-items:center;justify-content:center;';
+function deleteAdsCampaign(id){
+  showConfirm({
+    title:'Elimina campagna',
+    body:'La campagna verrà eliminata definitivamente. I dati di spesa e ROAS andranno persi.',
+    okLabel:'Elimina campagna',
+    type:'danger',
+    onOk:()=>{const k=currentAdsKey();if(!k)return;
+  const deleted=currentAdsCampaigns().find(camp=>camp.id===id);
+  const delIdx=currentAdsCampaigns().findIndex(camp=>camp.id===id);
+  adsCampaigns[k]=(adsCampaigns[k]||[]).filter(c=>c.id!==id);
+  renderAdsTab();
+  showUndoToast('Campagna eliminata',()=>{
+    if(deleted){adsCampaigns[k]=adsCampaigns[k]||[];adsCampaigns[k].splice(delIdx,0,deleted);renderAdsTab();autoSave();}
+  });
+  autoSave();
+  }});
+}
 
-  const box = document.createElement('div');
-  box.style.cssText = 'background:var(--surface);border-radius:var(--r);padding:20px;width:400px;max-width:90vw;box-shadow:var(--shadow-xl);';
-  box.innerHTML = `
-    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">
-      📄 Inserisci link documento
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div>
-        <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:4px;">Link (Dropbox Paper, Google Doc, ecc.)</label>
-        <input id="notes-paper-url" type="url" placeholder="https://paper.dropbox.com/doc/…" autocomplete="url" inputmode="url"
-          style="width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text);box-sizing:border-box;"/>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:4px;">Titolo (opzionale)</label>
-        <input id="notes-paper-title" type="text" placeholder="es. Brief cliente Maggio 2026" autocomplete="off"
-          style="width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text);box-sizing:border-box;"/>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
-        <button onclick="this.closest('[style*=fixed]').remove()" class="btn sm">Annulla</button>
-        <button onclick="notesConfirmPaperLink()" class="btn sm primary">Inserisci</button>
-      </div>
-    </div>
-  `;
 
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
-  setTimeout(()=>box.querySelector('#notes-paper-url')?.focus(), 50);
+/* ══ TAB ANNO — Calendario Editoriale Annuale ══ */
 
-  // Enter confirm
-  box.addEventListener('keydown', e=>{
-    if(e.key==='Enter') notesConfirmPaperLink();
-    if(e.key==='Escape') overlay.remove();
+const ANNO_TAG_COLORS = {
+  'Feed':     {bg:'#b2d8d0', text:'#0a3d35', border:'#7ab8ae'},
+  'Reel':     {bg:'#d4cff5', text:'#2a1a6e', border:'#a49de0'},
+  'Stories':  {bg:'#f5d4b8', text:'#5c2a00', border:'#d4a070'},
+  'UGC':      {bg:'#d8f0d4', text:'#1a4d14', border:'#80c878'},
+  'deadline': {bg:'#f5b8b8', text:'#5c0000', border:'#d48080'},
+  'note':     {bg:'#e8e8e8', text:'#2a2a2a', border:'#b0b0b0'},
+};
+
+/**
+ * Aggrega tutti i dati Feed + Stories + PED del cliente corrente
+ * per un dato anno, organizzati per mese (0-11) e canale (0=Feed, 1=Deadline/Note, 2=Stories/UGC)
+ */
+function buildAnnoData(year) {
+  const result = {}; // { monthIdx: [{day, ch, title, sub, tag, label}] }
+  if(globalClientIdx < 0) return result;
+  const cl = clients[globalClientIdx];
+  if(!cl) return result;
+
+  const yr = String(year);
+
+  // Scorre tutti gli account del cliente
+  (cl.accounts || []).forEach(acc => {
+    MONTHS.forEach((mName, mi) => {
+      const monthKey = accountKey(acc.id, mName + ' ' + yr);
+      if(!result[mi]) result[mi] = [];
+
+      // Campagne Paid → Canale 0 (primo giorno della campagna nel mese)
+      (adsCampaigns[cl.id||''] || []).forEach(camp => {
+        if(!camp.startDay) return;
+        const daysInMo = new Date(parseInt(yr), mi+1, 0).getDate();
+        if(camp.startDay > daysInMo) return;
+        if(!result[mi]) result[mi] = [];
+        result[mi].push({
+          day: camp.startDay,
+          ch: 0,
+          title: camp.name || 'Campagna Paid',
+          sub: (camp.platform||'ADS').toUpperCase() + (camp.budget ? ' · €'+camp.budget : ''),
+          tag: 'Paid',
+          raw: camp
+        });
+      });
+
+      // Feed items → Canale 0
+      (feeds[monthKey] || []).forEach(item => {
+        if(!item.date && !item.copy && !item.brief) return;
+        const dayNum = parseDayFromItalianDate(item.date);
+        if(!dayNum) return;
+        const tag = item.type === 'video' ? 'Reel' : item.type === 'carousel' ? 'Feed' : 'Feed';
+        result[mi].push({
+          day: dayNum,
+          ch: 0,
+          title: item.copy || item.brief || '—',
+          sub: acc.name + (item.type ? ' · ' + (item.type==='video'?'Reel':item.type==='carousel'?'Carosello':'Foto') : ''),
+          tag,
+          raw: item
+        });
+      });
+
+      // Stories → Canale 2
+      (stories[monthKey] || []).forEach(st => {
+        if(!st.date) return;
+        const dayNum = parseDayFromItalianDate(st.date);
+        if(!dayNum) return;
+        result[mi].push({
+          day: dayNum,
+          ch: 2,
+          title: st.isStoryboard ? 'Storyboard' : (st.note || st.copy || 'Story'),
+          sub: acc.name + (st.type === 'video' ? ' · Reel' : ' · Story'),
+          tag: 'Stories',
+          raw: st
+        });
+      });
+    });
+  });
+
+  // PED plans (UGC) → Canale 2
+  // FIX: usa stesso pattern del calendario (renderCalendar) che funziona
+  // Itera tutte le chiavi che iniziano con cl.name|||
+  // e filtra per anno con regex robusta invece di split fragile
+  const pedPrefix = cl.name + '|||';
+  Object.keys(pedPlans).forEach(k => {
+    if(!k.startsWith(pedPrefix)) return;
+    const monthStr = k.replace(pedPrefix, '').trim();
+    // Estrai anno con regex — gestisce spazi multipli e formati vari
+    const yearMatch = monthStr.match(/(\d{4})$/);
+    if(!yearMatch || yearMatch[1] !== yr) return;
+    // Estrai nome mese (tutto prima dell'anno)
+    const mName = monthStr.replace(yearMatch[1],'').trim();
+    const mi = MONTHS.indexOf(mName);
+    if(mi < 0) return;
+    if(!result[mi]) result[mi] = [];
+    (pedPlans[k] || []).forEach(item => {
+      if(!item.date) return;
+      // item.date può essere ISO "2026-06-03" o italiano
+      let dayNum = null;
+      if(item.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // ISO format — estrai giorno direttamente senza timezone issues
+        dayNum = parseInt(item.date.split('-')[2]);
+      } else {
+        dayNum = parseDayFromItalianDate(item.date);
+      }
+      if(!dayNum) return;
+      result[mi].push({
+        day: dayNum,
+        ch: 2,
+        title: item.brief || (item.type === 'autonoma' ? 'UGC Autonoma' : 'UGC Template'),
+        sub: item.type === 'autonoma' ? 'Autonoma' : 'Template Nassa',
+        tag: 'UGC',
+        raw: item
+      });
+    });
+  });
+
+  // Note → Canale 1 (da notesData)
+  const notesPrefix = cl.name + '|||';
+  Object.keys(notesData).forEach(k => {
+    if(!k.startsWith(notesPrefix)) return;
+    const monthStr = k.replace(notesPrefix, '');
+    const parts = monthStr.split(' ');
+    if(parts[1] !== yr) return;
+    const mi = MONTHS.indexOf(parts[0]);
+    if(mi < 0) return;
+    if(!result[mi]) result[mi] = [];
+    const content = notesData[k] || '';
+    // Estrae le deadline (righe che iniziano con ## o contengono "deadline"/"scadenza")
+    content.split('\n').forEach(line => {
+      const dl = line.match(/deadline[:\s]+(.+)/i) || line.match(/scadenza[:\s]+(.+)/i);
+      if(dl) {
+        result[mi].push({day:1, ch:1, label:dl[1].trim(), tag:'deadline'});
+      }
+    });
+  });
+
+  // Ordina ogni mese per giorno
+  Object.keys(result).forEach(mi => {
+    result[mi].sort((a,b) => a.day - b.day);
+  });
+
+  return result;
+}
+
+function parseDayFromItalianDate(dateStr) {
+  if(!dateStr) return null;
+  // Formato: "Lun 3 Giu" o "3 Giugno" o "2026-06-03"
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso) return parseInt(iso[3]);
+  const parts = dateStr.trim().split(/\s+/);
+  // "Ven 5 Giu" → giorno è il numero
+  for(const p of parts) {
+    const n = parseInt(p);
+    if(!isNaN(n) && n >= 1 && n <= 31) return n;
+  }
+  return null;
+}
+
+function annoPrevYear() { annoYear--; renderAnnoTab(); }
+function annoNextYear() { annoYear++; renderAnnoTab(); }
+
+function annoSetFilter(tag) {
+  annoFilterTag = annoFilterTag === tag ? null : tag;
+  renderAnnoTab();
+}
+
+function annoToggleMonth(mi) {
+  annoExpanded[mi] = !annoExpanded[mi];
+  renderAnnoTab();
+}
+
+function annoSelectEv(mi, evIdx) {
+  const data = buildAnnoData(annoYear);
+  const evs = data[mi] || [];
+  annoSelectedEv = evs[evIdx] ? {...evs[evIdx], month: mi} : null;
+  renderAnnoTab();
+}
+
+function renderAnnoTab() {
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  const eid = id => document.getElementById(id);
+
+  // Year label
+  if(eid('anno-year-lbl')) eid('anno-year-lbl').textContent = annoYear;
+
+  const data = buildAnnoData(annoYear);
+  const tags = Object.keys(ANNO_TAG_COLORS);
+
+  // Tag filters
+  const filterRow = eid('anno-tag-filters');
+  if(filterRow) {
+    filterRow.innerHTML = tags.map(t => {
+      const tc = ANNO_TAG_COLORS[t];
+      const isActive = annoFilterTag === t;
+      return `<button class="anno-tag-btn${isActive?' active':''}" 
+        onclick="annoSetFilter('${t}')"
+        style="${isActive?'background:'+tc.bg+';color:'+tc.text+';border:1.5px solid '+tc.border:'border-color:'+tc.border}"
+      >${t}</button>`;
+    }).join('');
+  }
+
+  // Bands
+  const bandsEl = eid('anno-bands');
+  if(!bandsEl) return;
+
+  const MONTHS_SHORT_IT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  let totalEvs = 0;
+  let html = '';
+
+  MONTHS.forEach((mName, mi) => {
+    let evs = data[mi] || [];
+    if(annoFilterTag) evs = evs.filter(e => e.tag === annoFilterTag);
+    totalEvs += evs.length;
+
+    const exp = !!annoExpanded[mi];
+    const byCh = [[],[],[]];
+    evs.forEach(e => byCh[Math.min(e.ch ?? 0, 2)].push(e));
+
+    html += `<div class="anno-band">
+      <div class="anno-band-row" onclick="annoToggleMonth(${mi})">
+        <div class="anno-month-cell">
+          <span class="anno-month-name">${MONTHS_SHORT_IT[mi]}</span>
+        </div>`;
+
+    [0,1,2].forEach(ch => {
+      const chEvs = byCh[ch];
+      if(!exp) {
+        html += `<div class="anno-channel"><div class="anno-ch-count">${chEvs.length ? chEvs.length + (chEvs.length===1?' evento':' eventi') : '—'}</div></div>`;
+        return;
+      }
+      html += `<div class="anno-channel">`;
+      chEvs.forEach((ev, ei) => {
+        const tc = ANNO_TAG_COLORS[ev.tag] || ANNO_TAG_COLORS.note;
+        const evIdx = evs.indexOf(ev);
+        const onclick = `event.stopPropagation();annoSelectEv(${mi},${evIdx})`;
+        const dayStr = ev.day ? String(ev.day) : '';
+
+        if(ev.tag === 'deadline') {
+          // Deadline — barra rossa prominente
+          html += `<div class="anno-ev-deadline" onclick="${onclick}">
+            <span class="anno-ev-dl-day">${dayStr}</span>
+            <span class="anno-ev-dl-icon">⚑</span>
+            <div class="anno-ev-dl-body">
+              <div class="anno-ev-dl-title">${esc(ev.label||ev.title||'Deadline')}</div>
+              <div class="anno-ev-dl-sub">DEADLINE</div>
+            </div>
+          </div>`;
+        } else if(ev.tag === 'note') {
+          // Nota — grigio neutro, compatta
+          html += `<div class="anno-ev-note" onclick="${onclick}">
+            <span class="anno-ev-note-icon">📝</span>
+            <div class="anno-ev-note-text">${esc(ev.label||ev.title||'Nota')}</div>
+          </div>`;
+        } else {
+          // Post normale — giorno + titolo + tipo
+          const typeLabel = ev.tag==='Reel'?'Reel':ev.tag==='Feed'?'Feed':ev.tag==='Stories'?'Story':ev.tag==='UGC'?'UGC':ev.tag==='Paid'?'Paid':ev.tag;
+          const dotColor = tc.bg;
+          html += `<div class="anno-ev-item" onclick="${onclick}">
+            <span class="anno-ev-day">${dayStr}</span>
+            <div class="anno-ev-body">
+              <div class="anno-ev-title">${esc(ev.title||ev.label||'—')}</div>
+              <div class="anno-ev-meta">
+                <span class="anno-ev-dot" style="background:${tc.border};"></span>
+                <span class="anno-ev-type">${typeLabel}</span>
+                ${ev.sub ? `<span class="anno-ev-sub-txt">${esc(ev.sub.split('·')[0].trim())}</span>` : ''}
+              </div>
+            </div>
+          </div>`;
+        }
+      });
+      if(!chEvs.length) html += `<div class="anno-ch-empty">—</div>`;
+      html += `</div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  // Empty state — nessun cliente o nessun contenuto con date
+  if(!cl) {
+    bandsEl.innerHTML = `
+      <div class="anno-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;opacity:.2;margin-bottom:14px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <p class="anno-empty-title">Nessun cliente selezionato</p>
+        <p class="anno-empty-sub">Seleziona un cliente dal menu in alto per vedere il suo calendario annuale.</p>
+      </div>`;
+  } else if(totalEvs === 0) {
+    const filterMsg = annoFilterTag ? ` con tag <strong>${annoFilterTag}</strong>` : '';
+    bandsEl.innerHTML = `
+      <div class="anno-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px;opacity:.2;margin-bottom:14px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+        <p class="anno-empty-title">Nessun contenuto nel ${annoYear}${filterMsg}</p>
+        <p class="anno-empty-sub">I post appariranno qui non appena assegni una <strong>data</strong> ai contenuti in Feed, Stories o UGC.</p>
+        <div class="anno-empty-tips">
+          <div class="anno-empty-tip" onclick="switchTab('feed')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Vai a Feed →
+          </div>
+          <div class="anno-empty-tip" onclick="switchTab('stories')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+            Vai a Stories →
+          </div>
+          <div class="anno-empty-tip" onclick="switchTab('ped')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Vai a UGC →
+          </div>
+        </div>
+      </div>`;
+  } else {
+    bandsEl.innerHTML = html;
+  }
+
+  // Footer
+  const footer = eid('anno-footer');
+  if(footer) {
+    const cln = cl ? cl.name.toUpperCase() : 'NESSUN CLIENTE';
+    footer.innerHTML = `
+      <span class="anno-footer-txt">NASSA STUDIO · ${cln} · ${annoYear}</span>
+      <span class="anno-footer-txt">${totalEvs > 0 ? totalEvs + ' EVENTI' + (annoFilterTag?' · '+annoFilterTag:'') : '—'}</span>
+    `;
+  }
+
+  // Modal evento
+  let existingModal = document.getElementById('anno-detail-modal');
+  if(existingModal) existingModal.remove();
+
+  if(annoSelectedEv) {
+    const ev = annoSelectedEv;
+    const tc = ANNO_TAG_COLORS[ev.tag] || ANNO_TAG_COLORS.note;
+    const mNameFull = MONTHS[ev.month] || '';
+    const modal = document.createElement('div');
+    modal.id = 'anno-detail-modal';
+    modal.className = 'anno-modal-bg';
+    modal.onclick = () => { annoSelectedEv = null; renderAnnoTab(); };
+    modal.innerHTML = `<div class="anno-modal" onclick="event.stopPropagation()">
+      <div class="anno-modal-eyebrow">Dettaglio · ${ev.day} ${mNameFull} ${annoYear}</div>
+      ${ev.title ? `<div class="anno-modal-title">${esc(ev.title)}</div>` : ''}
+      ${ev.sub ? `<div class="anno-modal-sub">${esc(ev.sub)}</div>` : ''}
+      ${ev.label ? `<div class="anno-modal-sub" style="font-style:italic">${esc(ev.label)}</div>` : ''}
+      <span class="anno-ev-tag" style="background:${tc.bg};color:${tc.text};font-size:10px;padding:2px 8px;display:inline-block">${ev.tag.toUpperCase()}</span>
+      <button class="btn sm" style="margin-top:14px;" onclick="annoSelectedEv=null;renderAnnoTab()">Chiudi</button>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+}
+
+
+/* ══ SISTEMA APPROVAZIONE FEED ══ */
+
+const APPR_STATI = [
+  {key:'bozza',       label:'Bozza',            dot:'#999',    bg:'rgba(100,100,100,0.12)', text:'var(--text-2)', border:'var(--border)'},
+  {key:'revisione',   label:'Da Revisionare',   dot:'#e05c00', bg:'rgba(224,92,0,0.13)',    text:'#7a2e00',       border:'rgba(224,92,0,0.45)'},
+  {key:'approvare',   label:'Da Approvare',     dot:'#d4a800', bg:'rgba(212,168,0,0.15)',   text:'#7a5c00',       border:'rgba(212,168,0,0.5)'},
+  {key:'approvato',   label:'Approvato',        dot:'#1a7a4a', bg:'rgba(26,122,74,0.12)',   text:'#0f5230',       border:'rgba(26,122,74,0.4)'},
+  {key:'pubblicato',  label:'Pubblicato',       dot:'#2563eb', bg:'rgba(37,99,235,0.12)',   text:'#1e3a8a',       border:'rgba(37,99,235,0.4)'},
+];
+/* ══ SISTEMA NOTIFICHE NOTE ══ */
+function updateNotifBadge(){
+  const badge = document.getElementById('notif-badge');
+  const count = apprUnreadNotes.length;
+  if(badge){
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+function markNoteRead(idx){
+  apprUnreadNotes = apprUnreadNotes.filter(i => i !== idx);
+  updateNotifBadge();
+}
+
+function markNoteUnread(idx, fromClient=false){
+  if(!apprUnreadNotes.includes(idx)) apprUnreadNotes.push(idx);
+  if(fromClient) showToast('💬 Nuova nota dal cliente sul post '+(idx+1));
+  updateNotifBadge();
+}
+
+
+function apprGetStato(key){ return APPR_STATI.find(s=>s.key===key)||APPR_STATI[0]; }
+
+let apprMode = false;          // toggle on/off
+let apprFilter = 'tutti';      // filtro stato approvazione
+let previewTypeFilter = 'tutti'; // filtro tipologia
+let apprOpenMenu = null;       // id post con menu aperto
+let apprModalIdx = null;       // index post nel modal
+let apprModalItems = [];
+let apprUnreadNotes = [];      // indici post con note non lette       // array corrente di feed items
+
+function toggleApprMode(){
+  apprMode = !apprMode;
+  const btn = document.getElementById('appr-toggle-btn');
+  const lbl = document.getElementById('appr-toggle-lbl');
+  const bar = document.getElementById('appr-stats-bar');
+  if(btn) btn.classList.toggle('active', apprMode);
+  if(lbl) lbl.textContent = apprMode ? 'Approvazione ON' : 'Approvazione';
+  if(bar) bar.style.display = apprMode ? 'flex' : 'none';
+  apprFilter = 'tutti';
+  renderPreview();
+}
+
+function apprGetItems(){
+  const ci = globalClientIdx >= 0 ? globalClientIdx : 0;
+  const cl = clients[ci];
+  if(!cl) return [];
+  const accs = cl.accounts || [];
+  const acc = accs[previewActiveAcc] || accs[0];
+  if(!acc) return [];
+  const msel = document.getElementById('preview-month-sel');
+  const month = (msel?.value) || feedMonth || MONTH_OPTIONS[new Date().getMonth()];
+  const key = accountKey(acc.id, month);
+  return (feeds[key] || []).filter(i => i.type !== 'pending');
+}
+
+function apprUpdateStats(items){
+  const bar = document.getElementById('appr-stats-bar');
+  if(!bar) return;
+  // Sempre visibile — non più condizionato a apprMode
+  bar.style.display = 'flex';
+
+  // Conteggi per stato approvazione (su tutto il feed, non filtered)
+  const allItems = apprGetItems ? apprGetItems() : items;
+  const counts = {bozza:0, revisione:0, approvare:0, approvato:0, pubblicato:0};
+  allItems.forEach(it => { const st=it.apprStato||'bozza'; counts[st]=(counts[st]||0)+1; });
+  const total = allItems.length;
+
+  // Conteggi per tipologia
+  const nFoto     = allItems.filter(x=>x.type==='image'||x.type==='editorial').length;
+  const nReel     = allItems.filter(x=>x.type==='video').length;
+  const nCarousel = allItems.filter(x=>x.type==='carousel').length;
+
+  // Aggiorna celle numeriche vecchie (retrocompat)
+  // revisione+approvare both map to the 'approvare' stat cell
+  ['bozza','approvare','approvato'].forEach(k => {
+    const cell = document.getElementById('appr-stat-'+k);
+    if(!cell) return;
+    const num = cell.querySelector('.appr-stat-num');
+    const barEl = cell.querySelector('.appr-stat-bar');
+    const displayCount = (counts[k]||0);
+    if(num) num.textContent = displayCount;
+    if(barEl) barEl.style.width = total ? Math.round(displayCount/total*100)+'%' : '0%';
+  });
+  const tot = document.getElementById('appr-stat-totale');
+  if(tot) tot.textContent = total;
+
+  // Barra chip unica: Tipo | Approvazione
+  const filterRow = document.getElementById('appr-filter-row');
+  if(filterRow){
+    const typeOpts = [
+      {k:'tutti', label:'Tutti', n:total, dot:null},
+      ...(nFoto     ? [{k:'image',    label:'Foto',      n:nFoto,     dot:null}] : []),
+      ...(nReel     ? [{k:'video',    label:'Reel',      n:nReel,     dot:null}] : []),
+      ...(nCarousel ? [{k:'carousel', label:'Carosello', n:nCarousel, dot:null}] : []),
+    ];
+    const apprOpts = APPR_STATI.map(s=>({k:s.key, label:s.label, n:counts[s.key]||0, dot:s.dot}));
+
+    filterRow.innerHTML =
+      typeOpts.map(o=>`
+        <button class="appr-filter-chip${previewTypeFilter===o.k&&apprFilter==='tutti'?' active':''}"
+          onclick="previewTypeFilter='${o.k}';apprFilter='tutti';apprUpdateStats(apprGetItems());renderPreview();">
+          ${o.label} <span class="afc-count">${o.n}</span>
+        </button>`).join('')
+      + '<span class="appr-filter-sep"></span>'
+      + apprOpts.map(o=>`
+        <button class="appr-filter-chip${apprFilter===o.k&&previewTypeFilter==='tutti'?' active':''}"
+          onclick="apprFilter='${o.k}';previewTypeFilter='tutti';apprUpdateStats(apprGetItems());renderPreview();">
+          <span class="afc-dot" style="background:${o.dot};"></span>
+          ${o.label} <span class="afc-count">${o.n}</span>
+        </button>`).join('');
+  }
+}
+
+function apprSetFilter(f){
+  apprFilter = f;
+  apprUpdateStats(apprGetItems());
+  renderPreview();
+}
+function setPreviewTypeFilter(f){
+  previewTypeFilter = f;
+  apprUpdateStats(apprGetItems());
+  renderPreview();
+}
+
+function apprChangeStato(idx, stato){
+  const items = apprGetItems();
+  if(!items[idx]) return;
+  const oldStato = items[idx].apprStato || 'bozza';
+  items[idx].apprStato = stato;
+  if(stato === 'approvare' && oldStato === 'bozza'){
+    items[idx].apprRevisions = (items[idx].apprRevisions || 0) + 1;
+  }
+  apprOpenMenu = null;
+  autoSave();
+  renderPreview();
+}
+
+function apprToggleMenu(idx){
+  apprOpenMenu = apprOpenMenu === idx ? null : idx;
+  renderPreview();
+}
+
+function openApprModal(idx, items){
+  apprModalIdx = idx;
+  apprModalItems = items;
+  const post = items[idx];
+  if(!post) return;
+  const s = apprGetStato(post.apprStato||'bozza');
+
+  document.getElementById('appr-modal-title').textContent =
+    `Post ${idx+1} · ${post.type||'Post'} · ${post.date||'—'}`;
+
+  // Thumb
+  const thumb = document.getElementById('appr-modal-thumb');
+  thumb.innerHTML = '';
+  const coverUrl = post.type==='carousel'&&post.slides?.length ? post.slides[0].url : post.url;
+  if(coverUrl){
+    const el = post.type==='video' ? makeMedia(coverUrl,'video') : makeMedia(coverUrl,'image');
+    if(el) thumb.appendChild(el);
+  } else {
+    thumb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:.2;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+  }
+
+  // Stato pills
+  const pillsEl = document.getElementById('appr-stato-pills');
+  pillsEl.innerHTML = APPR_STATI.map(st=>{
+    const active = (post.apprStato||'bozza') === st.key;
+    return `<button class="appr-stato-pill" onclick="apprModalSetStato('${st.key}')"
+      style="${active?`background:${st.bg};color:${st.text};border-color:${st.border};`:''}">
+      <span style="width:6px;height:6px;border-radius:50%;background:${st.dot};display:inline-block;"></span>
+      ${st.label}
+    </button>`;
+  }).join('');
+
+  // Admin's own note (textarea — editable)
+  const noteArea = document.getElementById('appr-note-area');
+  noteArea.value = post.apprNote || '';
+
+  // Client message (read-only bubble)
+  const clientWrap = document.getElementById('appr-client-note-wrap');
+  const clientBubble = document.getElementById('appr-client-note-text');
+  const clientSender = document.getElementById('appr-client-note-sender');
+  if(clientWrap && clientBubble) {
+    if(post.clientNote?.trim()) {
+      clientWrap.style.display = 'block';
+      clientBubble.textContent = post.clientNote;
+      if(clientSender) clientSender.textContent = (post.clientName || 'Cliente') + ' ha scritto:';
+    } else {
+      clientWrap.style.display = 'none';
+    }
+  }
+
+  // Bottone approva
+  const apprBtn = document.getElementById('appr-approva-btn');
+  if(apprBtn) apprBtn.style.display = post.apprStato==='approvato' ? 'none' : '';
+
+  const _apprBg=document.getElementById('appr-modal-bg');
+  _apprBg.style.display = 'flex';
+  FocusTrap.activate(_apprBg);
+}
+
+function closeApprModal(){ FocusTrap.deactivate(document.getElementById('appr-modal-bg')); document.getElementById('appr-modal-bg').style.display='none'; apprModalIdx=null; }
+
+function apprModalSetStato(stato){
+  if(apprModalIdx === null) return;
+  const post = apprModalItems[apprModalIdx];
+  if(!post) return;
+  const old = post.apprStato || 'bozza';
+  post.apprStato = stato;
+  if(stato==='approvare'&&old==='bozza') post.apprRevisions=(post.apprRevisions||0)+1;
+  // Aggiorna pills
+  const pillsEl = document.getElementById('appr-stato-pills');
+  if(pillsEl) pillsEl.innerHTML = APPR_STATI.map(st=>{
+    const active = stato === st.key;
+    return `<button class="appr-stato-pill" onclick="apprModalSetStato('${st.key}')"
+      style="${active?`background:${st.bg};color:${st.text};border-color:${st.border};`:''}">
+      <span style="width:6px;height:6px;border-radius:50%;background:${st.dot};display:inline-block;"></span>
+      ${st.label}
+    </button>`;
+  }).join('');
+  const apprBtn = document.getElementById('appr-approva-btn');
+  if(apprBtn) apprBtn.style.display = stato==='approvato'?'none':'';
+}
+
+function apprModalApprova(){
+  if(apprModalIdx===null) return;
+  apprModalSalva(true);
+  refreshFeed();
+  apprModalSetStato('approvato');
+  apprModalItems[apprModalIdx].apprStato = 'approvato';
+  closeApprModal();
+  autoSave();
+  renderPreview();
+}
+
+function apprModalSalva(skipClose){
+  if(apprModalIdx===null) return;
+  const note = document.getElementById('appr-note-area')?.value || '';
+  const oldNote = apprModalItems[apprModalIdx].apprNote || '';
+  apprModalItems[apprModalIdx].apprNote = note;
+  // Se c'è una nota nuova → notifica
+  if(note && note !== oldNote) markNoteUnread(apprModalIdx, false);
+  autoSave();
+  // Refresh both feed grid (updates status badge) and preview
+  refreshFeed();
+  if(!skipClose){ closeApprModal(); if(currentTab==='preview') renderPreview(); }
+}
+
+/** Inietta l'overlay approvazione su ogni client-post nella griglia */
+function apprInjectGrid(items){
+  if(!apprMode) return;
+  const posts = document.querySelectorAll('.client-post');
+  posts.forEach((postEl, idx) => {
+    const item = items[idx];
+    if(!item) return;
+    // Applica filtro
+    const st = item.apprStato || 'bozza';
+    if(apprFilter !== 'tutti' && st !== apprFilter){
+      postEl.style.display = 'none';
+      return;
+    }
+    postEl.style.display = '';
+
+    const s = apprGetStato(st);
+    const cell = postEl.querySelector('.client-cell');
+    if(!cell) return;
+
+    // Badge stato + menu
+    if(!cell.querySelector('.appr-badge')){
+      const badgeWrap = document.createElement('div');
+      badgeWrap.style.cssText = 'position:absolute;top:8px;left:8px;z-index:5;';
+
+      const badge = document.createElement('button');
+      badge.className = 'appr-badge';
+      badge.style.cssText = `background:${s.bg};color:${s.text};border-color:${s.border};`;
+      badge.innerHTML = `<span class="appr-badge-dot" style="background:${s.dot};"></span>${s.label}`;
+      badge.onclick = (e) => { e.stopPropagation(); apprToggleMenu(idx); };
+      badgeWrap.appendChild(badge);
+
+      if(apprOpenMenu === idx){
+        const menu = document.createElement('div');
+        menu.className = 'appr-status-menu';
+        APPR_STATI.forEach((st2, si) => {
+          const item2 = document.createElement('div');
+          item2.className = 'appr-menu-item' + (st===st2.key?' current':'');
+          item2.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${st2.dot};flex-shrink:0;display:inline-block;"></span>${st2.label}${st===st2.key?'<span style="margin-left:auto;opacity:.4;">✓</span>':''}`;
+          item2.onclick = (e) => { e.stopPropagation(); apprChangeStato(idx, st2.key); };
+          if(si < APPR_STATI.length-1){
+            const sep = document.createElement('div');
+            sep.style.cssText = 'height:.5px;background:var(--border);';
+            menu.appendChild(item2);
+            menu.appendChild(sep);
+          } else {
+            menu.appendChild(item2);
+          }
+        });
+        badgeWrap.appendChild(menu);
+      }
+      cell.appendChild(badgeWrap);
+    }
+
+    // Border colorato sulla card
+    postEl.style.borderColor = st==='approvare'?'#d4a800':st==='approvato'?'#1a7a4a':'var(--border)';
+    postEl.style.borderWidth = st==='bozza'?'1px':'1.5px';
+
+    // Nota revisione
+    if((item.clientNote||item.apprNote) && (st==='approvare'||st==='revisione') && !postEl.querySelector('.appr-rev-note')){
+      const revDiv = document.createElement('div');
+      revDiv.className = 'appr-rev-note';
+      const _noteText = item.clientNote || item.apprNote;
+      const _noteSender = item.clientName || 'Cliente';
+      revDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#e05c00" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;margin-top:1px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div style="flex:1;"><div style="font-size:9px;font-weight:700;color:#e05c00;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">${esc(_noteSender)}</div><div>${esc(_noteText)}</div></div>
+        ${item.apprRevisions>0?`<span style="font-size:10px;color:#e05c00;white-space:nowrap;font-family:var(--font);">${item.apprRevisions} rev.</span>`:''}`;
+      const cell2 = postEl.querySelector('.client-cell');
+      if(cell2) cell2.after(revDiv);
+    }
+
+    // Azioni rapide
+    if(!postEl.querySelector('.appr-actions')){
+      const actions = document.createElement('div');
+      actions.className = 'appr-actions';
+      if(st==='bozza'){
+        const btn = document.createElement('button');
+        btn.className = 'appr-action-btn';
+        btn.style.cssText = 'border:.5px solid #d4a800;color:#7a5c00;';
+        btn.textContent = '→ Invia';
+        btn.onclick = (e) => { e.stopPropagation(); apprChangeStato(idx,'approvare'); };
+        actions.appendChild(btn);
+      }
+      if(st==='approvare'){
+        const btn = document.createElement('button');
+        btn.className = 'appr-action-btn';
+        btn.style.cssText = 'border:.5px solid #1a7a4a;color:#0f5230;';
+        btn.textContent = '✓ Approva';
+        btn.onclick = (e) => { e.stopPropagation(); apprChangeStato(idx,'approvato'); };
+        actions.appendChild(btn);
+      }
+      if(st==='approvato'){
+        const lbl = document.createElement('span');
+        lbl.style.cssText = 'font-size:10px;color:#1a7a4a;font-family:var(--font);';
+        lbl.textContent = '✓ Approvato';
+        actions.appendChild(lbl);
+      }
+      const detBtn = document.createElement('button');
+      detBtn.className = 'appr-action-btn';
+      detBtn.style.cssText = 'border:.5px solid var(--border);color:var(--text-2);margin-left:auto;';
+      detBtn.textContent = 'Dettaglio';
+      detBtn.onclick = (e) => { e.stopPropagation(); openApprModal(idx, items); };
+      actions.appendChild(detBtn);
+      postEl.appendChild(actions);
+    }
+  });
+
+  apprUpdateStats(items);
+
+  // Chiude menu su click fuori
+  document.addEventListener('mousedown', (e) => {
+    if(apprOpenMenu!==null && !e.target.closest('.appr-badge') && !e.target.closest('.appr-status-menu')){
+      apprOpenMenu = null;
+    }
+  }, {once:true});
+}
+
+function cycleApprStato(idx, items){
+  if(!items[idx]) return;
+  const order = ['bozza','approvare','approvato'];
+  const cur = items[idx].apprStato || 'bozza';
+  const next = order[(order.indexOf(cur)+1) % order.length];
+  items[idx].apprStato = next;
+  if(next === 'approvare') items[idx].apprRevisions = (items[idx].apprRevisions||0)+1;
+  autoSave();
+  refreshFeed();
+}
+
+
+function sbLivePreview(){
+  const raw = document.getElementById('sb-parser-input')?.value || '';
+  const preview = document.getElementById('sb-live-preview');
+  if(!preview) return;
+  if(!raw.trim()){ preview.style.display='none'; return; }
+  const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  let num='',eye='',tit='',cop='';
+  lines.forEach(l=>{
+    if(/^\[NUM\]/i.test(l))          num=l.replace(/^\[NUM\]\s*/i,'');
+    else if(/^\[OCCHIELLO\]/i.test(l)) eye=l.replace(/^\[OCCHIELLO\]\s*/i,'');
+    else if(/^\[TITOLO\]/i.test(l))    tit=l.replace(/^\[TITOLO\]\s*/i,'');
+    else if(/^\[COPY\]/i.test(l))      cop=l.replace(/^\[COPY\]\s*/i,'');
+  });
+  // Fallback no-tag
+  if(!num&&!eye&&!tit&&!cop&&lines.length>=2){eye=lines[0];tit=lines[1];cop=lines.slice(2).join(' ');}
+  const set=(id,val)=>{const el=document.getElementById(id);if(el){el.textContent=val||'';el.style.opacity=val?'1':'0.3';}};
+  set('sb-live-num', num ? `#${num}` : '—');
+  set('sb-live-eye', eye || '—');
+  set('sb-live-tit', tit || '—');
+  set('sb-live-cop', cop || '—');
+  preview.style.display = 'block';
+}
+
+
+/* ══ BRIEF CREATOR MODAL (Gruppo C) ══ */
+let briefTargetSb = null;
+
+function openBriefModal(sb){
+  briefTargetSb = sb;
+  const modal = document.getElementById('brief-modal');
+  if(!modal) return;
+
+  // Titolo
+  const titleEl = document.getElementById('brief-modal-title');
+  if(titleEl) titleEl.textContent = sb.name || 'Storyboard';
+
+  // Link
+  const linkEl = document.getElementById('brief-modal-link');
+  if(linkEl){
+    const briefId = sb.id || 'preview';
+    const briefUrl = 'https://nassa.studio/brief/' + briefId;
+    linkEl.textContent = briefUrl;
+    linkEl.title = 'Clicca per copiare';
+    linkEl.style.cursor = 'pointer';
+    linkEl.onclick = ()=>{
+      navigator.clipboard.writeText(briefUrl).then(()=>{
+        const orig = linkEl.textContent;
+        linkEl.textContent = '✓ Link copiato!';
+        setTimeout(()=>{ linkEl.textContent = orig; }, 1800);
+      }).catch(()=>{ showToast('Copia manuale: '+briefUrl); });
+    };
+  }
+
+  // Preview slide list
+  const listEl = document.getElementById('brief-modal-list');
+  if(listEl){
+    listEl.innerHTML = '';
+    (sb.slides || []).forEach((sl, i) => {
+      const row = document.createElement('div');
+      row.className = 'brief-slide-row';
+
+      // Miniatura
+      const thumb = document.createElement('div');
+      thumb.className = 'brief-slide-thumb';
+      if(sl.url){
+        const img = document.createElement('img');
+        img.src = sl.url; img.alt = '';
+        thumb.appendChild(img);
+      }
+      if(sl.isPlaceholder){
+        const ph = document.createElement('div');
+        ph.className = 'brief-slide-ph';
+        thumb.appendChild(ph);
+      }
+
+      // Info
+      const info = document.createElement('div');
+      info.className = 'brief-slide-info';
+
+      const num = document.createElement('div');
+      num.className = 'brief-slide-num';
+      num.textContent = sl.num ? '#'+sl.num : '#'+(i+1);
+
+      const tit = document.createElement('div');
+      tit.className = 'brief-slide-tit';
+      tit.textContent = sl.title || sl.eye || '—';
+
+      info.appendChild(num);
+      info.appendChild(tit);
+
+      // Nota regia
+      if(sl.noteRegia){
+        const nr = document.createElement('div');
+        nr.className = 'brief-slide-regia';
+        nr.textContent = sl.noteRegia;
+        info.appendChild(nr);
+      }
+
+      // Placeholder label
+      if(sl.isPlaceholder){
+        const ph = document.createElement('div');
+        ph.className = 'brief-slide-ph-lbl';
+        ph.textContent = '↑ questa slide richiede il tuo video';
+        info.appendChild(ph);
+      }
+
+      row.appendChild(thumb);
+      row.appendChild(info);
+      listEl.appendChild(row);
+    });
+  }
+
+  // Stato bottone invia
+  const inviaBtn = document.getElementById('brief-modal-invia');
+  if(inviaBtn){
+    if(sb.briefInviato){
+      inviaBtn.textContent = 'Brief già inviato';
+      inviaBtn.disabled = true;
+      inviaBtn.style.opacity = '.5';
+    } else {
+      inviaBtn.textContent = 'Invia brief al creator';
+      inviaBtn.disabled = false;
+      inviaBtn.style.opacity = '1';
+    }
+  }
+
+  modal.style.display = 'flex';
+  FocusTrap.activate(modal);
+}
+
+function closeBriefModal(){
+  const modal = document.getElementById('brief-modal');
+  FocusTrap.deactivate(modal);
+  if(modal) modal.style.display = 'none';
+  briefTargetSb = null;
+}
+
+function copyBriefLink(){
+  const linkEl = document.getElementById('brief-modal-link');
+  if(!linkEl) return;
+  navigator.clipboard?.writeText(linkEl.textContent).then(()=>{
+    showToast('✓ Link copiato');
+  }).catch(()=>{
+    showToast('Link: ' + linkEl.textContent);
   });
 }
 
-function notesConfirmPaperLink(){
-  const urlEl = document.getElementById('notes-paper-url');
-  const titleEl = document.getElementById('notes-paper-title');
-  const url = urlEl?.value?.trim();
-  if(!url){ urlEl?.focus(); return; }
-
-  const title = titleEl?.value?.trim() || url;
-  // Icona basata sul dominio
-  const icon = url.includes('paper.dropbox') ? '📄' :
-               url.includes('docs.google') ? '📝' :
-               url.includes('notion.so') ? '📋' :
-               url.includes('figma.com') ? '🎨' : '🔗';
-
-  // Titolo pulito: se uguale all'url, tronca a 60 char
-  const displayTitle = title === url ? url.replace(/^https?:\/\//,'').slice(0,60) : title;
-  const mdLink = `
-${icon} [${displayTitle}](${url})
-`;
-  notesInsertAtCursor(mdLink);
-
-  // Chiudi overlay
-  document.querySelector('[style*="position:fixed"][style*="inset:0"][style*="z-index:600"]')?.remove();
-  showToast('✓ Link inserito');
+function inviaBreifCreator(){
+  if(!briefTargetSb) return;
+  briefTargetSb.briefInviato = true;
+  autoSave();
+  showToast('✓ Brief inviato al creator');
+  closeBriefModal();
+  renderPreview(); // aggiorna badge
 }
 
-// Helper: inserisce testo alla posizione del cursore nell'editor
-function notesInsertAtCursor(text){
-  const ta = document.getElementById('notes-editor');
-  if(!ta) return;
-  const start = ta.selectionStart;
-  const end = ta.selectionEnd;
-  const before = ta.value.slice(0, start);
-  const after = ta.value.slice(end);
-  ta.value = before + text + after;
-  ta.selectionStart = ta.selectionEnd = start + text.length;
-  ta.focus();
-  saveNotesText();
-  updateNotesToc();
-  updateNotesWc();
+
+function archiviaTemplate(sbId){
+  // Trova lo storyboard nelle Stories del cliente corrente
+  const key = currentFeedKey ? currentFeedKey() : null;
+  // Cerca in tutte le stories
+  let found = null;
+  Object.values(stories||{}).forEach(arr=>{
+    const s = arr.find(x=>x.id===sbId);
+    if(s) found=s;
+  });
+  if(!found) return;
+  found.fileCaricato = true;
+  autoSave();
+  showToast('✓ File caricato — lo storyboard è pronto');
 }
+
+
+/* ══ VIDEO COVER MODAL ══ */
+let videoCoverEditIdx = null;
+
+function openVideoCoverModal(idx){
+  videoCoverEditIdx = idx;
+  const modal = document.getElementById('video-cover-modal');
+  if(!modal) return;
+  const item = currentFeedItems()[idx];
+  // Mostra preview cover attuale se esiste
+  const prev = document.getElementById('vcm-preview');
+  if(prev){
+    if(item.coverUrl){
+      prev.innerHTML = '<img src="'+item.coverUrl+'" alt="Anteprima bozza" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:var(--rs);display:block;"/>';
+      prev.style.display = 'block';
+    } else {
+      prev.innerHTML = '';
+      prev.style.display = 'none';
+    }
+  }
+  const inp = document.getElementById('vcm-file-inp');
+  if(inp) inp.value = '';
+  modal.style.display = 'flex';
+}
+
+function closeVideoCoverModal(){
+  const modal = document.getElementById('video-cover-modal');
+  if(modal) modal.style.display = 'none';
+  videoCoverEditIdx = null;
+}
+
+async function setVideoCover(file){
+  if(!file || videoCoverEditIdx === null) return;
+  const items = currentFeedItems();
+  const item = items[videoCoverEditIdx];
+  if(!item) return;
+
+  showToast('⟳ Caricamento cover…');
+  // Upload su Dropbox
+  const destPath = '/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/covers/'+file.name;
+  const url = await DROPBOX.upload(file, destPath);
+  if(url){
+    items[videoCoverEditIdx].coverUrl = url;
+    setFeedItems(items);
+    CLOUD.saveNow(CLOUD.snapshot()); // salva subito la cover
+    refreshFeed();
+    showToast('✓ Cover reel impostata');
+  } else {
+    // Fallback: blob URL locale
+    if(item.coverUrl && item.coverUrl.startsWith('blob:')) URL.revokeObjectURL(item.coverUrl);
+    items[videoCoverEditIdx].coverUrl = URL.createObjectURL(file);
+    setFeedItems(items);
+    refreshFeed();
+    showToast('Cover impostata (locale)', 'warn');
+  }
+  closeVideoCoverModal();
+}
+
+function removeVideoCover(){
+  if(videoCoverEditIdx === null) return;
+  const items = currentFeedItems();
+  if(items[videoCoverEditIdx]?.coverUrl?.startsWith('blob:'))
+    URL.revokeObjectURL(items[videoCoverEditIdx].coverUrl);
+  items[videoCoverEditIdx].coverUrl = '';
+  setFeedItems(items);
+  autoSave();
+  refreshFeed();
+  closeVideoCoverModal();
+  showToast('Cover rimossa');
+}
+
+
+/* ══ SLIDE BUILDER — Mobile tab navigation ══ */
+function sbMobTab(tab){
+  if(window.innerWidth > 744) return; // solo su mobile
+  const nav = document.querySelector('.sbcol-nav');
+  const fields = document.querySelector('.sb-fields');
+  const preview = document.querySelector('.sb-preview-wrap');
+  const btnSlide = document.getElementById('sb-mob-slide-btn');
+  const btnEditor = document.getElementById('sb-mob-editor-btn');
+  const btnPreview = document.getElementById('sb-mob-preview-btn');
+
+  // Nascondi tutto
+  [nav, fields, preview].forEach(el => { if(el) el.classList.remove('sb-mob-active'); });
+  [btnSlide, btnEditor, btnPreview].forEach(b => { if(b) b.classList.remove('active'); });
+
+  // Mostra tab richiesto
+  if(tab === 'slides' && nav){
+    nav.classList.add('sb-mob-active');
+    if(btnSlide) btnSlide.classList.add('active');
+  } else if(tab === 'editor' && fields){
+    fields.classList.add('sb-mob-active');
+    if(btnEditor) btnEditor.classList.add('active');
+  } else if(tab === 'preview' && preview){
+    preview.classList.add('sb-mob-active');
+    if(btnPreview) btnPreview.classList.add('active');
+    // Aggiorna anteprima quando si entra
+    updateSbPreview();
+  }
+}
+
+// Quando si carica il SB su mobile, attiva il tab editor di default
+function sbInitMobile(){
+  if(window.innerWidth <= 744){
+    const fields = document.querySelector('.sb-fields');
+    if(fields) fields.classList.add('sb-mob-active');
+  }
+}
+
+
+/* INIT */
+function init(){
+  applySidebarState();
+  const fdz=document.getElementById('feed-drop-zone');if(fdz){fdz.addEventListener('dragover',e=>{e.preventDefault();fdz.classList.add('drag-over');});fdz.addEventListener('dragleave',e=>{if(!fdz.contains(e.relatedTarget))fdz.classList.remove('drag-over');});fdz.addEventListener('drop',e=>{e.preventDefault();fdz.classList.remove('drag-over');queueFeedFiles(e.dataTransfer.files);});}
+  const sdz=document.getElementById('stories-drop-zone');if(sdz){sdz.addEventListener('dragover',e=>{e.preventDefault();sdz.classList.add('drag-over');});sdz.addEventListener('dragleave',e=>{if(!sdz.contains(e.relatedTarget))sdz.classList.remove('drag-over');});sdz.addEventListener('drop',e=>{e.preventDefault();sdz.classList.remove('drag-over');queueStoryFiles(e.dataTransfer.files);});}
+  const cuzEl=document.getElementById('c-upload-zone');if(cuzEl){cuzEl.addEventListener('dragover',e=>{e.preventDefault();cuzEl.classList.add('drag-over');});cuzEl.addEventListener('dragleave',()=>cuzEl.classList.remove('drag-over'));cuzEl.addEventListener('drop',e=>{e.preventDefault();cuzEl.classList.remove('drag-over');addCarouselFiles(e.dataTransfer.files);});}
+  const hluz=document.getElementById('hl-upload-zone');if(hluz){hluz.addEventListener('dragover',e=>{e.preventDefault();hluz.classList.add('drag-over');});hluz.addEventListener('dragleave',()=>hluz.classList.remove('drag-over'));hluz.addEventListener('drop',e=>{e.preventDefault();hluz.classList.remove('drag-over');setHlCover(e.dataTransfer.files);});}
+  const pav=document.getElementById('feed-profile-avatar');if(pav){pav.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();pav.classList.add('drag-over');}});pav.addEventListener('dragleave',e=>{if(!pav.contains(e.relatedTarget))pav.classList.remove('drag-over');});pav.addEventListener('drop',e=>{e.preventDefault();pav.classList.remove('drag-over');if(e.dataTransfer.files.length)feedProfileImgChange(e.dataTransfer.files);});}
+  renderStudio();rebuildAllSelects();renderFeedGrid();renderStoriesGrid();updateFeedHeader();updateStoriesHeader();
+}
+
+window.addEventListener('beforeunload',e=>{
+  if(DROPBOX.uploading>0){
+    e.preventDefault();
+    e.returnValue='Ci sono '+DROPBOX.uploading+' file ancora in caricamento su Dropbox. Uscire ora li perderai.';
+  }
+});
+
+
+
+/* ══ KEYBOARD SHORTCUTS ══ */
+document.addEventListener('keydown', e => {
+  // Non intercettare quando si sta scrivendo in un campo
+  const inField = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+
+  // Cmd/Ctrl + S — salva ora
+  if((e.metaKey||e.ctrlKey) && e.key === 's'){
+    e.preventDefault();
+    clearTimeout(CLOUD._saveTimer);
+    CLOUD.saveNow(CLOUD.snapshot());
+    showToast('✓ Salvato');
+    return;
+  }
+
+  // Cmd/Ctrl + Z — undo (se disponibile)
+  if((e.metaKey||e.ctrlKey) && e.key === 'z' && !e.shiftKey){
+    if(typeof window._pendingUndoFn === 'function'){
+      e.preventDefault();
+      triggerUndo();
+      return;
+    }
+  }
+
+  // Esc — chiude modal/popover aperti (globale)
+  if(e.key === 'Escape' && !inField){
+    // Chiudi popover upload feed
+    const feedPopover = document.getElementById('feed-ctx-panel');
+    if(feedPopover?.classList.contains('open')){ closeFeedUploadPanel(); return; }
+    // Chiudi popover upload stories
+    const storiesPopover = document.getElementById('stories-ctx-panel');
+    if(storiesPopover?.classList.contains('open')){ closeStoriesUploadPanel(); return; }
+    // Chiudi UGC modal
+    const ugcModal = document.getElementById('ped-slot-modal');
+    if(ugcModal?.style.display !== 'none'){ pedCloseDrawer(); return; }
+    // Chiudi date picker
+    const dp = document.getElementById('global-date-picker');
+    if(dp?.classList.contains('open')){ closeDatePicker(); return; }
+  }
+
+  // ? — mostra shortcut help (solo quando non in un campo)
+  if(e.key === '?' && !inField){
+    showToast('⌨ Cmd+S salva · Cmd+Z annulla · Esc chiude');
+    return;
+  }
+});
 
 /* ── Auto-sync quando torna la connessione ── */
 window.addEventListener('online', async () => {
