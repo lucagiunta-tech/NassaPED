@@ -3968,39 +3968,30 @@ function renderCalendar(){
       // Day number + weekday
       const dowIdx=(new Date(cellY,cellM-1,cellD).getDay()+6)%7;
       html+=`<div class="ctd-header"><div class="ctd-num">${cellD}</div><div class="ctd-dow">${GIORNIW[dowIdx]}</div></div>`;
-      // Separator line — only if has events
-      if(evs.length) html+=`<div class="ctd-sep"></div>`;
-      // Events
+      // Dot grid — thumbnail 20x20 compatti, max 6 poi +N
       if(evs.length){
-        html+=`<div class="ctd-events">`;
-        const MAX=2;
-        evs.slice(0,MAX).forEach(ev=>{
-          const isStory=ev.type==='story';
+        const MAX_DOTS=6;
+        const dotColors={feed:'var(--green)',story:'#3b82f6',ped:'#7c3aed',ads:'#ec4899',highlight:'var(--amber)'};
+        html+=`<div class="ctd-dots">`;
+        evs.slice(0,MAX_DOTS).forEach(ev=>{
           const isPed=ev.type==='ped';
-          const thumbRatio=isStory?'9/16':'4/5';
-          let badgeCls='',badgeTxt='';
-          if(ev.type==='feed'){
-            if(ev.item?.type==='video'){badgeCls='cal-badge-reel';badgeTxt='Reel';}
-            else if(ev.item?.type==='carousel'){badgeCls='cal-badge-car';badgeTxt='Caros.';}
-            else{badgeCls='cal-badge-foto';badgeTxt='Foto';}
-          } else if(isStory){badgeCls='cal-badge-story';badgeTxt='Story';}
-          else if(isPed){badgeCls='cal-badge-ugc';badgeTxt='UGC';}else if(ev.type==='ads'){badgeCls='cal-badge-ads';badgeTxt='PAID';}
+          const isStory=ev.type==='story';
           const thumbSrc=ev.thumb||'';
-          const thumbInner=thumbSrc
-            ?`<img src="${thumbSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`
-            :`<span style="font-size:10px;color:var(--text-3);">${isPed?(ev.pedType==='autonoma'?'👤':'🎨'):'📷'}</span>`;
-          const clientShort=ev.clientName.split(' — ')[0].split(' ').slice(0,2).join(' ');
-          const labelTxt=ev.item?.copy?ev.item.copy.slice(0,22):(ev.item?.brief?ev.item.brief.slice(0,22):ev.label||'—');
-          html+=`<div class="ctd-event">
-            <div class="ctd-thumb${isStory?' ctd-thumb-story':''}">${thumbInner}</div>
-            <div class="ctd-info">
-              <div class="ctd-client">${clientShort}</div>
-              <div class="ctd-label">${labelTxt}</div>
-              <span class="ctd-badge ${badgeCls}">${badgeTxt}</span>
-            </div>
-          </div>`;
+          const dotColor=dotColors[ev.type]||dotColors.highlight;
+          // Tipo badge: lettera singola
+          const typeLetter=ev.type==='feed'?'F':ev.type==='story'?'S':ev.type==='ped'?'U':ev.type==='ads'?'A':'E';
+          if(thumbSrc){
+            html+=`<div class="ctd-dot has-thumb" style="aspect-ratio:${isStory?'9/16':'4/5'}">
+              <img src="${thumbSrc}" onerror="this.parentElement.classList.add('no-thumb')" />
+              <span class="ctd-dot-type" style="background:${dotColor};">${typeLetter}</span>
+            </div>`;
+          } else {
+            html+=`<div class="ctd-dot no-thumb" style="background:${dotColor}22;border:1.5px solid ${dotColor}40;">
+              <span style="font-size:9px;font-weight:700;color:${dotColor};">${typeLetter}</span>
+            </div>`;
+          }
         });
-        if(evs.length>MAX)html+=`<div class="ctd-more">+${evs.length-MAX} altri</div>`;
+        if(evs.length>MAX_DOTS) html+=`<div class="ctd-dot-more">+${evs.length-MAX_DOTS}</div>`;
         html+=`</div>`;
       }
       html+='</div>';
