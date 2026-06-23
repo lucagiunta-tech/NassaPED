@@ -8237,6 +8237,140 @@ document.addEventListener('keydown', e => {
   }
 });
 
+
+/* ══ NOTES — ALLEGATI E LINK DROPBOX PAPER ══ */
+
+// Apre il file picker per allegati
+function notesAttachFile(){
+  const inp = document.getElementById('notes-attach-input');
+  if(inp) inp.click();
+}
+
+// Carica file su Dropbox e inserisce link markdown nell'editor
+async function notesUploadAttachment(files){
+  if(!files || !files.length) return;
+  const cl = notesClientIdx >= 0 ? clients[notesClientIdx] : null;
+  if(!cl){ showToast('Seleziona un cliente prima di allegare file','warn'); return; }
+
+  for(const file of Array.from(files)){
+    // Validazione dimensione (max 50MB)
+    if(file.size > 50 * 1024 * 1024){
+      showToast(`⚠ File troppo grande: ${file.name} (max 50MB)`, 'warn');
+      continue;
+    }
+
+    showToast(`⟳ Caricamento ${file.name}…`);
+
+    const destPath = '/nassa/' + CLOUD.user + '/documenti/' + cl.name.replace(/[^a-zA-Z0-9]/g,'_') + '/' + file.name;
+
+    try {
+      const sharedUrl = await DROPBOX.upload(file, destPath);
+      if(sharedUrl){
+        // Inserisce link markdown nell'editor
+        const ext = file.name.split('.').pop().toLowerCase();
+        const icon = {
+          pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊',
+          ppt:'📊', pptx:'📊', csv:'📊', zip:'📦',
+          png:'🖼', jpg:'🖼', jpeg:'🖼', txt:'📄'
+        }[ext] || '📎';
+        const mdLink = `
+${icon} [${file.name}](${sharedUrl})
+`;
+        notesInsertAtCursor(mdLink);
+        showToast(`✓ ${file.name} allegato`);
+      } else {
+        showToast(`⚠ Upload fallito: ${file.name}`, 'warn');
+      }
+    } catch(e) {
+      showToast(`⚠ Errore upload: ${e.message}`, 'warn');
+    }
+  }
+  // Reset input
+  const inp = document.getElementById('notes-attach-input');
+  if(inp) inp.value = '';
+}
+
+// Inserisce link a Dropbox Paper (tramite dialog)
+function notesInsertPaperLink(){
+  // Crea un mini dialog per inserire il link
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:flex;align-items:center;justify-content:center;';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:var(--r);padding:20px;width:400px;max-width:90vw;box-shadow:var(--shadow-xl);';
+  box.innerHTML = `
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">
+      📄 Inserisci link documento
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:4px;">Link (Dropbox Paper, Google Doc, ecc.)</label>
+        <input id="notes-paper-url" type="url" placeholder="https://paper.dropbox.com/doc/…" autocomplete="url" inputmode="url"
+          style="width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text);box-sizing:border-box;"/>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:4px;">Titolo (opzionale)</label>
+        <input id="notes-paper-title" type="text" placeholder="es. Brief cliente Maggio 2026" autocomplete="off"
+          style="width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text);box-sizing:border-box;"/>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" class="btn sm">Annulla</button>
+        <button onclick="notesConfirmPaperLink()" class="btn sm primary">Inserisci</button>
+      </div>
+    </div>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  setTimeout(()=>box.querySelector('#notes-paper-url')?.focus(), 50);
+
+  // Enter confirm
+  box.addEventListener('keydown', e=>{
+    if(e.key==='Enter') notesConfirmPaperLink();
+    if(e.key==='Escape') overlay.remove();
+  });
+}
+
+function notesConfirmPaperLink(){
+  const urlEl = document.getElementById('notes-paper-url');
+  const titleEl = document.getElementById('notes-paper-title');
+  const url = urlEl?.value?.trim();
+  if(!url){ urlEl?.focus(); return; }
+
+  const title = titleEl?.value?.trim() || url;
+  // Icona basata sul dominio
+  const icon = url.includes('paper.dropbox') ? '📄' :
+               url.includes('docs.google') ? '📝' :
+               url.includes('notion.so') ? '📋' :
+               url.includes('figma.com') ? '🎨' : '🔗';
+
+  const mdLink = `
+${icon} [${title}](${url})
+`;
+  notesInsertAtCursor(mdLink);
+
+  // Chiudi overlay
+  document.querySelector('[style*="position:fixed"][style*="inset:0"][style*="z-index:600"]')?.remove();
+  showToast('✓ Link inserito');
+}
+
+// Helper: inserisce testo alla posizione del cursore nell'editor
+function notesInsertAtCursor(text){
+  const ta = document.getElementById('notes-editor');
+  if(!ta) return;
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const before = ta.value.slice(0, start);
+  const after = ta.value.slice(end);
+  ta.value = before + text + after;
+  ta.selectionStart = ta.selectionEnd = start + text.length;
+  ta.focus();
+  saveNotesText();
+  updateNotesToc();
+  updateNotesWc();
+}
+
 /* ── Auto-sync quando torna la connessione ── */
 window.addEventListener('online', async () => {
   console.log('[CLOUD] Back online — checking for pending local snapshot');
