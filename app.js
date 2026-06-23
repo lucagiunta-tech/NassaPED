@@ -1846,7 +1846,7 @@ function renderFeedGrid(){
         if(item.type==='video') menuActions.push({cls:'ob-cover',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',label:item.coverUrl?'Cover · cambia':'+ Cover reel',fn:()=>openVideoCoverModal(idx)});
         menuActions.push({cls:'ob-stories',svg:'<rect x="7" y="2" width="10" height="20" rx="2"/>',label:(item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories',fn:()=>openLinkStoriesModal(idx)});
         menuActions.push({cls:'ob-copy',svg:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',label:'Copia da…',fn:()=>openCopyModal('feed')});
-        menuActions.push({cls:'ob-delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',label:'Rimuovi',fn:()=>showConfirm({title:'Rimuovi post',body:'Il post verrà eliminato dal feed. Questa azione non può essere annullata.',okLabel:'Rimuovi',type:'danger',onOk:()=>removeFeedItem(idx)})});
+        menuActions.push({cls:'ob-delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',label:'Rimuovi',fn:()=>removeFeedItem(idx)});
 
         // The ⋯ trigger button
         const menuBtn = document.createElement('button');
@@ -2442,7 +2442,7 @@ function renderStoriesGrid(){
         const cpb=document.createElement('button');cpb.className='ov-btn ob-copy';cpb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copia da…';cpb.onclick=e=>{e.stopPropagation();openCopyModal('stories');};ov.appendChild(cpb);
         const del=document.createElement('button');del.className='ov-btn ob-delete';del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg> Rimuovi';del.onclick=e=>{e.stopPropagation();showConfirm({
               title:'Rimuovi story',
-              body:'La story verrà eliminata definitivamente.',
+              body:'La story verrà eliminata. Potrai annullarla subito dopo.',
               okLabel:'Rimuovi',
               type:'danger',
               onOk:()=>removeStoryItem(idx)
@@ -2864,7 +2864,19 @@ function renderSbThumbs(){
     d.onclick=()=>{sbCurSlide=i;renderSbBuilder();};
     const del=document.createElement('button');
     del.style.cssText='position:absolute;top:3px;right:3px;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;display:none;padding:2px;';
-    del.textContent='✕';del.onclick=e=>{e.stopPropagation();sbTmpSlides.splice(i,1);if(sbCurSlide>=sbTmpSlides.length)sbCurSlide=sbTmpSlides.length-1;renderSbBuilder();};
+    del.textContent='✕';del.onclick=e=>{
+  e.stopPropagation();
+  const snapSlide={...sbTmpSlides[i]};
+  const snapIdx=i;
+  sbTmpSlides.splice(i,1);
+  if(sbCurSlide>=sbTmpSlides.length)sbCurSlide=sbTmpSlides.length-1;
+  renderSbBuilder();
+  showUndoToast('Slide eliminata',()=>{
+    sbTmpSlides.splice(snapIdx,0,{...snapSlide});
+    sbCurSlide=snapIdx;
+    renderSbBuilder();
+  });
+};
     d.style.position='relative';
     d.onmouseenter=()=>{del.style.display='block';};
     d.onmouseleave=()=>{del.style.display='none';};
@@ -4542,13 +4554,18 @@ function pedDrawerSave(){
 
 function pedDrawerDelete(){
   if(!pedDrawerSlotId)return;
-  showConfirm({
-    title:'Elimina slot UGC',body:'Lo slot verrà eliminato definitivamente.',okLabel:'Elimina',type:'danger',
-    onOk:()=>{
-      const plan=currentPedPlan().filter(s=>s.id!==pedDrawerSlotId);
-      setCurrentPedPlan(plan);autoSave();renderPEDCal();renderCalendar();
-      showToast('✓ Slot eliminato');pedCloseDrawer();
-    }
+  const plan=currentPedPlan();
+  const idx=plan.findIndex(s=>s.id===pedDrawerSlotId);
+  if(idx<0)return;
+  const snapshot={item:{...plan[idx]},idx};
+  const newPlan=plan.filter(s=>s.id!==pedDrawerSlotId);
+  setCurrentPedPlan(newPlan);autoSave();renderPEDCal();renderCalendar();
+  pedCloseDrawer();
+  showUndoToast('Slot UGC eliminato',()=>{
+    const cur=currentPedPlan();
+    cur.splice(snapshot.idx,0,{...snapshot.item});
+    setCurrentPedPlan(cur);autoSave();renderPEDCal();
+    showToast('✓ Slot ripristinato');
   });
 }
 
