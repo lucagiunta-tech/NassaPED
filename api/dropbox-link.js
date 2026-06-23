@@ -1,44 +1,9 @@
-// Crea shared link Dropbox. Tutto inline — nessun import cross-file.
-// Variabili Vercel: DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, NASSA_API_KEY
+// Crea shared link Dropbox. Usa DROPBOX_ACCESS_TOKEN statico.
 
 const ALLOWED_ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
   'http://localhost:3000',
 ];
-
-let _cachedToken = null;
-let _cachedTokenExp = 0;
-
-async function getFreshToken() {
-  const now = Date.now();
-  if (_cachedToken && now < _cachedTokenExp - 5 * 60 * 1000) return _cachedToken;
-
-  const { DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN } = process.env;
-  if (!DROPBOX_APP_KEY || !DROPBOX_APP_SECRET || !DROPBOX_REFRESH_TOKEN) {
-    throw new Error('Missing env vars: ' +
-      (!DROPBOX_APP_KEY ? 'DROPBOX_APP_KEY ' : '') +
-      (!DROPBOX_APP_SECRET ? 'DROPBOX_APP_SECRET ' : '') +
-      (!DROPBOX_REFRESH_TOKEN ? 'DROPBOX_REFRESH_TOKEN' : ''));
-  }
-
-  const resp = await fetch('https://api.dropbox.com/oauth2/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ' + Buffer.from(DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET).toString('base64'),
-    },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: DROPBOX_REFRESH_TOKEN }),
-  });
-
-  const text = await resp.text();
-  if (!resp.ok) throw new Error('Dropbox OAuth failed (' + resp.status + '): ' + text.slice(0, 300));
-  const data = JSON.parse(text);
-  if (!data.access_token) throw new Error('No access_token: ' + text.slice(0, 200));
-
-  _cachedToken = data.access_token;
-  _cachedTokenExp = now + (data.expires_in || 14400) * 1000;
-  return _cachedToken;
-}
 
 function toDirectUrl(url) {
   if (!url) return '';
@@ -62,9 +27,11 @@ export default async function handler(req, res) {
   if (!key || key !== process.env.NASSA_API_KEY)
     return res.status(401).json({ error: 'Unauthorized' });
 
-  try {
-    const token = await getFreshToken();
+  const token = process.env.DROPBOX_ACCESS_TOKEN;
+  if (!token)
+    return res.status(500).json({ error: 'DROPBOX_ACCESS_TOKEN non configurato su Vercel' });
 
+  try {
     let path;
     if (req.body && req.body.path) {
       path = req.body.path;
@@ -87,7 +54,7 @@ export default async function handler(req, res) {
 
     let linkData;
     try { linkData = JSON.parse(linkText); } catch(_) {
-      return res.status(500).json({ error: 'Non-JSON from Dropbox: ' + linkText.slice(0, 200) });
+      return res.status(500).json({ error: 'Non-JSON da Dropbox: ' + linkText.slice(0, 200) });
     }
 
     if (linkData.url) return res.status(200).json({ url: toDirectUrl(linkData.url) });
@@ -105,10 +72,10 @@ export default async function handler(req, res) {
       const listData = await listRes.json();
       const existingLink = listData?.links?.[0]?.url;
       if (existingLink) return res.status(200).json({ url: toDirectUrl(existingLink) });
-      return res.status(500).json({ error: 'Could not retrieve existing link', detail: listData });
+      return res.status(500).json({ error: 'Link esistente non recuperabile', detail: listData });
     }
 
-    return res.status(500).json({ error: errorTag || 'Unknown Dropbox error', detail: linkData });
+    return res.status(500).json({ error: errorTag || 'Errore Dropbox sconosciuto', detail: linkData });
 
   } catch (err) {
     console.error('[dropbox-link] ERROR:', err.message);
