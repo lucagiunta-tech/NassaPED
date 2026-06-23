@@ -2162,36 +2162,14 @@ function renderFeedGrid(){
     _pdCleanup();
 
     if(insertIdx !== srcIdx){
-      // 1. Aggiorna array dati
       const arr = currentFeedItems().slice();
       const [moved] = arr.splice(srcIdx, 1);
       const fi = insertIdx > srcIdx ? insertIdx-1 : insertIdx;
       arr.splice(fi, 0, moved);
       setFeedItems(arr);
       autoSave();
-
-      // 2. Riordina nodi DOM direttamente — NO renderFeedGrid()
-      // Raccoglie tutti i .cell-wrap nell'ordine attuale del grid
-      const wraps = Array.from(grid.querySelectorAll('.cell-wrap'));
-      // Rimuovi il wrapper sorgente e inseriscilo nella nuova posizione
-      const srcWrap = wraps[srcIdx];
-      if(srcWrap){
-        const refWrap = wraps[insertIdx] || null;
-        // Se stiamo spostando avanti, il riferimento è dopo la rimozione
-        // quindi dobbiamo considerare che srcWrap è già nel DOM
-        if(insertIdx > srcIdx){
-          // inserisci dopo refWrap (che dopo la rimozione di srcWrap sarà all'indice giusto)
-          const ref = wraps[insertIdx + 1] || null;
-          grid.insertBefore(srcWrap, ref);
-        } else {
-          grid.insertBefore(srcWrap, refWrap);
-        }
-        // Aggiorna data-drag-idx su tutti i wraps
-        Array.from(grid.querySelectorAll('[data-drag-idx]')).forEach((el,i)=>{
-          el.dataset.dragIdx = String(i);
-        });
-      }
-
+      // renderFeedGrid fuori dal thread corrente — non blocca il rilascio
+      setTimeout(()=>renderFeedGrid(), 0);
       showUndoToast('Post riordinato', ()=>{
         const ar = currentFeedItems().slice();
         const [m] = ar.splice(fi, 1);
