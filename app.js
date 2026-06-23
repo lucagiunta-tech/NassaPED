@@ -1318,7 +1318,7 @@ function openAccountFeed(ci,aid){globalClientIdx=ci;feedClientIdx=ci;feedAccount
 
 function renderStudio(){
   const active=clients.filter(c=>c.status==='Attivo');const totalRev=active.reduce((s,c)=>s+c.revenue,0);const totalAccounts=clients.reduce((s,c)=>s+(c.accounts?.length||0),0);const el=v=>document.getElementById(v);
-  if(el('kpi-revenue'))el('kpi-revenue').textContent='€ '+totalRev.toLocaleString('it-IT');if(el('kpi-active'))el('kpi-active').textContent=active.length;if(el('kpi-accounts'))el('kpi-accounts').textContent=totalAccounts;if(el('kpi-rev-sub'))el('kpi-rev-sub').textContent='da '+active.length+(active.length===1?' cliente attivo':' clienti attivi');
+  if(el('kpi-revenue'))el('kpi-revenue').textContent=totalRev.toLocaleString('it-IT');if(el('kpi-active'))el('kpi-active').textContent=active.length;if(el('kpi-accounts'))el('kpi-accounts').textContent=totalAccounts;if(el('kpi-rev-sub'))el('kpi-rev-sub').textContent='da '+active.length+(active.length===1?' cliente attivo':' clienti attivi');
   const countTxt=clients.length+' client'+(clients.length===1?'e':'i');if(el('studio-count'))el('studio-count').textContent=countTxt;
   const tbody=document.getElementById('clients-tbody');if(!tbody)return;tbody.innerHTML='';
   if(!clients.length){
