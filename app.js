@@ -2901,20 +2901,74 @@ function _sbDoSaveArchivio(name) {
 function sbLoadBozza(id) {
   const entry = sbGetBozze().find(e=>e.id===id);
   if(!entry) return;
-  showConfirm({
-    title: 'Carica bozza',
-    body: 'Le slide correnti verranno sostituite con "' + entry.name + '". Continui?',
-    okLabel: 'Carica',
-    type: 'warn',
-    onOk: () => {
-      sbTmpSlides = entry.slides.map(s=>({...s, url: s.externalUrl||'', blobUrl:'', _file:null}));
-      sbCurSlide = 0;
-      renderSbBuilder();
-      sbSwitchTab('editor', document.getElementById('sb-tab-editor'));
-      openModal('storyboard-modal');
-      showToast('✓ Bozza "' + entry.name + '" caricata');
+
+  // Build destination picker overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:12px;padding:20px 22px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:12px;';
+
+  box.innerHTML = `
+    <div style="font-size:14px;font-weight:700;color:var(--text);">Usa bozza "${esc(entry.name)}"</div>
+    <div style="font-size:12px;color:var(--text-2);line-height:1.5;">Come vuoi usare questa bozza?</div>
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <button class="btn primary sm" id="sbload-edit" style="justify-content:flex-start;gap:8px;text-align:left;">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Modifica nel Slide Builder
+      </button>
+      <button class="btn sm" id="sbload-new" style="justify-content:flex-start;gap:8px;text-align:left;">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Crea nuovo storyboard da questa bozza
+      </button>
+    </div>
+    <button class="btn ghost sm" id="sbload-cancel" style="align-self:flex-end;font-size:11px;">Annulla</button>`;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+
+  box.querySelector('#sbload-cancel').onclick = close;
+  overlay.onclick = e => { if(e.target===overlay) close(); };
+
+  // Option A: open in builder to edit
+  box.querySelector('#sbload-edit').onclick = () => {
+    close();
+    sbTmpSlides = entry.slides.map(s=>({...s, url: s.externalUrl||'', blobUrl:'', _file:null}));
+    sbCurSlide = 0;
+    renderSbBuilder();
+    sbSwitchTab('editor', document.getElementById('sb-tab-editor'));
+    openModal('storyboard-modal');
+    showToast('✓ Bozza "' + entry.name + '" aperta nel builder — salva quando sei pronto');
+  };
+
+  // Option B: add directly to storyboard grid as new storyboard
+  box.querySelector('#sbload-new').onclick = () => {
+    close();
+    if(sbTabClientIdx<0||sbTabAccountIdx<0){
+      showToast('Seleziona un cliente e account prima','warn'); return;
     }
-  });
+    const acc = getAccount(sbTabClientIdx,sbTabAccountIdx);
+    if(!acc){ showToast('Account non trovato','warn'); return; }
+    const key = accountKey(acc.id, sbTabMonth||feedMonth||MONTH_OPTIONS[0]);
+    const newSb = {
+      id: 'sb_'+Date.now(),
+      name: entry.name,
+      date: '',
+      sbFmt: 'feed',
+      briefInviato: false,
+      fileCaricato: false,
+      isStoryboard: true,
+      slides: entry.slides.map(s=>({...s}))
+    };
+    const arr = stories[key]||[];
+    arr.unshift(newSb);
+    stories[key] = arr;
+    autoSave();
+    renderSbTabGrid();
+    showToast('✓ Storyboard "' + entry.name + '" aggiunto alla griglia');
+  };
 }
 
 // Rinomina bozza inline
@@ -2980,17 +3034,25 @@ function renderArchivioBozze() {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface);border-radius:8px;border:1px solid var(--border);';
 
-    // Icona
+    const slideCount = (entry.slides||[]).length;
+    const preview = (entry.slides||[]).find(s=>s.externalUrl?.startsWith('http'));
+
     row.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      ${preview
+        ? `<img src="${preview.externalUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;border:1px solid var(--border);" loading="lazy"/>`
+        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`
+      }
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(entry.name)}</div>
-        <div style="font-size:11px;color:var(--text-3);">${entry.slides.length} slide · ${dateStr}</div>
+        <div style="font-size:11px;color:var(--text-3);">${slideCount} slide · ${dateStr}</div>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button class="btn ghost sm" onclick="sbLoadBozza(${entry.id})" title="Carica nel builder" style="font-size:11px;padding:3px 8px;">Carica</button>
-        <button class="btn ghost sm" onclick="sbRenameBozza(${entry.id})" title="Rinomina" style="font-size:11px;padding:3px 6px;">✏︎</button>
-        <button class="btn ghost sm" onclick="sbDeleteBozza(${entry.id})" title="Elimina" style="font-size:11px;padding:3px 6px;color:var(--red);">✕</button>
+      <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+        <button class="btn primary sm" onclick="sbLoadBozza(${entry.id})" title="Usa questa bozza" style="font-size:11px;padding:3px 8px;gap:4px;">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Usa
+        </button>
+        <button class="btn ghost sm" onclick="sbRenameBozza(${entry.id})" title="Rinomina" style="font-size:11px;padding:3px 7px;">✏︎</button>
+        <button class="btn ghost sm" onclick="sbDeleteBozza(${entry.id})" title="Elimina" style="font-size:11px;padding:3px 7px;color:var(--red);">✕</button>
       </div>`;
     list.appendChild(row);
   });
@@ -4321,6 +4383,19 @@ function renderPEDCards(){}
    TAB STORYBOARD — griglia brief creator
 ════════════════════════════════════════════════════ */
 let sbTabClientIdx=-1, sbTabAccountIdx=-1, sbTabMonth=null;
+let sbViewMode = 'grid'; // 'grid' | 'list'
+
+function toggleSbView(){
+  sbViewMode = sbViewMode==='grid' ? 'list' : 'grid';
+  const icon = document.getElementById('sb-toggle-view-icon');
+  if(icon){
+    // Grid icon when in list mode (click to switch to grid), list icon when in grid mode
+    icon.innerHTML = sbViewMode==='list'
+      ? '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'
+      : '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+  }
+  renderSbTabGrid();
+}
 
 function onSbTabAccountChange(){
   const sel=document.getElementById('sb-tab-account-sel');
@@ -4364,6 +4439,8 @@ function renderSbTabMonthPills(){
 
 function renderSbTabGrid(){
   const grid=document.getElementById('sb-tab-grid');if(!grid)return;grid.innerHTML='';
+  // Apply view mode
+  grid.classList.toggle('sb-tab-grid-list', sbViewMode==='list');
   if(sbTabClientIdx<0||sbTabAccountIdx<0){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);font-size:13px;">Seleziona un cliente per vedere gli storyboard.</div>';return;
   }
