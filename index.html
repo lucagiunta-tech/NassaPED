@@ -19,12 +19,10 @@
 <link rel="stylesheet" href="/style.css?v=1782171720"/>
 </head>
 <body>
-<!-- Skip link — accessibilità keyboard -->
-<a href="#main-content" class="skip-link">Salta al contenuto</a>
 <div class="app">
 
 <!-- TOPBAR -->
-<header class="topbar" role="banner">
+<div class="topbar">
   <div class="topbar-brand" id="topbar-brand">
     <div class="brand-mark">N</div>
     <div class="brand-name" id="brand-name-text">Nassa Studio</div>
@@ -43,7 +41,7 @@
 </div>
 
 <!-- SUBTOPBAR CLIENTE -->
-<nav class="subtopbar" aria-label="Navigazione cliente" id="subtopbar">
+<div class="subtopbar" id="subtopbar">
   <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
     <span class="subtopbar-back">‹</span>
     <div>
@@ -80,12 +78,12 @@
   <button class="user-btn" onclick="switchUser('akash')">Akash</button>
   <button class="user-btn" onclick="switchUser('hermes')">Hermes</button>
   <button class="user-btn" onclick="switchUser('matteo')">Matteo</button>
-</nav><!-- /subtopbar -->
+</div>
 
 <div class="body">
 
 <!-- SIDEBAR -->
-<nav class="sidebar" id="sidebar" aria-label="Menu principale">
+<div class="sidebar" id="sidebar">
   <!-- Main icon sidebar — always visible -->
   <div class="sb-main-nav" id="sb-main-nav">
     <div class="sb-nav-top">
@@ -175,14 +173,13 @@
 
   <!-- sidebar-studio-add moved to modal -->
   <div id="sidebar-studio-add" style="display:none;"></div>
-</nav><!-- /sidebar -->
+</div><!-- /sidebar -->
 
 <!-- MAIN -->
-<main class="main" id="main-content" tabindex="-1">
+<div class="main">
 
   <!-- STUDIO -->
   <div class="tab-page active" id="page-studio">
-    <h1 class="sr-only">Studio — Clienti</h1>
     <div class="content-bar">
       <span class="content-title">Studio</span>
       <span class="content-tag" id="studio-count">0 clienti</span>
@@ -224,7 +221,6 @@
 
   <!-- PIANO TESTO -->
   <div class="tab-page" id="page-notes">
-    <h1 class="sr-only">Note</h1>
     <div class="notes-layout">
       <!-- TOC sidebar -->
       <div class="notes-toc" id="notes-toc">
@@ -304,7 +300,6 @@
 
   <!-- FEED -->
   <div class="tab-page" id="page-feed">
-    <h1 class="sr-only">Feed</h1>
     <!-- Feed context bar — 2 righe fisse -->
     <div class="feed-ctx-bar">
 
@@ -472,7 +467,6 @@
 
   <!-- STORIES -->
   <div class="tab-page" id="page-stories">
-    <h1 class="sr-only">Stories</h1>
     <div class="feed-ctx-bar">
       <!-- Riga 1 -->
       <div class="feed-ctx-row1">
@@ -548,14 +542,12 @@
   <!-- UGC -->
   <!-- PILASTRI TAB -->
   <div class="tab-page" id="page-pilastri">
-    <h1 class="sr-only">Pilastri editoriali</h1>
     <div class="studio-main" id="pilastri-main">
       <div id="pilastri-body"></div>
     </div>
   </div>
 
   <div class="tab-page" id="page-ped">
-    <h1 class="sr-only">UGC — Gestione contenuti</h1>
     <!-- UGC Header bar -->
     <div class="ped-topbar">
       <span class="ped-topbar-title" id="ped-title">UGC</span>
@@ -619,7 +611,6 @@
 
   <!-- STORYBOARD TAB -->
   <div class="tab-page" id="page-storyboard">
-    <h1 class="sr-only">Storyboard</h1>
     <div class="feed-ctx-bar">
       <!-- Riga 1 -->
       <div class="feed-ctx-row1">
@@ -674,7 +665,6 @@
 
   <!-- CALENDARIO -->
   <div class="tab-page" id="page-cal">
-    <h1 class="sr-only">Calendario</h1>
     <div class="feed-ctx-bar">
       <div class="feed-ctx-row1">
         <!-- Nav mese -->
@@ -722,7 +712,6 @@
 
   <!-- PREVIEW -->
   <div class="tab-page" id="page-preview">
-    <h1 class="sr-only">Preview</h1>
     <div class="preview-wrap">
       <div class="preview-topbar">
         <div class="brand-mark" style="width:26px;height:26px;font-size:12px;">N</div>
@@ -774,7 +763,6 @@
 
   <!-- PAGE ANNO — Calendario Editoriale Annuale -->
   <div class="tab-page" id="page-anno">
-    <h1 class="sr-only">Piano annuale</h1>
     <div class="anno-page">
       <!-- Barra superiore allineata al design Feed -->
       <div class="feed-ctx-bar">
@@ -805,7 +793,6 @@
 
   <!-- PAGE ADS -->
   <div class="tab-page" id="page-ads">
-    <h1 class="sr-only">Ads</h1>
     <div class="ads-page">
       <div class="ads-toprow">
         <div>
@@ -850,8 +837,10 @@
       </div>
     </div>
   </div>
-</main><!-- /main -->
-</div><!-- /body -->
+</div><!-- /main -->
+</div><!-- /body --
+
+>
 </div><!-- /app -->
 
 <!-- UGC SLOT MODAL -->
@@ -1409,14 +1398,14 @@
       <button class="btn ghost sm icon" onclick="closeModal('add-client-modal')" aria-label="Chiudi">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="field" style="grid-column:1/-1;"><label for="nc-name">Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" onkeydown="if(event.key==='Enter')addClient()"/></div>
-      <div class="field"><label for="nc-pkg">Pacchetto</label>
+      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" onkeydown="if(event.key==='Enter')addClient()"/></div>
+      <div class="field"><label>Pacchetto</label>
         <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
       </div>
-      <div class="field"><label for="nc-status">Stato</label>
+      <div class="field"><label>Stato</label>
         <select id="nc-status"><option selected>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
       </div>
-      <div class="field"><label for="nc-revenue">€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0"/></div>
+      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0"/></div>
     </div>
     <div class="divider" style="margin:4px -18px;"></div>
     <div>
@@ -1493,13 +1482,13 @@
         <div class="field"><label>Occhiello</label>
           <input type="text" id="ed-eyebrow" placeholder="es. Insight · Cliente" oninput="renderEdPreview()"/></div>
         <div class="field"><label>Titolo *</label>
-          <label for="ed-title" class="sr-only">Titolo</label><input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
+          <input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
         <div class="field"><label>Parola colorata</label>
-          <label for="ed-accent" class="sr-only">Parola accentata</label><input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
+          <input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
         <div class="field"><label>Copy / sottotitolo</label>
-          <label for="ed-copy" class="sr-only">Copy</label><textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
+          <textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
         <div class="field"><label>Firma</label>
-          <label for="ed-author" class="sr-only">Autore</label><input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
+          <input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
       </div>
     </div>
     <div class="modal-actions">
