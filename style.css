@@ -355,11 +355,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* Feed selector */
 
-#feed-month-pills,#stories-month-pills,#ads-month-pills{display:flex;flex-direction:column;gap:4px;}
+#feed-month-pills,#stories-month-pills,#ads-month-pills{display:flex;flex-direction:row;align-items:center;gap:4px;}
 .month-pill{font-size:var(--fs-xs);padding:3px 8px;border-radius:var(--r-pill);border:var(--bw) solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;font-family:var(--font);font-weight:500;transition:all var(--t-fast);}
 .month-pill:hover{border-color:var(--green);color:var(--green);}
 .month-pill.active{background:var(--green);border-color:var(--green);color:var(--green-text);font-weight:700;}
-.year-nav{display:flex;align-items:center;gap:4px;margin-bottom:5px;}
+.year-nav{display:flex;align-items:center;gap:4px;margin-bottom:0;}
 .year-nav-btn{background:none;border:var(--bw) solid var(--border);border-radius:var(--rs);padding:2px 7px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text-2);cursor:pointer;line-height:var(--lh-base);transition:all var(--t-fast);}
 .year-nav-btn:hover{border-color:var(--green);color:var(--green);}
 .year-label{font-size:var(--fs-sm);font-weight:700;color:var(--text);padding:0 4px;min-width:36px;text-align:center;}
@@ -1455,10 +1455,11 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-month-pills-inline .month-pill:hover{border-color:var(--green);color:var(--text);background:var(--green-lt);}
 .feed-month-pills-inline .month-pill.active{background:var(--green);color:var(--green-text);font-weight:700;border-color:var(--green);}
 .feed-month-pills-inline .year-nav{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.feed-month-pills-inline .month-pills{display:flex;flex-direction:row;align-items:center;gap:4px;flex-shrink:0;}
 .feed-month-pills-inline .year-nav-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:var(--fs-base);padding:2px 6px;line-height:1;transition:color var(--t-fast);}
 .feed-month-pills-inline .year-nav-btn:hover{color:var(--text);}
 .year-label{font-size:var(--fs-sm);font-weight:600;color:var(--text-2);min-width:32px;text-align:center;}
-.feed-month-pills-inline .year-label{font-size:var(--fs-base);font-weight:600;color:var(--text-2);}
+.feed-month-pills-inline .year-label{font-size:var(--fs-sm);font-weight:700;color:var(--text-2);min-width:36px;text-align:center;}
 .ctx-fmt-badge{font-size:var(--fs-base);font-weight:600;padding:5px 13px;border-radius:var(--r-pill);background:var(--green-lt);color:#111;white-space:nowrap;flex-shrink:0;border:.5px solid var(--green-mid);cursor:pointer;transition:all var(--t-fast);font-family:var(--font);}
 .ctx-fmt-badge:hover{background:var(--green);}
 .ctx-expand-btn{width:32px;height:32px;border-radius:var(--r);border:.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-3);flex-shrink:0;transition:all var(--t-fast);}
