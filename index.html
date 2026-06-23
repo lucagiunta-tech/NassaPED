@@ -343,7 +343,7 @@
                 <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Link</button>
               </div>
               <div class="link-row">
-                <input type="text" id="feed-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addFeedLink()"/>
+                <input type="text" id="feed-link-inp" placeholder="Incolla link…" autocomplete="url" inputmode="url" onkeydown="if(event.key==='Enter')addFeedLink()"/>
                 <button onclick="addFeedLink()">+</button>
               </div>
             </div>
@@ -422,7 +422,7 @@
           <div class="fig-info">
             <!-- Riga username + edit -->
             <div class="fig-top">
-              <input id="fig-username" class="fig-username-inp" type="text" placeholder="@username" maxlength="30"
+              <input id="fig-username" class="fig-username-inp" type="text" placeholder="@username" maxlength="30" autocomplete="username"
                 oninput="figSaveField('username',this.value)" />
               <button class="btn ghost sm" onclick="feedProfileAvatarClick()" style="font-size:11px;padding:3px 8px;gap:4px;">
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -449,11 +449,11 @@
             <!-- Nome account -->
             <div class="fig-name" id="fig-name"></div>
             <!-- Bio multiriga -->
-            <textarea id="fig-bio" class="fig-bio" rows="3" placeholder="Scrivi la bio…&#10;Puoi andare a capo liberamente."
+            <textarea id="fig-bio" class="fig-bio" autocomplete="off" rows="3" placeholder="Scrivi la bio…&#10;Puoi andare a capo liberamente."
               oninput="figSaveField('bio',this.value);figBioCounter(this.value)"></textarea>
             <div id="fig-bio-counter" class="fig-bio-counter"></div>
             <!-- Link -->
-            <input id="fig-link" class="fig-link-inp" type="url" placeholder="https://linkinbio.it/…" maxlength="100"
+            <input id="fig-link" class="fig-link-inp" type="url" inputmode="url" placeholder="https://linkinbio.it/…" maxlength="100" autocomplete="url"
               oninput="figSaveField('link',this.value)" />
           </div>
         </div>
@@ -499,7 +499,7 @@
                 <button class="link-tab" id="sl-tab-other" onclick="setStoriesLinkTab('other')">Link</button>
               </div>
               <div class="link-row">
-                <input type="text" id="stories-link-inp" placeholder="Incolla link…" onkeydown="if(event.key==='Enter')addStoryLink()"/>
+                <input type="text" id="stories-link-inp" placeholder="Incolla link…" autocomplete="url" inputmode="url" onkeydown="if(event.key==='Enter')addStoryLink()"/>
                 <button onclick="addStoryLink()">+</button>
               </div>
             </div>
@@ -1398,14 +1398,14 @@
       <button class="btn ghost sm icon" onclick="closeModal('add-client-modal')" aria-label="Chiudi">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" onkeydown="if(event.key==='Enter')addClient()"/></div>
+      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" autocomplete="organization" onkeydown="if(event.key==='Enter')addClient()"/></div>
       <div class="field"><label>Pacchetto</label>
         <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
       </div>
       <div class="field"><label>Stato</label>
         <select id="nc-status"><option selected>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
       </div>
-      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0"/></div>
+      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0" autocomplete="off" inputmode="numeric"/></div>
     </div>
     <div class="divider" style="margin:4px -18px;"></div>
     <div>

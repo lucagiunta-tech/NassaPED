@@ -3573,3 +3573,68 @@ tbody tr:hover .tr-actions{opacity:1;}
 .fig-link-inp:focus{ border-bottom-color:var(--green); }
 .fig-link-inp::placeholder{ color:var(--text-3); }
 .feed-profile-toggle-btn.active{ background:var(--green); border-color:var(--green); color:#111; }
+
+/* ══ TOUCH TARGETS MOBILE ≥ 44px (Apple HIG / Google Material) ══ */
+@media (max-width: 744px), (pointer: coarse) {
+  /* Barra navigazione */
+  .fbar-btn, .fbar-pill, .ctx-expand-btn,
+  .feed-backlog-btn, .feed-view-toggle-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Riga 2 */
+  .fbr2-btn, .fbr2-toggle, .fbr2-cal-btn {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+  /* Month pills */
+  .month-pill {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  /* Bottone upload */
+  .feed-upload-quick-btn {
+    min-height: 44px;
+    padding: 0 18px;
+  }
+  /* Avatar topbar */
+  .avatar {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  /* Theme toggle */
+  #theme-toggle {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  /* Bottoni modal */
+  .btn.sm {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  /* Link tab */
+  .link-tab {
+    min-height: 44px;
+  }
+  /* Copy expand */
+  .copy-expand-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  /* Pill anno */
+  .fbar-pill.active, .fbar-pill {
+    min-height: 44px;
+  }
+  /* Date picker giorni */
+  .dp-day {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Sub-tab navigation */
+  .sub-tab {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+

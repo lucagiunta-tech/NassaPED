@@ -1962,7 +1962,18 @@ function renderFeedGrid(){
         wrap.appendChild(cell);
         const cp=document.createElement('div');cp.className='copy-panel';cp.style.display=showAllCopy?'':'none';
         const cph=document.createElement('div');cph.className='copy-panel-header';const cl=document.createElement('div');cl.className='copy-label';cl.textContent='Caption';const expBtn=document.createElement('button');expBtn.className='copy-expand-btn';expBtn.textContent='▾';cph.appendChild(cl);cph.appendChild(expBtn);
-        const cpanel_body=document.createElement('div');cpanel_body.className='copy-body';const ct=document.createElement('textarea');ct.placeholder='Scrivi la caption…';ct.value=item.copy||'';ct.rows=3;ct.oninput=e=>{currentFeedItems()[idx].copy=e.target.value;const prev=cp.querySelector('.copy-preview');if(prev){prev.textContent=e.target.value||'';prev.classList.toggle('empty',!e.target.value);}};cpanel_body.appendChild(ct);
+        const cpanel_body=document.createElement('div');cpanel_body.className='copy-body';const ct=document.createElement('textarea');ct.placeholder='Scrivi la caption…';ct.value=item.copy||'';ct.rows=3;ct.oninput=e=>{
+  currentFeedItems()[idx].copy=e.target.value;
+  const prev=cp.querySelector('.copy-preview');
+  if(prev){prev.textContent=e.target.value||'';prev.classList.toggle('empty',!e.target.value);}
+  autoSave();
+  // Micro-feedback: label diventa "✓ salvato" per 1.5s
+  if(cl){
+    clearTimeout(cl._saveTimer);
+    cl.textContent='✓ salvato';cl.style.color='var(--green)';
+    cl._saveTimer=setTimeout(()=>{cl.textContent='Caption';cl.style.color='';},1500);
+  }
+};cpanel_body.appendChild(ct);
         const prev=document.createElement('div');prev.className='copy-preview'+(item.copy?'':' empty');prev.textContent=item.copy||'Caption…';
         const toggleCopy=()=>{
           const open=expBtn.classList.toggle('open');
@@ -4581,11 +4592,11 @@ function pedRenderDrawer(){
   body.appendChild(statoWrap);
   // Brief
   addLabel('Brief cliente');
-  const briefTA=mk('textarea','ped-field-ta');briefTA.rows=3;briefTA.placeholder='Brief per il creator…';briefTA.value=sl.brief||'';
+  const briefTA=mk('textarea','ped-field-ta');briefTA.rows=3;briefTA.placeholder='Brief per il creator…';briefTA.value=sl.brief||'';briefTA.autocomplete='off';
   briefTA.oninput=e=>{pedDrawerTmp.brief=e.target.value;};body.appendChild(briefTA);
   // Creator
   addLabel('Creator');
-  const creatorInp=mk('input','ped-field-inp');creatorInp.type='text';creatorInp.placeholder='Nome creator…';creatorInp.value=sl.creator||'';
+  const creatorInp=mk('input','ped-field-inp');creatorInp.type='text';creatorInp.inputMode='text';creatorInp.placeholder='Nome creator…';creatorInp.value=sl.creator||'';
   creatorInp.oninput=e=>{pedDrawerTmp.creator=e.target.value;};body.appendChild(creatorInp);
   // Note regia collassabile
   const noteToggle=mk('button','ped-collapse-toggle');
@@ -8023,6 +8034,53 @@ window.addEventListener('beforeunload',e=>{
   }
 });
 
+
+
+/* ══ KEYBOARD SHORTCUTS ══ */
+document.addEventListener('keydown', e => {
+  // Non intercettare quando si sta scrivendo in un campo
+  const inField = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+
+  // Cmd/Ctrl + S — salva ora
+  if((e.metaKey||e.ctrlKey) && e.key === 's'){
+    e.preventDefault();
+    clearTimeout(CLOUD._saveTimer);
+    CLOUD.saveNow(CLOUD.snapshot());
+    showToast('✓ Salvato');
+    return;
+  }
+
+  // Cmd/Ctrl + Z — undo (se disponibile)
+  if((e.metaKey||e.ctrlKey) && e.key === 'z' && !e.shiftKey){
+    if(typeof window._pendingUndoFn === 'function'){
+      e.preventDefault();
+      triggerUndo();
+      return;
+    }
+  }
+
+  // Esc — chiude modal/popover aperti (globale)
+  if(e.key === 'Escape' && !inField){
+    // Chiudi popover upload feed
+    const feedPopover = document.getElementById('feed-ctx-panel');
+    if(feedPopover?.classList.contains('open')){ closeFeedUploadPanel(); return; }
+    // Chiudi popover upload stories
+    const storiesPopover = document.getElementById('stories-ctx-panel');
+    if(storiesPopover?.classList.contains('open')){ closeStoriesUploadPanel(); return; }
+    // Chiudi UGC modal
+    const ugcModal = document.getElementById('ped-slot-modal');
+    if(ugcModal?.style.display !== 'none'){ pedCloseDrawer(); return; }
+    // Chiudi date picker
+    const dp = document.getElementById('global-date-picker');
+    if(dp?.classList.contains('open')){ closeDatePicker(); return; }
+  }
+
+  // ? — mostra shortcut help (solo quando non in un campo)
+  if(e.key === '?' && !inField){
+    showToast('⌨ Cmd+S salva · Cmd+Z annulla · Esc chiude');
+    return;
+  }
+});
 
 /* ── Auto-sync quando torna la connessione ── */
 window.addEventListener('online', async () => {
