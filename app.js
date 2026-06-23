@@ -4553,30 +4553,24 @@ function renderSbTabGrid(){
 }
 
 function sbTabMoveToFeed(sb, origIdx, key){
-  // Copia lo storyboard come post nel Feed o Stories
-  // usando le immagini già caricate nelle slide — nessun file picker.
+  // Il flusso "Carica in Feed": il creator ha prodotto il contenuto finale
+  // seguendo lo storyboard → carichiamo il file finale (foto/video) nel feed.
   const isStory = sb.sbFmt === 'stories';
   const acc = getAccount(sbTabClientIdx, sbTabAccountIdx);
   if(!acc){ showToast('Seleziona un account','warn'); return; }
 
-  const slides = (sb.slides||[]).filter(s => s.externalUrl?.startsWith('http') || s.url?.startsWith('http'));
-  const hasSlides = slides.length > 0;
-
-  // Mostra pannello di conferma con scelta destinazione
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;';
-
   const months = MONTH_OPTIONS;
   const currentMonth = sbTabMonth || feedMonth || months[new Date().getMonth()];
 
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML = `
     <div style="background:var(--surface);border-radius:12px;padding:20px 22px;width:340px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:14px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);">Copia in Feed/Stories</div>
-      <div style="font-size:12px;color:var(--text-2);line-height:1.5;">
-        Lo storyboard <strong>${esc(sb.name||'Storyboard')}</strong>
-        ${hasSlides ? 'ha <strong>'+slides.length+' slide con immagini</strong> già caricate.' : 'non ha ancora immagini caricate nelle slide.'}
+      <div style="font-size:14px;font-weight:700;color:var(--text);">Carica contenuto finale</div>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.6;">
+        Il creator ha realizzato <strong>${esc(sb.name||'Storyboard')}</strong>?<br>
+        Seleziona il file finale (foto o video) da aggiungere al Feed o Stories.
       </div>
-
       <div style="display:flex;flex-direction:column;gap:6px;">
         <label style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;">Destinazione</label>
         <div style="display:flex;gap:6px;">
@@ -4588,101 +4582,86 @@ function sbTabMoveToFeed(sb, origIdx, key){
           ${months.map(m=>`<option value="${m}"${m===currentMonth?' selected':''}>${m}</option>`).join('')}
         </select>
       </div>
-
-      ${hasSlides
-        ? `<div style="font-size:11px;color:var(--text-3);background:var(--surface-2,var(--surface));border:1px solid var(--border-lt);border-radius:6px;padding:8px 10px;line-height:1.5;">
-            ${slides.length===1
-              ? "→ Verrà creato <strong>1 post</strong> con l'immagine della slide."
-              : '→ Verrà creato <strong>1 post carosello</strong> con ' + slides.length + ' slide.'}
-           </div>`
-        : `<div style="font-size:11px;color:var(--amber,#f59e0b);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 10px;line-height:1.5;">
-            ⚠ Le slide non hanno immagini caricate. Verrà creato uno slot vuoto con il nome dello storyboard.
-           </div>`
-      }
-
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:2px;">
         <button id="sbtm-cancel" class="btn ghost sm">Annulla</button>
         <button id="sbtm-ok" class="btn primary sm" style="gap:5px;">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Copia nel Feed
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Scegli file…
         </button>
       </div>
     </div>`;
 
   document.body.appendChild(overlay);
-
   let destIsStory = isStory;
 
-  overlay.querySelector('#sbtm-feed').onclick = function(){
+  const feedBtn  = overlay.querySelector('#sbtm-feed');
+  const storyBtn = overlay.querySelector('#sbtm-story');
+  feedBtn.onclick = function(){
     destIsStory = false;
-    this.className = 'btn primary sm'; this.style.flex='1';
-    overlay.querySelector('#sbtm-story').className = 'btn ghost sm'; overlay.querySelector('#sbtm-story').style.flex='1';
-    overlay.querySelector('#sbtm-ok').textContent = ''; 
-    overlay.querySelector('#sbtm-ok').innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copia nel Feed';
+    feedBtn.className='btn primary sm'; feedBtn.style.flex='1';
+    storyBtn.className='btn ghost sm'; storyBtn.style.flex='1';
   };
-  overlay.querySelector('#sbtm-story').onclick = function(){
+  storyBtn.onclick = function(){
     destIsStory = true;
-    this.className = 'btn primary sm'; this.style.flex='1';
-    overlay.querySelector('#sbtm-feed').className = 'btn ghost sm'; overlay.querySelector('#sbtm-feed').style.flex='1';
-    overlay.querySelector('#sbtm-ok').innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copia nelle Stories';
+    storyBtn.className='btn primary sm'; storyBtn.style.flex='1';
+    feedBtn.className='btn ghost sm'; feedBtn.style.flex='1';
   };
   overlay.querySelector('#sbtm-cancel').onclick = () => overlay.remove();
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
 
   overlay.querySelector('#sbtm-ok').onclick = () => {
     overlay.remove();
-    const destMonth = overlay.querySelector('#sbtm-month')?.value || currentMonth;
+    const destMonth = document.querySelector('#sbtm-month')?.value || currentMonth;
+    // Open file picker
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*,video/*';
+    inp.multiple = !destIsStory; // Feed: multipli ok (carosello), Stories: uno alla volta
+    inp.onchange = async () => {
+      const files = Array.from(inp.files);
+      if(!files.length) return;
+      showToast('⟳ Caricamento su Dropbox…');
+      const uploaded = [];
+      for(const file of files){
+        const destPath = '/nassa/'+CLOUD.user+'/'+(destIsStory?'ped-stories':'feed')+'/'+Date.now()+'_'+file.name;
+        const url = await DROPBOX.upload(file, destPath);
+        if(url) uploaded.push({url, name:file.name, type:file.type.startsWith('video/')?'video':'image'});
+      }
+      if(!uploaded.length){ showToast('Upload fallito','warn'); return; }
 
-    if(destIsStory){
-      // → Stories: ogni slide diventa una story, oppure 1 story se slide singola
-      const skey = accountKey(acc.id, destMonth);
-      const arr = stories[skey]||[];
-      if(slides.length <= 1){
-        const s = slides[0];
-        const url = s?.externalUrl||s?.url||'';
-        arr.unshift({type:'image',url,externalUrl:url,isExternalLink:!!url,linkSource:'dropbox',
-          name:sb.name||'Story',date:'',note:'',isStoryboard:false,slides:[]});
-      } else {
-        // Più slide → una story per slide
-        slides.reverse().forEach(s=>{
-          const url = s.externalUrl||s.url||'';
-          arr.unshift({type:'image',url,externalUrl:url,isExternalLink:!!url,linkSource:'dropbox',
-            name:(sb.name||'Story')+' — '+((s.num||s.title)||'slide'),date:'',note:'',isStoryboard:false,slides:[]});
+      if(destIsStory){
+        const skey = accountKey(acc.id, destMonth);
+        const arr = stories[skey]||[];
+        uploaded.reverse().forEach(u=>{
+          arr.unshift({type:u.type,url:u.url,externalUrl:u.url,isExternalLink:true,
+            linkSource:'dropbox',name:sb.name||u.name,date:'',note:'',isStoryboard:false,slides:[]});
         });
-        slides.reverse(); // restore order
-      }
-      stories[skey] = arr;
-    } else {
-      // → Feed: se 1 slide → post singolo, se più slide → carosello
-      const fkey = accountKey(acc.id, destMonth);
-      const arr = feeds[fkey]||[];
-      if(slides.length <= 1){
-        const s = slides[0]||{};
-        const url = s.externalUrl||s.url||'';
-        arr.unshift({type:'image',url,externalUrl:url,isExternalLink:!!url,linkSource:'dropbox',
-          name:sb.name||'Post',date:'',showDate:false,copy:'',linkedStories:[],slides:[]});
+        stories[skey] = arr;
       } else {
-        // Carosello: prima slide come cover + tutte come slides[]
-        const coverUrl = slides[0].externalUrl||slides[0].url||'';
-        const carSlides = slides.map(s=>({
-          url:s.externalUrl||s.url||'', externalUrl:s.externalUrl||s.url||'',
-          name:s.name||'', copy:s.copy||''
-        }));
-        arr.unshift({type:'carousel',url:coverUrl,externalUrl:coverUrl,isExternalLink:true,
-          linkSource:'dropbox',name:sb.name||'Post',date:'',showDate:false,copy:'',
-          linkedStories:[],slides:carSlides});
+        const fkey = accountKey(acc.id, destMonth);
+        const arr = feeds[fkey]||[];
+        if(uploaded.length === 1){
+          const u = uploaded[0];
+          arr.unshift({type:u.type,url:u.url,externalUrl:u.url,isExternalLink:true,
+            linkSource:'dropbox',name:sb.name||u.name,date:'',showDate:false,copy:'',linkedStories:[],slides:[]});
+        } else {
+          // Più file → carosello
+          const carSlides = uploaded.map(u=>({url:u.url,externalUrl:u.url,name:u.name,copy:''}));
+          arr.unshift({type:'carousel',url:uploaded[0].url,externalUrl:uploaded[0].url,
+            isExternalLink:true,linkSource:'dropbox',name:sb.name||'Post',date:'',
+            showDate:false,copy:'',linkedStories:[],slides:carSlides});
+        }
+        feeds[fkey] = arr;
       }
-      feeds[fkey] = arr;
-    }
-
-    // Marca storyboard come pubblicato
-    const allSt = stories[key]||[];
-    if(allSt[origIdx]) allSt[origIdx].fileCaricato = true;
-
-    clearTimeout(CLOUD._saveTimer);
-    CLOUD.saveNow(CLOUD.snapshot());
-    renderSbTabGrid();
-    showToast('✓ Copiato in '+(destIsStory?'Stories':'Feed')+' — '+destMonth);
+      // Marca storyboard come pubblicato
+      const allSt = stories[key]||[];
+      if(allSt[origIdx]) allSt[origIdx].fileCaricato = true;
+      clearTimeout(CLOUD._saveTimer);
+      await CLOUD.saveNow(CLOUD.snapshot());
+      renderSbTabGrid();
+      showToast('✓ Caricato in '+(destIsStory?'Stories':'Feed')+' — '+destMonth);
+    };
+    inp.click();
   };
 }
 
