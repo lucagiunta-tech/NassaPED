@@ -318,6 +318,11 @@
         <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">—</option></select>
         <div class="ctx-divider"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
+        <!-- Scorciatoia Calendario — sempre visibile accanto ai mesi -->
+        <button class="feed-backlog-btn" onclick="switchTab('cal')" title="Vai al Calendario" aria-label="Calendario" style="gap:4px;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Cal
+        </button>
         <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma" style="cursor:pointer;">Instagram · 4:5 ▾</button>
         <!-- Bottone Profilo -->
         <button class="feed-backlog-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" title="Mostra/nascondi profilo" aria-label="Profilo account">
@@ -490,6 +495,10 @@
         <select id="stories-client-sel" onchange="onStoriesClientChange()" style="display:none;"><option value="">—</option></select>
         <div class="ctx-divider"></div>
         <div id="stories-month-pills" class="feed-month-pills-inline"></div>
+        <button class="feed-backlog-btn" onclick="switchTab('cal')" title="Vai al Calendario" aria-label="Calendario" style="gap:4px;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Cal
+        </button>
         <button class="ctx-expand-btn" id="stories-expand-btn" onclick="toggleStoriesPanel()" title="Carica e opzioni" aria-label="Carica e opzioni">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="stories-expand-icon"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
@@ -654,6 +663,10 @@
         <select id="sb-tab-account-sel" class="ctx-select" onchange="onSbTabAccountChange()"></select>
         <div class="ctx-divider"></div>
         <div id="sb-tab-month-pills" class="feed-month-pills-inline"></div>
+        <button class="feed-backlog-btn" onclick="switchTab('cal')" title="Vai al Calendario" aria-label="Calendario" style="gap:4px;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Cal
+        </button>
         <button class="btn sm primary" onclick="openStoryboardModal(-1)" style="margin-left:auto;white-space:nowrap;gap:5px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
           + Nuovo storyboard
