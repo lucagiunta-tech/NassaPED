@@ -319,6 +319,11 @@
         <div class="ctx-divider"></div>
         <div id="feed-month-pills" class="feed-month-pills-inline"></div>
         <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma" style="cursor:pointer;">Instagram · 4:5 ▾</button>
+        <!-- Bottone Profilo -->
+        <button class="feed-backlog-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" title="Mostra/nascondi profilo" aria-label="Profilo account">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Profilo
+        </button>
 
         <!-- Bottone + Carica con popover contestuale -->
         <div style="position:relative;" id="feed-upload-anchor">
@@ -446,7 +451,58 @@
       </div>
     <!-- Feed grid full width -->
     <div class="feed-grid-area">
-      <div class="feed-grid" id="feed-grid"></div>
+
+      <!-- Blocco profilo Instagram-style — collassabile -->
+      <div id="feed-ig-profile" class="feed-ig-profile" style="display:none;">
+        <div class="fig-inner">
+          <!-- Avatar -->
+          <div class="fig-avatar-wrap">
+            <div class="fig-avatar" id="fig-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+          <!-- Info -->
+          <div class="fig-info">
+            <!-- Riga username + edit -->
+            <div class="fig-top">
+              <input id="fig-username" class="fig-username-inp" type="text" placeholder="@username" maxlength="30"
+                oninput="figSaveField('username',this.value)" />
+              <button class="btn ghost sm" onclick="feedProfileAvatarClick()" style="font-size:11px;padding:3px 8px;gap:4px;">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Cambia foto
+              </button>
+            </div>
+            <!-- Stats row -->
+            <div class="fig-stats">
+              <div class="fig-stat">
+                <span class="fig-stat-n" id="fig-stat-post">0</span>
+                <span class="fig-stat-l">post</span>
+              </div>
+              <div class="fig-stat" style="cursor:pointer;">
+                <input class="fig-stat-inp" id="fig-followers" type="text" placeholder="0" maxlength="8"
+                  oninput="figSaveField('followers',this.value)" />
+                <span class="fig-stat-l">follower</span>
+              </div>
+              <div class="fig-stat" style="cursor:pointer;">
+                <input class="fig-stat-inp" id="fig-following" type="text" placeholder="0" maxlength="8"
+                  oninput="figSaveField('following',this.value)" />
+                <span class="fig-stat-l">seguiti</span>
+              </div>
+            </div>
+            <!-- Nome account -->
+            <div class="fig-name" id="fig-name"></div>
+            <!-- Bio multiriga -->
+            <textarea id="fig-bio" class="fig-bio" rows="3" placeholder="Scrivi la bio…&#10;Puoi andare a capo liberamente."
+              oninput="figSaveField('bio',this.value);figBioCounter(this.value)"></textarea>
+            <div id="fig-bio-counter" class="fig-bio-counter"></div>
+            <!-- Link -->
+            <input id="fig-link" class="fig-link-inp" type="url" placeholder="https://linkinbio.it/…" maxlength="100"
+              oninput="figSaveField('link',this.value)" />
+          </div>
+        </div>
+      </div>
+
+      <div id="feed-grid" class="feed-grid"></div>
       <div id="feed-all-months-wrap" style="display:none;flex-direction:column;gap:0;overflow-y:auto;flex:1;min-height:0;"></div>
       <div id="feed-backlog-wrap" style="display:none;flex-direction:column;flex:1;overflow-y:auto;min-height:0;"></div>
     </div>

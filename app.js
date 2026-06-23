@@ -1912,6 +1912,81 @@ function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pendin
 function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();feedProfileSync();}
 
 /* ── FEED PROFILE PANEL ── */
+/* ══ FEED — Blocco profilo Instagram-style ══ */
+let figProfileOpen = false;
+
+function toggleFigProfile(){
+  figProfileOpen = !figProfileOpen;
+  const block = document.getElementById('feed-ig-profile');
+  const btn = document.getElementById('feed-profile-toggle-btn');
+  if(block) block.style.display = figProfileOpen ? '' : 'none';
+  if(btn) btn.classList.toggle('active', figProfileOpen);
+  if(figProfileOpen) figSync();
+}
+
+function figSync(){
+  const acc = getAccount(feedClientIdx, feedAccountIdx);
+  if(!acc) return;
+  const cl = feedClientIdx >= 0 ? clients[feedClientIdx] : null;
+
+  // Avatar
+  const av = document.getElementById('fig-avatar');
+  if(av){
+    const oldImg = av.querySelector('img');
+    if(oldImg) oldImg.remove();
+    if(acc.profileImg){
+      const img = document.createElement('img');
+      img.src = acc.profileImg; img.alt = '';
+      av.insertBefore(img, av.firstChild);
+    }
+  }
+
+  // Nome account (readonly)
+  const nameEl = document.getElementById('fig-name');
+  if(nameEl) nameEl.textContent = acc.name || '';
+
+  // Username
+  const usEl = document.getElementById('fig-username');
+  if(usEl) usEl.value = acc.username || '';
+
+  // Followers / following
+  const flEl = document.getElementById('fig-followers');
+  const fwEl = document.getElementById('fig-following');
+  if(flEl) flEl.value = acc.followers || '';
+  if(fwEl) fwEl.value = acc.following || '';
+
+  // Post count (da feed corrente)
+  const statPost = document.getElementById('fig-stat-post');
+  if(statPost){
+    const allFeeds = Object.keys(feeds).filter(k=>k.startsWith(accountId(feedClientIdx,feedAccountIdx)+'|||'));
+    const total = allFeeds.reduce((s,k)=>(feeds[k]||[]).filter(i=>i.type!=='pending').length+s, 0);
+    statPost.textContent = total;
+  }
+
+  // Bio
+  const bioEl = document.getElementById('fig-bio');
+  if(bioEl){ bioEl.value = acc.bio || ''; figBioCounter(acc.bio || ''); }
+
+  // Link
+  const linkEl = document.getElementById('fig-link');
+  if(linkEl) linkEl.value = acc.link || '';
+}
+
+function figSaveField(field, value){
+  const acc = getAccount(feedClientIdx, feedAccountIdx);
+  if(!acc) return;
+  acc[field] = value;
+  autoSave();
+}
+
+function figBioCounter(val){
+  const el = document.getElementById('fig-bio-counter');
+  if(!el) return;
+  const len = (val||'').length;
+  el.textContent = len > 0 ? len + '/150' : '';
+  el.style.color = len > 130 ? (len >= 150 ? 'var(--red)' : '#f59e0b') : 'var(--text-3)';
+}
+
 function updateBioCounter(val){
   const el = document.getElementById('bio-counter');
   if(!el) return;
@@ -1951,9 +2026,11 @@ function feedProfileSync(){
     if(img){img.remove();}
     if(svg)svg.style.display='';
   }
-  // Bio
+  // Bio (pannello opzioni — legacy, kept for compat)
   bioEl.value = acc.bio||'';
   updateBioCounter(acc.bio||'');
+  // Sync anche il blocco profilo IG se aperto
+  if(figProfileOpen) figSync();
 }
 
 function feedProfileAvatarClick(){

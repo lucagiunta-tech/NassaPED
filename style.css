@@ -3251,3 +3251,71 @@ tbody tr:hover .tr-actions{opacity:1;}
   pointer-events:all !important;
 }
 .feed-cell-stato-btn:hover{background:rgba(0,0,0,0.92);}
+
+/* ══ FEED — Blocco profilo Instagram-style ══ */
+.feed-ig-profile{
+  border-bottom:1px solid var(--border-lt);
+  background:var(--surface);
+  padding:20px 24px 18px;
+  flex-shrink:0;
+}
+.fig-inner{
+  display:flex;
+  gap:28px;
+  align-items:flex-start;
+  max-width:640px;
+}
+.fig-avatar-wrap{ flex-shrink:0; }
+.fig-avatar{
+  width:86px; height:86px;
+  border-radius:50%;
+  background:var(--bg);
+  border:1.5px dashed var(--border);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; overflow:hidden; position:relative;
+  transition:border-color var(--t-base);
+}
+.fig-avatar:hover{ border-color:var(--green); border-style:solid; }
+.fig-avatar img{ width:100%;height:100%;object-fit:cover;display:block; }
+.fig-avatar svg{ width:28px;height:28px; }
+.fig-info{ flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.fig-top{ display:flex; align-items:center; gap:10px; }
+.fig-username-inp{
+  font-size:18px; font-weight:300; font-family:var(--font);
+  color:var(--text); background:none; border:none; outline:none;
+  padding:0; min-width:80px; max-width:200px;
+  border-bottom:1px solid transparent;
+  transition:border-color var(--t-base);
+}
+.fig-username-inp:focus{ border-bottom-color:var(--green); }
+.fig-username-inp::placeholder{ color:var(--text-3); font-weight:300; }
+.fig-stats{ display:flex; gap:20px; }
+.fig-stat{ display:flex; align-items:baseline; gap:4px; }
+.fig-stat-n{ font-size:14px; font-weight:700; color:var(--text); }
+.fig-stat-l{ font-size:13px; color:var(--text); }
+.fig-stat-inp{
+  font-size:14px; font-weight:700; font-family:var(--font);
+  color:var(--text); background:none; border:none; outline:none;
+  padding:0; width:48px; text-align:center;
+  border-bottom:1px solid transparent; transition:border-color var(--t-base);
+}
+.fig-stat-inp:focus{ border-bottom-color:var(--green); }
+.fig-stat-inp::placeholder{ font-weight:400; color:var(--text-3); }
+.fig-name{ font-size:13px; font-weight:700; color:var(--text); }
+.fig-bio{
+  font-size:13px; font-family:var(--font); color:var(--text);
+  background:none; border:none; outline:none; resize:none;
+  padding:0; width:100%; line-height:1.5;
+  border-bottom:1px solid transparent; transition:border-color var(--t-base);
+}
+.fig-bio:focus{ border-bottom-color:var(--green); }
+.fig-bio::placeholder{ color:var(--text-3); }
+.fig-bio-counter{ font-size:10px; color:var(--text-3); text-align:right; margin-top:1px; }
+.fig-link-inp{
+  font-size:12px; font-family:var(--font); color:#4a90d9;
+  background:none; border:none; outline:none; padding:0; width:100%;
+  border-bottom:1px solid transparent; transition:border-color var(--t-base);
+}
+.fig-link-inp:focus{ border-bottom-color:var(--green); }
+.fig-link-inp::placeholder{ color:var(--text-3); }
+.feed-profile-toggle-btn.active{ background:var(--green); border-color:var(--green); color:#111; }
