@@ -512,7 +512,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* TOP BAR — drag handle + number + badge, always visible, no overlaps */
 .cell-top-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:6px;padding:8px 9px 24px;background:linear-gradient(to bottom,rgba(0,0,0,.6) 0%,transparent 100%);z-index:4;pointer-events:none;}
-.drag-handle{width:28px;height:28px;border-radius:var(--rs);background:rgba(0,0,0,.35);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:grab;flex-shrink:0;opacity:0;transition:opacity var(--t-base),background var(--t-fast);pointer-events:all;user-select:none;}
+.drag-handle{width:28px;height:28px;border-radius:var(--rs);background:rgba(0,0,0,.35);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:grab;flex-shrink:0;opacity:0;transition:opacity var(--t-base),background var(--t-fast);pointer-events:all;user-select:none;touch-action:none;-webkit-user-drag:none;}
 .drag-handle:hover{background:rgba(0,0,0,.55);}
 .drag-handle:active{cursor:grabbing;background:rgba(13,255,0,.4);}
 .feed-cell:not(.empty-slot):hover .drag-handle{opacity:1;}
@@ -3359,21 +3359,16 @@ tbody tr:hover .tr-actions{opacity:1;}
   from{ opacity:.8; transform:scaleY(.98); box-shadow:0 0 4px rgba(13,255,0,.4); }
   to{   opacity:1; transform:scaleY(1);    box-shadow:0 0 12px rgba(13,255,0,.8); }
 }
-/* Elemento trascinato — si svuota ma la griglia non crolla */
+/* Placeholder dove stava la card trascinata */
 .cell-wrap.dragging{
-  opacity:.2;
-  transform:scale(.96);
-  transition:opacity .12s ease, transform .12s ease;
+  opacity:0;
   pointer-events:none;
+  border:2px dashed var(--border);
+  border-radius:var(--r);
 }
 .story-wrap.dragging{
-  opacity:.2;
-  transform:scale(.96);
-  transition:opacity .12s ease, transform .12s ease;
-}
-/* Le altre card scivolano leggermente per fare spazio */
-.feed-grid .cell-wrap:not(.dragging){
-  transition:transform .15s ease;
+  opacity:0;
+  pointer-events:none;
 }
 .feed-backlog-banner{grid-column:1/-1;padding:8px 12px;background:var(--green-lt);border:1px solid var(--green-mid);border-radius:var(--r);font-size:var(--fs-xs);color:var(--text-2);margin-bottom:8px;}
 .feed-backlog-banner strong{color:var(--text);font-weight:700;}

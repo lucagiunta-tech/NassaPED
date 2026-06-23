@@ -1837,8 +1837,7 @@ function renderFeedGrid(){
           }
         }
         else{const img=makeMedia(coverUrl,'image');if(img){img.onerror=()=>{img.style.display='none';cell.appendChild(needsReloadPh('img',item.name));};cell.appendChild(img);}else{cell.appendChild(needsReloadPh('img',item.name));}}
-        // drag via event delegation — mark the cell
-        cell.draggable=true;
+        // pointer-based drag — solo data-drag-idx, no draggable
         cell.dataset.dragIdx=idx;
 
         // SVG icons as strings
@@ -2021,109 +2020,162 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
-  // Drag & drop — fluido senza re-render del DOM
-  let feedDragIndicator = null;
-  let _dragOverFrame = null; // throttle requestAnimationFrame
+  // ── POINTER-BASED DRAG & DROP ──
+  // Sostituisce HTML drag API (lagosa) con pointer events (60fps fluidi)
+  let _pd = {
+    active: false,
+    srcIdx: null,
+    ghost: null,
+    indicator: null,
+    offsetX: 0,
+    offsetY: 0,
+    lastTarget: null,
+    insertBefore: null,
+    rafId: null
+  };
 
-  function feedGetIndicator(){
-    if(!feedDragIndicator){
-      feedDragIndicator = document.createElement('div');
-      feedDragIndicator.className = 'drag-insert-indicator';
-      feedDragIndicator.setAttribute('aria-hidden','true');
+  function _pdGetIndicator(){
+    if(!_pd.indicator){
+      _pd.indicator = document.createElement('div');
+      _pd.indicator.className = 'drag-insert-indicator';
+      _pd.indicator.setAttribute('aria-hidden','true');
     }
-    return feedDragIndicator;
-  }
-  function feedRemoveIndicator(){
-    feedDragIndicator?.remove();
+    return _pd.indicator;
   }
 
-  grid.addEventListener('dragstart',e=>{
-    const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
-    feedDragSrc=parseInt(cell.dataset.dragIdx);
-    e.dataTransfer.effectAllowed='move';
-    e.dataTransfer.setData('text/plain', String(feedDragSrc));
-    // Ghost image: clone pulito senza overlay attivi
-    const wrap=cell.closest('.cell-wrap');
-    if(wrap){
-      const ghost=wrap.cloneNode(true);
-      ghost.style.cssText='position:fixed;top:-9999px;left:-9999px;width:'+wrap.offsetWidth+'px;opacity:1;pointer-events:none;';
-      document.body.appendChild(ghost);
-      e.dataTransfer.setDragImage(ghost, wrap.offsetWidth/2, 40);
-      setTimeout(()=>{ghost.remove(); wrap.classList.add('dragging');}, 0);
-    }
+  function _pdCleanup(){
+    if(_pd.ghost){ _pd.ghost.remove(); _pd.ghost=null; }
+    _pd.indicator?.remove();
+    if(_pd.rafId){ cancelAnimationFrame(_pd.rafId); _pd.rafId=null; }
+    grid.querySelectorAll('.cell-wrap').forEach(c=>{
+      c.classList.remove('dragging');
+      c.style.willChange='';
+    });
+    document.body.style.userSelect='';
+    document.body.style.cursor='';
+    _pd.active=false; _pd.srcIdx=null; _pd.lastTarget=null;
+  }
+
+  // Attach al drag handle di ogni card
+  grid.addEventListener('pointerdown', e=>{
+    const handle = e.target.closest('.drag-handle');
+    if(!handle) return;
+    const wrap = handle.closest('.cell-wrap');
+    const cell = wrap?.querySelector('[data-drag-idx]');
+    if(!wrap||!cell) return;
+
+    e.preventDefault();
+    _pd.srcIdx = parseInt(cell.dataset.dragIdx);
+    _pd.active = true;
+
+    // Ghost: clone della card, segue il cursore
+    const rect = wrap.getBoundingClientRect();
+    _pd.offsetX = e.clientX - rect.left;
+    _pd.offsetY = e.clientY - rect.top;
+
+    const ghost = wrap.cloneNode(true);
+    ghost.style.cssText = [
+      'position:fixed',
+      'top:'+rect.top+'px',
+      'left:'+rect.left+'px',
+      'width:'+rect.width+'px',
+      'height:'+rect.height+'px',
+      'pointer-events:none',
+      'z-index:9000',
+      'opacity:.92',
+      'box-shadow:0 20px 60px rgba(0,0,0,.35)',
+      'border-radius:var(--r)',
+      'transform:scale(1.03)',
+      'transition:transform .1s ease',
+      'will-change:transform'
+    ].join(';');
+    document.body.appendChild(ghost);
+    _pd.ghost = ghost;
+
+    // La card originale diventa placeholder
+    wrap.classList.add('dragging');
+    wrap.style.willChange = 'opacity';
+
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'grabbing';
   });
 
-  grid.addEventListener('dragover',e=>{
-    e.preventDefault();
-    e.dataTransfer.dropEffect='move';
-    if(feedDragSrc===null) return;
-    // Throttle via rAF — evita jank da centinaia di eventi/s
-    if(_dragOverFrame) return;
-    _dragOverFrame = requestAnimationFrame(()=>{
-      _dragOverFrame = null;
-      const wrap=e.target.closest('.cell-wrap');
-      if(!wrap||!wrap.querySelector('[data-drag-idx]')) return;
-      const idx=parseInt(wrap.querySelector('[data-drag-idx]').dataset.dragIdx);
-      if(idx===feedDragSrc) return;
-      const rect=wrap.getBoundingClientRect();
-      const insertBefore=(e.clientX-rect.left)<rect.width/2;
-      const indicator=feedGetIndicator();
-      const target=insertBefore?wrap:wrap.nextSibling;
-      // Muovi solo se necessario (evita reflow inutili)
-      if(indicator.nextSibling!==target) grid.insertBefore(indicator, target||null);
+  document.addEventListener('pointermove', e=>{
+    if(!_pd.active) return;
+    if(_pd.rafId) return; // throttle 60fps
+    _pd.rafId = requestAnimationFrame(()=>{
+      _pd.rafId = null;
+      if(!_pd.active) return;
+
+      // Muovi ghost
+      if(_pd.ghost){
+        _pd.ghost.style.top  = (e.clientY - _pd.offsetY)+'px';
+        _pd.ghost.style.left = (e.clientX - _pd.offsetX)+'px';
+      }
+
+      // Trova la card sotto il cursore (escludi ghost e indicator)
+      _pd.ghost.style.display='none';
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      _pd.ghost.style.display='';
+
+      const wrap = el?.closest('.cell-wrap');
+      const cell = wrap?.querySelector('[data-drag-idx]');
+      if(!wrap||!cell){ _pd.indicator?.remove(); return; }
+
+      const idx = parseInt(cell.dataset.dragIdx);
+      if(idx === _pd.srcIdx){ _pd.indicator?.remove(); return; }
+
+      const rect = wrap.getBoundingClientRect();
+      const before = (e.clientX - rect.left) < rect.width / 2;
+      const target = before ? wrap : wrap.nextSibling;
+
+      // Inserisci indicatore solo se posizione cambiata
+      const ind = _pdGetIndicator();
+      if(ind.nextSibling !== target){
+        grid.insertBefore(ind, target || null);
+      }
     });
   });
 
-  grid.addEventListener('dragleave',e=>{
-    if(!grid.contains(e.relatedTarget)){
-      feedRemoveIndicator();
-      if(_dragOverFrame){cancelAnimationFrame(_dragOverFrame);_dragOverFrame=null;}
-    }
-  });
+  document.addEventListener('pointerup', e=>{
+    if(!_pd.active) return;
+    if(_pd.rafId){ cancelAnimationFrame(_pd.rafId); _pd.rafId=null; }
 
-  grid.addEventListener('drop',e=>{
-    e.preventDefault();
-    if(_dragOverFrame){cancelAnimationFrame(_dragOverFrame);_dragOverFrame=null;}
-    if(feedDragSrc===null) return;
-    const ind=feedDragIndicator;
-    let insertIdx=feedDragSrc;
-    if(ind&&ind.parentElement===grid){
-      let count=0;
+    // Calcola posizione finale dall'indicatore
+    const ind = _pd.indicator;
+    let insertIdx = _pd.srcIdx;
+
+    if(ind && ind.parentElement === grid){
+      let count = 0;
       for(const ch of grid.children){
-        if(ch===ind) break;
-        if(ch.classList.contains('cell-wrap')&&ch.querySelector('[data-drag-idx]')) count++;
+        if(ch === ind) break;
+        if(ch.classList.contains('cell-wrap') && ch.querySelector('[data-drag-idx]')) count++;
       }
-      insertIdx=count;
-    } else {
-      const cell=e.target.closest('[data-drag-idx]');
-      if(cell) insertIdx=parseInt(cell.dataset.dragIdx);
+      insertIdx = count;
     }
-    feedRemoveIndicator();
-    if(insertIdx!==feedDragSrc){
-      const arr=currentFeedItems();
-      const [moved]=arr.splice(feedDragSrc,1);
-      const fi=insertIdx>feedDragSrc?insertIdx-1:insertIdx;
-      arr.splice(fi,0,moved);
+
+    const srcIdx = _pd.srcIdx;
+    _pdCleanup();
+
+    if(insertIdx !== srcIdx){
+      const arr = currentFeedItems();
+      const [moved] = arr.splice(srcIdx, 1);
+      const fi = insertIdx > srcIdx ? insertIdx-1 : insertIdx;
+      arr.splice(fi, 0, moved);
       setFeedItems(arr);
-      // Re-render leggero: aggiorna solo data-drag-idx senza ricostruire DOM
-      grid.querySelectorAll('[data-drag-idx]').forEach((el,i)=>el.dataset.dragIdx=String(i));
       autoSave();
-      showUndoToast('Post riordinato',()=>{
-        const ar=currentFeedItems();
-        ar.splice(fi,0,ar.splice(feedDragSrc>fi?fi:fi-1,1)[0]);
-        setFeedItems(ar);renderFeedGrid();
+      renderFeedGrid();
+      showUndoToast('Post riordinato', ()=>{
+        const ar = currentFeedItems();
+        const [m] = ar.splice(fi, 1);
+        ar.splice(srcIdx, 0, m);
+        setFeedItems(ar); renderFeedGrid();
       });
     }
-    feedDragSrc=null;
-    grid.querySelectorAll('.cell-wrap').forEach(c=>c.classList.remove('dragging'));
   });
 
-  grid.addEventListener('dragend',()=>{
-    feedRemoveIndicator();
-    if(_dragOverFrame){cancelAnimationFrame(_dragOverFrame);_dragOverFrame=null;}
-    feedDragSrc=null;
-    grid.querySelectorAll('.cell-wrap').forEach(c=>c.classList.remove('dragging'));
-  });
+  // Cancella se perde focus (es. tab switch)
+  document.addEventListener('pointercancel', _pdCleanup);
 }
 
 function addEmptyFeedListeners(cell){cell.addEventListener('dragover',e=>{if(feedDragSrc!==null)return;if(e.dataTransfer.types.includes('Files')){e.preventDefault();cell.classList.add('file-hover');}});cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(feedDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueFeedFiles(e.dataTransfer.files);});}
