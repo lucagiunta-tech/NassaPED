@@ -521,7 +521,7 @@ let notesClientIdx = -1, notesMonth = '';
 let globalClientIdx = -1;
 let previewActiveAcc = 0;
 
-let showAllDates = true, showAllCopy = true, feedViewMode = 'grid';
+let showAllDates = true, showAllCopy = true, feedViewMode = 'grid'; // showAllCopy: mostra/nasconde la sezione caption
 let currentTab = 'studio';
 
 let feedDragSrc = null, stDragSrc = null;
@@ -1982,8 +1982,7 @@ function renderFeedGrid(){
           if(open)setTimeout(()=>ct.focus(),0);
         };
         cph.onclick=toggleCopy;prev.onclick=toggleCopy;
-        // Se item ha copy, espandi solo su desktop
-        if(item.copy && window.innerWidth > 768){cpanel_body.classList.add('open');expBtn.classList.add('open');prev.style.display='none';}
+        // Caption sempre collassata di default — si espande solo a click
         cp.appendChild(cph);cp.appendChild(prev);cp.appendChild(cpanel_body);
         // Copy per slide carosello — mostra sotto la caption generale
         if(item.type==='carousel' && (item.slides||[]).some(s=>s.copy?.trim())){
