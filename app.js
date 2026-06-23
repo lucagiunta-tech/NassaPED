@@ -8238,6 +8238,161 @@ document.addEventListener('keydown', e => {
 });
 
 
+
+/* ══ NOTES — DROPBOX FILE BROWSER PANEL ══ */
+let dbxCurrentPath = '/nassa';
+let _dbxSearchTimer = null;
+let _dbxSearchMode = false;
+
+function toggleDbxPanel(){
+  const panel = document.getElementById('notes-dbx-panel');
+  const btn   = document.getElementById('notes-dbx-btn');
+  const layout = document.querySelector('.notes-layout');
+  if(!panel) return;
+  const open = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = open ? 'flex' : 'none';
+  if(btn) btn.classList.toggle('active', open);
+  if(layout) layout.classList.toggle('dbx-open', open);
+  if(open) dbxNavigate(dbxCurrentPath);
+}
+
+async function dbxNavigate(path){
+  _dbxSearchMode = false;
+  dbxCurrentPath = path;
+  const list = document.getElementById('notes-dbx-list');
+  const bc   = document.getElementById('notes-dbx-breadcrumb');
+  if(!list) return;
+
+  // Breadcrumb
+  if(bc){
+    const parts = path.split('/').filter(Boolean);
+    let html = `<span class="dbx-bc-item" onclick="dbxNavigate('/nassa')">nassa</span>`;
+    let cur = '';
+    parts.forEach((p,i) => {
+      if(p === 'nassa' && i === 0) return;
+      cur += '/' + p;
+      const fullPath = '/nassa' + cur.replace(/^\/nassa/,'');
+      html += `<span class="dbx-bc-sep">›</span><span class="dbx-bc-item" onclick="dbxNavigate('${fullPath.replace(/'/g,"\'")}')">${p}</span>`;
+    });
+    bc.innerHTML = html;
+  }
+
+  list.innerHTML = '<div class="notes-dbx-loading"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg> Caricamento…</div>';
+
+  try {
+    const res = await fetch('/api/dropbox-list?path='+encodeURIComponent(path), {
+      headers: { 'x-nassa-key': CLOUD.apiKey },
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Errore');
+    dbxRenderList(data.entries || []);
+  } catch(e) {
+    list.innerHTML = `<div class="notes-dbx-empty">⚠ ${e.message}</div>`;
+  }
+}
+
+function dbxSearch(query){
+  clearTimeout(_dbxSearchTimer);
+  if(!query.trim()){ dbxNavigate(dbxCurrentPath); return; }
+  _dbxSearchTimer = setTimeout(async()=>{
+    _dbxSearchMode = true;
+    const list = document.getElementById('notes-dbx-list');
+    const bc   = document.getElementById('notes-dbx-breadcrumb');
+    if(bc) bc.innerHTML = '<span class="dbx-bc-item">Risultati ricerca</span>';
+    list.innerHTML = '<div class="notes-dbx-loading">Ricerca…</div>';
+    try {
+      const res = await fetch('/api/dropbox-list?search='+encodeURIComponent(query), {
+        headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include'
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Errore');
+      dbxRenderList(data.entries || []);
+    } catch(e) {
+      list.innerHTML = `<div class="notes-dbx-empty">⚠ ${e.message}</div>`;
+    }
+  }, 400);
+}
+
+function dbxRenderList(entries){
+  const list = document.getElementById('notes-dbx-list');
+  if(!list) return;
+  if(!entries.length){
+    list.innerHTML = '<div class="notes-dbx-empty">Nessun file trovato</div>';
+    return;
+  }
+
+  const ICONS = {
+    folder: '📁',
+    pdf:'📄', doc:'📝', docx:'📝',
+    xls:'📊', xlsx:'📊', csv:'📊',
+    ppt:'📊', pptx:'📊',
+    png:'🖼', jpg:'🖼', jpeg:'🖼', gif:'🖼', webp:'🖼',
+    mp4:'🎬', mov:'🎬', avi:'🎬',
+    mp3:'🎵', wav:'🎵',
+    zip:'📦', rar:'📦',
+    txt:'📄', md:'📄',
+  };
+
+  list.innerHTML = entries.filter(Boolean).map(e => {
+    const icon = e.type === 'folder' ? ICONS.folder : (ICONS[e.ext] || '📄');
+    const size = e.size ? dbxFormatSize(e.size) : '';
+    const date = e.modified ? new Date(e.modified).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}) : '';
+    const meta = [size, date].filter(Boolean).join(' · ');
+
+    if(e.type === 'folder'){
+      return `<div class="dbx-item dbx-folder" onclick="dbxNavigate('${e.path.replace(/'/g,"\'")}')">
+        <span class="dbx-icon">${icon}</span>
+        <div class="dbx-info"><div class="dbx-name">${esc(e.name)}</div></div>
+        <span class="dbx-chevron">›</span>
+      </div>`;
+    }
+    return `<div class="dbx-item dbx-file" onclick="dbxInsertFile('${e.path.replace(/'/g,"\'")}','${e.name.replace(/'/g,"\'")}')">
+      <span class="dbx-icon">${icon}</span>
+      <div class="dbx-info">
+        <div class="dbx-name">${esc(e.name)}</div>
+        ${meta ? `<div class="dbx-meta">${meta}</div>` : ''}
+      </div>
+      <button class="dbx-insert-btn" title="Inserisci link">+</button>
+    </div>`;
+  }).join('');
+}
+
+async function dbxInsertFile(path, name){
+  showToast('⟳ Ottengo link condivisibile…');
+  try {
+    const res = await fetch('/api/dropbox-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
+      credentials: 'include',
+      body: JSON.stringify({ path })
+    });
+    const text = await res.text();
+    let url = text.trim();
+    // Converti in link diretto
+    url = url.replace('www.dropbox.com','dl.dropboxusercontent.com')
+             .replace('?dl=0','').replace('?dl=1','');
+
+    const ext = name.split('.').pop().toLowerCase();
+    const ICONS = {pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',
+                   ppt:'📊',pptx:'📊',png:'🖼',jpg:'🖼',jpeg:'🖼',
+                   mp4:'🎬',mov:'🎬',zip:'📦',txt:'📄',csv:'📊'};
+    const icon = ICONS[ext] || '📎';
+    notesInsertAtCursor(`
+${icon} [${name}](${url})
+`);
+    showToast(`✓ "${name}" inserito`);
+  } catch(e) {
+    showToast('⚠ Impossibile ottenere link: '+e.message,'warn');
+  }
+}
+
+function dbxFormatSize(bytes){
+  if(bytes < 1024) return bytes+'B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(0)+'KB';
+  return (bytes/1024/1024).toFixed(1)+'MB';
+}
+
 /* ══ NOTES — ALLEGATI E LINK DROPBOX PAPER ══ */
 
 // Apre il file picker per allegati

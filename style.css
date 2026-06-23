@@ -3807,3 +3807,88 @@ tbody tr:hover .tr-actions{opacity:1;}
   border-radius:var(--rs);padding:6px 10px;margin:4px 0;
   font-size:var(--fs-sm);
 }
+
+/* ══ NOTES — DROPBOX FILE BROWSER PANEL ══ */
+.notes-layout.dbx-open{
+  display:grid;
+  grid-template-columns:auto 1fr 300px;
+}
+.notes-dbx-panel{
+  width:300px;flex-shrink:0;
+  background:var(--surface);
+  border-left:var(--bw) solid var(--border);
+  display:flex;flex-direction:column;
+  height:100%;overflow:hidden;
+}
+.notes-dbx-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:var(--bw) solid var(--border);
+  flex-shrink:0;
+}
+.notes-dbx-title{
+  display:flex;align-items:center;gap:6px;
+  font-size:var(--fs-sm);font-weight:700;color:var(--text);
+}
+.notes-dbx-close{
+  background:none;border:none;cursor:pointer;
+  color:var(--text-3);font-size:16px;padding:2px 6px;
+  border-radius:var(--rs);transition:background var(--t-fast);
+}
+.notes-dbx-close:hover{background:var(--bg);}
+.notes-dbx-search-row{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 12px;border-bottom:var(--bw) solid var(--border-lt);
+  flex-shrink:0;
+}
+.notes-dbx-search-row input{
+  flex:1;border:none;outline:none;font-size:var(--fs-sm);
+  font-family:var(--font);color:var(--text);background:transparent;
+}
+.notes-dbx-search-row svg{color:var(--text-3);}
+.notes-dbx-breadcrumb{
+  display:flex;align-items:center;flex-wrap:wrap;gap:2px;
+  padding:6px 12px;border-bottom:var(--bw) solid var(--border-lt);
+  font-size:var(--fs-xs);color:var(--text-3);flex-shrink:0;
+  min-height:30px;
+}
+.dbx-bc-item{cursor:pointer;color:var(--text-2);}
+.dbx-bc-item:hover{color:var(--text);text-decoration:underline;}
+.dbx-bc-sep{margin:0 2px;color:var(--border);}
+.notes-dbx-list{
+  flex:1;overflow-y:auto;padding:4px 0;
+}
+.notes-dbx-loading{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:24px;color:var(--text-3);font-size:var(--fs-sm);
+}
+.notes-dbx-empty{
+  padding:24px;color:var(--text-3);font-size:var(--fs-sm);text-align:center;
+}
+/* Item: cartella o file */
+.dbx-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 12px;cursor:pointer;
+  transition:background var(--t-fast);
+  border-bottom:var(--bw) solid var(--border-lt);
+}
+.dbx-item:last-child{border-bottom:none;}
+.dbx-item:hover{background:var(--bg);}
+.dbx-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center;}
+.dbx-info{flex:1;min-width:0;}
+.dbx-name{
+  font-size:var(--fs-xs);font-weight:500;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.dbx-meta{font-size:10px;color:var(--text-3);margin-top:1px;}
+.dbx-chevron{color:var(--text-3);font-size:16px;flex-shrink:0;}
+.dbx-insert-btn{
+  opacity:0;border:1px solid var(--green);background:var(--green-lt);
+  color:var(--green-dk);border-radius:var(--rs);
+  padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;
+  flex-shrink:0;transition:opacity var(--t-fast);font-family:var(--font);
+}
+.dbx-item:hover .dbx-insert-btn{opacity:1;}
+.dbx-insert-btn:hover{background:var(--green);color:#111;}
+
+/* Dark mode */
+[data-theme="dark"] .notes-dbx-panel{background:var(--surface);}
