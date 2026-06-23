@@ -61,10 +61,12 @@
 <link rel="stylesheet" href="/style.css?v=1782171720"/>
 </head>
 <body>
+<!-- Skip link — accessibilità keyboard -->
+<a href="#main-content" class="skip-link">Salta al contenuto</a>
 <div class="app">
 
 <!-- TOPBAR -->
-<div class="topbar">
+<header class="topbar" role="banner">
   <div class="topbar-brand" id="topbar-brand">
     <div class="brand-mark">N</div>
     <div class="brand-name" id="brand-name-text">Nassa Studio</div>
@@ -83,7 +85,7 @@
 </div>
 
 <!-- SUBTOPBAR CLIENTE -->
-<div class="subtopbar" id="subtopbar">
+<nav class="subtopbar" aria-label="Navigazione cliente" id="subtopbar">
   <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
     <span class="subtopbar-back">‹</span>
     <div>
@@ -120,12 +122,12 @@
   <button class="user-btn" onclick="switchUser('akash')">Akash</button>
   <button class="user-btn" onclick="switchUser('hermes')">Hermes</button>
   <button class="user-btn" onclick="switchUser('matteo')">Matteo</button>
-</div>
+</nav><!-- /subtopbar -->
 
 <div class="body">
 
 <!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
+<nav class="sidebar" id="sidebar" aria-label="Menu principale">
   <!-- Main icon sidebar — always visible -->
   <div class="sb-main-nav" id="sb-main-nav">
     <div class="sb-nav-top">
@@ -215,13 +217,14 @@
 
   <!-- sidebar-studio-add moved to modal -->
   <div id="sidebar-studio-add" style="display:none;"></div>
-</div><!-- /sidebar -->
+</nav><!-- /sidebar -->
 
 <!-- MAIN -->
-<div class="main">
+<main class="main" id="main-content" tabindex="-1">
 
   <!-- STUDIO -->
   <div class="tab-page active" id="page-studio">
+    <h1 class="sr-only">Studio — Clienti</h1>
     <div class="content-bar">
       <span class="content-title">Studio</span>
       <span class="content-tag" id="studio-count">0 clienti</span>
@@ -263,6 +266,7 @@
 
   <!-- PIANO TESTO -->
   <div class="tab-page" id="page-notes">
+    <h1 class="sr-only">Note</h1>
     <div class="notes-layout">
       <!-- TOC sidebar -->
       <div class="notes-toc" id="notes-toc">
@@ -342,6 +346,7 @@
 
   <!-- FEED -->
   <div class="tab-page" id="page-feed">
+    <h1 class="sr-only">Feed</h1>
     <!-- Feed context bar — 2 righe fisse -->
     <div class="feed-ctx-bar">
 
@@ -509,6 +514,7 @@
 
   <!-- STORIES -->
   <div class="tab-page" id="page-stories">
+    <h1 class="sr-only">Stories</h1>
     <div class="feed-ctx-bar">
       <!-- Riga 1 -->
       <div class="feed-ctx-row1">
@@ -584,12 +590,14 @@
   <!-- UGC -->
   <!-- PILASTRI TAB -->
   <div class="tab-page" id="page-pilastri">
+    <h1 class="sr-only">Pilastri editoriali</h1>
     <div class="studio-main" id="pilastri-main">
       <div id="pilastri-body"></div>
     </div>
   </div>
 
   <div class="tab-page" id="page-ped">
+    <h1 class="sr-only">UGC — Gestione contenuti</h1>
     <!-- UGC Header bar -->
     <div class="ped-topbar">
       <span class="ped-topbar-title" id="ped-title">UGC</span>
@@ -653,6 +661,7 @@
 
   <!-- STORYBOARD TAB -->
   <div class="tab-page" id="page-storyboard">
+    <h1 class="sr-only">Storyboard</h1>
     <div class="feed-ctx-bar">
       <!-- Riga 1 -->
       <div class="feed-ctx-row1">
@@ -707,6 +716,7 @@
 
   <!-- CALENDARIO -->
   <div class="tab-page" id="page-cal">
+    <h1 class="sr-only">Calendario</h1>
     <div class="feed-ctx-bar">
       <div class="feed-ctx-row1">
         <!-- Nav mese -->
@@ -754,6 +764,7 @@
 
   <!-- PREVIEW -->
   <div class="tab-page" id="page-preview">
+    <h1 class="sr-only">Preview</h1>
     <div class="preview-wrap">
       <div class="preview-topbar">
         <div class="brand-mark" style="width:26px;height:26px;font-size:12px;">N</div>
@@ -805,6 +816,7 @@
 
   <!-- PAGE ANNO — Calendario Editoriale Annuale -->
   <div class="tab-page" id="page-anno">
+    <h1 class="sr-only">Piano annuale</h1>
     <div class="anno-page">
       <!-- Barra superiore allineata al design Feed -->
       <div class="feed-ctx-bar">
@@ -835,6 +847,7 @@
 
   <!-- PAGE ADS -->
   <div class="tab-page" id="page-ads">
+    <h1 class="sr-only">Ads</h1>
     <div class="ads-page">
       <div class="ads-toprow">
         <div>
@@ -879,10 +892,8 @@
       </div>
     </div>
   </div>
-</div><!-- /main -->
-</div><!-- /body --
-
->
+</main><!-- /main -->
+</div><!-- /body -->
 </div><!-- /app -->
 
 <!-- UGC SLOT MODAL -->
