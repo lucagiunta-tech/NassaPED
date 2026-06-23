@@ -2159,10 +2159,14 @@ function renderFeedGrid(){
 
     if(insertIdx !== srcIdx){
       const arr = currentFeedItems();
+      console.log('[DnD] before:', arr.map(i=>i.name||i.copy||'?').join(','));
+      console.log('[DnD] srcIdx='+srcIdx+' insertIdx='+insertIdx);
       const [moved] = arr.splice(srcIdx, 1);
       const fi = insertIdx > srcIdx ? insertIdx-1 : insertIdx;
       arr.splice(fi, 0, moved);
+      console.log('[DnD] after:', arr.map(i=>i.name||i.copy||'?').join(','));
       setFeedItems(arr);
+      console.log('[DnD] currentFeedItems after set:', currentFeedItems().map(i=>i.name||i.copy||'?').join(','));
       autoSave();
       renderFeedGrid();
       showUndoToast('Post riordinato', ()=>{
