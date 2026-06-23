@@ -7909,27 +7909,3 @@ function toggleDarkMode(){
 }
 
 
-/* ── defer ready: registra le funzioni reali e riproduce la coda ── */
-if(typeof window.__appReady === 'function'){
-  [
-    'switchTab','openClientFeed','toggleAllMonthsMode','toggleBacklogFilter',
-    'toggleFeedView','onFeedAccountChange','onFeedClientChange','toggleFmtDropdown',
-    'openFeedUploadPanel','toggleFeedPanel','toggleFigProfile','toggleAllDates','toggleAllCopy',
-    'openEditorialModal','addPendingSlot','pedSwitchTab','pedCalNav',
-    'pedGenerate','pedClear','pedOpenDrawerNew','pedDrawerSave','pedDrawerDelete','pedCloseDrawer',
-    'onStoriesAccountChange','onStoriesClientChange','openStoriesUploadPanel',
-    'setFeedLinkTab','addFeedLink','setStoriesLinkTab','addStoryLink',
-    'toggleSbView','onSbTabAccountChange','openStoryboardModal',
-    'toggleDarkMode','toggleUserSwitcher','calNav','calGoToday','setCalView',
-    'annoPrevYear','annoNextYear','annoSetFilter','annoToggleMonth',
-    'batchReuploadMissing','closeFeedUploadPanel','closeStoriesUploadPanel',
-    'queueFeedFiles','queueStoryFiles','batchReuploadFromFiles',
-    'feedProfileAvatarClick','feedProfileImgChange','feedProfileBioInput',
-    'figSaveField','figBioCounter','saveCarousel','openCopyModal',
-    'openBriefModal','sbTabMoveToFeed','sbLoadBozza','toggleArchivioBozze',
-    'saveEditorialCard','closeModal'
-  ].forEach(name => {
-    if(typeof window[name] === 'function') window['_real_'+name] = window[name];
-  });
-  window.__appReady();
-}
