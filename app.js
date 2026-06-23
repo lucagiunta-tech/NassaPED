@@ -4553,8 +4553,6 @@ function renderSbTabGrid(){
 }
 
 function sbTabMoveToFeed(sb, origIdx, key){
-  // Il flusso "Carica in Feed": il creator ha prodotto il contenuto finale
-  // seguendo lo storyboard → carichiamo il file finale (foto/video) nel feed.
   const isStory = sb.sbFmt === 'stories';
   const acc = getAccount(sbTabClientIdx, sbTabAccountIdx);
   if(!acc){ showToast('Seleziona un account','warn'); return; }
@@ -4562,33 +4560,54 @@ function sbTabMoveToFeed(sb, origIdx, key){
   const months = MONTH_OPTIONS;
   const currentMonth = sbTabMonth || feedMonth || months[new Date().getMonth()];
 
+  // Slide con immagini già caricate nel builder (Dropbox URLs)
+  const templateSlides = (sb.slides||[]).filter(s =>
+    (s.externalUrl && s.externalUrl.startsWith('http')) ||
+    (s.url && s.url.startsWith('http'))
+  );
+  const hasTemplate = templateSlides.length > 0;
+
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML = `
-    <div style="background:var(--surface);border-radius:12px;padding:20px 22px;width:340px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:14px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);">Carica contenuto finale</div>
-      <div style="font-size:12px;color:var(--text-2);line-height:1.6;">
-        Il creator ha realizzato <strong>${esc(sb.name||'Storyboard')}</strong>?<br>
-        Seleziona il file finale (foto o video) da aggiungere al Feed o Stories.
-      </div>
+    <div style="background:var(--surface);border-radius:12px;padding:20px 22px;width:360px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:12px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);">Porta in Feed/Stories</div>
+
+      <!-- Destinazione + mese -->
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <label style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;">Destinazione</label>
+        <label style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;">Destinazione</label>
         <div style="display:flex;gap:6px;">
           <button id="sbtm-feed" class="btn ${!isStory?'primary':'ghost'} sm" style="flex:1;">📋 Feed</button>
           <button id="sbtm-story" class="btn ${isStory?'primary':'ghost'} sm" style="flex:1;">📖 Stories</button>
         </div>
-        <label style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;">Mese</label>
+        <label style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-top:2px;">Mese</label>
         <select id="sbtm-month" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);">
           ${months.map(m=>`<option value="${m}"${m===currentMonth?' selected':''}>${m}</option>`).join('')}
         </select>
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:2px;">
-        <button id="sbtm-cancel" class="btn ghost sm">Annulla</button>
-        <button id="sbtm-ok" class="btn primary sm" style="gap:5px;">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Scegli file…
-        </button>
-      </div>
+
+      <!-- Divisore -->
+      <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;">Come vuoi inserirlo?</div>
+
+      <!-- Opzione A: Usa template -->
+      <button id="sbtm-template" class="btn sm" style="justify-content:flex-start;gap:8px;padding:10px 12px;border:1.5px solid ${hasTemplate?'var(--green)':'var(--border)'};border-radius:8px;opacity:${hasTemplate?1:0.45};background:${hasTemplate?'rgba(13,255,0,.04)':'var(--surface)'};cursor:${hasTemplate?'pointer':'default'};">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="${hasTemplate?'var(--green)':'var(--text-3)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <div style="text-align:left;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Usa template builder</div>
+          <div style="font-size:11px;color:var(--text-3);">${hasTemplate ? templateSlides.length+' slide con immagini già caricate' : 'Nessuna immagine caricata nelle slide'}</div>
+        </div>
+      </button>
+
+      <!-- Opzione B: Carica file finale -->
+      <button id="sbtm-upload" class="btn sm" style="justify-content:flex-start;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="text-align:left;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Carica file finale</div>
+          <div style="font-size:11px;color:var(--text-3);">Il creator ha prodotto il contenuto → seleziona foto/video</div>
+        </div>
+      </button>
+
+      <button id="sbtm-cancel" class="btn ghost sm" style="align-self:flex-end;font-size:11px;margin-top:2px;">Annulla</button>
     </div>`;
 
   document.body.appendChild(overlay);
@@ -4596,12 +4615,12 @@ function sbTabMoveToFeed(sb, origIdx, key){
 
   const feedBtn  = overlay.querySelector('#sbtm-feed');
   const storyBtn = overlay.querySelector('#sbtm-story');
-  feedBtn.onclick = function(){
+  feedBtn.onclick = () => {
     destIsStory = false;
     feedBtn.className='btn primary sm'; feedBtn.style.flex='1';
     storyBtn.className='btn ghost sm'; storyBtn.style.flex='1';
   };
-  storyBtn.onclick = function(){
+  storyBtn.onclick = () => {
     destIsStory = true;
     storyBtn.className='btn primary sm'; storyBtn.style.flex='1';
     feedBtn.className='btn ghost sm'; feedBtn.style.flex='1';
@@ -4609,14 +4628,73 @@ function sbTabMoveToFeed(sb, origIdx, key){
   overlay.querySelector('#sbtm-cancel').onclick = () => overlay.remove();
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
 
-  overlay.querySelector('#sbtm-ok').onclick = () => {
+  function getDestMonth(){ return overlay.querySelector('#sbtm-month')?.value || currentMonth; }
+
+  function markPublished(){
+    const allSt = stories[key]||[];
+    if(allSt[origIdx]) allSt[origIdx].fileCaricato = true;
+  }
+
+  function addToFeed(items, destMonth){
+    const fkey = accountKey(acc.id, destMonth);
+    const arr = feeds[fkey]||[];
+    items.reverse().forEach(it => arr.unshift(it));
+    feeds[fkey] = arr;
+  }
+
+  function addToStories(items, destMonth){
+    const skey = accountKey(acc.id, destMonth);
+    const arr = stories[skey]||[];
+    items.reverse().forEach(it => arr.unshift(it));
+    stories[skey] = arr;
+  }
+
+  // OPZIONE A: usa le slide del template (immagini già su Dropbox)
+  overlay.querySelector('#sbtm-template').onclick = () => {
+    if(!hasTemplate){ showToast('Nessuna immagine nelle slide — carica prima le immagini nel builder','warn'); return; }
     overlay.remove();
-    const destMonth = document.querySelector('#sbtm-month')?.value || currentMonth;
-    // Open file picker
+    const destMonth = getDestMonth();
+
+    if(destIsStory){
+      const items = templateSlides.map(s=>({
+        type:'image', url:s.externalUrl||s.url, externalUrl:s.externalUrl||s.url,
+        isExternalLink:true, linkSource:'dropbox',
+        name:(sb.name||'Story')+' — '+(s.num||s.title||'slide'),
+        date:'', note:'', isStoryboard:false, slides:[]
+      }));
+      addToStories(items, destMonth);
+    } else {
+      if(templateSlides.length === 1){
+        const s = templateSlides[0];
+        const url = s.externalUrl||s.url;
+        addToFeed([{type:'image',url,externalUrl:url,isExternalLink:true,linkSource:'dropbox',
+          name:sb.name||'Post',date:'',showDate:false,copy:'',linkedStories:[],slides:[]}], destMonth);
+      } else {
+        const coverUrl = templateSlides[0].externalUrl||templateSlides[0].url;
+        const carSlides = templateSlides.map(s=>({
+          url:s.externalUrl||s.url, externalUrl:s.externalUrl||s.url,
+          name:s.name||'', copy:s.copy||s.note||''
+        }));
+        addToFeed([{type:'carousel',url:coverUrl,externalUrl:coverUrl,isExternalLink:true,
+          linkSource:'dropbox',name:sb.name||'Post',date:'',showDate:false,copy:'',
+          linkedStories:[],slides:carSlides}], destMonth);
+      }
+    }
+    markPublished();
+    clearTimeout(CLOUD._saveTimer);
+    CLOUD.saveNow(CLOUD.snapshot());
+    renderSbTabGrid();
+    showToast('✓ Template copiato in '+(destIsStory?'Stories':'Feed')+' — '+destMonth);
+  };
+
+  // OPZIONE B: carica il file finale del creator
+  overlay.querySelector('#sbtm-upload').onclick = () => {
+    overlay.remove();
+    const destMonth = getDestMonth();
     const inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*,video/*';
-    inp.multiple = !destIsStory; // Feed: multipli ok (carosello), Stories: uno alla volta
+    inp.multiple = true;
     inp.onchange = async () => {
       const files = Array.from(inp.files);
       if(!files.length) return;
@@ -4630,32 +4708,24 @@ function sbTabMoveToFeed(sb, origIdx, key){
       if(!uploaded.length){ showToast('Upload fallito','warn'); return; }
 
       if(destIsStory){
-        const skey = accountKey(acc.id, destMonth);
-        const arr = stories[skey]||[];
-        uploaded.reverse().forEach(u=>{
-          arr.unshift({type:u.type,url:u.url,externalUrl:u.url,isExternalLink:true,
-            linkSource:'dropbox',name:sb.name||u.name,date:'',note:'',isStoryboard:false,slides:[]});
-        });
-        stories[skey] = arr;
+        const items = uploaded.map(u=>({type:u.type,url:u.url,externalUrl:u.url,
+          isExternalLink:true,linkSource:'dropbox',name:sb.name||u.name,
+          date:'',note:'',isStoryboard:false,slides:[]}));
+        addToStories(items, destMonth);
       } else {
-        const fkey = accountKey(acc.id, destMonth);
-        const arr = feeds[fkey]||[];
         if(uploaded.length === 1){
           const u = uploaded[0];
-          arr.unshift({type:u.type,url:u.url,externalUrl:u.url,isExternalLink:true,
-            linkSource:'dropbox',name:sb.name||u.name,date:'',showDate:false,copy:'',linkedStories:[],slides:[]});
+          addToFeed([{type:u.type,url:u.url,externalUrl:u.url,isExternalLink:true,
+            linkSource:'dropbox',name:sb.name||u.name,date:'',showDate:false,
+            copy:'',linkedStories:[],slides:[]}], destMonth);
         } else {
-          // Più file → carosello
           const carSlides = uploaded.map(u=>({url:u.url,externalUrl:u.url,name:u.name,copy:''}));
-          arr.unshift({type:'carousel',url:uploaded[0].url,externalUrl:uploaded[0].url,
+          addToFeed([{type:'carousel',url:uploaded[0].url,externalUrl:uploaded[0].url,
             isExternalLink:true,linkSource:'dropbox',name:sb.name||'Post',date:'',
-            showDate:false,copy:'',linkedStories:[],slides:carSlides});
+            showDate:false,copy:'',linkedStories:[],slides:carSlides}], destMonth);
         }
-        feeds[fkey] = arr;
       }
-      // Marca storyboard come pubblicato
-      const allSt = stories[key]||[];
-      if(allSt[origIdx]) allSt[origIdx].fileCaricato = true;
+      markPublished();
       clearTimeout(CLOUD._saveTimer);
       await CLOUD.saveNow(CLOUD.snapshot());
       renderSbTabGrid();
