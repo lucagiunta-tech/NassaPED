@@ -759,7 +759,7 @@ function queueFeedFiles(files){
       _uploadId: uid // unique id to track this specific upload
     };
   });
-  setFeedItems([...newItems,...items]);refreshFeed();
+  setFeedItems([...newItems,...items]);refreshFeed(true); // skipAutoSave=true — don't schedule a stale save before upload completes
   // Capture the feed key NOW — before user can navigate to another month/account
   // This is the ROOT CAUSE of anteprime scompaiono: if feedMonth or feedAccountIdx
   // changes during upload, currentFeedItems() in the callback reads the WRONG feed.
@@ -827,6 +827,8 @@ function queueFeedFiles(files){
         const snapSize = JSON.stringify(snap).length;
         console.log('Snapshot size:', Math.round(snapSize/1024)+'KB', snapSize > 15*1024*1024 ? '❌ TOO LARGE' : '✅ OK');
         console.groupEnd();
+        // Cancel any pending debounce save — avoids a stale write racing against this authoritative one
+        clearTimeout(CLOUD._saveTimer);
         await CLOUD.saveNow(snap);
         console.log('✅ saveNow completed');
       } else {
@@ -880,7 +882,7 @@ function queueStoryFiles(files){
   const filesArr=Array.from(files);
   const arr=currentStoryItems();
   const newItems=filesArr.map(f=>({type:detectType(f),url:URL.createObjectURL(f),name:f.name,date:'',note:'',isStoryboard:false,slides:[]}));
-  setStoryItems([...newItems,...arr]);refreshStories();
+  setStoryItems([...newItems,...arr]);renderStoriesGrid();updateStoriesStats(); // skipAutoSave — don't schedule a stale save before upload completes
   // Capture stories key NOW — before user can navigate to another month/account
   const uploadStoriesKey = currentStoriesKey();
   (async()=>{
@@ -898,6 +900,7 @@ function queueStoryFiles(files){
         if(uploadStoriesKey) stories[uploadStoriesKey]=a;
         if(currentStoriesKey()===uploadStoriesKey) refreshStories();
         if(currentTab==='preview') renderPreview();
+        clearTimeout(CLOUD._saveTimer); // cancel any pending stale debounce save
         CLOUD.saveNow(CLOUD.snapshot());
       } else {
         if(match>=0){ a[match].needsReload=true; }
@@ -2025,6 +2028,7 @@ async function saveCarousel(){
   }
   closeModal('carousel-modal');
   if(currentFeedKey()===uploadFeedKey) refreshFeed(true);
+  clearTimeout(CLOUD._saveTimer); // cancel any pending stale debounce save
   CLOUD.saveNow(CLOUD.snapshot());
   showToast('✓ Carosello salvato');
 }
