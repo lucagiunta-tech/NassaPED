@@ -4334,11 +4334,10 @@ function pedOpenDrawerNew(dateStr){
 }
 
 function pedRenderDrawer(){
-  const drawer=document.getElementById('ped-drawer');
   const dateEl=document.getElementById('ped-drawer-date');
   const body=document.getElementById('ped-drawer-body');
   const delBtn=document.getElementById('ped-drawer-del');
-  if(!drawer||!body)return;
+  if(!body)return;
   if(dateEl)dateEl.textContent=fmtDate(pedDrawerDate)||pedDrawerDate||'—';
   if(delBtn)delBtn.style.display=pedDrawerIsNew?'none':'';
   body.innerHTML='';
