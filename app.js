@@ -2021,13 +2021,15 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
-  // Drag & drop — insert fluido con indicatore di posizione
+  // Drag & drop — fluido senza re-render del DOM
   let feedDragIndicator = null;
+  let _dragOverFrame = null; // throttle requestAnimationFrame
 
   function feedGetIndicator(){
     if(!feedDragIndicator){
       feedDragIndicator = document.createElement('div');
       feedDragIndicator.className = 'drag-insert-indicator';
+      feedDragIndicator.setAttribute('aria-hidden','true');
     }
     return feedDragIndicator;
   }
@@ -2039,35 +2041,53 @@ function renderFeedGrid(){
     const cell=e.target.closest('[data-drag-idx]');if(!cell)return;
     feedDragSrc=parseInt(cell.dataset.dragIdx);
     e.dataTransfer.effectAllowed='move';
-    e.dataTransfer.setData('text/plain', feedDragSrc);
-    setTimeout(()=>cell.closest('.cell-wrap')?.classList.add('dragging'),0);
+    e.dataTransfer.setData('text/plain', String(feedDragSrc));
+    // Ghost image: clone pulito senza overlay attivi
+    const wrap=cell.closest('.cell-wrap');
+    if(wrap){
+      const ghost=wrap.cloneNode(true);
+      ghost.style.cssText='position:fixed;top:-9999px;left:-9999px;width:'+wrap.offsetWidth+'px;opacity:1;pointer-events:none;';
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, wrap.offsetWidth/2, 40);
+      setTimeout(()=>{ghost.remove(); wrap.classList.add('dragging');}, 0);
+    }
   });
 
   grid.addEventListener('dragover',e=>{
     e.preventDefault();
+    e.dataTransfer.dropEffect='move';
     if(feedDragSrc===null) return;
-    const wrap=e.target.closest('.cell-wrap');
-    if(!wrap||!wrap.querySelector('[data-drag-idx]')) return;
-    const idx=parseInt(wrap.querySelector('[data-drag-idx]').dataset.dragIdx);
-    if(idx===feedDragSrc) return;
-    const rect=wrap.getBoundingClientRect();
-    const insertBefore=(e.clientX-rect.left)<rect.width/2;
-    const indicator=feedGetIndicator();
-    if(insertBefore) grid.insertBefore(indicator, wrap);
-    else grid.insertBefore(indicator, wrap.nextSibling);
+    // Throttle via rAF — evita jank da centinaia di eventi/s
+    if(_dragOverFrame) return;
+    _dragOverFrame = requestAnimationFrame(()=>{
+      _dragOverFrame = null;
+      const wrap=e.target.closest('.cell-wrap');
+      if(!wrap||!wrap.querySelector('[data-drag-idx]')) return;
+      const idx=parseInt(wrap.querySelector('[data-drag-idx]').dataset.dragIdx);
+      if(idx===feedDragSrc) return;
+      const rect=wrap.getBoundingClientRect();
+      const insertBefore=(e.clientX-rect.left)<rect.width/2;
+      const indicator=feedGetIndicator();
+      const target=insertBefore?wrap:wrap.nextSibling;
+      // Muovi solo se necessario (evita reflow inutili)
+      if(indicator.nextSibling!==target) grid.insertBefore(indicator, target||null);
+    });
   });
 
   grid.addEventListener('dragleave',e=>{
-    if(!grid.contains(e.relatedTarget)) feedRemoveIndicator();
+    if(!grid.contains(e.relatedTarget)){
+      feedRemoveIndicator();
+      if(_dragOverFrame){cancelAnimationFrame(_dragOverFrame);_dragOverFrame=null;}
+    }
   });
 
   grid.addEventListener('drop',e=>{
     e.preventDefault();
+    if(_dragOverFrame){cancelAnimationFrame(_dragOverFrame);_dragOverFrame=null;}
     if(feedDragSrc===null) return;
     const ind=feedDragIndicator;
     let insertIdx=feedDragSrc;
     if(ind&&ind.parentElement===grid){
-      // Count cell-wraps before the indicator
       let count=0;
       for(const ch of grid.children){
         if(ch===ind) break;
@@ -2084,13 +2104,23 @@ function renderFeedGrid(){
       const [moved]=arr.splice(feedDragSrc,1);
       const fi=insertIdx>feedDragSrc?insertIdx-1:insertIdx;
       arr.splice(fi,0,moved);
-      setFeedItems(arr);autoSave();
+      setFeedItems(arr);
+      // Re-render leggero: aggiorna solo data-drag-idx senza ricostruire DOM
+      grid.querySelectorAll('[data-drag-idx]').forEach((el,i)=>el.dataset.dragIdx=String(i));
+      autoSave();
+      showUndoToast('Post riordinato',()=>{
+        const ar=currentFeedItems();
+        ar.splice(fi,0,ar.splice(feedDragSrc>fi?fi:fi-1,1)[0]);
+        setFeedItems(ar);renderFeedGrid();
+      });
     }
-    feedDragSrc=null;renderFeedGrid();
+    feedDragSrc=null;
+    grid.querySelectorAll('.cell-wrap').forEach(c=>c.classList.remove('dragging'));
   });
 
   grid.addEventListener('dragend',()=>{
     feedRemoveIndicator();
+    if(_dragOverFrame){cancelAnimationFrame(_dragOverFrame);_dragOverFrame=null;}
     feedDragSrc=null;
     grid.querySelectorAll('.cell-wrap').forEach(c=>c.classList.remove('dragging'));
   });
