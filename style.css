@@ -148,7 +148,7 @@
   --text-3:#6b7280;
   --green-lt:#0d2b0c;
   --green-mid:#1a4d18;
-  --green-text:#0dff00;
+  --green-text:#0a1a00;
   --teal-lt:#0a1f1e;
   --amber:#3a3500;
   --amber-lt:#2a2800;
@@ -219,6 +219,20 @@
 [data-theme="dark"] .month-pill.active{
   color:#0a1a00;
 }
+
+/* ── Dark mode: bottoni verdi — testo scuro garantito ── */
+[data-theme="dark"] .btn.primary,
+[data-theme="dark"] .btn.primary:hover,
+[data-theme="dark"] .feed-upload-quick-btn,
+[data-theme="dark"] .fbar-pill.active,
+[data-theme="dark"] .month-pill.active,
+[data-theme="dark"] .acc-btn.active,
+[data-theme="dark"] .link-tab.active,
+[data-theme="dark"] .link-row button,
+[data-theme="dark"] .sb-nav-item.active,
+[data-theme="dark"] .gtoggle-chip {
+  color: #0a1a00;
+}
 /* Scrollbar dark */
 [data-theme="dark"] ::-webkit-scrollbar-track{ background:var(--bg); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb{ background:var(--border); }
@@ -265,7 +279,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .acc-btn.active{background:var(--green);border-color:var(--green);color:var(--green-text);font-weight:600;}
 .acc-btn .acc-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6;flex-shrink:0;}
 /* .acc-lbl removed — label not needed next to client name */
-.sub-tab{display:flex;align-items:center;padding:0 14px;font-size:var(--fs-lg);font-weight:500;color:var(--text-3);cursor:pointer;border-bottom:none;transition:color .12s;white-space:nowrap;letter-spacing:var(--ls-tight);}
+.sub-tab{display:flex;align-items:center;padding:0 14px;font-size:var(--fs-md);font-weight:500;color:var(--text-3);cursor:pointer;border-bottom:none;transition:color .12s;white-space:nowrap;letter-spacing:var(--ls-tight);}
 .sub-tab:hover{color:var(--text-2);background:none;}
 .sub-tab.active{color:var(--text);font-weight:700;border-bottom:none;}
 .topbar-brand{width:var(--sidebar);flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);transition:width .22s;overflow:hidden;gap:10px;padding:0;}.topbar-brand.expanded{width:var(--sidebar-expanded);justify-content:flex-start;padding:0 16px;}.topbar-brand .brand-name{opacity:0;white-space:nowrap;transition:opacity var(--t-base);font-size:var(--fs-base);font-weight:700;}.topbar-brand.expanded .brand-name{opacity:1;}
