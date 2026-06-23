@@ -59,7 +59,7 @@
     <div class="sub-tab" id="sub-tab-ped"     onclick="switchTab('ped')">UGC</div>
     <div class="sub-tab" id="sub-tab-ads" onclick="switchTab('ads')">Ads</div>
     <div class="sub-tab" id="sub-tab-cal"     onclick="switchTab('cal')">Calendario</div>
-    <div class="sub-tab" id="sub-tab-anno"   onclick="switchTab('anno')">Anno</div>
+    <div class="sub-tab" id="sub-tab-anno"   onclick="switchTab('anno')">Piano annuale</div>
     <div class="sub-tab" id="sub-tab-preview" onclick="switchTab('preview')">Preview</div>
   </div>
 </div>
@@ -130,7 +130,7 @@
       </div>
       <div class="sb-nav-item" id="si-anno" onclick="switchTab('anno')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
-        <span class="sb-nav-label">Anno</span>
+        <span class="sb-nav-label">Piano annuale</span>
       </div>
 
       <div class="sb-nav-sep"></div>
@@ -694,26 +694,39 @@
 
   <!-- CALENDARIO -->
   <div class="tab-page" id="page-cal">
-    <div class="cal-toolbar">
-      <div class="cal-nav">
-        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Mese precedente">‹</button>
-        <div class="cal-month-label" id="cal-month-label">—</div>
-        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Mese successivo">›</button>
-        <button class="cal-nav-btn" onclick="calGoToday()">Oggi</button>
-      </div>
-      <div class="cal-space"></div>
-      <div class="cal-legend">
-        <span><span class="cal-legend-dot" style="background:var(--green);"></span>Feed</span>
-        <span><span class="cal-legend-dot" style="background:var(--blue-dk);"></span>Stories</span>
-        <span><span class="cal-legend-dot" style="background:var(--amber);"></span>Evidenza</span>
-        <span><span class="cal-legend-dot" style="background:#7c3aed;"></span>PED Template</span>
-        <span><span class="cal-legend-dot" style="background:#1a56c4;"></span>PED Autonoma</span>
-        <span><span class="cal-legend-dot" style="background:#7c3aed;border-radius:2px;"></span>Paid</span>
-      </div>
-      <div class="cal-view-toggle">
-        <button class="cal-view-btn active" id="cal-btn-month" onclick="setCalView('month')">Mese</button>
-        <button class="cal-view-btn" id="cal-btn-week" onclick="setCalView('week')">Settimana</button>
-        <button class="cal-view-btn" id="cal-btn-year" onclick="setCalView('year')">Anno</button>
+    <div class="feed-ctx-bar">
+      <div class="feed-ctx-row1">
+        <!-- Nav mese -->
+        <button class="fbar-btn" onclick="calNav(-1)" aria-label="Mese precedente">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="cal-month-label" id="cal-month-label" style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">—</span>
+        <button class="fbar-btn" onclick="calNav(1)" aria-label="Mese successivo">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="fbar-pill" onclick="calGoToday()" style="font-size:11px;">Oggi</button>
+        <div class="fbar-sep"></div>
+        <!-- Legenda inline compatta -->
+        <div class="cal-legend-inline">
+          <span><span class="cal-legend-dot" style="background:var(--green);"></span>Feed</span>
+          <span><span class="cal-legend-dot" style="background:var(--blue-dk);"></span>Stories</span>
+          <span><span class="cal-legend-dot" style="background:var(--amber);"></span>Evidenza</span>
+          <span><span class="cal-legend-dot" style="background:#7c3aed;"></span>UGC</span>
+          <span><span class="cal-legend-dot" style="background:#7c3aed;border-radius:2px;"></span>Paid</span>
+        </div>
+        <div style="flex:1;"></div>
+        <!-- Switcher vista -->
+        <div class="cal-view-toggle">
+          <button class="cal-view-btn active" id="cal-btn-month" onclick="setCalView('month')">Mese</button>
+          <button class="cal-view-btn" id="cal-btn-week" onclick="setCalView('week')">Settimana</button>
+          <button class="cal-view-btn" id="cal-btn-year" onclick="setCalView('year')">Anno</button>
+        </div>
+        <!-- Link Piano annuale -->
+        <div class="fbar-sep"></div>
+        <button class="fbr2-btn" onclick="switchTab('anno')" style="height:30px;font-size:11px;" aria-label="Piano annuale">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+          Piano annuale
+        </button>
       </div>
     </div>
     <div class="cal-body" id="cal-body"></div>
@@ -780,17 +793,21 @@
   <!-- PAGE ANNO — Calendario Editoriale Annuale -->
   <div class="tab-page" id="page-anno">
     <div class="anno-page">
-      <div class="anno-toprow">
-        <div class="anno-year-nav">
-          <button class="btn sm icon" onclick="annoPrevYear()" aria-label="Anno precedente">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="15 18 9 12 15 6"/></svg>
+      <!-- Barra superiore allineata al design Feed -->
+      <div class="feed-ctx-bar">
+        <div class="feed-ctx-row1">
+          <!-- Nav anno -->
+          <button class="fbar-btn" onclick="annoPrevYear()" aria-label="Anno precedente">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <span class="anno-year-lbl" id="anno-year-lbl">2026</span>
-          <button class="btn sm icon" onclick="annoNextYear()" aria-label="Anno successivo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="9 18 15 12 9 6"/></svg>
+          <span class="anno-year-lbl" id="anno-year-lbl" style="font-size:15px;font-weight:700;color:var(--text);min-width:40px;text-align:center;">2026</span>
+          <button class="fbar-btn" onclick="annoNextYear()" aria-label="Anno successivo">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
+          <div class="fbar-sep"></div>
+          <!-- Filtri tag -->
+          <div class="anno-tag-filters" id="anno-tag-filters" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
         </div>
-        <div class="anno-tag-filters" id="anno-tag-filters"></div>
       </div>
       <div class="anno-col-headers">
         <div class="anno-col-hdr-month"></div>
