@@ -1,3 +1,5 @@
+import { getFreshDropboxToken } from './dropbox-token.js';
+
 const ALLOWED_ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
   'http://localhost:3000',
@@ -25,10 +27,10 @@ export default async function handler(req, res) {
   if (!key || key !== process.env.NASSA_API_KEY)
     return res.status(401).json({ error: 'Unauthorized' });
 
-  const token = process.env.DROPBOX_ACCESS_TOKEN;
-  if (!token) return res.status(500).json({ error: 'DROPBOX_ACCESS_TOKEN not configured' });
-
   try {
+    // Get a fresh token via OAuth2 refresh — no more static DROPBOX_ACCESS_TOKEN
+    const token = await getFreshDropboxToken();
+
     // Support both auto-parsed body and raw stream
     let path;
     if (req.body && req.body.path) {
