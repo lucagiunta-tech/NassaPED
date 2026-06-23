@@ -1183,8 +1183,9 @@ tbody tr:hover .tr-actions{opacity:1;}
 .fbr2-cal-btn{border-color:var(--border);color:var(--text-2);}
 .fbr2-hint{font-size:10px;color:var(--text-3);white-space:nowrap;padding-left:4px;}
 
-/* Popover upload */
-.feed-ctx-panel{display:none;}
+/* Expandable panel — usato da Stories e Storyboard */
+.feed-ctx-panel{display:none;position:fixed;left:0;right:0;padding:14px 16px;gap:20px;align-items:flex-start;border-top:.5px solid var(--border-lt);border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.08);}
+.feed-ctx-panel.open{display:flex;}
 .feed-upload-popover{display:none;position:absolute;top:calc(100% + 8px);right:0;width:260px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:12px;z-index:400;flex-direction:column;gap:10px;}
 .feed-upload-popover.open{display:flex;}
 .fup-divider{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);text-align:center;position:relative;}
