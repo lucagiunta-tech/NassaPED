@@ -995,7 +995,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
           <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="ec-new-acc-name" placeholder="Es: Modica IG"/></div>
           <div class="field" style="margin:0;"><label>Piattaforma</label>
-            <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Altro</option></select>
+            <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Pin Idea</option><option>Altro</option></select>
           </div>
           <button class="btn primary sm" onclick="ecAddAccount()" style="margin-bottom:1px;">+</button>
         </div>
@@ -1099,10 +1099,17 @@
         <div class="sb-tab-row">
           <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)" aria-label="Tab editor">Editor</button>
           <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)" aria-label="Tab parser note">Parser note</button>
-          <button class="btn ghost sm" onclick="sbSaveToArchivio()" style="margin-left:auto;font-size:11px;gap:4px;" title="Salva come bozza nell'Archivio">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Salva bozza
-          </button>
+          <div id="sb-save-bozza-wrap" style="margin-left:auto;display:flex;align-items:center;gap:4px;">
+            <div id="sb-save-bozza-inline" style="display:none;align-items:center;gap:4px;">
+              <input id="sb-bozza-name-inp" type="text" placeholder="Nome bozza…" style="font-size:11px;padding:3px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:130px;" onkeydown="if(event.key==='Enter')_sbDoSaveArchivio(this.value);if(event.key==='Escape')sbHideBozzaInput();"/>
+              <button class="btn primary sm" onclick="_sbDoSaveArchivio(document.getElementById('sb-bozza-name-inp').value)" style="font-size:11px;padding:3px 8px;">Salva</button>
+              <button class="btn ghost sm" onclick="sbHideBozzaInput()" style="font-size:11px;padding:3px 6px;">✕</button>
+            </div>
+            <button id="sb-save-bozza-btn" class="btn ghost sm" onclick="sbShowBozzaInput()" style="font-size:11px;gap:4px;" title="Salva come bozza nell'Archivio">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Salva bozza
+            </button>
+          </div>
         </div>
         <!-- TAB: Editor -->
         <div class="sb-fields-scroll" id="sb-panel-editor">
@@ -1314,7 +1321,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
         <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="nc-acc-name" placeholder="Es: Modica IG"/></div>
         <div class="field" style="margin:0;"><label>Piattaforma</label>
-          <select id="nc-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Altro</option></select>
+          <select id="nc-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Pin Idea</option><option>Altro</option></select>
         </div>
       </div>
       <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Puoi aggiungere altri account dopo dalla scheda cliente.</div>

@@ -505,6 +505,7 @@ const PLATFORM_FORMAT = {
   'YouTube':    {ratio:'16/9',label:'YouTube · 16:9',   cols:3, cssRatio:'16/9'},
   'TikTok':     {ratio:'9/16',label:'TikTok · 9:16',    cols:5, cssRatio:'9/16'},
   'Pinterest':  {ratio:'2/3', label:'Pinterest · 2:3',  cols:4, cssRatio:'2/3'},
+  'Pin Idea':   {ratio:'9/16',label:'Pin Idea · 9:16',  cols:5, cssRatio:'9/16'},
   'Altro':      {ratio:'4/5', label:'4:5',              cols:4, cssRatio:'4/5'},
 };
 function getPlatformFormat(){
@@ -1777,7 +1778,35 @@ function renderFeedGrid(){
         cph.onclick=toggleCopy;prev.onclick=toggleCopy;
         // Se item ha copy, espandi solo su desktop
         if(item.copy && window.innerWidth > 768){cpanel_body.classList.add('open');expBtn.classList.add('open');prev.style.display='none';}
-        cp.appendChild(cph);cp.appendChild(prev);cp.appendChild(cpanel_body);wrap.appendChild(cp);
+        cp.appendChild(cph);cp.appendChild(prev);cp.appendChild(cpanel_body);
+        // Copy per slide carosello — mostra sotto la caption generale
+        if(item.type==='carousel' && (item.slides||[]).some(s=>s.copy?.trim())){
+          const slideCopyWrap=document.createElement('div');
+          slideCopyWrap.style.cssText='border-top:1px solid var(--border-lt);padding:4px 8px 6px;';
+          const slideLabel=document.createElement('div');
+          slideLabel.style.cssText='font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;';
+          slideLabel.textContent='Copy per slide';
+          slideCopyWrap.appendChild(slideLabel);
+          (item.slides||[]).forEach((s,si)=>{
+            const row=document.createElement('div');
+            row.style.cssText='display:flex;gap:5px;margin-bottom:3px;align-items:flex-start;';
+            const num=document.createElement('span');
+            num.style.cssText='font-size:10px;font-weight:700;color:var(--text-3);flex-shrink:0;min-width:14px;padding-top:1px;';
+            num.textContent=(si+1)+'.';
+            const ta=document.createElement('textarea');
+            ta.style.cssText='flex:1;font-size:11px;font-family:var(--font);border:1px solid var(--border-lt);border-radius:4px;padding:2px 5px;resize:none;background:var(--surface);color:var(--text);line-height:1.4;';
+            ta.rows=2; ta.placeholder='Copy slide '+(si+1)+'…';
+            ta.value=s.copy||'';
+            ta.oninput=e=>{
+              const cur=currentFeedItems();
+              if(cur[idx]&&cur[idx].slides&&cur[idx].slides[si]) cur[idx].slides[si].copy=e.target.value;
+            };
+            row.appendChild(num); row.appendChild(ta);
+            slideCopyWrap.appendChild(row);
+          });
+          cpanel_body.appendChild(slideCopyWrap);
+        }
+        wrap.appendChild(cp);
       }
     } else if(i===items.length){cell.classList.add('empty-slot');addEmptyFeedListeners(cell);const sp=document.createElement('span');sp.textContent='+ aggiungi';cell.appendChild(sp);wrap.appendChild(cell);}
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
@@ -2821,13 +2850,34 @@ function sbSetBozze(arr) {
 }
 
 // Chiamata dal bottone "Salva bozza" nel modal Slide Builder
+function sbShowBozzaInput() {
+  const btn = document.getElementById('sb-save-bozza-btn');
+  const inline = document.getElementById('sb-save-bozza-inline');
+  const inp = document.getElementById('sb-bozza-name-inp');
+  if(!inline) { sbSaveToArchivio(); return; }
+  const defaultName = 'Bozza ' + (sbGetBozze().length + 1);
+  if(inp) { inp.value = defaultName; }
+  btn.style.display = 'none';
+  inline.style.display = 'flex';
+  setTimeout(() => { if(inp){ inp.focus(); inp.select(); } }, 50);
+}
+
+function sbHideBozzaInput() {
+  const btn = document.getElementById('sb-save-bozza-btn');
+  const inline = document.getElementById('sb-save-bozza-inline');
+  if(btn) btn.style.display = '';
+  if(inline) inline.style.display = 'none';
+}
+
 function sbSaveToArchivio() {
-  if(!sbTmpSlides.length){ showToast('Nessuna slide da salvare','warn'); return; }
-  const name = prompt('Nome bozza:', 'Bozza ' + (sbGetBozze().length + 1));
-  if(!name) return;
+  sbShowBozzaInput();
+}
+
+function _sbDoSaveArchivio(name) {
+  if(!name || !name.trim()) return;
   const entry = {
     id: Date.now(),
-    name,
+    name: name.trim(),
     savedAt: new Date().toISOString(),
     clientKey: sbBozzeClientKey(),
     slides: sbTmpSlides.map(s=>({
@@ -2842,7 +2892,9 @@ function sbSaveToArchivio() {
   sbSetBozze(arr);
   autoSave();
   renderArchivioBozze();
-  showToast('✓ Bozza salvata nell\'archivio');
+  sbHideBozzaInput();
+  closeModal('storyboard-modal');
+  showToast('✓ Bozza "' + entry.name + '" salvata — visibile in Storyboard → Archivio');
 }
 
 // Carica una bozza nel Slide Builder
