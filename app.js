@@ -829,6 +829,7 @@ function queueFeedFiles(files){
       url:URL.createObjectURL(f),name:f.name,
       date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type,
       coverUrl:'',
+      _uid: _feedUID(), // stable key for DOM reconciliation
       _uploadId: uid // unique id to track this specific upload
     };
   });
@@ -1597,10 +1598,22 @@ function withStorySkeleton(gridEl, count, renderFn){
   requestAnimationFrame(()=>requestAnimationFrame(renderFn));
 }
 
+
+/* ══ FEED ITEM UID — chiave stabile per keyed reconciliation ══ */
+function _feedUID(){ return 'f' + Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+function _ensureUID(item){ if(!item._uid) item._uid = _feedUID(); return item; }
+// Assegna uid a tutti gli item di tutti i feed al boot
+function _initFeedUIDs(){
+  Object.keys(feeds).forEach(k=>{
+    if(Array.isArray(feeds[k])) feeds[k].forEach(_ensureUID);
+  });
+}
+
 function renderFeedGrid(){
   const grid=document.getElementById('feed-grid');if(!grid)return;
-  // Mostra skeleton solo se la griglia è vuota (primo caricamento / cambio account)
-  // Non in re-render rapidi (drag, update singolo item)
+  // Assicura che tutti gli item abbiano _uid
+  currentFeedItems().forEach(_ensureUID);
+  // Skeleton solo al primo caricamento
   if(!grid.children.length || grid.querySelector('.feed-skeleton-card')){
     grid.innerHTML='';
   }
@@ -1773,6 +1786,8 @@ function renderFeedGrid(){
     const wrap=document.createElement('div');wrap.className='cell-wrap';const cell=document.createElement('div');cell.className='feed-cell';
     if(i<items.length){
       const item=items[i],idx=i;
+      _ensureUID(item);
+      wrap.dataset.uid=item._uid; // keyed reconciliation
       if(item.type==='pending'){
         cell.classList.add('empty-slot');cell.style.overflow='hidden';
         const bg=document.createElement('img');bg.className='picker-bg';bg.src=item.url;bg.alt='';bg.setAttribute('aria-hidden','true');cell.appendChild(bg);
@@ -2020,6 +2035,50 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
+
+/* ══ FEED GRID RECONCILER ══
+ * Dopo un drag riordina i nodi DOM esistenti senza ricostruirli.
+ * Confronta l'ordine corrente dei .cell-wrap nel DOM con l'ordine
+ * desiderato (dall'array items), e sposta solo i nodi fuori posto.
+ * Le immagini rimangono intatte — zero flickering.
+ */
+function _reconcileFeedOrder(grid, items){
+  // Costruisce mappa uid → nodo DOM esistente
+  const nodeByUid = new Map();
+  grid.querySelectorAll('.cell-wrap[data-uid]').forEach(n=>{
+    nodeByUid.set(n.dataset.uid, n);
+  });
+
+  // Aggiorna i numeri di posizione e data-drag-idx sui nodi esistenti
+  items.forEach((item, i)=>{
+    if(!item._uid) return;
+    const node = nodeByUid.get(item._uid);
+    if(!node) return;
+    // Aggiorna numero posizione
+    const numEl = node.querySelector('.cell-num');
+    if(numEl) numEl.textContent = i + 1;
+    // Aggiorna drag idx
+    const dragEl = node.querySelector('[data-drag-idx]');
+    if(dragEl) dragEl.dataset.dragIdx = String(i);
+  });
+
+  // Riordina nodi nel DOM secondo l'ordine di items
+  // Algoritmo: per ogni item nell'ordine desiderato,
+  // inserisci il suo nodo nella posizione corretta
+  let lastNode = null;
+  items.forEach((item, i)=>{
+    if(!item._uid) return;
+    const node = nodeByUid.get(item._uid);
+    if(!node) return;
+
+    const nextSibling = lastNode ? lastNode.nextSibling : grid.firstChild;
+    if(node !== nextSibling){
+      grid.insertBefore(node, nextSibling);
+    }
+    lastNode = node;
+  });
+}
+
   // ── POINTER-BASED DRAG & DROP ──
   // Sostituisce HTML drag API (lagosa) con pointer events (60fps fluidi)
   let _pd = {
@@ -2168,8 +2227,8 @@ function renderFeedGrid(){
       arr.splice(fi, 0, moved);
       setFeedItems(arr);
       autoSave();
-      // renderFeedGrid fuori dal thread corrente — non blocca il rilascio
-      setTimeout(()=>renderFeedGrid(), 0);
+      // Riconcilia l'ordine DOM senza ricostruire le card
+      _reconcileFeedOrder(grid, arr);
       showUndoToast('Post riordinato', ()=>{
         const ar = currentFeedItems().slice();
         const [m] = ar.splice(fi, 1);
@@ -6169,6 +6228,7 @@ async function loadFromCloud(){
       console.log('[NassaPED] Migrate: '+oldBozze.length+' bozze da localStorage → Supabase');
     }
   } catch(_){}
+  _initFeedUIDs(); // assegna _uid a tutti gli item caricati dal cloud
   CLOUD._booting=false;
   showBootOverlay(false);
   routerRestore();
