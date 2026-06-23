@@ -411,34 +411,7 @@
           </div>
         </div>
 
-        <!-- Divisore verticale -->
-        <div class="fpo-divider"></div>
-
-        <!-- Colonna 2: Profilo -->
-        <div class="fpo-col fpo-profile" id="feed-profile-section" style="display:none;">
-          <div class="ctx-sec-lbl">Profilo account</div>
-          <div style="display:flex;align-items:flex-start;gap:10px;">
-            <div class="feed-profile-avatar" id="feed-profile-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <input type="file" id="feed-profile-img-inp" accept="image/*" style="display:none;" onchange="feedProfileImgChange(this.files)"/>
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
-              <input type="text" id="feed-profile-bio" maxlength="150"
-                placeholder="Bio del profilo…"
-                oninput="feedProfileBioInput(this.value);updateBioCounter(this.value)"
-                style="width:100%;border:.5px solid var(--border);border-radius:var(--rs);padding:6px 9px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color var(--t-base);"
-                onfocus="this.style.borderColor='var(--green)'"
-                onblur="this.style.borderColor='var(--border)'"
-              />
-              <div id="bio-counter" style="font-size:10px;color:var(--text-3);text-align:right;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Divisore verticale (solo se profilo visibile) -->
-        <div class="fpo-divider fpo-divider-profile" id="fpo-div-profile" style="display:none;"></div>
-
-        <!-- Colonna 3: Opzioni display -->
+        <!-- Colonna 2: Opzioni display -->
         <div class="fpo-col" style="margin-left:auto;">
           <div class="ctx-sec-lbl">Vista</div>
           <div style="display:flex;flex-direction:column;gap:6px;">
