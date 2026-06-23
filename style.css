@@ -1135,6 +1135,12 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* fmt-badge vars merged into :root above */
 
 /* Context bar */
+/* ── Alias compatibilità per Stories, Storyboard e altre tab ── */
+.feed-ctx-row1{height:50px;display:flex;align-items:center;gap:6px;padding:0 14px;overflow:hidden;}
+.ctx-expand-btn{width:30px;height:30px;border-radius:var(--r);border:.5px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-2);flex-shrink:0;transition:background var(--t-fast);}
+.ctx-expand-btn:hover{background:var(--bg);}
+.ctx-expand-btn svg{width:14px;height:14px;}
+
 /* ══ FEED BAR — 2 righe fisse ══ */
 .feed-ctx-bar{background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;width:100%;position:relative;}
 
