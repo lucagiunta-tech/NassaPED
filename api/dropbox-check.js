@@ -1,4 +1,4 @@
-// Diagnostica env vars + test OAuth live. Tutto inline.
+// Diagnostica completa — mostra quale strategia funziona
 const ALLOWED_ORIGINS = ['https://nassa-ped-yp63.vercel.app','http://localhost:3000'];
 
 export default async function handler(req, res) {
@@ -12,30 +12,46 @@ export default async function handler(req, res) {
   if (!key || key !== process.env.NASSA_API_KEY)
     return res.status(401).json({ error: 'Unauthorized' });
 
-  const vars = {
-    NASSA_API_KEY:         !!process.env.NASSA_API_KEY,
-    DROPBOX_APP_KEY:       !!process.env.DROPBOX_APP_KEY,
-    DROPBOX_APP_SECRET:    !!process.env.DROPBOX_APP_SECRET,
-    DROPBOX_REFRESH_TOKEN: !!process.env.DROPBOX_REFRESH_TOKEN,
-    DROPBOX_ACCESS_TOKEN:  !!process.env.DROPBOX_ACCESS_TOKEN,
+  const { DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, DROPBOX_ACCESS_TOKEN } = process.env;
+
+  const result = {
+    env: {
+      DROPBOX_APP_KEY:       !!DROPBOX_APP_KEY,
+      DROPBOX_APP_SECRET:    !!DROPBOX_APP_SECRET,
+      DROPBOX_REFRESH_TOKEN: !!DROPBOX_REFRESH_TOKEN,
+      DROPBOX_ACCESS_TOKEN:  !!DROPBOX_ACCESS_TOKEN,
+    },
+    oauth2: null,
+    static_token: !!DROPBOX_ACCESS_TOKEN,
   };
 
-  let oauthTest = null;
-  try {
-    const { DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN } = process.env;
-    if (!DROPBOX_APP_KEY || !DROPBOX_APP_SECRET || !DROPBOX_REFRESH_TOKEN) throw new Error('Missing vars');
-    const resp = await fetch('https://api.dropbox.com/oauth2/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + Buffer.from(DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET).toString('base64'),
-      },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: DROPBOX_REFRESH_TOKEN }),
-    });
-    const text = await resp.text();
-    let data; try { data = JSON.parse(text); } catch(_) { data = { raw: text.slice(0,200) }; }
-    oauthTest = { status: resp.status, ok: resp.ok, has_token: !!data.access_token, error: data.error||null, error_description: data.error_description||null };
-  } catch(e) { oauthTest = { ok: false, error: e.message }; }
+  // Testa OAuth2 refresh
+  if (DROPBOX_APP_KEY && DROPBOX_APP_SECRET && DROPBOX_REFRESH_TOKEN) {
+    try {
+      const resp = await fetch('https://api.dropbox.com/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic ' + Buffer.from(DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET).toString('base64'),
+        },
+        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: DROPBOX_REFRESH_TOKEN }),
+      });
+      const text = await resp.text();
+      let data; try { data = JSON.parse(text); } catch(_) { data = null; }
+      result.oauth2 = {
+        http_status: resp.status,
+        ok: resp.ok,
+        has_access_token: !!(data?.access_token),
+        error: data?.error || null,
+        error_description: data?.error_description || null,
+        raw: resp.ok ? null : text.slice(0, 300),
+      };
+    } catch(e) {
+      result.oauth2 = { ok: false, exception: e.message };
+    }
+  } else {
+    result.oauth2 = { ok: false, reason: 'missing env vars' };
+  }
 
-  return res.status(200).json({ vars, oauthTest });
+  return res.status(200).json(result);
 }
