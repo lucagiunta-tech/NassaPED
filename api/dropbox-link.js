@@ -1,4 +1,7 @@
-import { getFreshDropboxToken } from './dropbox-token.js';
+// Crea shared link Dropbox per un file già uploadato.
+// Variabili Vercel: DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, NASSA_API_KEY
+
+import { getFreshDropboxToken } from '../lib/dropbox-auth.js';
 
 const ALLOWED_ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
@@ -28,10 +31,8 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    // Get a fresh token via OAuth2 refresh — no more static DROPBOX_ACCESS_TOKEN
     const token = await getFreshDropboxToken();
 
-    // Support both auto-parsed body and raw stream
     let path;
     if (req.body && req.body.path) {
       path = req.body.path;
@@ -43,7 +44,6 @@ export default async function handler(req, res) {
     }
     if (!path) return res.status(400).json({ error: 'Missing path' });
 
-    // Try to create shared link
     const linkRes = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -51,49 +51,33 @@ export default async function handler(req, res) {
     });
 
     const linkText = await linkRes.text();
-    console.log('[dropbox-link] status:', linkRes.status, 'body:', linkText.slice(0, 500));
+    console.log('[dropbox-link] status:', linkRes.status, 'body:', linkText.slice(0, 300));
 
     let linkData;
     try { linkData = JSON.parse(linkText); } catch(_) {
       return res.status(500).json({ error: 'Non-JSON from Dropbox: ' + linkText.slice(0, 200) });
     }
 
-    // Case 1: Success
     if (linkData.url) {
       return res.status(200).json({ url: toDirectUrl(linkData.url) });
     }
 
-    // Case 2: Link already exists — get it via list_shared_links
     const errorTag = linkData?.error?.['.tag'] || linkData?.error_summary || '';
     if (errorTag.includes('shared_link_already_exists')) {
-      console.log('[dropbox-link] Link exists, fetching existing link...');
-      
-      // Try to get existing link from error metadata first
       const existingUrl = linkData?.error?.shared_link_already_exists?.metadata?.url;
-      if (existingUrl) {
-        console.log('[dropbox-link] Got URL from error metadata:', existingUrl.slice(0, 80));
-        return res.status(200).json({ url: toDirectUrl(existingUrl) });
-      }
+      if (existingUrl) return res.status(200).json({ url: toDirectUrl(existingUrl) });
 
-      // Fallback: list existing shared links for this path
       const listRes = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ path, direct_only: true })
       });
       const listData = await listRes.json();
-      console.log('[dropbox-link] list_shared_links:', JSON.stringify(listData).slice(0, 300));
-      
       const existingLink = listData?.links?.[0]?.url;
-      if (existingLink) {
-        console.log('[dropbox-link] ✅ Found existing link:', existingLink.slice(0, 80));
-        return res.status(200).json({ url: toDirectUrl(existingLink) });
-      }
-
+      if (existingLink) return res.status(200).json({ url: toDirectUrl(existingLink) });
       return res.status(500).json({ error: 'Could not retrieve existing link', detail: listData });
     }
 
-    // Case 3: Other error
     console.error('[dropbox-link] Unexpected error:', linkText);
     return res.status(500).json({ error: errorTag || 'Unknown Dropbox error', detail: linkData });
 
