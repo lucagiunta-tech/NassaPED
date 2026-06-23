@@ -1912,6 +1912,14 @@ function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pendin
 function updateFeedHeader(){const acc=getAccount(feedClientIdx,feedAccountIdx);const cn=acc?clients[feedClientIdx].name+' — '+acc.name:'Feed Preview';const mn=feedMonth;const el=id=>document.getElementById(id);if(el('feed-title'))el('feed-title').textContent=cn+(mn?' · '+mn:'');if(el('feed-tag'))el('feed-tag').textContent=mn?mn+' · 4:5':'1080×1350 · 4:5';updateFeedStats();feedProfileSync();}
 
 /* ── FEED PROFILE PANEL ── */
+function updateBioCounter(val){
+  const el = document.getElementById('bio-counter');
+  if(!el) return;
+  const len = (val||'').length;
+  el.textContent = len > 0 ? len + '/150' : '';
+  el.style.color = len > 130 ? (len >= 150 ? 'var(--red)' : '#f59e0b') : 'var(--text-3)';
+}
+
 function feedProfileSync(){
   const acc=getAccount(feedClientIdx,feedAccountIdx);
   const avatarEl=document.getElementById('feed-profile-avatar');
@@ -1944,7 +1952,8 @@ function feedProfileSync(){
     if(svg)svg.style.display='';
   }
   // Bio
-  bioEl.value=acc.bio||'';
+  bioEl.value = acc.bio||'';
+  updateBioCounter(acc.bio||'');
 }
 
 function feedProfileAvatarClick(){
