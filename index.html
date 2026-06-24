@@ -76,15 +76,12 @@
 
 <!-- USER SWITCHER -->
 <div class="user-switcher" id="user-switcher">
-  <div class="user-switcher-title">Utente</div>
-  <button class="user-btn" onclick="switchUser('shared')">Shared (team)</button>
-  <button class="user-btn" onclick="switchUser('luca')">Luca</button>
-  <button class="user-btn" onclick="switchUser('alberto')">Alberto</button>
-  <button class="user-btn" onclick="switchUser('giacomo')">Giacomo</button>
-  <button class="user-btn" onclick="switchUser('paolone')">Paolone</button>
-  <button class="user-btn" onclick="switchUser('akash')">Akash</button>
-  <button class="user-btn" onclick="switchUser('hermes')">Hermes</button>
-  <button class="user-btn" onclick="switchUser('matteo')">Matteo</button>
+  <div class="user-switcher-title" id="user-switcher-name">Utente</div>
+  <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+  <button class="user-btn" style="color:#dc2626;font-weight:600;" onclick="doLogout()">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Esci
+  </button>
 </div>
 
 <div class="body">
@@ -1542,6 +1539,58 @@
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('editorial-modal')">Annulla</button>
       <button class="btn primary" onclick="saveEditorialCard()">+ Aggiungi al feed</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGIN OVERLAY ══ -->
+<div id="login-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
+  <div id="login-box" style="width:360px;max-width:90vw;">
+    <!-- Brand -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;">
+      <div class="brand-mark" style="width:44px;height:44px;font-size:20px;">N</div>
+      <div>
+        <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:var(--ls-tight);">Nassa Studio</div>
+        <div style="font-size:var(--fs-xs);color:var(--text-3);margin-top:1px;">Social Media Management</div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div style="background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow-lg);">
+      <div style="font-size:var(--fs-base);font-weight:700;color:var(--text);margin-bottom:20px;">Accedi</div>
+
+      <div class="field" style="margin-bottom:14px;">
+        <label for="login-user" style="display:block;font-size:var(--fs-xs);font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:var(--ls-wide);margin-bottom:5px;">Utente</label>
+        <input id="login-user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
+          placeholder="es. luca"
+          style="width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;font-size:var(--fs-base);font-family:var(--font);color:var(--text);background:var(--bg);box-sizing:border-box;transition:border-color var(--t-fast);"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
+      </div>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label for="login-pass" style="display:block;font-size:var(--fs-xs);font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:var(--ls-wide);margin-bottom:5px;">Password</label>
+        <div style="position:relative;">
+          <input id="login-pass" type="password" autocomplete="current-password"
+            placeholder="••••••••"
+            style="width:100%;border:1px solid var(--border);border-radius:var(--rs);padding:10px 40px 10px 12px;font-size:var(--fs-base);font-family:var(--font);color:var(--text);background:var(--bg);box-sizing:border-box;transition:border-color var(--t-fast);"
+            onkeydown="if(event.key==='Enter')doLogin()"/>
+          <button onclick="toggleLoginPass()" tabindex="-1" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-3);padding:4px;" aria-label="Mostra/nascondi password">
+            <svg id="login-eye" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--rs);padding:8px 12px;font-size:var(--fs-sm);color:#991b1b;margin-bottom:14px;"></div>
+
+      <!-- Submit -->
+      <button id="login-btn" onclick="doLogin()" style="width:100%;padding:11px;background:var(--green);color:var(--green-text);border:none;border-radius:var(--rs);font-size:var(--fs-base);font-weight:700;font-family:var(--font);cursor:pointer;transition:opacity var(--t-fast);letter-spacing:var(--ls-normal);">
+        Accedi
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;font-size:var(--fs-xs);color:var(--text-3);">
+      NassaPED · Nassa Studio © 2026
     </div>
   </div>
 </div>

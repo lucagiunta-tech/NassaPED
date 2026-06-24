@@ -1,11 +1,13 @@
 /**
  * /api/auth
- * POST { password } → imposta cookie HttpOnly nassa_session
- * GET              → verifica sessione corrente
- * DELETE           → logout (cancella cookie)
+ * POST { user, password } → cookie HttpOnly nassa_session (JWT)
+ * GET                     → verifica sessione corrente
+ * DELETE                  → logout
  *
- * La password è in NASSA_PASSWORD env var su Vercel.
- * Il JWT_SECRET è in JWT_SECRET env var su Vercel.
+ * Credenziali in Vercel env:
+ *   NASSA_USERS = JSON con mappa { "luca":"pass1", "alberto":"pass2", ... }
+ *   oppure fallback NASSA_PASSWORD per password unica
+ *   JWT_SECRET per firmare i token
  */
 
 import { SignJWT, jwtVerify } from 'jose';
@@ -53,6 +55,31 @@ function getCookie(req){
   return match ? match[1] : null;
 }
 
+// Verifica credenziali — supporta utenti multipli o password unica
+function checkCredentials(user, password){
+  // Prima: prova con NASSA_USERS (JSON map)
+  const usersEnv = process.env.NASSA_USERS;
+  if(usersEnv){
+    try {
+      const users = JSON.parse(usersEnv);
+      // Normalizza: chiavi lowercase
+      const userKey = (user || '').toLowerCase().trim();
+      if(users[userKey] && users[userKey] === password) return userKey;
+      // Cerca anche chiavi non-lowercase
+      const match = Object.entries(users).find(([k,v]) =>
+        k.toLowerCase() === userKey && v === password
+      );
+      if(match) return match[0];
+    } catch(e) {
+      console.warn('[auth] NASSA_USERS parse error:', e.message);
+    }
+  }
+  // Fallback: password unica (retrocompatibilità)
+  const PASS = process.env.NASSA_PASSWORD || process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
+  if(password === PASS) return (user || 'shared').toLowerCase().trim();
+  return null;
+}
+
 const ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
   'http://localhost:3000',
@@ -71,22 +98,25 @@ export default async function handler(req, res){
   // POST — login
   if(req.method === 'POST'){
     const { password, user } = req.body || {};
-    const PASS = process.env.NASSA_PASSWORD || process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
-    if(!password || password !== PASS)
-      return res.status(401).json({ error: 'Password non corretta' });
+    if(!password || !user)
+      return res.status(400).json({ error: 'Utente e password obbligatori' });
 
-    const token = await createToken({ app: 'nassa', user: user || 'default', v: 2 });
+    const validUser = checkCredentials(user, password);
+    if(!validUser)
+      return res.status(401).json({ error: 'Credenziali non corrette' });
+
+    const token = await createToken({ app: 'nassa', user: validUser, v: 2 });
     setCookie(res, token, SESSION_DAYS * 86400);
-    return res.status(200).json({ ok: true, user: user || 'default' });
+    return res.status(200).json({ ok: true, user: validUser });
   }
 
   // GET — verifica sessione
   if(req.method === 'GET'){
     const token = getCookie(req);
-    if(!token) return res.status(401).json({ ok: false });
+    if(!token) return res.status(401).json({ ok: false, reason: 'no_session' });
     const payload = await verifyToken(token);
-    if(!payload) return res.status(401).json({ ok: false });
-    // Rinnova il cookie se mancano meno di 7 giorni alla scadenza
+    if(!payload) return res.status(401).json({ ok: false, reason: 'invalid_token' });
+    // Rinnova cookie se scade entro 7 giorni
     const exp = payload.exp || 0;
     if(exp - Date.now()/1000 < 7 * 86400){
       const newToken = await createToken({ app: 'nassa', user: payload.user, v: 2 });
