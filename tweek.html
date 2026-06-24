@@ -210,14 +210,15 @@ body{
 .cal{display:grid;min-width:520px;}
 .cal-head{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr));border-bottom:var(--bw) solid var(--border);}
 .ch-empty{padding:var(--sp-2);}
-.ch-day{padding:10px var(--sp-2);text-align:center;border-left:var(--bw) solid var(--border);}
-.ch-wd{font-size:var(--fs-xs);color:var(--text-3);text-transform:uppercase;letter-spacing:var(--ls-wide);display:block;font-weight:600;}
-.ch-num{font-size:var(--fs-md);font-weight:500;color:var(--text);display:block;line-height:1.2;margin-top:2px;}
+.ch-day{padding:10px var(--sp-2);text-align:center;border-left:var(--bw) solid var(--border);cursor:pointer;transition:background var(--t);}
+.ch-day:hover{background:var(--bg);}
+.ch-wd{font-size:var(--fs-xs);color:var(--text-3);text-transform:uppercase;letter-spacing:var(--ls-wide);display:block;font-weight:700;}
+.ch-num{font-size:22px;font-weight:300;color:var(--text);display:block;line-height:1.2;margin-top:2px;letter-spacing:var(--ls-tight);}
 .ch-day.today .ch-num{
   color:var(--green-text);background:var(--green);
-  border-radius:50%;width:32px;height:32px;
+  border-radius:50%;width:34px;height:34px;
   display:flex;align-items:center;justify-content:center;
-  margin:2px auto 0;font-weight:700;
+  margin:2px auto 0;font-weight:800;font-size:16px;
 }
 .cal-body{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr));}
 .time-col{display:flex;flex-direction:column;}
@@ -229,7 +230,8 @@ body{
   position:relative;cursor:pointer;
   transition:background var(--t-fast);
 }
-.hour-cell:hover{background:var(--bg);}
+.hour-cell:hover{background:rgba(13,255,0,.03);}
+[data-theme="dark"] .hour-cell:hover{background:rgba(13,255,0,.05);}
 .hour-cell:hover .add-hint{opacity:1;}
 .add-hint{
   position:absolute;inset:0;
@@ -246,14 +248,15 @@ body{
 
 /* ══ TASK ══ */
 .task{
-  border-radius:var(--rs);padding:4px 7px;
+  border-radius:var(--rs);padding:5px 8px;
   margin:2px 3px;font-size:var(--fs-xs);
   border-left:2px solid transparent;
   position:relative;
   transition:opacity .2s,transform .2s,box-shadow var(--t-fast);
+  line-height:1.3;
 }
 .task[draggable="true"]{cursor:grab;}
-.task:hover{box-shadow:var(--shadow-sm);}
+.task:hover{box-shadow:var(--shadow-md);z-index:2;}
 .task.is-dragging{opacity:.25;transform:scale(.96);}
 .task:hover .task-delete{opacity:1;}
 .task:hover .task-edit-hint{opacity:1;}
@@ -357,12 +360,13 @@ body{
   display:grid;grid-template-columns:repeat(3,1fr);
   border-top:var(--bw) solid var(--border);
 }
-.bs{padding:var(--sp-3) var(--sp-3);border-right:var(--bw) solid var(--border);}
+.bs{padding:12px 14px;border-right:var(--bw) solid var(--border);}
 .bs:last-child{border-right:none;}
 .bs-title{
   font-size:var(--fs-xs);font-weight:700;
   text-transform:uppercase;letter-spacing:var(--ls-wide);
   color:var(--text-3);margin-bottom:var(--sp-2);
+  padding-bottom:6px;border-bottom:var(--bw) solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
 }
 .bs-add{
@@ -469,8 +473,6 @@ body{
   display:flex;flex-direction:column;
   min-height:100vh;
   background:var(--surface);
-  max-width:1200px;margin:0 auto;
-  box-shadow:var(--shadow-xl);
 }
 #week-view{display:flex;flex-direction:column;flex:1;}
 .cal-wrap{flex:1;}
@@ -703,7 +705,7 @@ body{
   <!-- Nav settimana -->
   <button class="btn btn-icon" onclick="shiftPeriod(-1)" aria-label="Precedente">‹</button>
   <button class="btn btn-icon" onclick="shiftPeriod(1)" aria-label="Successivo">›</button>
-  <span class="period-label" id="period-label"></span>
+  <span class="period-label" id="period-label" style="min-width:180px;font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--ls-tight);"></span>
   <button class="btn btn-ghost" onclick="goToday()" style="font-size:var(--fs-xs);padding:4px 10px;">Oggi</button>
 
   <div class="view-toggle">
@@ -746,12 +748,12 @@ body{
 
 <!-- ══ HINT BAR ══ -->
 <div class="hint-bar">
-  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+  <span style="color:var(--green-dk);font-size:10px;">●</span>
   <span id="hint-text">Trascina per spostare · Doppio click per modificare · Export PDF dalla topbar</span>
 </div>
 
 <!-- ══ WEEK VIEW ══ -->
-<div id="week-view">
+<div id="week-view" style="display:flex;">
   <div class="cal-wrap"><div class="cal">
     <div class="cal-head" id="cal-head"><div class="ch-empty"></div></div>
     <div class="cal-body" id="cal-body"><div class="time-col" id="time-col"></div></div>
@@ -823,7 +825,7 @@ body{
 </div>
 
 <!-- ══ TASK DETAIL PANEL (slide-in) ══ -->
-<div id="task-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:420px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:400;flex-direction:column;overflow:hidden;">
+<div id="task-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:440px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:400;flex-direction:column;overflow:hidden;font-family:var(--font);">
   <div class="tp-head">
     <button class="btn btn-icon" onclick="tvClosePanel()" style="margin-right:8px;" aria-label="Chiudi">✕</button>
     <span class="tp-title" id="tp-title">Task</span>
@@ -952,7 +954,21 @@ function renderLegend(){document.getElementById('cl-legend').innerHTML=clients.m
 function renderClientsPanel(){const list=document.getElementById('cp-list');list.innerHTML='';clients.forEach((cl,idx)=>{const tc=Object.values(tasks).flat().filter(t=>t.client===cl.id).length;const row=document.createElement('div');row.className='cp-row';row.innerHTML=`<div class="cp-color" style="background:${cl.color}"><input type="color" value="${cl.color}"/></div><input class="cp-name-input" type="text" value="${esc(cl.label)}" style="border-color:${cl.color}22"/><span class="cp-count">${tc} task</span><button class="cp-del" ${clients.length<=1?'disabled':''}>✕</button>`;row.querySelector('input[type=color]').addEventListener('input',e=>{clients[idx].color=e.target.value;row.querySelector('.cp-color').style.background=e.target.value;scheduleSave();renderLegend();rebuild();});row.querySelector('.cp-name-input').addEventListener('input',e=>{clients[idx].label=e.target.value;scheduleSave();renderLegend();});row.querySelector('.cp-name-input').addEventListener('blur',()=>rebuild());row.querySelector('.cp-del').addEventListener('click',()=>{if(clients.length<=1)return;const fb=clients.find(c=>c.id!==cl.id);Object.values(tasks).flat().forEach(t=>{if(t.client===cl.id)t.client=fb.id;});Object.values(bottom).flat().forEach(t=>{if(t.client===cl.id)t.client=fb.id;});clients.splice(idx,1);scheduleSave();renderClientsPanel();renderLegend();rebuild();showToast(`"${cl.label}" rimosso`);});list.appendChild(row);});const aw=document.getElementById('cp-add-color-wrap'),ac=document.getElementById('cp-new-color');aw.style.background=ac.value;ac.addEventListener('input',()=>{aw.style.background=ac.value;});}
 function addClient(){const ne=document.getElementById('cp-new-name');const name=ne.value.trim();if(!name){ne.focus();return;}clients.push({id:'cl_'+uid(),label:name,color:document.getElementById('cp-new-color').value});ne.value='';scheduleSave();renderClientsPanel();renderLegend();renderModalClientGrid();showToast(`"${name}" aggiunto`);}
 function toggleClientsPanel(){const p=document.getElementById('clients-panel');const b=document.getElementById('clients-toggle-btn');const o=p.classList.toggle('open');b.classList.toggle('active',o);if(o)renderClientsPanel();}
-function setView(v){view=v;document.getElementById('vt-week').classList.toggle('active',v==='week');document.getElementById('vt-month').classList.toggle('active',v==='month');document.getElementById('week-view').style.display=v==='week'?'':'none';document.getElementById('month-view').style.display=v==='month'?'':'none';document.getElementById('hint-text').textContent=v==='week'?'Trascina per spostare · Doppio click per modificare':'Clicca un giorno per i task · Doppio click per la settimana';if(v==='week'){weekOffset=0;renderWeek();}else renderMonth();}
+function setView(v){
+  view=v;
+  document.getElementById('vt-week').classList.toggle('active',v==='week');
+  document.getElementById('vt-month').classList.toggle('active',v==='month');
+  document.getElementById('vt-tasks').classList.toggle('active',v==='tasks');
+  document.getElementById('week-view').style.display=v==='week'?'flex':'none';
+  document.getElementById('month-view').style.display=v==='month'?'block':'none';
+  document.getElementById('task-view').style.display=v==='tasks'?'flex':'none';
+  const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar'};
+  document.getElementById('hint-text').textContent=hints[v]||'';
+  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':'';
+  if(v==='week'){weekOffset=0;renderWeek();}
+  else if(v==='month') renderMonth();
+  else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
+}
 function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else{monthOffset+=d;renderMonth();}}
 function goToday(){weekOffset=0;monthOffset=0;if(view==='week')renderWeek();else renderMonth();}
 function rebuild(){if(view==='week')renderWeek();else renderMonth();}
@@ -1017,25 +1033,7 @@ function tvPersist(){
 }
 function tvUID(){ return 'tv_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 
-// ── setView esteso ───────────────────────────────────────
-const _origSetView = setView;
-setView = function(v){
-  document.getElementById('vt-tasks').classList.toggle('active', v==='tasks');
-  document.getElementById('task-view').style.display = v==='tasks' ? 'flex' : 'none';
-  if(v === 'tasks'){
-    view = 'tasks';
-    document.getElementById('vt-week').classList.remove('active');
-    document.getElementById('vt-month').classList.remove('active');
-    document.getElementById('week-view').style.display = 'none';
-    document.getElementById('month-view').style.display = 'none';
-    document.getElementById('hint-text').textContent = 'Clicca una card per aprire i dettagli · Trascina per cambiare stato';
-    document.getElementById('period-label').textContent = 'Task';
-    tvPopulateClientFilter();
-    tvRender();
-  } else {
-    _origSetView(v);
-  }
-};
+// setView è ora unificata nella funzione principale
 
 // ── Filtri ────────────────────────────────────────────────
 function tvPopulateClientFilter(){
