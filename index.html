@@ -228,84 +228,96 @@
 
   <!-- PIANO TESTO -->
   <div class="tab-page" id="page-notes">
-    <div class="notes-layout">
-      <!-- TOC sidebar -->
-      <div class="notes-toc" id="notes-toc">
-        <div class="notes-toc-head">Indice</div>
-        <div class="notes-toc-list" id="notes-toc-list"></div>
+    <div class="docs-layout">
+
+      <!-- ── COL 1: Cartelle ── -->
+      <div class="docs-folders" id="docs-folders">
+        <div class="docs-col-head">
+          <span class="docs-col-title">Cartelle</span>
+          <button class="docs-add-btn" onclick="docsNewFolder()" title="Nuova cartella" aria-label="Nuova cartella">+</button>
+        </div>
+        <div class="docs-folder-list" id="docs-folder-list"></div>
       </div>
-      <!-- Editor column -->
-      <div class="notes-editor-col">
-        <!-- Selectors row — client comes from global context -->
-        <div class="notes-sel-row">
-          <!-- Month pills — stesso pattern Feed/Stories -->
-          <div id="notes-month-pills" class="feed-month-pills-inline"></div>
-          <!-- Hidden selects mantenuti per compat JS -->
-          <select id="notes-month-sel" onchange="renderNotesEditor()" style="display:none;"></select>
-          <select id="notes-client-sel" onchange="onNotesClientChange()" style="display:none;"><option value="">—</option></select>
-          <div style="flex:1;"></div>
-          <span class="notes-wc" id="notes-wc">0 parole</span>
+
+      <!-- ── COL 2: Lista documenti ── -->
+      <div class="docs-list-col" id="docs-list-col">
+        <div class="docs-col-head">
+          <span class="docs-col-title" id="docs-list-title">Documenti</span>
+          <button class="docs-add-btn" onclick="docsNewDoc()" title="Nuovo documento" aria-label="Nuovo documento">+</button>
         </div>
-        <!-- Toolbar -->
-        <div class="notes-toolbar">
-          <button class="ntb" title="Titolo H1" onclick="notesInsert('h1')" aria-label="Titolo H1">H1</button>
-          <button class="ntb" title="Titolo H2" onclick="notesInsert('h2')" aria-label="Titolo H2">H2</button>
-          <button class="ntb" title="Titolo H3" onclick="notesInsert('h3')" aria-label="Titolo H3">H3</button>
-          <div class="ntb-sep"></div>
-          <button class="ntb" title="Grassetto" onclick="notesInsert('bold')" aria-label="Grassetto">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
-          </button>
-          <button class="ntb" title="Corsivo" onclick="notesInsert('italic')" aria-label="Corsivo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
-          </button>
-          <div class="ntb-sep"></div>
-          <button class="ntb" title="Lista puntata" onclick="notesInsert('ul')" aria-label="Lista puntata">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
-          </button>
-          <button class="ntb" title="Lista numerata" onclick="notesInsert('ol')" aria-label="Lista numerata">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
-          </button>
-          <button class="ntb" title="Citazione" onclick="notesInsert('quote')" aria-label="Citazione">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
-          </button>
-          <div class="ntb-sep"></div>
-          <button class="ntb" title="Inserisci link" onclick="notesInsert('link')" aria-label="Inserisci link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-          <button class="ntb" title="Inserisci immagine (file, URL, Dropbox)" onclick="notesInsert('media')" aria-label="Inserisci immagine">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </button>
-          <div class="ntb-sep"></div>
-          <button class="ntb" title="Separatore" onclick="notesInsert('hr')" aria-label="Separatore">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-          <div style="flex:1;"></div>
-          <button class="ntb ntb-toggle" id="notes-preview-btn" title="Anteprima" onclick="toggleNotesPreview()" aria-label="Anteprima">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            Preview
-          </button>
+        <div class="docs-doc-list" id="docs-doc-list"></div>
+      </div>
+
+      <!-- ── COL 3: Editor ── -->
+      <div class="docs-editor-col" id="docs-editor-col">
+        <!-- Empty state -->
+        <div class="docs-empty" id="docs-empty">
+          <div class="docs-empty-icon">📄</div>
+          <div class="docs-empty-title">Nessun documento aperto</div>
+          <div class="docs-empty-sub">Seleziona un documento o creane uno nuovo</div>
+          <button class="btn primary" onclick="docsNewDoc()">+ Nuovo documento</button>
         </div>
-        <!-- Editor / Preview -->
-        <div class="notes-body">
-          <textarea class="notes-ta" id="notes-editor"
-            placeholder="# Piano editoriale&#10;&#10;## Obiettivi&#10;Scrivi qui gli obiettivi del mese...&#10;&#10;## Settimana 1&#10;### Lun 1&#10;- Foto cantiere&#10;..."
-            oninput="saveNotesText();updateNotesToc();updateNotesWc();"
-            onpaste="notesHandlePaste(event)"
-            ondrop="notesHandleDrop(event)"
-            ondragover="event.dataTransfer.files?.length&&event.preventDefault()"></textarea>
-          <div class="notes-preview" id="notes-preview" style="display:none;"></div>
-        </div>
-        <!-- Status bar -->
-        <div class="notes-status">
-          <span id="notes-client-status" style="font-weight:600;color:var(--text-2);"></span>
-          <span id="notes-month-status"></span>
-          <span style="margin-left:auto;" id="notes-saved-status">✓ Salvato</span>
+
+        <!-- Editor attivo -->
+        <div class="docs-editor-wrap" id="docs-editor-wrap" style="display:none;">
+          <!-- Titlebar -->
+          <div class="docs-titlebar">
+            <input class="docs-title-inp" id="docs-title-inp" type="text"
+              placeholder="Titolo documento…" autocomplete="off"
+              oninput="docsSaveTitle(this.value)"/>
+            <div class="docs-meta" id="docs-meta"></div>
+            <button class="ntb" onclick="docsTogglePreview()" id="docs-preview-btn" title="Preview">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview
+            </button>
+          </div>
+
+          <!-- Block toolbar -->
+          <div class="docs-toolbar" id="docs-toolbar">
+            <button class="ntb" onclick="docsInsertBlock('h1')" title="Titolo H1">H1</button>
+            <button class="ntb" onclick="docsInsertBlock('h2')" title="Titolo H2">H2</button>
+            <button class="ntb" onclick="docsInsertBlock('h3')" title="Titolo H3">H3</button>
+            <div class="ntb-sep"></div>
+            <button class="ntb" onclick="docsInsertBlock('paragraph')" title="Paragrafo">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('bullet')" title="Lista puntata">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('numbered')" title="Lista numerata">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('callout')" title="Callout/nota">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('image')" title="Immagine / link Dropbox">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('divider')" title="Separatore">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <div style="flex:1;"></div>
+            <span class="notes-wc" id="notes-wc"></span>
+          </div>
+
+          <!-- Blocchi editor -->
+          <div class="docs-blocks" id="docs-blocks"></div>
+
+          <!-- Preview -->
+          <div class="docs-preview" id="docs-preview" style="display:none;"></div>
         </div>
       </div>
+
     </div>
+
+    <!-- Hidden compat -->
+    <select id="notes-month-sel" style="display:none;"></select>
+    <select id="notes-client-sel" style="display:none;"><option value="">—</option></select>
+    <div id="notes-month-pills" style="display:none;"></div>
+    <div id="notes-toc" style="display:none;"><div id="notes-toc-list"></div></div>
   </div>
 
-  <!-- FEED -->
+    <!-- FEED -->
   <div class="tab-page" id="page-feed">
     <!-- Feed context bar — 2 righe fisse -->
     <div class="feed-ctx-bar">

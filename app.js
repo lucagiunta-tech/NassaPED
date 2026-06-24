@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, pilastri, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -394,6 +394,7 @@ const CLOUD = {
     notesData  = data.notesData  || {};
     pilastri   = data.pilastri   || {};
     sbBozze    = data.sbBozze    || {};
+    nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
     if (data.meta) {
       showAllDates = data.meta.showAllDates !== false;
@@ -1226,7 +1227,7 @@ function switchTab(tab){
   const sStudio=document.getElementById('sidebar-studio');const sAdd=document.getElementById('sidebar-studio-add');const sFeed=document.getElementById('sidebar-feed');const sSt=document.getElementById('sidebar-stories');
   if(sStudio)sStudio.style.display='none';if(sAdd)sAdd.style.display='none';if(sFeed)sFeed.style.display='none';if(sSt)sSt.style.display='none';
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
-  if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;rebuildNotesSelects();renderNotesMonthPills();renderNotesEditor();}
+  if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;docsInit();}
   if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
   if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();renderAccSwitcher();}
   if(tab==='ped'){
@@ -2034,6 +2035,464 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
+
+
+/* ══════════════════════════════════════════════════════════════
+   NASSAPED DOCS — Sistema documenti stile Dropbox Paper
+   Storage: nassaDocs[clienteName] = { folders:[], docs:[] }
+   Completamente separato da notesData (che rimane intatto)
+══════════════════════════════════════════════════════════════ */
+let nassaDocs = {};           // { [clienteName]: { folders:[], docs:[] } }
+let _docsCurrentFolder = null; // id cartella selezionata (null = tutte)
+let _docsCurrentDocId  = null; // id documento aperto
+let _docsPreviewMode   = false;
+
+// ── Helper storage ──────────────────────────────────────────
+function _docsClientData(){
+  const ci = notesClientIdx >= 0 ? notesClientIdx : globalClientIdx;
+  const cl = clients[ci];
+  if(!cl) return null;
+  if(!nassaDocs[cl.name]) nassaDocs[cl.name] = { folders:[], docs:[] };
+  return nassaDocs[cl.name];
+}
+function _docsUID(prefix){ return (prefix||'d') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function _docsCurrentDoc(){
+  const data = _docsClientData();
+  if(!data || !_docsCurrentDocId) return null;
+  return data.docs.find(d => d.id === _docsCurrentDocId) || null;
+}
+
+// ── Render cartelle ─────────────────────────────────────────
+function docsRenderFolders(){
+  const el = document.getElementById('docs-folder-list');
+  if(!el) return;
+  const data = _docsClientData();
+  if(!data){ el.innerHTML = '<div class="docs-col-empty">Seleziona un cliente</div>'; return; }
+
+  el.innerHTML = '';
+  // "Tutti" sempre in cima
+  const allBtn = document.createElement('div');
+  allBtn.className = 'docs-folder-item' + (_docsCurrentFolder === null ? ' active' : '');
+  allBtn.innerHTML = '<span class="docs-folder-icon">📋</span><span class="docs-folder-name">Tutti i documenti</span>';
+  allBtn.onclick = () => { _docsCurrentFolder = null; docsRenderFolders(); docsRenderDocList(); };
+  el.appendChild(allBtn);
+
+  if(!data.folders.length){
+    const em = document.createElement('div');
+    em.className = 'docs-col-empty';
+    em.textContent = 'Nessuna cartella';
+    el.appendChild(em);
+    return;
+  }
+
+  data.folders.forEach(f => {
+    const docsInFolder = data.docs.filter(d => d.folderId === f.id).length;
+    const item = document.createElement('div');
+    item.className = 'docs-folder-item' + (_docsCurrentFolder === f.id ? ' active' : '');
+    item.innerHTML = `<span class="docs-folder-icon">📁</span><span class="docs-folder-name">${esc(f.name)}</span><span class="docs-folder-count">${docsInFolder}</span>`;
+    item.onclick = () => { _docsCurrentFolder = f.id; docsRenderFolders(); docsRenderDocList(); };
+    // Long press → rename
+    let _pressTimer;
+    item.onmousedown = () => { _pressTimer = setTimeout(() => docsRenameFolder(f.id), 600); };
+    item.onmouseup = () => clearTimeout(_pressTimer);
+    el.appendChild(item);
+  });
+}
+
+// ── Nuova cartella ──────────────────────────────────────────
+function docsNewFolder(){
+  const data = _docsClientData();
+  if(!data){ showToast('Seleziona un cliente prima', 'warn'); return; }
+  const name = prompt('Nome cartella:');
+  if(!name?.trim()) return;
+  const folder = { id: _docsUID('f'), name: name.trim(), createdAt: Date.now() };
+  data.folders.push(folder);
+  _docsCurrentFolder = folder.id;
+  autoSave();
+  docsRenderFolders();
+  docsRenderDocList();
+}
+
+function docsRenameFolder(id){
+  const data = _docsClientData();
+  const f = data?.folders.find(x => x.id === id);
+  if(!f) return;
+  const name = prompt('Rinomina cartella:', f.name);
+  if(!name?.trim()) return;
+  f.name = name.trim();
+  autoSave();
+  docsRenderFolders();
+}
+
+// ── Render lista documenti ───────────────────────────────────
+function docsRenderDocList(){
+  const el = document.getElementById('docs-doc-list');
+  const titleEl = document.getElementById('docs-list-title');
+  if(!el) return;
+  const data = _docsClientData();
+  if(!data){ el.innerHTML = ''; return; }
+
+  const docs = _docsCurrentFolder === null
+    ? data.docs
+    : data.docs.filter(d => d.folderId === _docsCurrentFolder);
+
+  const folderName = _docsCurrentFolder
+    ? data.folders.find(f => f.id === _docsCurrentFolder)?.name || 'Cartella'
+    : 'Tutti';
+  if(titleEl) titleEl.textContent = folderName;
+
+  // Sort: più recenti prima
+  const sorted = [...docs].sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+
+  el.innerHTML = '';
+  if(!sorted.length){
+    const em = document.createElement('div');
+    em.className = 'docs-col-empty';
+    em.innerHTML = 'Nessun documento.<br><br>';
+    const nb = document.createElement('button');
+    nb.className = 'btn sm primary'; nb.textContent = '+ Nuovo';
+    nb.onclick = docsNewDoc;
+    em.appendChild(nb);
+    el.appendChild(em);
+    return;
+  }
+
+  sorted.forEach(doc => {
+    const active = doc.id === _docsCurrentDocId;
+    const date = doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString('it-IT',{day:'2-digit',month:'short'}) : '';
+    const preview = doc.blocks
+      ? doc.blocks.filter(b => b.type === 'paragraph' || b.type === 'bullet')
+          .map(b => b.content).join(' ').slice(0, 55)
+      : '';
+    const folderName = doc.folderId ? data.folders.find(f=>f.id===doc.folderId)?.name : '';
+
+    const item = document.createElement('div');
+    item.className = 'docs-doc-item' + (active ? ' active' : '');
+    item.innerHTML = `
+      <div class="docs-doc-title">${esc(doc.title || 'Senza titolo')}</div>
+      ${preview ? `<div class="docs-doc-preview">${esc(preview)}…</div>` : ''}
+      <div class="docs-doc-meta">
+        <span>${date}</span>
+        ${folderName && _docsCurrentFolder === null ? `<span class="docs-doc-folder">📁 ${esc(folderName)}</span>` : ''}
+        <button class="docs-doc-del" onclick="event.stopPropagation();docsDeleteDoc('${doc.id}')" title="Elimina" aria-label="Elimina documento">✕</button>
+      </div>
+    `;
+    item.onclick = () => docsOpenDoc(doc.id);
+    el.appendChild(item);
+  });
+}
+
+// ── Nuovo documento ──────────────────────────────────────────
+function docsNewDoc(){
+  const data = _docsClientData();
+  if(!data){ showToast('Seleziona un cliente prima', 'warn'); return; }
+  const doc = {
+    id: _docsUID('doc'),
+    folderId: _docsCurrentFolder || null,
+    title: '',
+    blocks: [{ id: _docsUID('b'), type: 'paragraph', content: '' }],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  data.docs.unshift(doc);
+  autoSave();
+  docsRenderDocList();
+  docsOpenDoc(doc.id);
+  setTimeout(() => document.getElementById('docs-title-inp')?.focus(), 80);
+}
+
+// ── Apri documento ───────────────────────────────────────────
+function docsOpenDoc(id){
+  const data = _docsClientData();
+  const doc = data?.docs.find(d => d.id === id);
+  if(!doc) return;
+  _docsCurrentDocId = id;
+  _docsPreviewMode = false;
+
+  const empty = document.getElementById('docs-empty');
+  const wrap  = document.getElementById('docs-editor-wrap');
+  const titleInp = document.getElementById('docs-title-inp');
+  const metaEl = document.getElementById('docs-meta');
+  const previewBtn = document.getElementById('docs-preview-btn');
+  const previewEl = document.getElementById('docs-preview');
+  const blocksEl = document.getElementById('docs-blocks');
+
+  if(empty) empty.style.display = 'none';
+  if(wrap)  wrap.style.display = '';
+  if(titleInp) titleInp.value = doc.title || '';
+  if(previewEl) previewEl.style.display = 'none';
+  if(previewBtn) previewBtn.classList.remove('active');
+
+  // Folder badge
+  if(metaEl){
+    const folderName = doc.folderId ? data.folders.find(f=>f.id===doc.folderId)?.name : '';
+    const date = doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'}) : '';
+    metaEl.textContent = [folderName ? '📁 '+folderName : '', date].filter(Boolean).join(' · ');
+  }
+
+  docsRenderBlocks();
+  docsRenderDocList(); // aggiorna highlight
+}
+
+// ── Salva titolo ─────────────────────────────────────────────
+function docsSaveTitle(val){
+  const doc = _docsCurrentDoc();
+  if(!doc) return;
+  doc.title = val || '';
+  doc.updatedAt = Date.now();
+  // Aggiorna nome nella lista
+  const item = document.querySelector(`.docs-doc-item.active .docs-doc-title`);
+  if(item) item.textContent = val || 'Senza titolo';
+  _docsDebouncedSave();
+}
+
+let _docsSaveTimer = null;
+function _docsDebouncedSave(){
+  clearTimeout(_docsSaveTimer);
+  _docsSaveTimer = setTimeout(() => {
+    autoSave();
+    const ss = document.getElementById('notes-wc');
+    if(ss){ ss.textContent = '✓ Salvato'; setTimeout(() => { if(ss) ss.textContent = ''; }, 2000); }
+  }, 800);
+}
+
+// ── Elimina documento ────────────────────────────────────────
+function docsDeleteDoc(id){
+  const data = _docsClientData();
+  if(!data) return;
+  const idx = data.docs.findIndex(d => d.id === id);
+  if(idx < 0) return;
+  const snap = {...data.docs[idx], blocks: [...(data.docs[idx].blocks||[])]};
+  data.docs.splice(idx, 1);
+  if(_docsCurrentDocId === id){
+    _docsCurrentDocId = null;
+    document.getElementById('docs-empty').style.display = '';
+    document.getElementById('docs-editor-wrap').style.display = 'none';
+  }
+  autoSave();
+  docsRenderDocList();
+  showUndoToast('Documento eliminato', () => {
+    data.docs.splice(idx, 0, snap);
+    autoSave(); docsRenderDocList();
+  });
+}
+
+// ── BLOCCHI ──────────────────────────────────────────────────
+const BLOCK_TYPES = {
+  h1:        { label:'Titolo',    tag:'h1',       ph:'Titolo principale…' },
+  h2:        { label:'Heading 2', tag:'h2',        ph:'Sezione…' },
+  h3:        { label:'Heading 3', tag:'h3',        ph:'Sotto-sezione…' },
+  paragraph: { label:'Testo',     tag:'p',         ph:'Scrivi qui…' },
+  bullet:    { label:'Lista',     tag:'ul',        ph:'Elemento lista…' },
+  numbered:  { label:'Numerata',  tag:'ol',        ph:'Elemento lista…' },
+  callout:   { label:'Callout',   tag:'blockquote',ph:'Nota importante…' },
+  image:     { label:'Immagine',  tag:'figure',    ph:'URL immagine o link Dropbox…' },
+  divider:   { label:'Divisore',  tag:'hr',        ph:'' },
+};
+
+function docsInsertBlock(type){
+  const doc = _docsCurrentDoc();
+  if(!doc) return;
+  const block = { id: _docsUID('b'), type, content: '' };
+  // Inserisci dopo il blocco con focus (o in fondo)
+  const focused = document.querySelector('.docs-block-inp:focus, .docs-block-area:focus');
+  const focusedId = focused?.closest('[data-block-id]')?.dataset.blockId;
+  const idx = focusedId ? doc.blocks.findIndex(b => b.id === focusedId) : doc.blocks.length - 1;
+  doc.blocks.splice(idx + 1, 0, block);
+  doc.updatedAt = Date.now();
+  docsRenderBlocks();
+  // Focus sul nuovo blocco
+  setTimeout(() => {
+    const el = document.querySelector(`[data-block-id="${block.id}"] .docs-block-inp, [data-block-id="${block.id}"] .docs-block-area`);
+    el?.focus();
+  }, 30);
+  _docsDebouncedSave();
+}
+
+function docsRenderBlocks(){
+  const el = document.getElementById('docs-blocks');
+  if(!el) return;
+  const doc = _docsCurrentDoc();
+  if(!doc){ el.innerHTML = ''; return; }
+
+  el.innerHTML = '';
+  (doc.blocks || []).forEach((block, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'docs-block';
+    wrap.dataset.blockId = block.id;
+
+    if(block.type === 'divider'){
+      wrap.innerHTML = '<hr class="docs-divider"/>';
+      // Click per eliminare
+      wrap.querySelector('hr').onclick = () => docsDeleteBlock(block.id);
+      el.appendChild(wrap);
+      return;
+    }
+
+    if(block.type === 'image'){
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'docs-img-block';
+      if(block.content && block.content.startsWith('http')){
+        const img = document.createElement('img');
+        img.src = block.content; img.alt = block.caption || '';
+        img.style.cssText = 'max-width:100%;border-radius:var(--r);';
+        imgWrap.appendChild(img);
+      }
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'docs-block-inp docs-img-url';
+      inp.value = block.content || ''; inp.placeholder = 'URL immagine…';
+      inp.oninput = e => { block.content = e.target.value; doc.updatedAt = Date.now(); _docsDebouncedSave(); docsRenderBlocks(); };
+      if(block.content) imgWrap.appendChild(inp); else imgWrap.appendChild(inp);
+      wrap.appendChild(imgWrap);
+      el.appendChild(wrap);
+      return;
+    }
+
+    // Blocchi testo
+    const cfg = BLOCK_TYPES[block.type] || BLOCK_TYPES.paragraph;
+    const isMultiline = ['paragraph','callout','bullet','numbered'].includes(block.type);
+    const inp = document.createElement(isMultiline ? 'textarea' : 'input');
+    inp.className = isMultiline ? 'docs-block-area' : 'docs-block-inp';
+    if(inp.tagName === 'TEXTAREA') inp.rows = 1;
+    inp.value = block.content || '';
+    inp.placeholder = cfg.ph;
+
+    // Tipo CSS
+    wrap.classList.add('docs-block-' + block.type);
+
+    inp.oninput = e => {
+      block.content = e.target.value;
+      doc.updatedAt = Date.now();
+      // Auto-resize textarea
+      if(inp.tagName === 'TEXTAREA'){ inp.style.height = 'auto'; inp.style.height = inp.scrollHeight + 'px'; }
+      _docsDebouncedSave();
+    };
+
+    inp.onkeydown = e => {
+      // Enter su input singola → nuovo paragrafo
+      if(e.key === 'Enter' && inp.tagName === 'INPUT'){ e.preventDefault(); docsInsertBlock('paragraph'); }
+      // Enter su textarea con shift → a capo normale
+      if(e.key === 'Enter' && inp.tagName === 'TEXTAREA' && !e.shiftKey && block.type !== 'paragraph'){
+        e.preventDefault(); docsInsertBlock(block.type);
+      }
+      // Backspace su blocco vuoto → elimina
+      if(e.key === 'Backspace' && !inp.value && doc.blocks.length > 1){
+        e.preventDefault(); docsDeleteBlock(block.id, true);
+      }
+    };
+
+    // Handle per trascinare (future drag-to-reorder)
+    const handle = document.createElement('div');
+    handle.className = 'docs-block-handle';
+    handle.innerHTML = '⋮⋮';
+    handle.title = 'Trascina per riordinare';
+
+    // Bottone elimina
+    const del = document.createElement('button');
+    del.className = 'docs-block-del';
+    del.textContent = '✕';
+    del.title = 'Elimina blocco';
+    del.onclick = () => docsDeleteBlock(block.id);
+
+    wrap.appendChild(handle);
+    wrap.appendChild(inp);
+    wrap.appendChild(del);
+    el.appendChild(wrap);
+
+    // Auto-resize al render
+    if(inp.tagName === 'TEXTAREA'){
+      inp.style.height = 'auto';
+      inp.style.height = inp.scrollHeight + 'px';
+    }
+  });
+}
+
+function docsDeleteBlock(id, focusPrev){
+  const doc = _docsCurrentDoc();
+  if(!doc || doc.blocks.length <= 1) return;
+  const idx = doc.blocks.findIndex(b => b.id === id);
+  if(idx < 0) return;
+  doc.blocks.splice(idx, 1);
+  doc.updatedAt = Date.now();
+  docsRenderBlocks();
+  if(focusPrev){
+    const prevIdx = Math.max(0, idx - 1);
+    setTimeout(() => {
+      const blocks = document.querySelectorAll('.docs-block');
+      const target = blocks[prevIdx]?.querySelector('.docs-block-inp, .docs-block-area');
+      target?.focus();
+      if(target?.setSelectionRange) target.setSelectionRange(target.value.length, target.value.length);
+    }, 30);
+  }
+  _docsDebouncedSave();
+}
+
+// ── Preview ──────────────────────────────────────────────────
+function docsTogglePreview(){
+  _docsPreviewMode = !_docsPreviewMode;
+  const blocksEl = document.getElementById('docs-blocks');
+  const toolbarEl = document.getElementById('docs-toolbar');
+  const previewEl = document.getElementById('docs-preview');
+  const btn = document.getElementById('docs-preview-btn');
+
+  if(_docsPreviewMode){
+    const doc = _docsCurrentDoc();
+    if(previewEl && doc){
+      previewEl.innerHTML = docsRenderPreview(doc);
+      previewEl.style.display = '';
+    }
+    if(blocksEl) blocksEl.style.display = 'none';
+    if(btn) btn.classList.add('active');
+  } else {
+    if(previewEl) previewEl.style.display = 'none';
+    if(blocksEl) blocksEl.style.display = '';
+    if(btn) btn.classList.remove('active');
+  }
+}
+
+function docsRenderPreview(doc){
+  if(!doc?.blocks) return '';
+  const title = doc.title ? `<h1 class="docs-preview-title">${esc(doc.title)}</h1>` : '';
+  const blocks = doc.blocks.map(b => {
+    switch(b.type){
+      case 'h1': return `<h1>${esc(b.content)}</h1>`;
+      case 'h2': return `<h2>${esc(b.content)}</h2>`;
+      case 'h3': return `<h3>${esc(b.content)}</h3>`;
+      case 'paragraph': return `<p>${esc(b.content).replace(/\n/g,'<br>')}</p>`;
+      case 'bullet': return `<ul>${b.content.split('\n').filter(Boolean).map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`;
+      case 'numbered': return `<ol>${b.content.split('\n').filter(Boolean).map(l=>`<li>${esc(l)}</li>`).join('')}</ol>`;
+      case 'callout': return `<blockquote class="docs-callout">${esc(b.content).replace(/\n/g,'<br>')}</blockquote>`;
+      case 'image': return b.content ? `<figure><img src="${esc(b.content)}" alt="${esc(b.caption||'')}" style="max-width:100%;border-radius:var(--r);"/>${b.caption?`<figcaption>${esc(b.caption)}</figcaption>`:''}</figure>` : '';
+      case 'divider': return '<hr/>';
+      default: return `<p>${esc(b.content)}</p>`;
+    }
+  }).join('\n');
+  return `<div class="docs-preview-inner">${title}${blocks}</div>`;
+}
+
+// ── Init / switch cliente ────────────────────────────────────
+function docsInit(){
+  _docsCurrentFolder = null;
+  _docsCurrentDocId  = null;
+  _docsPreviewMode   = false;
+  const empty = document.getElementById('docs-empty');
+  const wrap  = document.getElementById('docs-editor-wrap');
+  if(empty) empty.style.display = '';
+  if(wrap)  wrap.style.display  = 'none';
+  docsRenderFolders();
+  docsRenderDocList();
+}
+
+// Stub compat — vecchie funzioni Piano usate in switchTab
+function renderNotesEditor(){ docsInit(); }
+function rebuildNotesSelects(){ docsInit(); }
+function renderNotesMonthPills(){}
+function updateNotesToc(){}
+function updateNotesWc(){}
+function saveNotesText(){}
+function toggleNotesPreview(){ docsTogglePreview(); }
+function notesInsert(){}
+function onNotesClientChange(){ docsInit(); }
 
 /* ══ FEED GRID RECONCILER ══
  * Dopo un drag riordina i nodi DOM esistenti senza ricostruirli.

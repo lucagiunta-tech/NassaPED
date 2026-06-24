@@ -3976,3 +3976,234 @@ tbody tr:hover .tr-actions{opacity:1;}
 [data-theme="dark"] .kpi-val.green{color:#4ade80;}
 [data-theme="dark"] .kpi-val.amber{color:var(--amber-dk);}
 [data-theme="dark"] .kpi-val.blue{color:#60a5fa;}
+
+/* ══════════════════════════════════════════════════════════════
+   NASSAPED DOCS — Stile sistema documenti
+══════════════════════════════════════════════════════════════ */
+
+/* Layout 3 colonne */
+.docs-layout{
+  display:flex;height:100%;overflow:hidden;
+  background:var(--bg);
+}
+
+/* ── Colonna 1: Cartelle (180px) ── */
+.docs-folders{
+  width:180px;flex-shrink:0;
+  background:var(--bg);
+  border-right:var(--bw) solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── Colonna 2: Lista doc (220px) ── */
+.docs-list-col{
+  width:220px;flex-shrink:0;
+  background:var(--surface);
+  border-right:var(--bw) solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── Intestazione colonne ── */
+.docs-col-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px 8px;
+  border-bottom:var(--bw) solid var(--border);
+  flex-shrink:0;
+}
+.docs-col-title{
+  font-size:var(--fs-xs);font-weight:700;
+  text-transform:uppercase;letter-spacing:var(--ls-wide);
+  color:var(--text-3);
+}
+.docs-add-btn{
+  width:22px;height:22px;border-radius:var(--rs);
+  border:none;background:none;cursor:pointer;
+  color:var(--text-3);font-size:18px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--t-fast),color var(--t-fast);
+}
+.docs-add-btn:hover{background:var(--border);color:var(--text);}
+
+/* ── Cartelle ── */
+.docs-folder-list,.docs-doc-list{flex:1;overflow-y:auto;padding:4px 0;}
+.docs-col-empty{padding:16px 12px;font-size:var(--fs-xs);color:var(--text-3);text-align:center;line-height:1.6;}
+
+.docs-folder-item{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;cursor:pointer;
+  border-radius:0;transition:background var(--t-fast);
+  font-size:var(--fs-sm);color:var(--text-2);
+  position:relative;
+}
+.docs-folder-item:hover{background:var(--surface);}
+.docs-folder-item.active{
+  background:var(--surface);
+  color:var(--text);font-weight:600;
+  border-left:2px solid var(--green);
+  padding-left:10px;
+}
+.docs-folder-icon{font-size:14px;flex-shrink:0;}
+.docs-folder-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.docs-folder-count{font-size:10px;color:var(--text-3);background:var(--bg);border-radius:99px;padding:1px 5px;}
+
+/* ── Lista documenti ── */
+.docs-doc-item{
+  padding:9px 12px 7px;cursor:pointer;
+  border-bottom:var(--bw) solid var(--border-lt);
+  transition:background var(--t-fast);
+}
+.docs-doc-item:last-child{border-bottom:none;}
+.docs-doc-item:hover{background:var(--bg);}
+.docs-doc-item.active{
+  background:var(--bg);
+  border-left:2px solid var(--green);
+  padding-left:10px;
+}
+.docs-doc-title{
+  font-size:var(--fs-sm);font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:2px;
+}
+.docs-doc-preview{
+  font-size:var(--fs-xs);color:var(--text-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;margin-bottom:3px;
+}
+.docs-doc-meta{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;color:var(--text-3);
+}
+.docs-doc-folder{color:var(--text-3);}
+.docs-doc-del{
+  opacity:0;margin-left:auto;background:none;border:none;
+  cursor:pointer;color:var(--text-3);padding:1px 3px;
+  border-radius:3px;font-size:11px;
+  transition:opacity var(--t-fast),color var(--t-fast);
+}
+.docs-doc-item:hover .docs-doc-del{opacity:1;}
+.docs-doc-del:hover{color:#dc2626;}
+
+/* ── Colonna 3: Editor ── */
+.docs-editor-col{
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  background:var(--surface);overflow:hidden;
+}
+
+/* Empty state */
+.docs-empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:10px;padding:40px;text-align:center;
+}
+.docs-empty-icon{font-size:48px;}
+.docs-empty-title{font-size:var(--fs-base);font-weight:600;color:var(--text);}
+.docs-empty-sub{font-size:var(--fs-sm);color:var(--text-3);}
+
+/* Editor wrap */
+.docs-editor-wrap{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+}
+
+/* Titlebar */
+.docs-titlebar{
+  display:flex;align-items:center;gap:8px;
+  padding:14px 40px 10px;
+  border-bottom:var(--bw) solid var(--border-lt);
+  flex-shrink:0;
+}
+.docs-title-inp{
+  flex:1;border:none;outline:none;
+  font-size:22px;font-weight:800;
+  font-family:var(--font);color:var(--text);
+  background:transparent;letter-spacing:var(--ls-tight);
+}
+.docs-title-inp::placeholder{color:var(--placeholder);}
+.docs-meta{font-size:var(--fs-xs);color:var(--text-3);white-space:nowrap;}
+
+/* Toolbar */
+.docs-toolbar{
+  display:flex;align-items:center;gap:2px;
+  padding:5px 40px;
+  border-bottom:var(--bw) solid var(--border-lt);
+  flex-shrink:0;flex-wrap:wrap;
+}
+
+/* Blocchi */
+.docs-blocks{
+  flex:1;overflow-y:auto;
+  padding:20px 40px 60px;
+}
+
+.docs-block{
+  display:flex;align-items:flex-start;gap:6px;
+  position:relative;margin-bottom:2px;
+}
+.docs-block:hover .docs-block-handle,
+.docs-block:hover .docs-block-del{opacity:1;}
+
+.docs-block-handle{
+  opacity:0;cursor:grab;color:var(--text-3);
+  font-size:11px;padding:4px 2px;
+  flex-shrink:0;transition:opacity var(--t-fast);
+  user-select:none;margin-top:5px;
+}
+.docs-block-del{
+  opacity:0;background:none;border:none;cursor:pointer;
+  color:var(--text-3);font-size:12px;padding:3px 5px;
+  border-radius:var(--rs);flex-shrink:0;
+  transition:opacity var(--t-fast),color var(--t-fast);
+  margin-top:3px;
+}
+.docs-block-del:hover{color:#dc2626;background:var(--bg);}
+
+/* Input blocchi */
+.docs-block-inp,
+.docs-block-area{
+  flex:1;border:none;outline:none;resize:none;
+  font-family:var(--font);color:var(--text);
+  background:transparent;line-height:1.6;
+  padding:4px 0;width:100%;
+  transition:background var(--t-fast);
+}
+.docs-block-inp:focus,
+.docs-block-area:focus{
+  background:var(--bg);
+  border-radius:var(--rs);
+  padding:4px 6px;
+  margin:0 -6px;
+}
+.docs-block-inp::placeholder,
+.docs-block-area::placeholder{color:var(--placeholder);}
+
+/* Stili per tipo blocco */
+.docs-block-h1 .docs-block-inp{font-size:22px;font-weight:800;letter-spacing:var(--ls-tight);}
+.docs-block-h2 .docs-block-inp{font-size:18px;font-weight:700;}
+.docs-block-h3 .docs-block-inp{font-size:15px;font-weight:600;color:var(--text-2);}
+.docs-block-paragraph .docs-block-area{font-size:15px;}
+.docs-block-bullet .docs-block-area{font-size:15px;padding-left:16px;border-left:2px solid var(--border);}
+.docs-block-numbered .docs-block-area{font-size:15px;padding-left:16px;border-left:2px solid var(--border);}
+.docs-block-callout{background:var(--green-lt);border-radius:var(--r);padding:8px 12px;border-left:3px solid var(--green);}
+.docs-block-callout .docs-block-area{font-size:14px;}
+.docs-divider{border:none;border-top:1px solid var(--border);margin:8px 0;cursor:pointer;width:100%;}
+.docs-img-block{width:100%;}
+.docs-img-url{font-size:var(--fs-xs);color:var(--text-3);width:100%;margin-top:4px;}
+
+/* Preview */
+.docs-preview{
+  flex:1;overflow-y:auto;padding:20px 40px 60px;
+}
+.docs-preview-inner h1{font-size:24px;font-weight:800;margin:0 0 16px;letter-spacing:var(--ls-tight);}
+.docs-preview-inner h2{font-size:18px;font-weight:700;margin:24px 0 8px;}
+.docs-preview-inner h3{font-size:15px;font-weight:600;margin:20px 0 6px;color:var(--text-2);}
+.docs-preview-inner p{margin:0 0 10px;font-size:15px;line-height:1.7;}
+.docs-preview-inner ul,.docs-preview-inner ol{padding-left:20px;margin:0 0 10px;}
+.docs-preview-inner li{margin-bottom:4px;font-size:15px;line-height:1.6;}
+.docs-preview-inner blockquote.docs-callout{background:var(--green-lt);border-left:3px solid var(--green);padding:10px 14px;border-radius:var(--r);margin:8px 0;font-size:14px;}
+.docs-preview-inner hr{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.docs-preview-title{font-size:28px;font-weight:800;margin:0 0 20px;letter-spacing:var(--ls-tight);}
+
+/* Dark mode */
+[data-theme="dark"] .docs-folders{background:var(--bg);}
+[data-theme="dark"] .docs-block-callout{background:var(--green-lt);}
