@@ -943,6 +943,130 @@ body{
   font-style:italic;
 }
 .jv-add-item-inp:focus{color:var(--text);font-style:normal;}
+
+/* ══ STREAM VIEW ══ */
+.stream-nav{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;border-bottom:.5px solid var(--border);
+  flex-shrink:0;background:var(--surface);flex-wrap:wrap;
+}
+.stream-nav-tabs{display:flex;gap:4px;}
+.stream-tab{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 14px;border-radius:var(--r-pill);
+  border:none;background:transparent;cursor:pointer;
+  font-size:var(--fs-xs);font-weight:600;color:var(--text-3);
+  font-family:var(--font);transition:all var(--t);
+}
+.stream-tab:hover{background:var(--bg);color:var(--text);}
+.stream-tab.active{background:var(--green);color:var(--green-text);}
+.stream-kpi-bar{display:flex;gap:16px;font-size:var(--fs-xs);color:var(--text-3);}
+.stream-kpi-bar strong{color:var(--text);font-weight:700;}
+.stream-search{
+  font-size:var(--fs-xs);font-family:var(--font);
+  border:.5px solid var(--border);border-radius:var(--rs);
+  padding:5px 10px;background:var(--bg);color:var(--text);
+  width:160px;
+}
+.stream-search:focus{outline:none;border-color:var(--green);}
+
+/* Clienti table */
+.stream-table{width:100%;border-collapse:collapse;}
+.stream-table th{
+  font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-3);
+  padding:8px 14px;text-align:left;
+  border-bottom:.5px solid var(--border);
+  background:var(--bg);position:sticky;top:0;z-index:2;
+}
+.stream-table th.right{text-align:right;}
+.stream-table td{
+  padding:10px 14px;border-bottom:.5px solid var(--border-lt);
+  font-size:var(--fs-xs);color:var(--text);vertical-align:middle;
+}
+.stream-table tr:last-child td{border-bottom:none;}
+
+/* Clienti row */
+.stream-client-row{cursor:pointer;transition:background var(--t);}
+.stream-client-row:hover{background:var(--bg);}
+.stream-client-row td:first-child{padding-left:10px;}
+.stream-client-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.stream-client-name{font-size:var(--fs-sm);font-weight:700;color:var(--text);}
+.stream-client-sub{font-size:var(--fs-xs);color:var(--text-3);margin-top:1px;}
+
+/* Jobs raggruppati per cliente */
+.stream-group{margin-bottom:0;}
+.stream-group-head{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;background:var(--bg);
+  border-bottom:.5px solid var(--border);
+  cursor:pointer;transition:background var(--t);
+  position:sticky;top:0;z-index:2;
+}
+.stream-group-head:hover{background:var(--border-lt);}
+.stream-group-name{font-size:var(--fs-xs);font-weight:700;color:var(--text);}
+.stream-group-meta{font-size:10px;color:var(--text-3);margin-left:4px;}
+
+/* Job row */
+.stream-job-row{cursor:pointer;transition:background var(--t);}
+.stream-job-row:hover{background:var(--bg);}
+.stream-job-title{font-size:var(--fs-sm);font-weight:600;color:var(--text);}
+.stream-job-num{
+  font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:var(--r-xs);
+  background:var(--bg);border:.5px solid var(--border);
+  color:var(--text-3);margin-right:6px;flex-shrink:0;
+}
+
+/* Barra ore */
+.stream-ore-bar{
+  width:120px;height:6px;
+  background:var(--border);border-radius:var(--r-pill);
+  overflow:hidden;display:inline-block;vertical-align:middle;
+}
+.stream-ore-fill{
+  height:100%;border-radius:var(--r-pill);
+  transition:width .3s;
+}
+
+/* Status pill */
+.stream-status{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:var(--r-pill);
+  white-space:nowrap;
+}
+.stream-status.inplay{background:#dcfce7;color:#166534;border:.5px solid #86efac;}
+.stream-status.completed{background:#f3f4f6;color:#6b7280;border:.5px solid #e5e7eb;}
+.stream-status.archived{background:#fef3c7;color:#92400e;border:.5px solid #fcd34d;}
+.stream-status.onhold{background:#ede9fe;color:#5b21b6;border:.5px solid #a78bfa;}
+[data-theme="dark"] .stream-status.inplay{background:#0d2b0c;color:#4ade80;border-color:#166534;}
+[data-theme="dark"] .stream-status.completed{background:#1a1a1e;color:#6b7280;border-color:#374151;}
+
+/* Profitto */
+.stream-profit.pos{color:#16a34a;font-weight:700;}
+.stream-profit.neg{color:#dc2626;font-weight:700;}
+[data-theme="dark"] .stream-profit.pos{color:#4ade80;}
+
+/* Panel job */
+.sp-section{margin-bottom:20px;}
+.sp-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:6px;}
+.sp-inp{width:100%;font-size:var(--fs-sm);font-family:var(--font);border:.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;background:var(--bg);color:var(--text);}
+.sp-inp:focus{outline:none;border-color:var(--green);}
+.sp-row{display:flex;gap:10px;}
+.sp-row .sp-section{flex:1;}
+.sp-phase{border:.5px solid var(--border);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;}
+.sp-phase-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-bottom:.5px solid var(--border);}
+.sp-phase-title{flex:1;border:none;outline:none;background:transparent;font-size:var(--fs-sm);font-weight:700;font-family:var(--font);color:var(--text);}
+.sp-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:.5px solid var(--border-lt);transition:background var(--t);}
+.sp-item:last-child{border-bottom:none;}
+.sp-item:hover{background:var(--bg);}
+.sp-item-title{flex:1;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-family:var(--font);color:var(--text);}
+.sp-item-ore{width:60px;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-family:var(--font);color:var(--text-3);text-align:right;}
+.sp-item-ore:focus{color:var(--text);}
+.sp-item-budget{width:70px;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-family:var(--font);color:var(--text-3);text-align:right;}
+.sp-add-inp{width:100%;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-family:var(--font);color:var(--text-3);padding:6px 12px;font-style:italic;}
+.sp-add-inp:focus{color:var(--text);font-style:normal;}
 </style>
 </head>
 <body>
@@ -970,7 +1094,7 @@ body{
     <button class="vt-btn active" id="vt-week" onclick="setView('week')">Settimana</button>
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
     <button class="vt-btn" id="vt-tasks" onclick="setView('tasks')">Task</button>
-    <button class="vt-btn" id="vt-jobs" onclick="setView('jobs')">Jobs</button>
+    <button class="vt-btn" id="vt-stream" onclick="setView('stream')">Stream</button>
   </div>
 
   <div class="topbar-spacer"></div>
@@ -1085,45 +1209,58 @@ body{
 
 <!-- task panel rimosso — editing inline nelle card -->
 
-<!-- ══ JOBS VIEW ══ -->
-<div id="job-view" style="display:none;flex:1;min-height:0;overflow:hidden;flex-direction:row;">
+<!-- ══ STREAM VIEW ══ -->
+<div id="stream-view" style="display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column;">
 
-  <!-- Sidebar: lista job per cliente -->
-  <div class="jv-sidebar" id="jv-sidebar">
-    <div class="jv-sidebar-head">
-      <span class="jv-sidebar-title">Jobs</span>
-      <button class="tv-col-add" onclick="jvNewJob()" style="width:auto;padding:4px 10px;border-radius:var(--rs);">+ Nuovo</button>
+  <!-- Stream topbar: 2 viste + azioni -->
+  <div class="stream-nav">
+    <div class="stream-nav-tabs">
+      <button class="stream-tab active" id="st-clients" onclick="streamSetTab('clients')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clienti
+      </button>
+      <button class="stream-tab" id="st-jobs" onclick="streamSetTab('jobs')">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Jobs
+      </button>
     </div>
-    <div id="jv-job-list"></div>
+    <div style="flex:1;"></div>
+    <div class="stream-kpi-bar" id="stream-kpi-bar"></div>
+    <div style="display:flex;gap:6px;">
+      <input class="stream-search" id="stream-search" type="text" placeholder="Cerca…" oninput="streamRender()">
+      <button class="btn btn-primary" id="stream-new-btn" onclick="streamNewJob()" style="font-size:var(--fs-xs);padding:5px 12px;gap:5px;">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuovo Job
+      </button>
+    </div>
   </div>
 
-  <!-- Main: dettaglio job aperto -->
-  <div class="jv-main" id="jv-main">
-    <div class="jv-empty" id="jv-empty">
-      <div style="font-size:40px;margin-bottom:12px;">📋</div>
-      <div style="font-size:var(--fs-base);font-weight:700;color:var(--text);margin-bottom:6px;">Seleziona un Job</div>
-      <div style="font-size:var(--fs-sm);color:var(--text-3);">o creane uno nuovo dalla sidebar</div>
+  <!-- Loading state -->
+  <div id="stream-loading" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:var(--fs-sm);">
+    <div style="text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">⏳</div>
+      Caricamento clienti da NassaPED…
     </div>
-    <div id="jv-detail" style="display:none;flex-direction:column;height:100%;overflow:hidden;"></div>
   </div>
+
+  <!-- Clienti view -->
+  <div id="stream-clients-view" style="display:none;flex:1;overflow-y:auto;"></div>
+
+  <!-- Jobs view -->
+  <div id="stream-jobs-view" style="display:none;flex:1;overflow-y:auto;"></div>
 
 </div>
 
-<!-- Job Modal -->
-<div id="job-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)jvCloseModal()">
-  <div style="background:var(--surface);border-radius:var(--r);width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-xl);">
-    <div style="display:flex;align-items:center;padding:16px 20px;border-bottom:.5px solid var(--border);">
-      <span style="font-size:var(--fs-base);font-weight:700;color:var(--text);" id="jm-title">Nuovo Job</span>
-      <div style="flex:1;"></div>
-      <button onclick="jvCloseModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;">✕</button>
-    </div>
-    <div style="padding:20px;" id="jm-body"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:.5px solid var(--border);">
-      <button class="btn-cancel" onclick="jvCloseModal()">Annulla</button>
-      <button class="btn-save" onclick="jvSaveModal()">Salva</button>
-    </div>
+<!-- Stream: Job detail panel -->
+<div id="stream-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:520px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:400;flex-direction:column;overflow:hidden;">
+  <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;">
+    <button onclick="streamClosePanel()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:16px;padding:4px;margin-right:8px;">✕</button>
+    <span id="stream-panel-title" style="font-size:var(--fs-base);font-weight:700;color:var(--text);flex:1;"></span>
+    <button onclick="streamDeleteJob(_streamCurrentJobId)" style="background:none;border:.5px solid var(--border);cursor:pointer;color:var(--text-3);font-size:var(--fs-xs);padding:4px 10px;border-radius:var(--rs);">Elimina</button>
   </div>
+  <div id="stream-panel-body" style="flex:1;overflow-y:auto;padding:16px 20px 40px;"></div>
 </div>
+<div id="stream-panel-overlay" onclick="streamClosePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:399;"></div>
 
 <!-- ══ BOTTOM SECTIONS ══ -->
 <div class="bottom-sections">
@@ -1257,9 +1394,9 @@ function setView(v){
   if(v==='week'){weekOffset=0;renderWeek();}
   else if(v==='month') renderMonth();
   else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
-  document.getElementById('vt-jobs').classList.toggle('active',v==='jobs');
-  document.getElementById('job-view').style.display=v==='jobs'?'flex':'none';
-  if(v==='jobs'){jvRenderSidebar();}
+  document.getElementById('vt-stream').classList.toggle('active',v==='stream');
+  document.getElementById('stream-view').style.display=v==='stream'?'flex':'none';
+  if(v==='stream'){streamInit();}
 }
 function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else{monthOffset+=d;renderMonth();}}
 function goToday(){weekOffset=0;monthOffset=0;if(view==='week')renderWeek();else renderMonth();}
@@ -1293,7 +1430,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor()
 document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 renderLegend();renderWeek();renderBottom();
 tvLoad();
-jvLoad();jvSetupCalendarDrop();
+streamLoad();
 
 /* ══════════════════════════════════════════════════════════
    TASK MANAGER — Tab Task in Tweek — Inline editing stile Streamtime
@@ -2119,6 +2256,474 @@ function jvSetupCalendarDrop(){
 // ── Init ──────────────────────────────────────────────────
 jvLoad();
 jvSetupCalendarDrop();
+
+
+/* ══════════════════════════════════════════════════════════
+   NASSAPED STREAM — Gestione Clienti + Jobs stile Streamtime
+   Clienti: da /api/project (NassaPED Supabase)
+   Jobs: localStorage nassaped_tweek_v8.stream_v1
+══════════════════════════════════════════════════════════ */
+
+const STREAM_API  = '/api/project';
+const STREAM_KEY  = 'NASSA_SECRET_2026';
+const STREAM_USER = 'shared';
+
+let stream_v1 = {};       // { [jobId]: Job }
+let _streamClients = [];  // clienti da NassaPED
+let _streamLoaded  = false;
+let _streamTab     = 'clients'; // 'clients' | 'jobs'
+let _streamCurrentJobId = null;
+let _streamGroupCollapsed = {}; // { clientSlug: bool }
+
+const STREAM_STATI = {
+  inplay:    { l:'In Play',   cls:'inplay'    },
+  completed: { l:'Completed', cls:'completed' },
+  archived:  { l:'Archived',  cls:'archived'  },
+  onhold:    { l:'On Hold',   cls:'onhold'    },
+};
+const STREAM_EMOJIS = ['🚀','📋','🎯','⚡','🔥','💡','✨','📌','🎨','📊','🏆','💼'];
+
+/* ── Storage ─────────────────────────────────────────── */
+function streamLoad(){
+  try{const raw=localStorage.getItem(SK);if(raw){const p=JSON.parse(raw);stream_v1=p.stream_v1||{};}}catch(e){}
+}
+function streamPersist(){
+  try{const raw=localStorage.getItem(SK);const p=raw?JSON.parse(raw):{};p.stream_v1=stream_v1;localStorage.setItem(SK,JSON.stringify(p));flashSave();}catch(e){}
+}
+function streamUID(){return'str_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+
+/* ── Carica clienti da NassaPED ──────────────────────── */
+async function streamFetchClients(){
+  if(_streamLoaded) return;
+  try {
+    const res = await fetch(`${STREAM_API}?user=${STREAM_USER}`, {
+      headers:{'x-nassa-key': STREAM_KEY},
+      credentials:'include'
+    });
+    if(!res.ok) throw new Error('API error '+res.status);
+    const data = await res.json();
+    const raw = data?.data || data;
+    _streamClients = (raw?.clients || []).map(c => ({
+      slug: c.id || c.name?.toLowerCase().replace(/\s+/g,'_'),
+      n:    c.name || c.Nome || '',
+      c:    c.color || '#888',
+      pkg:  c.package || c.pkg || '',
+      rev:  c.revenue || 0,
+      stato: c.status || 'Attivo',
+    })).filter(c => c.n);
+    _streamLoaded = true;
+  } catch(e) {
+    // Fallback: usa clienti Tweek esistenti
+    _streamClients = clients.map(c => ({
+      slug: c.id, n: c.label, c: c.color, pkg:'', rev:0, stato:'Attivo'
+    }));
+    _streamLoaded = true;
+    console.warn('[Stream] Fallback a clienti Tweek:', e.message);
+  }
+}
+
+/* ── Init ────────────────────────────────────────────── */
+async function streamInit(){
+  if(!_streamLoaded){
+    document.getElementById('stream-loading').style.display = 'flex';
+    document.getElementById('stream-clients-view').style.display = 'none';
+    document.getElementById('stream-jobs-view').style.display = 'none';
+    await streamFetchClients();
+    document.getElementById('stream-loading').style.display = 'none';
+  }
+  streamSetTab(_streamTab);
+}
+
+function streamSetTab(tab){
+  _streamTab = tab;
+  document.getElementById('st-clients').classList.toggle('active', tab==='clients');
+  document.getElementById('st-jobs').classList.toggle('active', tab==='jobs');
+  document.getElementById('stream-clients-view').style.display = tab==='clients' ? 'block' : 'none';
+  document.getElementById('stream-jobs-view').style.display = tab==='jobs' ? 'block' : 'none';
+  document.getElementById('stream-new-btn').textContent = tab==='jobs' ? '+ Nuovo Job' : '+ Nuovo Cliente';
+  document.getElementById('stream-new-btn').onclick = tab==='jobs' ? streamNewJob : streamNewClient;
+  streamRenderKpi();
+  streamRender();
+}
+
+function streamRender(){
+  if(_streamTab==='clients') streamRenderClients();
+  else streamRenderJobs();
+}
+
+/* ── KPI topbar ─────────────────────────────────────── */
+function streamRenderKpi(){
+  const el = document.getElementById('stream-kpi-bar');
+  if(!el) return;
+  const jobs = Object.values(stream_v1);
+  const totBudget = jobs.reduce((s,j)=>s+streamJobBudget(j),0);
+  const totUsed   = jobs.reduce((s,j)=>s+streamJobUsed(j),0);
+  const totProfit = totBudget - totUsed;
+  const inPlay    = jobs.filter(j=>j.stato==='inplay').length;
+  el.innerHTML = `
+    <span><strong>${jobs.length}</strong> job</span>
+    <span><strong>${inPlay}</strong> attivi</span>
+    <span>Budget <strong>€${totBudget.toLocaleString('it-IT')}</strong></span>
+    <span class="${totProfit>=0?'stream-profit pos':'stream-profit neg'}">Profitto <strong>€${totProfit.toLocaleString('it-IT')}</strong></span>
+  `;
+}
+
+/* ── Calcoli job ─────────────────────────────────────── */
+function streamJobBudget(j){
+  return j.budget || (j.phases||[]).flatMap(p=>p.items||[]).reduce((s,it)=>s+(it.budget||0),0);
+}
+function streamJobUsed(j){
+  return (j.phases||[]).flatMap(p=>p.items||[]).reduce((s,it)=>s+(it.oreUsate||0)*(it.tariffaOraria||0),0);
+}
+function streamJobOreStim(j){
+  return (j.phases||[]).flatMap(p=>p.items||[]).reduce((s,it)=>s+(it.oreStimate||0),0);
+}
+function streamJobOreUsed(j){
+  return (j.phases||[]).flatMap(p=>p.items||[]).reduce((s,it)=>s+(it.oreUsate||0),0);
+}
+function streamClientColor(slug){
+  return _streamClients.find(c=>c.slug===slug)?.c || clients.find(c=>c.id===slug)?.color || '#888';
+}
+function streamClientName(slug){
+  return _streamClients.find(c=>c.slug===slug)?.n || clients.find(c=>c.id===slug)?.label || slug;
+}
+
+/* ── Vista CLIENTI ───────────────────────────────────── */
+function streamRenderClients(){
+  const el = document.getElementById('stream-clients-view');
+  const q  = document.getElementById('stream-search')?.value.toLowerCase() || '';
+  const filtered = _streamClients.filter(c => !q || c.n.toLowerCase().includes(q));
+
+  const table = document.createElement('table');
+  table.className = 'stream-table';
+  table.innerHTML = `<thead><tr>
+    <th style="width:14px;"></th>
+    <th>Cliente</th>
+    <th class="right">Job</th>
+    <th class="right">Budget totale</th>
+    <th class="right">Usato</th>
+    <th class="right">Profitto</th>
+    <th>Pacchetto</th>
+    <th>Stato</th>
+  </tr></thead>`;
+  const tbody = document.createElement('tbody');
+
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--text-3);">Nessun cliente trovato.</td></tr>';
+  }
+
+  filtered.forEach(cl => {
+    const clJobs = Object.values(stream_v1).filter(j=>j.client===cl.slug);
+    const totBudget = clJobs.reduce((s,j)=>s+streamJobBudget(j),0);
+    const totUsed   = clJobs.reduce((s,j)=>s+streamJobUsed(j),0);
+    const profit    = totBudget - totUsed;
+
+    const tr = document.createElement('tr');
+    tr.className = 'stream-client-row';
+    tr.innerHTML = `
+      <td><span class="stream-client-dot" style="background:${cl.c};"></span></td>
+      <td>
+        <div class="stream-client-name">${esc(cl.n)}</div>
+        ${cl.stato?`<div class="stream-client-sub">${esc(cl.stato)}</div>`:''}
+      </td>
+      <td style="text-align:right;color:var(--text-3);">${clJobs.length||'—'}</td>
+      <td style="text-align:right;">${totBudget?'€'+totBudget.toLocaleString('it-IT'):'—'}</td>
+      <td style="text-align:right;color:var(--text-3);">${totUsed?'€'+totUsed.toLocaleString('it-IT'):'—'}</td>
+      <td style="text-align:right;" class="${profit>0?'stream-profit pos':profit<0?'stream-profit neg':''}">${totBudget?'€'+profit.toLocaleString('it-IT'):'—'}</td>
+      <td style="color:var(--text-3);">${esc(cl.pkg||'—')}</td>
+      <td><span class="stream-status ${cl.stato==='Attivo'?'inplay':cl.stato==='Inattivo'?'archived':''}">${esc(cl.stato||'—')}</span></td>
+    `;
+    tr.onclick = () => { streamSetTab('jobs'); setTimeout(()=>{ document.getElementById('stream-search').value=cl.n; streamRender(); },50); };
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  el.innerHTML = '';
+  el.appendChild(table);
+}
+
+/* ── Vista JOBS ──────────────────────────────────────── */
+function streamRenderJobs(){
+  const el = document.getElementById('stream-jobs-view');
+  const q  = document.getElementById('stream-search')?.value.toLowerCase() || '';
+  const allJobs = Object.values(stream_v1).filter(j =>
+    !q || j.title?.toLowerCase().includes(q) || streamClientName(j.client).toLowerCase().includes(q)
+  );
+
+  if(!allJobs.length){
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3);"><div style="font-size:32px;margin-bottom:10px;">📋</div>Nessun job. Clicca "+ Nuovo Job".</div>';
+    return;
+  }
+
+  // Raggruppa per cliente
+  const byClient = {};
+  allJobs.forEach(j => { if(!byClient[j.client])byClient[j.client]=[]; byClient[j.client].push(j); });
+
+  el.innerHTML = '';
+
+  // Header tabella (sticky)
+  const headerDiv = document.createElement('div');
+  headerDiv.style.cssText = 'position:sticky;top:0;z-index:3;background:var(--bg);';
+  headerDiv.innerHTML = `<table class="stream-table" style="width:100%;"><thead><tr>
+    <th style="width:14px;"></th>
+    <th>Nome Job</th>
+    <th class="right">Budget / Usato</th>
+    <th style="width:140px;">Ore</th>
+    <th class="right">Profitto</th>
+    <th style="width:100px;">Scadenza</th>
+    <th style="width:100px;">Stato</th>
+  </tr></thead></table>`;
+  el.appendChild(headerDiv);
+
+  // Clienti con i loro job
+  const sortedClients = Object.keys(byClient).sort((a,b)=>streamClientName(a).localeCompare(streamClientName(b)));
+  sortedClients.forEach(slug => {
+    const clJobs = byClient[slug];
+    const clColor = streamClientColor(slug);
+    const clName  = streamClientName(slug);
+    const collapsed = _streamGroupCollapsed[slug];
+    const clBudget = clJobs.reduce((s,j)=>s+streamJobBudget(j),0);
+    const clProfit = clBudget - clJobs.reduce((s,j)=>s+streamJobUsed(j),0);
+
+    const group = document.createElement('div');
+    group.className = 'stream-group';
+
+    // Group header
+    const head = document.createElement('div');
+    head.className = 'stream-group-head';
+    head.innerHTML = `
+      <span style="font-size:12px;color:var(--text-3);margin-right:2px;">${collapsed?'▶':'▼'}</span>
+      <span class="stream-client-dot" style="background:${clColor};"></span>
+      <span class="stream-group-name">${esc(clName)}</span>
+      <span class="stream-group-meta">(${clJobs.length} job)</span>
+      <div style="flex:1;"></div>
+      <span style="font-size:var(--fs-xs);color:var(--text-3);">€${clBudget.toLocaleString('it-IT')}</span>
+      <span class="stream-group-meta">·</span>
+      <span class="stream-group-meta ${clProfit>=0?'stream-profit pos':'stream-profit neg'}">€${clProfit.toLocaleString('it-IT')}</span>
+    `;
+    head.onclick = () => { _streamGroupCollapsed[slug]=!collapsed; streamRenderJobs(); };
+    group.appendChild(head);
+
+    if(!collapsed){
+      const table = document.createElement('table');
+      table.className = 'stream-table';
+      const tbody = document.createElement('tbody');
+
+      clJobs.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(j => {
+        const budget   = streamJobBudget(j);
+        const used     = streamJobUsed(j);
+        const profit   = budget - used;
+        const oreStim  = streamJobOreStim(j);
+        const oreUsed  = streamJobOreUsed(j);
+        const pct      = oreStim>0 ? Math.min(100,Math.round(oreUsed/oreStim*100)) : 0;
+        const barColor = pct>90?'#dc2626':pct>70?'#d97706':'var(--green)';
+        const stCfg    = STREAM_STATI[j.stato]||STREAM_STATI.inplay;
+
+        // Scadenza relativa
+        let scadStr = '—';
+        if(j.dataEnd){
+          const days=Math.round((new Date(j.dataEnd)-new Date())/864e5);
+          const abs=Math.abs(days);
+          if(days<0) scadStr=`<span style="color:#dc2626;">${abs}gg fa</span>`;
+          else if(days<7) scadStr=`<span style="color:#d97706;">tra ${days}gg</span>`;
+          else scadStr=`<span style="color:var(--text-3);">${j.dataEnd}</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'stream-job-row';
+        tr.innerHTML = `
+          <td style="padding-left:24px;"><span class="stream-job-num">#${j.num||'—'}</span></td>
+          <td>
+            <span class="stream-job-title">${esc(j.emoji||'')} ${esc(j.title||'Job senza titolo')}</span>
+          </td>
+          <td style="text-align:right;">
+            <span style="font-weight:700;">€${budget.toLocaleString('it-IT')}</span>
+            <span style="color:var(--text-3);font-size:10px;"> / €${used.toLocaleString('it-IT')}</span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:7px;">
+              <div class="stream-ore-bar"><div class="stream-ore-fill" style="width:${pct}%;background:${barColor};"></div></div>
+              <span style="font-size:10px;color:var(--text-3);white-space:nowrap;">${oreUsed}h/${oreStim}h</span>
+            </div>
+          </td>
+          <td style="text-align:right;" class="${profit>0?'stream-profit pos':profit<0?'stream-profit neg'.''}">€${profit.toLocaleString('it-IT')}</td>
+          <td>${scadStr}</td>
+          <td><span class="stream-status ${stCfg.cls}">${stCfg.l}</span></td>
+        `;
+        tr.onclick = () => streamOpenPanel(j.id);
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      group.appendChild(table);
+    }
+    el.appendChild(group);
+  });
+}
+
+/* ── Nuovo Job ───────────────────────────────────────── */
+function streamNewJob(){
+  const id = streamUID();
+  const num = Object.keys(stream_v1).length + 1;
+  const defaultClient = _streamClients[0]?.slug || clients[0]?.id || '';
+  stream_v1[id] = {
+    id, num, title:'', client: defaultClient,
+    stato:'inplay', emoji:'🚀', budget:0,
+    dataStart:'', dataEnd:'',
+    phases:[], createdAt: Date.now()
+  };
+  streamPersist();
+  streamOpenPanel(id);
+  streamRender();
+}
+
+function streamNewClient(){
+  showToast('I clienti vengono da NassaPED — aggiungili lì', 'info');
+}
+
+function streamDeleteJob(id){
+  if(!id||!stream_v1[id])return;
+  const snap={...stream_v1[id]};
+  delete stream_v1[id];
+  streamPersist();streamClosePanel();streamRender();streamRenderKpi();
+  showToast('"'+(snap.title||'Job')+'" eliminato',true);
+  undoStack={type:'streamDel',snap};
+}
+
+/* ── Panel job ───────────────────────────────────────── */
+function streamOpenPanel(id){
+  _streamCurrentJobId = id;
+  document.getElementById('stream-panel').style.display='flex';
+  document.getElementById('stream-panel-overlay').style.display='block';
+  streamRenderPanel(id);
+}
+function streamClosePanel(){
+  document.getElementById('stream-panel').style.display='none';
+  document.getElementById('stream-panel-overlay').style.display='none';
+  _streamCurrentJobId=null;
+  streamRender();streamRenderKpi();
+}
+
+function streamRenderPanel(id){
+  const j=stream_v1[id];if(!j)return;
+  document.getElementById('stream-panel-title').textContent=(j.emoji||'📋')+' '+(j.title||'Nuovo Job');
+  const body=document.getElementById('stream-panel-body');
+  body.innerHTML='';
+
+  const mk=(cls,tag='div')=>{const el=document.createElement(tag);el.className=cls;return el;};
+
+  // ── Titolo + Emoji ──
+  const topRow=mk('sp-row');
+  const sEmoji=mk('sp-section');sEmoji.style.maxWidth='80px';
+  const lEmoji=document.createElement('span');lEmoji.className='sp-label';lEmoji.textContent='Emoji';
+  const inpEmoji=document.createElement('input');inpEmoji.className='sp-inp';inpEmoji.value=j.emoji||'📋';inpEmoji.style.fontSize='20px';inpEmoji.style.textAlign='center';
+  inpEmoji.oninput=e=>{j.emoji=e.target.value;streamPersist();document.getElementById('stream-panel-title').textContent=j.emoji+' '+(j.title||'');};
+  sEmoji.appendChild(lEmoji);sEmoji.appendChild(inpEmoji);topRow.appendChild(sEmoji);
+
+  const sTit=mk('sp-section');
+  const lTit=document.createElement('span');lTit.className='sp-label';lTit.textContent='Titolo Job';
+  const inpTit=document.createElement('input');inpTit.className='sp-inp';inpTit.value=j.title||'';inpTit.placeholder='Nome del job…';inpTit.style.fontSize='var(--fs-base)';inpTit.style.fontWeight='700';
+  inpTit.oninput=e=>{j.title=e.target.value;streamPersist();document.getElementById('stream-panel-title').textContent=(j.emoji||'📋')+' '+j.title;streamRender();};
+  sTit.appendChild(lTit);sTit.appendChild(inpTit);topRow.appendChild(sTit);
+  body.appendChild(topRow);
+
+  // ── Cliente + Stato + N° ──
+  const row2=mk('sp-row');
+  const sCl=mk('sp-section');const lCl=document.createElement('span');lCl.className='sp-label';lCl.textContent='Cliente';sCl.appendChild(lCl);
+  const selCl=document.createElement('select');selCl.className='sp-inp';
+  _streamClients.forEach(c=>{const o=document.createElement('option');o.value=c.slug;o.textContent=c.n;if(c.slug===j.client)o.selected=true;selCl.appendChild(o);});
+  selCl.onchange=e=>{j.client=e.target.value;streamPersist();streamRender();};
+  sCl.appendChild(selCl);row2.appendChild(sCl);
+
+  const sSt=mk('sp-section');const lSt=document.createElement('span');lSt.className='sp-label';lSt.textContent='Stato';sSt.appendChild(lSt);
+  const selSt=document.createElement('select');selSt.className='sp-inp';
+  Object.entries(STREAM_STATI).forEach(([v,s])=>{const o=document.createElement('option');o.value=v;o.textContent=s.l;if(v===j.stato)o.selected=true;selSt.appendChild(o);});
+  selSt.onchange=e=>{j.stato=e.target.value;streamPersist();streamRender();};
+  sSt.appendChild(selSt);row2.appendChild(sSt);
+
+  const sNum=mk('sp-section');sNum.style.maxWidth='80px';const lNum=document.createElement('span');lNum.className='sp-label';lNum.textContent='N° Job';sNum.appendChild(lNum);
+  const inpNum=document.createElement('input');inpNum.type='number';inpNum.className='sp-inp';inpNum.value=j.num||'';
+  inpNum.onchange=e=>{j.num=parseInt(e.target.value)||0;streamPersist();};
+  sNum.appendChild(inpNum);row2.appendChild(sNum);
+  body.appendChild(row2);
+
+  // ── Budget + Date ──
+  const row3=mk('sp-row');
+  const sBudget=mk('sp-section');const lBudget=document.createElement('span');lBudget.className='sp-label';lBudget.textContent='Budget €';sBudget.appendChild(lBudget);
+  const inpBudget=document.createElement('input');inpBudget.type='number';inpBudget.className='sp-inp';inpBudget.value=j.budget||0;inpBudget.min='0';
+  inpBudget.onchange=e=>{j.budget=parseFloat(e.target.value)||0;streamPersist();streamRenderKpi();};
+  sBudget.appendChild(inpBudget);row3.appendChild(sBudget);
+
+  const sStart=mk('sp-section');const lStart=document.createElement('span');lStart.className='sp-label';lStart.textContent='Data inizio';sStart.appendChild(lStart);
+  const inpStart=document.createElement('input');inpStart.type='date';inpStart.className='sp-inp';inpStart.value=j.dataStart||'';
+  inpStart.onchange=e=>{j.dataStart=e.target.value;streamPersist();};
+  sStart.appendChild(inpStart);row3.appendChild(sStart);
+
+  const sEnd=mk('sp-section');const lEnd=document.createElement('span');lEnd.className='sp-label';lEnd.textContent='Data fine';sEnd.appendChild(lEnd);
+  const inpEnd=document.createElement('input');inpEnd.type='date';inpEnd.className='sp-inp';inpEnd.value=j.dataEnd||'';
+  inpEnd.onchange=e=>{j.dataEnd=e.target.value;streamPersist();streamRender();};
+  sEnd.appendChild(inpEnd);row3.appendChild(sEnd);
+  body.appendChild(row3);
+
+  // Separator
+  const sep=document.createElement('div');sep.style.cssText='border-top:.5px solid var(--border);margin:12px 0 16px;';body.appendChild(sep);
+
+  // ── Fasi + Item ──
+  const phLabel=document.createElement('div');phLabel.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
+  const phTitle=document.createElement('span');phTitle.className='sp-label';phTitle.style.margin='0';phTitle.textContent='Fasi & Item';
+  const addPhBtn=document.createElement('button');addPhBtn.className='tv-add-inline';addPhBtn.textContent='+ Fase';addPhBtn.style.cssText='padding:0;font-size:var(--fs-xs);';
+  addPhBtn.onclick=()=>{if(!j.phases)j.phases=[];j.phases.push({id:streamUID(),title:'Nuova fase',emoji:'📁',items:[]});streamPersist();streamRenderPanel(id);};
+  phLabel.appendChild(phTitle);phLabel.appendChild(addPhBtn);body.appendChild(phLabel);
+
+  (j.phases||[]).forEach((phase,pi)=>{
+    const phEl=document.createElement('div');phEl.className='sp-phase';
+    const phHead=document.createElement('div');phHead.className='sp-phase-head';
+    const phEmoji=document.createElement('input');phEmoji.style.cssText='width:28px;border:none;background:transparent;font-size:14px;text-align:center;outline:none;cursor:text;';phEmoji.value=phase.emoji||'📁';
+    phEmoji.oninput=e=>{j.phases[pi].emoji=e.target.value;streamPersist();};
+    const phTit=document.createElement('input');phTit.className='sp-phase-title';phTit.value=phase.title||'';phTit.placeholder='Nome fase…';
+    phTit.oninput=e=>{j.phases[pi].title=e.target.value;streamPersist();};
+    const phDel=document.createElement('button');phDel.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:11px;';phDel.textContent='✕';
+    phDel.onclick=()=>{j.phases.splice(pi,1);streamPersist();streamRenderPanel(id);};
+    phHead.appendChild(phEmoji);phHead.appendChild(phTit);phHead.appendChild(phDel);phEl.appendChild(phHead);
+
+    // Items
+    (phase.items||[]).forEach((item,ii)=>{
+      const itEl=document.createElement('div');itEl.className='sp-item';
+      const itChk=document.createElement('button');itChk.style.cssText=`width:14px;height:14px;border-radius:50%;border:1.5px solid ${item.stato==='done'?'var(--green)':'var(--border)'};background:${item.stato==='done'?'var(--green)':'none'};flex-shrink:0;cursor:pointer;`;
+      itChk.onclick=()=>{item.stato=item.stato==='done'?'todo':'done';streamPersist();streamRenderPanel(id);streamRender();};
+      const itTit=document.createElement('input');itTit.className='sp-item-title';itTit.value=item.title||'';itTit.placeholder='Nome item…';
+      itTit.style.textDecoration=item.stato==='done'?'line-through':'none';
+      itTit.oninput=e=>{item.title=e.target.value;streamPersist();};
+      const itOre=document.createElement('input');itOre.type='number';itOre.className='sp-item-ore';itOre.value=item.oreStimate||0;itOre.title='Ore stimate';itOre.min=0;
+      itOre.onchange=e=>{item.oreStimate=parseFloat(e.target.value)||0;streamPersist();streamRender();};
+      const itBudget=document.createElement('input');itBudget.type='number';itBudget.className='sp-item-budget';itBudget.value=item.budget||0;itBudget.title='Budget €';itBudget.min=0;
+      itBudget.onchange=e=>{item.budget=parseFloat(e.target.value)||0;streamPersist();streamRender();streamRenderKpi();};
+      const itDel=document.createElement('button');itDel.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;opacity:0;transition:opacity .1s;';itDel.textContent='✕';
+      itEl.addEventListener('mouseenter',()=>itDel.style.opacity='1');itEl.addEventListener('mouseleave',()=>itDel.style.opacity='0');
+      itDel.onclick=()=>{phase.items.splice(ii,1);streamPersist();streamRenderPanel(id);streamRender();};
+      itEl.appendChild(itChk);itEl.appendChild(itTit);itEl.appendChild(itOre);itEl.appendChild(itBudget);itEl.appendChild(itDel);phEl.appendChild(itEl);
+    });
+
+    // Add item
+    const addIt=document.createElement('input');addIt.className='sp-add-inp';addIt.placeholder='+ Aggiungi item…';
+    addIt.onkeydown=e=>{if(e.key==='Enter'&&addIt.value.trim()){if(!phase.items)phase.items=[];phase.items.push({id:streamUID(),title:addIt.value.trim(),stato:'todo',oreStimate:0,oreUsate:0,budget:0,tariffaOraria:0});addIt.value='';streamPersist();streamRenderPanel(id);streamRender();}};
+    phEl.appendChild(addIt);body.appendChild(phEl);
+  });
+
+  // Undo stream delete
+  const origUndo=execUndo;
+  if(!window._streamUndoPatched){
+    window._streamUndoPatched=true;
+    const _orig=execUndo;
+    execUndo=function(){
+      if(undoStack?.type==='streamDel'){clearTimeout(toastTimer);document.getElementById('toast').classList.remove('show');stream_v1[undoStack.snap.id]=undoStack.snap;streamPersist();streamRender();streamRenderKpi();showToast('Job ripristinato');undoStack=null;return;}
+      _orig();
+    };
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+streamLoad();
 
 </script>
 </body>
