@@ -3487,149 +3487,141 @@ function streamDeleteJobDetail(){
 </script>
 </body>
 </html>        items.forEach((item,ii) => {
-        const isExpItem = _sjdExpandedItem === `${id}-${pi}-${ii}`;
+        const isExp = _sjdExpandedItem === `${id}-${pi}-${ii}`;
         const done = item.stato==='done';
         const oreStimH = (item.oreStimate||0)+'h / '+(item.oreUsate||0)+'h';
-        const usedCost = (item.oreUsate||0)*(item.tariffaOraria||0);
+        const usedCost = ((item.oreUsate||0)*(item.tariffaOraria||0));
         const stCls = item.stato==='done'?'done':item.stato==='inprogress'?'inprogress':'todo';
-        const stLbl = STATI_LABEL[item.stato||'todo'];
-        // Date pill
-        const hasDates = item.dataStart||item.dataEnd;
-        const datePill = hasDates
-          ? `<span class="sjd-date-pill">📅 ${item.dataStart||'?'} – ${item.dataEnd||'?'}</span>`
-          : `<span class="sjd-date-pill sjd-date-empty">Set dates</span>`;
-        // Team avatars
-        const teamAvsHTML = (item.team||[]).slice(0,3).map(mid=>{
-          const m=JV_MEMBERS.find(x=>x.id===mid)||{n:mid,c:'#888'};
-          return `<span class="sjd-av-mini" title="${esc(m.n)}" style="background:${m.c};">${m.n[0].toUpperCase()}</span>`;
-        }).join('') + ((item.team||[]).length>3?`<span class="sjd-av-mini" style="background:var(--border);color:var(--text-3);">+${(item.team||[]).length-3}</span>`:'');
+        const stLbl = {todo:'Da fare',inprogress:'In corso',done:'Fatto'}[item.stato||'todo'];
 
-        // ── RIGA PRINCIPALE ──
         const tr = document.createElement('tr');
-        tr.className = 'sjd-item-tr' + (isExpItem?' sjd-item-expanded':'');
-        tr.innerHTML = `
-          <td style="width:28px;">
-            <button class="sjd-expand-btn" title="Espandi">${isExpItem?'▼':'›'}</button>
-          </td>
-          <td>
-            <div style="display:flex;align-items:center;gap:7px;">
-              <button class="sjd-item-check${done?' done':''}" onclick="event.stopPropagation();sjdToggleItemDone('${id}',${pi},${ii})"></button>
-              <input class="sjd-item-inp${done?' done':''}" value="${esc(item.title||'')}" placeholder="Nome item…"
-                onclick="event.stopPropagation();"
-                oninput="stream_v1['${id}'].phases[${pi}].items[${ii}].title=this.value;streamPersist();">
-            </div>
-          </td>
-          <td>${datePill}</td>
-          <td><div class="sjd-team-mini">${teamAvsHTML||'<span style="font-size:10px;color:var(--text-3);">—</span>'}</div></td>
-          <td style="text-align:right;">
-            <span style="font-size:var(--fs-xs);color:var(--text-3);">${oreStimH}</span>
-          </td>
-          <td style="text-align:right;font-size:var(--fs-xs);color:var(--text-3);">
-            ${item.tariffaOraria?'€'+(item.tariffaOraria)+'/ h':'—'}
-          </td>
-          <td style="text-align:right;font-size:var(--fs-xs);">
-            <span style="color:${usedCost>0?'var(--text)':'var(--text-3)'};">€${usedCost.toLocaleString('it-IT')}</span>
-            <span style="color:var(--text-3);"> / €${(item.budget||0).toLocaleString('it-IT')}</span>
-          </td>
-          <td>
-            <span class="sjd-item-status ${stCls}" onclick="event.stopPropagation();sjdCycleStatus('${id}',${pi},${ii})" title="Cambia stato">${stLbl}</span>
-          </td>
-          <td style="width:24px;">
-            <button class="sjd-item-del" onclick="event.stopPropagation();stream_v1['${id}'].phases[${pi}].items.splice(${ii},1);streamPersist();sjdRenderPlan('${id}');sjdRenderKpi('${id}');streamRenderJobs();">✕</button>
-          </td>
-        `;
-        tr.querySelector('.sjd-expand-btn').onclick = e => {
-          e.stopPropagation();
-          _sjdExpandedItem = isExpItem ? null : `${id}-${pi}-${ii}`;
-          sjdRenderPlan(id);
-        };
+        tr.className = 'sjd-item-tr'+(isExp?' sjd-item-expanded':'');
+
+        // td1: expand chevron
+        const td1=document.createElement('td');td1.style.width='28px';
+        const expBtn=document.createElement('button');expBtn.className='sjd-expand-btn';expBtn.textContent=isExp?'▼':'›';
+        expBtn.onclick=e=>{e.stopPropagation();_sjdExpandedItem=isExp?null:`${id}-${pi}-${ii}`;sjdRenderPlan(id);};
+        td1.appendChild(expBtn);tr.appendChild(td1);
+
+        // td2: nome item
+        const td2=document.createElement('td');
+        const nameRow=document.createElement('div');nameRow.style.cssText='display:flex;align-items:center;gap:7px;';
+        const chk=document.createElement('button');chk.className='sjd-item-check'+(done?' done':'');
+        if(done)chk.innerHTML='<svg viewBox="0 0 12 12" width="8" height="8" fill="none"><polyline points="2,6 5,9 10,3" stroke="var(--green-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        chk.onclick=e=>{e.stopPropagation();sjdToggleItemDone(id,pi,ii);};
+        const inp=document.createElement('input');inp.className='sjd-item-inp'+(done?' done':'');inp.value=item.title||'';inp.placeholder='Nome item…';
+        inp.onclick=e=>e.stopPropagation();inp.oninput=e=>{item.title=e.target.value;streamPersist();};
+        nameRow.appendChild(chk);nameRow.appendChild(inp);td2.appendChild(nameRow);tr.appendChild(td2);
+
+        // td3: date pill
+        const td3=document.createElement('td');
+        const datePill=document.createElement('span');
+        datePill.className='sjd-date-pill'+(item.dataStart||item.dataEnd?'':' sjd-date-empty');
+        datePill.textContent=item.dataStart||item.dataEnd?'📅 '+(item.dataStart||'?')+' – '+(item.dataEnd||'?'):'Set dates';
+        td3.appendChild(datePill);tr.appendChild(td3);
+
+        // td4: team avatars
+        const td4=document.createElement('td');
+        const teamDiv=document.createElement('div');teamDiv.className='sjd-team-mini';
+        if(!(item.team||[]).length){const dash=document.createElement('span');dash.style.cssText='font-size:10px;color:var(--text-3);';dash.textContent='—';teamDiv.appendChild(dash);}
+        (item.team||[]).slice(0,3).forEach(mid=>{
+          const m=JV_MEMBERS.find(x=>x.id===mid)||{n:mid,c:'#888'};
+          const av=document.createElement('span');av.className='sjd-av-mini';av.title=m.n;av.style.background=m.c;av.textContent=m.n[0].toUpperCase();teamDiv.appendChild(av);
+        });
+        if((item.team||[]).length>3){const plus=document.createElement('span');plus.className='sjd-av-mini';plus.style.cssText='background:var(--border);color:var(--text-3);';plus.textContent='+'+(item.team.length-3);teamDiv.appendChild(plus);}
+        td4.appendChild(teamDiv);tr.appendChild(td4);
+
+        // td5: ore
+        const td5=document.createElement('td');td5.style.textAlign='right';
+        const oreInp=document.createElement('input');oreInp.type='number';oreInp.className='sjd-item-num';oreInp.value=item.oreStimate||0;oreInp.min=0;oreInp.step=0.25;oreInp.title='Ore stimate';
+        oreInp.onclick=e=>e.stopPropagation();
+        oreInp.onchange=e=>{item.oreStimate=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
+        const oreSub=document.createElement('div');oreSub.style.cssText='font-size:9px;color:var(--text-3);text-align:right;';oreSub.textContent=(item.oreUsate||0)+'h usate';
+        td5.appendChild(oreInp);td5.appendChild(oreSub);tr.appendChild(td5);
+
+        // td6: tariffa
+        const td6=document.createElement('td');td6.style.textAlign='right';
+        const tarInp=document.createElement('input');tarInp.type='number';tarInp.className='sjd-item-num';tarInp.value=item.tariffaOraria||0;tarInp.min=0;tarInp.title='€/h';
+        tarInp.onclick=e=>e.stopPropagation();
+        tarInp.onchange=e=>{item.tariffaOraria=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);};
+        const tarSub=document.createElement('div');tarSub.style.cssText='font-size:9px;color:var(--text-3);text-align:right;';tarSub.textContent='€/h';
+        td6.appendChild(tarInp);td6.appendChild(tarSub);tr.appendChild(td6);
+
+        // td7: usato / budget
+        const td7=document.createElement('td');td7.style.textAlign='right';
+        const budInp=document.createElement('input');budInp.type='number';budInp.className='sjd-item-num';budInp.value=item.budget||0;budInp.min=0;budInp.title='Budget €';
+        budInp.onclick=e=>e.stopPropagation();
+        budInp.onchange=e=>{item.budget=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderKpi();streamRenderJobs();};
+        const usatoSpan=document.createElement('div');usatoSpan.style.cssText='font-size:9px;color:var(--text-3);text-align:right;';usatoSpan.textContent='€'+usedCost.toLocaleString('it-IT')+' usati';
+        td7.appendChild(budInp);td7.appendChild(usatoSpan);tr.appendChild(td7);
+
+        // td8: status pill
+        const td8=document.createElement('td');
+        const stPill=document.createElement('span');stPill.className='sjd-item-status '+stCls;stPill.textContent=stLbl;stPill.title='Click per cambiare stato';
+        stPill.onclick=e=>{e.stopPropagation();sjdCycleStatus(id,pi,ii);};
+        td8.appendChild(stPill);tr.appendChild(td8);
+
+        // td9: delete
+        const td9=document.createElement('td');td9.style.width='24px';
+        const delBtn=document.createElement('button');delBtn.className='sjd-item-del';delBtn.textContent='✕';
+        delBtn.onclick=e=>{e.stopPropagation();items.splice(ii,1);streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);streamRenderJobs();};
+        td9.appendChild(delBtn);tr.appendChild(td9);
+
         tbody.appendChild(tr);
 
-        // ── RIGA ESPANSA — team + dettagli ──
-        if(isExpItem){
-          const expTr = document.createElement('tr');
-          expTr.className = 'sjd-item-exp-tr';
-          const expTd = document.createElement('td');
-          expTd.colSpan = 9; expTd.style.padding = '0';
+        // ── RIGA ESPANSA ──
+        if(isExp){
+          const expTr=document.createElement('tr');expTr.className='sjd-item-exp-tr';
+          const expTd=document.createElement('td');expTd.colSpan=9;expTd.style.padding='0';
+          const expBody=document.createElement('div');expBody.className='sjd-item-exp-body';
 
-          const expDiv = document.createElement('div');
-          expDiv.className = 'sjd-item-exp-body';
-
-          // Team assegnato
-          const teamSection = document.createElement('div');
-          teamSection.className = 'sjd-exp-team';
-
-          (item.team||[]).forEach((mid, ti) => {
-            const m = JV_MEMBERS.find(x=>x.id===mid)||{id:mid,n:mid,c:'#888',r:'—'};
-            const memberRow = document.createElement('div');
-            memberRow.className = 'sjd-member-row';
-            memberRow.innerHTML = `
-              <span class="sjd-av-mini" style="background:${m.c};width:26px;height:26px;font-size:10px;">${m.n[0].toUpperCase()}</span>
-              <span class="sjd-member-name">${esc(m.n)}</span>
-              <span class="sjd-member-role">${esc(m.r||'—')}</span>
-              <div style="flex:1;"></div>
-              <input type="number" class="sjd-member-ore" title="Ore usate da ${m.n}"
-                value="${(item.teamOre||{})[mid]||0}" min="0" step="0.25" placeholder="0h"
-                onchange="if(!stream_v1['${id}'].phases[${pi}].items[${ii}].teamOre)stream_v1['${id}'].phases[${pi}].items[${ii}].teamOre={};
-                  stream_v1['${id}'].phases[${pi}].items[${ii}].teamOre['${mid}']=parseFloat(this.value)||0;
-                  stream_v1['${id}'].phases[${pi}].items[${ii}].oreUsate=Object.values(stream_v1['${id}'].phases[${pi}].items[${ii}].teamOre).reduce((s,v)=>s+v,0);
-                  streamPersist();sjdRenderKpi('${id}');streamRenderJobs();">
-              <span class="sjd-member-rate">€${item.tariffaOraria||0}/h</span>
-              <span class="sjd-member-cost">€${((item.teamOre||{})[mid]||0)*(item.tariffaOraria||0)}</span>
-              <button class="sjd-member-del" onclick="stream_v1['${id}'].phases[${pi}].items[${ii}].team.splice(${ti},1);streamPersist();sjdRenderPlan('${id}');">✕</button>
-            `;
-            teamSection.appendChild(memberRow);
+          // Team list
+          const teamSec=document.createElement('div');teamSec.className='sjd-exp-team';
+          (item.team||[]).forEach((mid,ti)=>{
+            const m=JV_MEMBERS.find(x=>x.id===mid)||{id:mid,n:mid,c:'#888',r:'—'};
+            const mRow=document.createElement('div');mRow.className='sjd-member-row';
+            const av=document.createElement('span');av.className='sjd-av-mini';av.style.cssText='background:'+m.c+';width:26px;height:26px;font-size:10px;';av.textContent=m.n[0].toUpperCase();
+            const nm=document.createElement('span');nm.className='sjd-member-name';nm.textContent=m.n;
+            const rl=document.createElement('span');rl.className='sjd-member-role';rl.textContent=m.r||'—';
+            const sp=document.createElement('div');sp.style.flex='1';
+            const oreM=document.createElement('input');oreM.type='number';oreM.className='sjd-member-ore';
+            oreM.value=(item.teamOre||{})[mid]||0;oreM.min=0;oreM.step=0.25;oreM.title='Ore di '+m.n;
+            oreM.onchange=e=>{
+              if(!item.teamOre)item.teamOre={};
+              item.teamOre[mid]=parseFloat(e.target.value)||0;
+              item.oreUsate=Object.values(item.teamOre).reduce((s,v)=>s+v,0);
+              streamPersist();sjdRenderKpi(id);streamRenderJobs();
+            };
+            const rt=document.createElement('span');rt.className='sjd-member-rate';rt.textContent='€'+(item.tariffaOraria||0)+'/h';
+            const cst=document.createElement('span');cst.className='sjd-member-cost';cst.textContent='€'+(((item.teamOre||{})[mid]||0)*(item.tariffaOraria||0)).toLocaleString('it-IT');
+            const dl=document.createElement('button');dl.className='sjd-member-del';dl.textContent='✕';
+            dl.onclick=()=>{item.team.splice(ti,1);if(item.teamOre)delete item.teamOre[mid];streamPersist();sjdRenderPlan(id);};
+            mRow.appendChild(av);mRow.appendChild(nm);mRow.appendChild(rl);mRow.appendChild(sp);mRow.appendChild(oreM);mRow.appendChild(rt);mRow.appendChild(cst);mRow.appendChild(dl);
+            teamSec.appendChild(mRow);
           });
+          // Add member btn
+          const addMBtn=document.createElement('div');addMBtn.className='sjd-add-member-row';
+          addMBtn.innerHTML='<span style="font-size:11px;">＋</span> Aggiungi membro';
+          addMBtn.onclick=()=>sjdShowMemberPicker(id,pi,ii,addMBtn);
+          teamSec.appendChild(addMBtn);
+          expBody.appendChild(teamSec);
 
-          // Add team member button
-          const addMemberDiv = document.createElement('div');
-          addMemberDiv.className = 'sjd-add-member-row';
-          addMemberDiv.innerHTML = `<span style="font-size:11px;">+</span> Aggiungi membro`;
-          addMemberDiv.onclick = () => sjdShowMemberPicker(id, pi, ii, addMemberDiv);
-          teamSection.appendChild(addMemberDiv);
-          expDiv.appendChild(teamSection);
+          // Note
+          const noteWrap=document.createElement('div');noteWrap.className='sjd-exp-note';
+          noteWrap.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+          const noteTA=document.createElement('textarea');noteTA.className='sjd-exp-note-inp';noteTA.placeholder='Note sull'item…';noteTA.rows=2;noteTA.value=item.note||'';
+          noteTA.oninput=e=>{item.note=e.target.value;streamPersist();};
+          noteWrap.appendChild(noteTA);expBody.appendChild(noteWrap);
 
-          // Note / description
-          const noteDiv = document.createElement('div');
-          noteDiv.className = 'sjd-exp-note';
-          noteDiv.innerHTML = `
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            <textarea class="sjd-exp-note-inp" placeholder="Note sull'item…" rows="2"
-              oninput="stream_v1['${id}'].phases[${pi}].items[${ii}].note=this.value;streamPersist();"
-              >${esc(item.note||'')}</textarea>
-          `;
-          expDiv.appendChild(noteDiv);
+          // Extra fields: tariffa, budget già in riga — qui aggiungiamo ore usate manuale
+          const flds=document.createElement('div');flds.className='sjd-exp-fields';
+          const mkF=(lbl,inpEl)=>{const d=document.createElement('div');d.className='sjd-exp-field';const l=document.createElement('label');l.className='sjd-exp-lbl';l.textContent=lbl;d.appendChild(l);d.appendChild(inpEl);flds.appendChild(d);};
+          const oreUInp=document.createElement('input');oreUInp.type='number';oreUInp.className='sjd-exp-inp';oreUInp.value=item.oreUsate||0;oreUInp.min=0;oreUInp.step=0.25;oreUInp.title='Ore usate totali';
+          oreUInp.onchange=e=>{item.oreUsate=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
+          mkF('Ore usate (tot.)',oreUInp);
+          expBody.appendChild(flds);
 
-          // Fields compatti: tariffa + date + budget
-          const fieldsDiv = document.createElement('div');
-          fieldsDiv.className = 'sjd-exp-fields';
-          fieldsDiv.innerHTML = `
-            <div class="sjd-exp-field">
-              <label class="sjd-exp-lbl">Tariffa €/h</label>
-              <input type="number" class="sjd-exp-inp" value="${item.tariffaOraria||0}" min="0"
-                onchange="stream_v1['${id}'].phases[${pi}].items[${ii}].tariffaOraria=parseFloat(this.value)||0;streamPersist();sjdRenderPlan('${id}');sjdRenderKpi('${id}');">
-            </div>
-            <div class="sjd-exp-field">
-              <label class="sjd-exp-lbl">Budget €</label>
-              <input type="number" class="sjd-exp-inp" value="${item.budget||0}" min="0"
-                onchange="stream_v1['${id}'].phases[${pi}].items[${ii}].budget=parseFloat(this.value)||0;streamPersist();sjdRenderKpi('${id}');streamRenderKpi();streamRenderJobs();">
-            </div>
-            <div class="sjd-exp-field">
-              <label class="sjd-exp-lbl">Inizio</label>
-              <input type="date" class="sjd-exp-inp" value="${item.dataStart||''}"
-                onchange="stream_v1['${id}'].phases[${pi}].items[${ii}].dataStart=this.value;streamPersist();sjdRenderPlan('${id}');">
-            </div>
-            <div class="sjd-exp-field">
-              <label class="sjd-exp-lbl">Fine</label>
-              <input type="date" class="sjd-exp-inp" value="${item.dataEnd||''}"
-                onchange="stream_v1['${id}'].phases[${pi}].items[${ii}].dataEnd=this.value;streamPersist();sjdRenderPlan('${id}');">
-            </div>
-          `;
-          expDiv.appendChild(fieldsDiv);
-
-          expTd.appendChild(expDiv);
-          expTr.appendChild(expTd);
-          tbody.appendChild(expTr);
+          expTd.appendChild(expBody);expTr.appendChild(expTd);tbody.appendChild(expTr);
         }
       });
 
