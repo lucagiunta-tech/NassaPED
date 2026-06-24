@@ -8,6 +8,26 @@
   },
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/home.html"
+    },
+    {
+      "source": "/app",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tweek",
+      "destination": "/tweek.html"
+    },
+    {
+      "source": "/tweek/",
+      "destination": "/tweek.html"
+    },
+    {
       "source": "/robots.txt",
       "destination": "/robots.txt"
     },
