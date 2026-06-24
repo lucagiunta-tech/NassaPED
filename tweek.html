@@ -3275,97 +3275,9 @@ function sjdRenderPlan(id){
       </tr></thead>`;
       const tbody = document.createElement('tbody');
 
-      items.forEach((item,ii) => {
-        const tr = document.createElement('tr');
-        tr.className = 'sjd-item-tr';
-        const done = item.stato === 'done';
-
-        // Checkbox
-        const tdChk = document.createElement('td');
-        const chk = document.createElement('button');
-        chk.className = 'sjd-item-check' + (done?' done':'');
-        if(done) chk.innerHTML='<svg viewBox="0 0 12 12" width="7" height="7" fill="none"><polyline points="2,6 5,9 10,3" stroke="var(--green-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        chk.onclick=e=>{e.stopPropagation();item.stato=item.stato==='done'?'todo':'done';streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);streamRenderJobs();};
-        tdChk.appendChild(chk);tr.appendChild(tdChk);
-
-        // Titolo
-        const tdTit=document.createElement('td');
-        const inpTit=document.createElement('input');inpTit.className='sjd-item-inp'+(done?' done':'');
-        inpTit.value=item.title||'';inpTit.placeholder='Nome item…';
-        inpTit.onclick=e=>e.stopPropagation();
-        inpTit.oninput=e=>{item.title=e.target.value;streamPersist();};
-        tdTit.appendChild(inpTit);tr.appendChild(tdTit);
-
-        // Team avatars
-        const tdTeam=document.createElement('td');
-        const teamDiv=document.createElement('div');teamDiv.className='sjd-team-mini';
-        (item.team||[]).slice(0,3).forEach(mid=>{
-          const m=JV_MEMBERS.find(x=>x.id===mid)||{n:mid,c:'#888'};
-          const av=document.createElement('span');av.className='sjd-av-mini';av.title=m.n;av.style.background=m.c;av.textContent=m.n[0].toUpperCase();teamDiv.appendChild(av);
-        });
-        if((item.team||[]).length>3){const plus=document.createElement('span');plus.className='sjd-av-mini';plus.style.background='var(--border)';plus.style.color='var(--text-3)';plus.textContent='+'+((item.team||[]).length-3);teamDiv.appendChild(plus);}
-        tdTeam.appendChild(teamDiv);tr.appendChild(tdTeam);
-
-        // Data start
-        const tdS=document.createElement('td');tdS.style.textAlign='right';
-        const inpS=document.createElement('input');inpS.type='date';inpS.className='sjd-item-num';inpS.value=item.dataStart||'';
-        inpS.onclick=e=>e.stopPropagation();inpS.onchange=e=>{item.dataStart=e.target.value;streamPersist();};
-        tdS.appendChild(inpS);tr.appendChild(tdS);
-
-        // Data end
-        const tdE=document.createElement('td');tdE.style.textAlign='right';
-        const inpE=document.createElement('input');inpE.type='date';inpE.className='sjd-item-num';inpE.value=item.dataEnd||'';
-        inpE.onclick=e=>e.stopPropagation();inpE.onchange=e=>{item.dataEnd=e.target.value;streamPersist();};
-        tdE.appendChild(inpE);tr.appendChild(tdE);
-
-        // Ore stimate / usate
-        const tdOreS=document.createElement('td');tdOreS.style.textAlign='right';
-        const inpOS=document.createElement('input');inpOS.type='number';inpOS.className='sjd-item-num';inpOS.value=item.oreStimate||0;inpOS.min=0;inpOS.step=0.25;inpOS.title='Ore stimate';
-        inpOS.onclick=e=>e.stopPropagation();inpOS.onchange=e=>{item.oreStimate=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
-        const spOre=document.createElement('span');spOre.style.cssText='font-size:9px;color:var(--text-3);display:block;text-align:right;';spOre.textContent=(item.oreUsate||0)+'h usate';
-        tdOreS.appendChild(inpOS);tdOreS.appendChild(spOre);tr.appendChild(tdOreS);
-
-        // Budget
-        const tdBud=document.createElement('td');tdBud.style.textAlign='right';
-        const inpBud=document.createElement('input');inpBud.type='number';inpBud.className='sjd-item-num';inpBud.value=item.budget||0;inpBud.min=0;inpBud.title='Budget €';
-        inpBud.onclick=e=>e.stopPropagation();inpBud.onchange=e=>{item.budget=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderKpi();streamRenderJobs();};
-        tdBud.appendChild(inpBud);tr.appendChild(tdBud);
-
-        // Usato (ore_usate × tariffa)
-        const usato=(item.oreUsate||0)*(item.tariffaOraria||0);
-        const tdUsato=document.createElement('td');tdUsato.style.textAlign='right';tdUsato.style.fontSize='var(--fs-xs)';tdUsato.style.color=usato>0?'var(--text)':'var(--text-3)';
-        tdUsato.textContent='€'+usato.toLocaleString('it-IT');tr.appendChild(tdUsato);
-
-        // Status pill (click per ciclare)
-        const tdSt=document.createElement('td');
-        const stBtn=document.createElement('span');stBtn.className='sjd-item-status '+(item.stato||'todo');
-        stBtn.textContent=STATI_LABEL[item.stato||'todo']||'Da fare';
-        stBtn.onclick=e=>{e.stopPropagation();const cur=STATI_CYCLE.indexOf(item.stato||'todo');item.stato=STATI_CYCLE[(cur+1)%3];streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);sjdRenderTeamStrip(id);streamRenderJobs();};
-        stBtn.title='Click per cambiare stato';
-        tdSt.appendChild(stBtn);tr.appendChild(tdSt);
-
-        // Del
-        const tdDel=document.createElement('td');
-        const delBtn=document.createElement('button');delBtn.className='sjd-item-del';delBtn.textContent='✕';
-        delBtn.onclick=e=>{e.stopPropagation();items.splice(ii,1);streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);streamRenderJobs();};
-        tdDel.appendChild(delBtn);tr.appendChild(tdDel);
-
-        tbody.appendChild(tr);
+      items.forEach(function(item,ii){
+        sjdBuildItemRow(tbody, id, pi, ii, item, phase);
       });
-
-      // Add item row
-      const addTr=document.createElement('tr');addTr.className='sjd-add-row';
-      const addTd=document.createElement('td');addTd.colSpan=10;
-      const addInp=document.createElement('input');addInp.className='sjd-add-inp';addInp.placeholder='+ Aggiungi item… (premi Invio)';
-      addInp.onclick=e=>e.stopPropagation();
-      addInp.onkeydown=e=>{
-        if(e.key==='Enter'&&addInp.value.trim()){
-          if(!phase.items)phase.items=[];
-          phase.items.push({id:streamUID(),title:addInp.value.trim(),stato:'todo',team:[],oreStimate:0,oreUsate:0,budget:0,tariffaOraria:0,dataStart:'',dataEnd:''});
-          addInp.value='';streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);
-        }
-      };
-      addTd.appendChild(addInp);addTr.appendChild(addTd);tbody.appendChild(addTr);
 
       tbl.appendChild(tbody);phEl.appendChild(tbl);
     }
