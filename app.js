@@ -2037,6 +2037,17 @@ function renderFeedGrid(){
   }
 
 
+
+function renderNotesEditor(){ docsInit(); }
+function rebuildNotesSelects(){ docsInit(); }
+function renderNotesMonthPills(){}
+function updateNotesToc(){}
+function updateNotesWc(){}
+function saveNotesText(){}
+function toggleNotesPreview(){ docsTogglePreview(); }
+function notesInsert(){}
+function onNotesClientChange(){ docsInit(); }
+
 /* ══════════════════════════════════════════════════════════════
    NASSAPED DOCS — Sistema documenti stile Dropbox Paper
    Storage: nassaDocs[clienteName] = { folders:[], docs:[] }
@@ -2484,15 +2495,6 @@ function docsInit(){
 }
 
 // Stub compat — vecchie funzioni Piano usate in switchTab
-function renderNotesEditor(){ docsInit(); }
-function rebuildNotesSelects(){ docsInit(); }
-function renderNotesMonthPills(){}
-function updateNotesToc(){}
-function updateNotesWc(){}
-function saveNotesText(){}
-function toggleNotesPreview(){ docsTogglePreview(); }
-function notesInsert(){}
-function onNotesClientChange(){ docsInit(); }
 
 /* ══ FEED GRID RECONCILER ══
  * Dopo un drag riordina i nodi DOM esistenti senza ricostruirli.
