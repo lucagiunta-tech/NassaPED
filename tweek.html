@@ -1251,16 +1251,24 @@ body{
 
 </div>
 
-<!-- Stream: Job detail panel -->
-<div id="stream-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:520px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:400;flex-direction:column;overflow:hidden;">
+<!-- Stream: Job detail panel — FUORI da stream-view per evitare overflow:hidden -->
+<div id="stream-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:520px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:9000;flex-direction:column;overflow:hidden;">
   <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:.5px solid var(--border);flex-shrink:0;">
-    <button onclick="streamClosePanel()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:16px;padding:4px;margin-right:8px;">✕</button>
-    <span id="stream-panel-title" style="font-size:var(--fs-base);font-weight:700;color:var(--text);flex:1;"></span>
-    <button onclick="streamDeleteJob(_streamCurrentJobId)" style="background:none;border:.5px solid var(--border);cursor:pointer;color:var(--text-3);font-size:var(--fs-xs);padding:4px 10px;border-radius:var(--rs);">Elimina</button>
+    <button onclick="streamClosePanel()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;padding:4px;margin-right:8px;line-height:1;">✕</button>
+    <span id="stream-panel-title" style="font-size:var(--fs-base);font-weight:700;color:var(--text);flex:1;letter-spacing:var(--ls-tight);"></span>
+    <select id="stream-panel-stato" onchange="streamPanelSetStato(this.value)"
+      style="font-size:var(--fs-xs);font-family:var(--font);border:.5px solid var(--border);border-radius:var(--rs);padding:4px 8px;background:var(--bg);color:var(--text);margin-right:8px;">
+      <option value="inplay">In Play</option>
+      <option value="completed">Completed</option>
+      <option value="archived">Archived</option>
+      <option value="onhold">On Hold</option>
+    </select>
+    <button onclick="if(confirm('Eliminare questo job?'))streamDeleteJob(_streamCurrentJobId)"
+      style="background:none;border:.5px solid var(--border);cursor:pointer;color:var(--text-3);font-size:var(--fs-xs);padding:4px 10px;border-radius:var(--rs);">Elimina</button>
   </div>
-  <div id="stream-panel-body" style="flex:1;overflow-y:auto;padding:16px 20px 40px;"></div>
+  <div id="stream-panel-body" style="flex:1;overflow-y:auto;padding:0 0 40px;"></div>
 </div>
-<div id="stream-panel-overlay" onclick="streamClosePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:399;"></div>
+<div id="stream-panel-overlay" onclick="streamClosePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:8999;"></div>
 
 <!-- ══ BOTTOM SECTIONS ══ -->
 <div class="bottom-sections">
@@ -2593,8 +2601,11 @@ function streamDeleteJob(id){
 /* ── Panel job ───────────────────────────────────────── */
 function streamOpenPanel(id){
   _streamCurrentJobId = id;
-  document.getElementById('stream-panel').style.display='flex';
-  document.getElementById('stream-panel-overlay').style.display='block';
+  const panel = document.getElementById('stream-panel');
+  const overlay = document.getElementById('stream-panel-overlay');
+  if(!panel){console.error('[Stream] panel not found');return;}
+  panel.style.display='flex';
+  overlay.style.display='block';
   streamRenderPanel(id);
 }
 function streamClosePanel(){
@@ -2603,113 +2614,148 @@ function streamClosePanel(){
   _streamCurrentJobId=null;
   streamRender();streamRenderKpi();
 }
+function streamPanelSetStato(v){
+  const j=stream_v1[_streamCurrentJobId];if(!j)return;
+  j.stato=v;streamPersist();streamRenderKpi();
+  // Aggiorna la riga nella lista senza full re-render
+  streamRenderJobs();
+}
 
 function streamRenderPanel(id){
   const j=stream_v1[id];if(!j)return;
+  // Aggiorna header
   document.getElementById('stream-panel-title').textContent=(j.emoji||'📋')+' '+(j.title||'Nuovo Job');
+  const stSel=document.getElementById('stream-panel-stato');
+  if(stSel)stSel.value=j.stato||'inplay';
+
   const body=document.getElementById('stream-panel-body');
   body.innerHTML='';
 
-  const mk=(cls,tag='div')=>{const el=document.createElement(tag);el.className=cls;return el;};
+  /* ── Sezione info ── */
+  const info=document.createElement('div');
+  info.style.cssText='padding:14px 20px;border-bottom:.5px solid var(--border);background:var(--bg);';
 
-  // ── Titolo + Emoji ──
-  const topRow=mk('sp-row');
-  const sEmoji=mk('sp-section');sEmoji.style.maxWidth='80px';
-  const lEmoji=document.createElement('span');lEmoji.className='sp-label';lEmoji.textContent='Emoji';
-  const inpEmoji=document.createElement('input');inpEmoji.className='sp-inp';inpEmoji.value=j.emoji||'📋';inpEmoji.style.fontSize='20px';inpEmoji.style.textAlign='center';
-  inpEmoji.oninput=e=>{j.emoji=e.target.value;streamPersist();document.getElementById('stream-panel-title').textContent=j.emoji+' '+(j.title||'');};
-  sEmoji.appendChild(lEmoji);sEmoji.appendChild(inpEmoji);topRow.appendChild(sEmoji);
+  // Titolo editabile
+  const inpTit=document.createElement('input');
+  inpTit.style.cssText='width:100%;border:none;outline:none;background:transparent;font-size:20px;font-weight:800;font-family:var(--font);color:var(--text);letter-spacing:-.02em;margin-bottom:10px;display:block;';
+  inpTit.value=j.title||'';inpTit.placeholder='Titolo job…';
+  inpTit.oninput=e=>{j.title=e.target.value;streamPersist();document.getElementById('stream-panel-title').textContent=(j.emoji||'📋')+' '+j.title;};
+  info.appendChild(inpTit);
 
-  const sTit=mk('sp-section');
-  const lTit=document.createElement('span');lTit.className='sp-label';lTit.textContent='Titolo Job';
-  const inpTit=document.createElement('input');inpTit.className='sp-inp';inpTit.value=j.title||'';inpTit.placeholder='Nome del job…';inpTit.style.fontSize='var(--fs-base)';inpTit.style.fontWeight='700';
-  inpTit.oninput=e=>{j.title=e.target.value;streamPersist();document.getElementById('stream-panel-title').textContent=(j.emoji||'📋')+' '+j.title;streamRender();};
-  sTit.appendChild(lTit);sTit.appendChild(inpTit);topRow.appendChild(sTit);
-  body.appendChild(topRow);
+  // Fields grid
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;';
 
-  // ── Cliente + Stato + N° ──
-  const row2=mk('sp-row');
-  const sCl=mk('sp-section');const lCl=document.createElement('span');lCl.className='sp-label';lCl.textContent='Cliente';sCl.appendChild(lCl);
+  const fld=(label,inp)=>{
+    const d=document.createElement('div');
+    const l=document.createElement('label');l.style.cssText='font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:4px;';l.textContent=label;
+    d.appendChild(l);d.appendChild(inp);grid.appendChild(d);
+  };
+
+  // Cliente
   const selCl=document.createElement('select');selCl.className='sp-inp';
   _streamClients.forEach(c=>{const o=document.createElement('option');o.value=c.slug;o.textContent=c.n;if(c.slug===j.client)o.selected=true;selCl.appendChild(o);});
-  selCl.onchange=e=>{j.client=e.target.value;streamPersist();streamRender();};
-  sCl.appendChild(selCl);row2.appendChild(sCl);
+  // fallback: clienti Tweek
+  if(!_streamClients.length){clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.label;if(c.id===j.client)o.selected=true;selCl.appendChild(o);});}
+  selCl.onchange=e=>{j.client=e.target.value;streamPersist();streamRenderJobs();};
+  fld('Cliente',selCl);
 
-  const sSt=mk('sp-section');const lSt=document.createElement('span');lSt.className='sp-label';lSt.textContent='Stato';sSt.appendChild(lSt);
-  const selSt=document.createElement('select');selSt.className='sp-inp';
-  Object.entries(STREAM_STATI).forEach(([v,s])=>{const o=document.createElement('option');o.value=v;o.textContent=s.l;if(v===j.stato)o.selected=true;selSt.appendChild(o);});
-  selSt.onchange=e=>{j.stato=e.target.value;streamPersist();streamRender();};
-  sSt.appendChild(selSt);row2.appendChild(sSt);
-
-  const sNum=mk('sp-section');sNum.style.maxWidth='80px';const lNum=document.createElement('span');lNum.className='sp-label';lNum.textContent='N° Job';sNum.appendChild(lNum);
-  const inpNum=document.createElement('input');inpNum.type='number';inpNum.className='sp-inp';inpNum.value=j.num||'';
+  // N° Job
+  const inpNum=document.createElement('input');inpNum.type='number';inpNum.className='sp-inp';inpNum.value=j.num||'';inpNum.placeholder='N°';
   inpNum.onchange=e=>{j.num=parseInt(e.target.value)||0;streamPersist();};
-  sNum.appendChild(inpNum);row2.appendChild(sNum);
-  body.appendChild(row2);
+  fld('N° Job',inpNum);
 
-  // ── Budget + Date ──
-  const row3=mk('sp-row');
-  const sBudget=mk('sp-section');const lBudget=document.createElement('span');lBudget.className='sp-label';lBudget.textContent='Budget €';sBudget.appendChild(lBudget);
+  // Budget
   const inpBudget=document.createElement('input');inpBudget.type='number';inpBudget.className='sp-inp';inpBudget.value=j.budget||0;inpBudget.min='0';
   inpBudget.onchange=e=>{j.budget=parseFloat(e.target.value)||0;streamPersist();streamRenderKpi();};
-  sBudget.appendChild(inpBudget);row3.appendChild(sBudget);
+  fld('Budget €',inpBudget);
 
-  const sStart=mk('sp-section');const lStart=document.createElement('span');lStart.className='sp-label';lStart.textContent='Data inizio';sStart.appendChild(lStart);
+  // Date
   const inpStart=document.createElement('input');inpStart.type='date';inpStart.className='sp-inp';inpStart.value=j.dataStart||'';
   inpStart.onchange=e=>{j.dataStart=e.target.value;streamPersist();};
-  sStart.appendChild(inpStart);row3.appendChild(sStart);
+  fld('Data inizio',inpStart);
 
-  const sEnd=mk('sp-section');const lEnd=document.createElement('span');lEnd.className='sp-label';lEnd.textContent='Data fine';sEnd.appendChild(lEnd);
   const inpEnd=document.createElement('input');inpEnd.type='date';inpEnd.className='sp-inp';inpEnd.value=j.dataEnd||'';
-  inpEnd.onchange=e=>{j.dataEnd=e.target.value;streamPersist();streamRender();};
-  sEnd.appendChild(inpEnd);row3.appendChild(sEnd);
-  body.appendChild(row3);
+  inpEnd.onchange=e=>{j.dataEnd=e.target.value;streamPersist();streamRenderJobs();};
+  fld('Data fine',inpEnd);
 
-  // Separator
-  const sep=document.createElement('div');sep.style.cssText='border-top:.5px solid var(--border);margin:12px 0 16px;';body.appendChild(sep);
+  // Emoji
+  const inpEmoji=document.createElement('input');inpEmoji.className='sp-inp';inpEmoji.value=j.emoji||'📋';inpEmoji.style.fontSize='18px';inpEmoji.style.textAlign='center';
+  inpEmoji.oninput=e=>{j.emoji=e.target.value;streamPersist();document.getElementById('stream-panel-title').textContent=j.emoji+' '+(j.title||'');};
+  fld('Emoji',inpEmoji);
 
-  // ── Fasi + Item ──
-  const phLabel=document.createElement('div');phLabel.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
-  const phTitle=document.createElement('span');phTitle.className='sp-label';phTitle.style.margin='0';phTitle.textContent='Fasi & Item';
-  const addPhBtn=document.createElement('button');addPhBtn.className='tv-add-inline';addPhBtn.textContent='+ Fase';addPhBtn.style.cssText='padding:0;font-size:var(--fs-xs);';
-  addPhBtn.onclick=()=>{if(!j.phases)j.phases=[];j.phases.push({id:streamUID(),title:'Nuova fase',emoji:'📁',items:[]});streamPersist();streamRenderPanel(id);};
-  phLabel.appendChild(phTitle);phLabel.appendChild(addPhBtn);body.appendChild(phLabel);
+  info.appendChild(grid);body.appendChild(info);
+
+  /* ── Fasi & Item ── */
+  const phWrap=document.createElement('div');phWrap.style.padding='14px 20px 20px';
+
+  // Header fasi
+  const phHd=document.createElement('div');phHd.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+  const phLbl=document.createElement('span');phLbl.style.cssText='font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);';phLbl.textContent='Fasi & Item';
+  const addPhBtn=document.createElement('button');addPhBtn.style.cssText='background:none;border:none;cursor:pointer;color:var(--green-dk);font-size:var(--fs-xs);font-weight:700;font-family:var(--font);';addPhBtn.textContent='+ Fase';
+  addPhBtn.onclick=()=>{if(!j.phases)j.phases=[];j.phases.push({id:streamUID(),title:'',emoji:'📁',items:[]});streamPersist();streamRenderPanel(id);};
+  phHd.appendChild(phLbl);phHd.appendChild(addPhBtn);phWrap.appendChild(phHd);
 
   (j.phases||[]).forEach((phase,pi)=>{
-    const phEl=document.createElement('div');phEl.className='sp-phase';
+    // KPI fase
+    const phOreStim=(phase.items||[]).reduce((s,it)=>s+(it.oreStimate||0),0);
+    const phBudget=(phase.items||[]).reduce((s,it)=>s+(it.budget||0),0);
+    const phDone=(phase.items||[]).filter(it=>it.stato==='done').length;
+
+    const phEl=document.createElement('div');phEl.className='sp-phase';phEl.style.marginBottom='10px';
+
+    // Phase header
     const phHead=document.createElement('div');phHead.className='sp-phase-head';
-    const phEmoji=document.createElement('input');phEmoji.style.cssText='width:28px;border:none;background:transparent;font-size:14px;text-align:center;outline:none;cursor:text;';phEmoji.value=phase.emoji||'📁';
-    phEmoji.oninput=e=>{j.phases[pi].emoji=e.target.value;streamPersist();};
+    const phEmoji=document.createElement('input');phEmoji.style.cssText='width:26px;border:none;background:transparent;font-size:14px;text-align:center;outline:none;';phEmoji.value=phase.emoji||'📁';
+    phEmoji.oninput=e=>{phase.emoji=e.target.value;streamPersist();};
     const phTit=document.createElement('input');phTit.className='sp-phase-title';phTit.value=phase.title||'';phTit.placeholder='Nome fase…';
-    phTit.oninput=e=>{j.phases[pi].title=e.target.value;streamPersist();};
-    const phDel=document.createElement('button');phDel.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:11px;';phDel.textContent='✕';
-    phDel.onclick=()=>{j.phases.splice(pi,1);streamPersist();streamRenderPanel(id);};
-    phHead.appendChild(phEmoji);phHead.appendChild(phTit);phHead.appendChild(phDel);phEl.appendChild(phHead);
+    phTit.oninput=e=>{phase.title=e.target.value;streamPersist();};
+    const phMeta=document.createElement('span');phMeta.style.cssText='font-size:10px;color:var(--text-3);margin-left:auto;display:flex;gap:8px;align-items:center;';
+    phMeta.innerHTML=`<span>${phDone}/${(phase.items||[]).length}</span><span>€${phBudget.toLocaleString('it-IT')}</span><span>${phOreStim}h</span>`;
+    const phDel=document.createElement('button');phDel.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:2px 4px;';phDel.textContent='✕';
+    phDel.onclick=()=>{if(confirm('Eliminare la fase e tutti i suoi item?')){j.phases.splice(pi,1);streamPersist();streamRenderPanel(id);}};
+    phHead.appendChild(phEmoji);phHead.appendChild(phTit);phHead.appendChild(phMeta);phHead.appendChild(phDel);phEl.appendChild(phHead);
 
     // Items
     (phase.items||[]).forEach((item,ii)=>{
       const itEl=document.createElement('div');itEl.className='sp-item';
-      const itChk=document.createElement('button');itChk.style.cssText=`width:14px;height:14px;border-radius:50%;border:1.5px solid ${item.stato==='done'?'var(--green)':'var(--border)'};background:${item.stato==='done'?'var(--green)':'none'};flex-shrink:0;cursor:pointer;`;
-      itChk.onclick=()=>{item.stato=item.stato==='done'?'todo':'done';streamPersist();streamRenderPanel(id);streamRender();};
-      const itTit=document.createElement('input');itTit.className='sp-item-title';itTit.value=item.title||'';itTit.placeholder='Nome item…';
-      itTit.style.textDecoration=item.stato==='done'?'line-through':'none';
-      itTit.oninput=e=>{item.title=e.target.value;streamPersist();};
-      const itOre=document.createElement('input');itOre.type='number';itOre.className='sp-item-ore';itOre.value=item.oreStimate||0;itOre.title='Ore stimate';itOre.min=0;
-      itOre.onchange=e=>{item.oreStimate=parseFloat(e.target.value)||0;streamPersist();streamRender();};
-      const itBudget=document.createElement('input');itBudget.type='number';itBudget.className='sp-item-budget';itBudget.value=item.budget||0;itBudget.title='Budget €';itBudget.min=0;
-      itBudget.onchange=e=>{item.budget=parseFloat(e.target.value)||0;streamPersist();streamRender();streamRenderKpi();};
-      const itDel=document.createElement('button');itDel.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;opacity:0;transition:opacity .1s;';itDel.textContent='✕';
-      itEl.addEventListener('mouseenter',()=>itDel.style.opacity='1');itEl.addEventListener('mouseleave',()=>itDel.style.opacity='0');
-      itDel.onclick=()=>{phase.items.splice(ii,1);streamPersist();streamRenderPanel(id);streamRender();};
-      itEl.appendChild(itChk);itEl.appendChild(itTit);itEl.appendChild(itOre);itEl.appendChild(itBudget);itEl.appendChild(itDel);phEl.appendChild(itEl);
+      // Check
+      const chk=document.createElement('button');
+      chk.style.cssText=`width:14px;height:14px;border-radius:50%;flex-shrink:0;cursor:pointer;border:1.5px solid ${item.stato==='done'?'var(--green)':'var(--border)'};background:${item.stato==='done'?'var(--green)':'none'};transition:all var(--t);`;
+      if(item.stato==='done'){chk.innerHTML='<svg viewBox="0 0 12 12" width="8" height="8" fill="none"><polyline points="2,6 5,9 10,3" stroke="#0a1a00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+      chk.onclick=()=>{item.stato=item.stato==='done'?'todo':'done';streamPersist();streamRenderPanel(id);streamRenderJobs();};
+      // Titolo
+      const tit=document.createElement('input');tit.className='sp-item-title';tit.value=item.title||'';tit.placeholder='Nome item…';
+      tit.style.textDecoration=item.stato==='done'?'line-through':'none';tit.style.opacity=item.stato==='done'?'.5':'1';
+      tit.oninput=e=>{item.title=e.target.value;streamPersist();};
+      // Ore
+      const ore=document.createElement('input');ore.type='number';ore.className='sp-item-ore';ore.value=item.oreStimate||0;ore.title='Ore stimate';ore.min=0;ore.placeholder='0h';
+      ore.onchange=e=>{item.oreStimate=parseFloat(e.target.value)||0;streamPersist();streamRenderJobs();};
+      // Budget
+      const bud=document.createElement('input');bud.type='number';bud.className='sp-item-budget';bud.value=item.budget||0;bud.title='Budget €';bud.min=0;bud.placeholder='€0';
+      bud.onchange=e=>{item.budget=parseFloat(e.target.value)||0;streamPersist();streamRenderJobs();streamRenderKpi();};
+      // Del
+      const del=document.createElement('button');del.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;opacity:0;transition:opacity .1s;padding:2px 4px;';del.textContent='✕';
+      itEl.addEventListener('mouseenter',()=>del.style.opacity='1');itEl.addEventListener('mouseleave',()=>del.style.opacity='0');
+      del.onclick=()=>{phase.items.splice(ii,1);streamPersist();streamRenderPanel(id);streamRenderJobs();};
+      itEl.appendChild(chk);itEl.appendChild(tit);itEl.appendChild(ore);itEl.appendChild(bud);itEl.appendChild(del);phEl.appendChild(itEl);
     });
 
     // Add item
-    const addIt=document.createElement('input');addIt.className='sp-add-inp';addIt.placeholder='+ Aggiungi item…';
-    addIt.onkeydown=e=>{if(e.key==='Enter'&&addIt.value.trim()){if(!phase.items)phase.items=[];phase.items.push({id:streamUID(),title:addIt.value.trim(),stato:'todo',oreStimate:0,oreUsate:0,budget:0,tariffaOraria:0});addIt.value='';streamPersist();streamRenderPanel(id);streamRender();}};
-    phEl.appendChild(addIt);body.appendChild(phEl);
+    const addInp=document.createElement('input');addInp.className='sp-add-inp';addInp.placeholder='+ Aggiungi item… (premi Invio)';
+    addInp.onkeydown=e=>{
+      if(e.key==='Enter'&&addInp.value.trim()){
+        if(!phase.items)phase.items=[];
+        phase.items.push({id:streamUID(),title:addInp.value.trim(),stato:'todo',oreStimate:0,oreUsate:0,budget:0,tariffaOraria:0});
+        addInp.value='';streamPersist();streamRenderPanel(id);streamRenderJobs();
+      }
+    };
+    phEl.appendChild(addInp);phWrap.appendChild(phEl);
   });
 
+  body.appendChild(phWrap);
+
+  // ── Undo delete ──
   // Undo stream delete
   const origUndo=execUndo;
   if(!window._streamUndoPatched){
