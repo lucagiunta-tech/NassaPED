@@ -2546,7 +2546,7 @@ function streamRenderJobs(){
               <span style="font-size:10px;color:var(--text-3);white-space:nowrap;">${oreUsed}h/${oreStim}h</span>
             </div>
           </td>
-          <td style="text-align:right;" class="${profit>0?'stream-profit pos':profit<0?'stream-profit neg'.''}">€${profit.toLocaleString('it-IT')}</td>
+          <td style="text-align:right;" class="${profit>0?'stream-profit pos':profit<0?'stream-profit neg':''}">€${profit.toLocaleString('it-IT')}</td>
           <td>${scadStr}</td>
           <td><span class="stream-status ${stCfg.cls}">${stCfg.l}</span></td>
         `;
