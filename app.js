@@ -153,7 +153,7 @@ function triggerUndo(){
 ══════════════════════════════════════════ */
 const CLOUD = {
   apiUrl: window.location.origin + '/api/project',
-  apiKey: 'NASSA_SECRET_2026', // Fallback attivo — usato quando non c'è sessione JWT
+  apiKey: 'NASSA_SECRET_2026', // Verrà aggiornato dopo login JWT
   user: localStorage.getItem('nassa_user') || 'shared',
   _saveTimer: null,
   _status: 'idle',
@@ -8781,7 +8781,7 @@ async function doLogin(){
     // Login OK
     localStorage.setItem('nassa_last_user', data.user);
     CLOUD.user = data.user;
-    CLOUD.apiKey = ''; // non più necessario — usiamo il cookie JWT
+    CLOUD.apiKey = ''; // sessione JWT attiva — apiKey non necessaria
     const av = document.getElementById('user-avatar');
     if(av) av.textContent = data.user.slice(0,2).toUpperCase();
     showLoginOverlay(false);
@@ -8832,25 +8832,22 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // Verifica sessione JWT
   const authed = await checkSession();
   if(authed){
-    // Sessione JWT valida
     showLoginOverlay(false);
     await loadFromCloud();
   } else {
-    // Nessuna sessione JWT — prova fallback con apiKey
-    // Questo garantisce accesso anche durante la transizione al nuovo sistema auth
+    // Tenta caricamento con cookie esistente (retrocompatibilità)
     try {
       const testRes = await fetch(CLOUD.apiUrl+'?user='+CLOUD.user, {
         headers: { 'x-nassa-key': CLOUD.apiKey },
         credentials: 'include'
       });
       if(testRes.ok){
-        // apiKey valida — carica senza login
         showLoginOverlay(false);
         await loadFromCloud();
         return;
       }
     } catch(_){}
-    // Nessun accesso possibile — mostra login
+    // Mostra login
     showLoginOverlay(true);
     setLoginLoading(false);
   }
