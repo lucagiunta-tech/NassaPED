@@ -3817,3 +3817,149 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ped-infl-lbl{flex:1;font-size:var(--fs-sm);font-weight:500;}
 .ped-infl-body{padding:10px 12px;border-top:var(--bw) solid var(--border-lt);background:var(--surface);}
 .ped-infl-badge{display:inline-flex;align-items:center;gap:4px;}
+
+/* ══ CALENDARIO — CARD ARRICCHITE ══ */
+.ctd-cards{display:flex;flex-direction:column;gap:3px;margin-top:4px;}
+
+.ctd-card{
+  border-radius:var(--rs);
+  border:var(--bw) solid var(--border-lt);
+  border-left-width:2px;
+  padding:4px 6px;
+  background:var(--surface);
+  cursor:pointer;
+  transition:background var(--t-fast),box-shadow var(--t-fast);
+  font-size:11px;
+  line-height:1.3;
+}
+.ctd-card:hover{background:var(--bg);box-shadow:var(--shadow-sm);}
+
+.ctd-card-head{
+  display:flex;align-items:center;gap:4px;
+  margin-bottom:2px;flex-wrap:wrap;
+}
+.ctd-card-type{
+  font-size:10px;font-weight:700;
+  letter-spacing:var(--ls-wide);text-transform:uppercase;
+  flex-shrink:0;
+}
+.ctd-card-client{
+  font-size:10px;color:var(--text-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:80px;
+}
+.ctd-card-status{
+  font-size:9px;font-weight:600;
+  margin-left:auto;flex-shrink:0;
+  letter-spacing:var(--ls-normal);
+}
+
+.ctd-card-thumb{
+  width:100%;height:48px;
+  border-radius:3px;overflow:hidden;
+  margin:3px 0;
+}
+.ctd-card-thumb img{
+  width:100%;height:100%;
+  object-fit:cover;display:block;
+}
+
+.ctd-card-copy{
+  color:var(--text-2);
+  font-size:10px;line-height:1.35;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.ctd-card-brief{
+  margin-top:3px;
+  padding:2px 5px;
+  background:var(--green-lt);
+  border-radius:3px;
+  font-size:10px;
+  color:var(--text-2);
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.ctd-brief-lbl{
+  font-size:9px;font-weight:700;
+  color:var(--green-dk);
+  text-transform:uppercase;
+  letter-spacing:var(--ls-wide);
+  margin-right:4px;
+}
+
+.ctd-more{
+  font-size:10px;font-weight:600;
+  color:var(--text-3);
+  padding:2px 4px;
+  cursor:pointer;
+  text-align:center;
+  border-radius:var(--rs);
+  transition:background var(--t-fast);
+}
+.ctd-more:hover{background:var(--bg);color:var(--text);}
+
+/* Dark mode */
+[data-theme="dark"] .ctd-card-brief{background:var(--green-lt);}
+
+/* Celle con card: un po' più alte */
+.cal-teatro-day.cal-has-events{min-height:90px;}
+
+/* ── Date picker trigger (collaborazione) ── */
+.ped-date-trigger{
+  width:100%;text-align:left;
+  border:1px solid var(--border);border-radius:var(--rs);
+  padding:7px 10px;font-size:var(--fs-sm);font-family:var(--font);
+  color:var(--text);background:var(--surface);
+  cursor:pointer;transition:border-color var(--t-fast);
+}
+.ped-date-trigger:hover{border-color:var(--green);}
+
+/* dp-nav inside global-date-picker for collab use */
+.date-picker-popup .dp-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px 6px;border-bottom:var(--bw) solid var(--border-lt);
+}
+.date-picker-popup .dp-month-lbl{
+  font-size:var(--fs-sm);font-weight:600;color:var(--text);
+}
+.date-picker-popup .dp-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:1px;padding:6px 8px 8px;
+}
+.date-picker-popup .dp-weekday{
+  font-size:10px;font-weight:600;color:var(--text-3);
+  text-align:center;padding:3px 0;
+}
+.date-picker-popup .dp-day{
+  aspect-ratio:1;border-radius:50%;
+  font-size:var(--fs-xs);color:var(--text-2);
+  background:none;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background var(--t-fast),color var(--t-fast);
+  font-family:var(--font);
+}
+.date-picker-popup .dp-day:hover{background:var(--bg);color:var(--text);}
+.date-picker-popup .dp-today{color:var(--green);font-weight:700;}
+.date-picker-popup .dp-sel{background:var(--green);color:#0a1a00 !important;font-weight:700;}
+
+/* ══ CALENDARIO — DRAG & DROP ══ */
+.ctd-card[draggable="true"]{cursor:grab;}
+.ctd-card[draggable="true"]:active{cursor:grabbing;}
+
+.ctd-card.cal-dragging{
+  opacity:.3;
+  transform:scale(.97);
+  pointer-events:none;
+}
+
+.cal-teatro-day.cal-drop-target{
+  background:var(--green-lt) !important;
+  outline:2px dashed var(--green);
+  outline-offset:-2px;
+}

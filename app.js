@@ -4337,34 +4337,43 @@ function renderCalendar(){
       else if(day>daysInMonth){cellD=nextDay++;cellM=m+2>12?1:m+2;cellY=m+2>12?y+1:y;isOther=true;}
       else{cellD=day++;}
       const dateStr=isoDate(cellY,cellM,cellD);const isToday=dateStr===today;const evs=events[dateStr]||[];
-      html+=`<div class="cal-teatro-day${isOther?' cal-other':''}${isToday?' cal-today':''}${evs.length?' cal-has-events':''}" onclick="openCalPanel('${dateStr}')">`;
+      const cellDragAttr=`ondragover="calDragOver(event,'${dateStr}')" ondragleave="calDragLeave(event)" ondrop="calDrop(event,'${dateStr}')"`;
+      html+=`<div class="cal-teatro-day${isOther?' cal-other':''}${isToday?' cal-today':''}${evs.length?' cal-has-events':''}" data-date="${dateStr}" onclick="openCalPanel('${dateStr}')" ${cellDragAttr}>`;
       // Day number + weekday
       const dowIdx=(new Date(cellY,cellM-1,cellD).getDay()+6)%7;
       html+=`<div class="ctd-header"><div class="ctd-num">${cellD}</div><div class="ctd-dow">${GIORNIW[dowIdx]}</div></div>`;
-      // Dot grid — thumbnail 20x20 compatti, max 6 poi +N
+      // Card eventi — compatte con brief e status
       if(evs.length){
-        const MAX_DOTS=6;
-        const dotColors={feed:'var(--green)',story:'#3b82f6',ped:'#7c3aed',ads:'#ec4899',highlight:'var(--amber)'};
-        html+=`<div class="ctd-dots">`;
-        evs.slice(0,MAX_DOTS).forEach(ev=>{
-          const isPed=ev.type==='ped';
-          const isStory=ev.type==='story';
-          const thumbSrc=ev.thumb||'';
-          const dotColor=dotColors[ev.type]||dotColors.highlight;
-          // Tipo badge: lettera singola
-          const typeLetter=ev.type==='feed'?'F':ev.type==='story'?'S':ev.type==='ped'?'U':ev.type==='ads'?'A':'E';
-          if(thumbSrc){
-            html+=`<div class="ctd-dot has-thumb" style="aspect-ratio:${isStory?'9/16':'4/5'}">
-              <img src="${thumbSrc}" alt="" loading="lazy" onerror="this.parentElement.classList.add('no-thumb')" />
-              <span class="ctd-dot-type" style="background:${dotColor};">${typeLetter}</span>
-            </div>`;
-          } else {
-            html+=`<div class="ctd-dot no-thumb" style="background:${dotColor}22;border:1.5px solid ${dotColor}40;">
-              <span style="font-size:9px;font-weight:700;color:${dotColor};">${typeLetter}</span>
-            </div>`;
-          }
+        const typeColors={feed:'var(--green)',story:'#3b82f6',ped:'#7c3aed',ads:'#ec4899',highlight:'var(--amber-dk)'};
+        const typeLabels={feed:'Feed',story:'Story',ped:'UGC',ads:'Ads',highlight:'Evid.'};
+        const statusCfg={bozza:{l:'Bozza',c:'#888'},revisione:{l:'Revisione',c:'#e05c00'},approvare:{l:'Da approv.',c:'#d4a800'},approvato:{l:'Approvato',c:'#16a34a'},pubblicato:{l:'Pubbl.',c:'#2563eb'}};
+        const MAX_CARDS=3;
+        html+=`<div class="ctd-cards">`;
+        evs.slice(0,MAX_CARDS).forEach(ev=>{
+          const col=typeColors[ev.type]||typeColors.highlight;
+          const lbl=typeLabels[ev.type]||ev.type;
+          const thumb=ev.thumb||'';
+          const copy=(ev.item?.copy||'').slice(0,55);
+          const brief=(ev.item?.brief||'').slice(0,40);
+          const stato=ev.item?.apprStato||ev.ugcStato||'';
+          const stCfg=statusCfg[stato]||null;
+          const clientName=globalClientIdx<0?(ev.clientName||''):'';
+          const evKey=JSON.stringify({type:ev.type,date:dateStr,idx:evs.indexOf(ev),month:ev.month||''});
+          html+=`<div class="ctd-card" onclick="event.stopPropagation();openCalPanel('${dateStr}')" style="border-left:2px solid ${col}" draggable="true" data-evkey="${esc(evKey)}" data-date="${dateStr}" ondragstart="calDragStart(event)" ondragend="calDragEnd(event)">`;
+          // Header: tipo + client (se multi-client)
+          html+=`<div class="ctd-card-head"><span class="ctd-card-type" style="color:${col}">${lbl}</span>`;
+          if(clientName) html+=`<span class="ctd-card-client">${esc(clientName.split('—')[0].trim())}</span>`;
+          if(stCfg) html+=`<span class="ctd-card-status" style="color:${stCfg.c}">${stCfg.l}</span>`;
+          html+=`</div>`;
+          // Thumbnail (se presente)
+          if(thumb) html+=`<div class="ctd-card-thumb"><img src="${thumb}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"/></div>`;
+          // Copy preview
+          if(copy) html+=`<div class="ctd-card-copy">${esc(copy)}${ev.item?.copy?.length>55?'…':''}</div>`;
+          // Brief snippet — differenziatore
+          if(brief) html+=`<div class="ctd-card-brief"><span class="ctd-brief-lbl">Brief</span>${esc(brief)}${ev.item?.brief?.length>40?'…':''}</div>`;
+          html+=`</div>`;
         });
-        if(evs.length>MAX_DOTS) html+=`<div class="ctd-dot-more">+${evs.length-MAX_DOTS}</div>`;
+        if(evs.length>MAX_CARDS) html+=`<div class="ctd-more" onclick="event.stopPropagation();openCalPanel('${dateStr}')">+${evs.length-MAX_CARDS} altri</div>`;
         html+=`</div>`;
       }
       html+='</div>';
@@ -5000,12 +5009,38 @@ function _renderCollabModal(data){
   fld('ci-tel','Telefono','tel',data.tel||'','+39 …','tel','tel');
   // Compenso + Scadenza
   const row=document.createElement('div');row.className='field-row';
-  ['Compenso (€)','Scadenza'].forEach((lbl,i)=>{
-    const d=document.createElement('div');d.className='field';
-    const l=document.createElement('label');l.textContent=lbl;d.appendChild(l);
-    const inp=document.createElement('input');inp.id=i===0?'ci-comp':'ci-scad';inp.type=i===0?'number':'date';inp.value=i===0?(data.compenso||''):(data.scadenza||'');if(i===0){inp.min='0';inp.placeholder='0';inp.inputMode='numeric';}
-    d.appendChild(inp);row.appendChild(d);
-  });
+  // Compenso
+  const compDiv=document.createElement('div');compDiv.className='field';
+  const compLbl=document.createElement('label');compLbl.textContent='Compenso (€)';compDiv.appendChild(compLbl);
+  const compInp=document.createElement('input');compInp.id='ci-comp';compInp.type='number';compInp.value=data.compenso||'';compInp.min='0';compInp.placeholder='0';compInp.inputMode='numeric';
+  compDiv.appendChild(compInp);row.appendChild(compDiv);
+  // Scadenza — usa date picker custom
+  const scadDiv=document.createElement('div');scadDiv.className='field';
+  const scadLbl=document.createElement('label');scadLbl.textContent='Scadenza';scadDiv.appendChild(scadLbl);
+  // Hidden input per il valore ISO
+  const scadInp=document.createElement('input');scadInp.type='hidden';scadInp.id='ci-scad';scadInp.value=data.scadenza||'';
+  scadDiv.appendChild(scadInp);
+  // Trigger visivo
+  const scadTrigger=document.createElement('button');
+  scadTrigger.type='button';
+  scadTrigger.className='ped-date-trigger';
+  scadTrigger.id='ci-scad-trigger';
+  const _scadFmt=()=>{
+    const v=document.getElementById('ci-scad')?.value;
+    if(!v)return'— Seleziona —';
+    const d=new Date(v+'T00:00:00');
+    return d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  };
+  scadTrigger.textContent=_scadFmt();
+  scadTrigger.onclick=e=>{
+    e.stopPropagation();
+    // Apri date picker posizionato sul trigger
+    _openCollabDatePicker(scadTrigger, document.getElementById('ci-scad'), ()=>{
+      scadTrigger.textContent=_scadFmt();
+    });
+  };
+  scadDiv.appendChild(scadTrigger);
+  row.appendChild(scadDiv);
   body.appendChild(row);
   // Stato
   const sd=document.createElement('div');sd.className='field';const sl=document.createElement('label');sl.textContent='Stato';sd.appendChild(sl);
@@ -5062,6 +5097,168 @@ function pedDeleteCollab(id){
 }
 
 
+
+
+/* ══ CALENDARIO — DRAG & DROP tra giorni ══ */
+let _calDragData = null;
+
+function calDragStart(e){
+  const card = e.currentTarget;
+  _calDragData = null;
+  try { _calDragData = JSON.parse(card.dataset.evkey); } catch(_){}
+  if(!_calDragData) return;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', card.dataset.evkey);
+  setTimeout(()=>card.classList.add('cal-dragging'), 0);
+}
+
+function calDragEnd(e){
+  e.currentTarget.classList.remove('cal-dragging');
+  document.querySelectorAll('.cal-drop-target').forEach(c=>c.classList.remove('cal-drop-target'));
+  _calDragData = null;
+}
+
+function calDragOver(e, dateStr){
+  if(!_calDragData) return;
+  if(dateStr === _calDragData.date) return; // stesso giorno
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const cell = e.currentTarget;
+  if(!cell.classList.contains('cal-drop-target')) cell.classList.add('cal-drop-target');
+}
+
+function calDragLeave(e){
+  if(!e.currentTarget.contains(e.relatedTarget))
+    e.currentTarget.classList.remove('cal-drop-target');
+}
+
+function calDrop(e, newDateStr){
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('cal-drop-target');
+  let dragData = _calDragData;
+  if(!dragData){
+    try { dragData = JSON.parse(e.dataTransfer.getData('text/plain')); } catch(_){}
+  }
+  if(!dragData || !newDateStr || dragData.date === newDateStr) return;
+  _calMoveEvent(dragData, newDateStr);
+}
+
+function _calMoveEvent(dragData, newDateStr){
+  const {type, date: oldDate, month, idx} = dragData;
+  const newDateIt = formatItalianDate(newDateStr); // es. "Lun 15 giugno"
+  if(!newDateIt) return;
+
+  if(type === 'feed'){
+    // Trova il client/account/month corretti
+    const ci = globalClientIdx >= 0 ? globalClientIdx : 0;
+    const cl = clients[ci];
+    if(!cl) return;
+    // Cerca tra tutti gli account il feed che contiene l'item
+    let found = false;
+    (cl.accounts||[]).forEach(acc=>{
+      const key = acc.id+'|||'+month;
+      const arr = feeds[key]||[];
+      if(idx >= 0 && idx < arr.length && !found){
+        const oldItem = arr[idx];
+        const oldDate2 = oldItem.date;
+        // Aggiorna data
+        arr[idx].date = newDateIt;
+        feeds[key] = arr;
+        found = true;
+        autoSave();
+        renderCalendar();
+        showUndoToast('Post spostato al '+newDateIt, ()=>{
+          arr[idx].date = oldDate2;
+          feeds[key] = arr;
+          autoSave();
+          renderCalendar();
+        });
+      }
+    });
+    if(!found) showToast('Impossibile spostare il post', 'warn');
+  }
+  else if(type === 'ped'){
+    const ci = globalClientIdx >= 0 ? globalClientIdx : 0;
+    const cl = clients[ci];
+    if(!cl) return;
+    const pkey = cl.name+'|||'+month;
+    const plan = pedPlans[pkey]||[];
+    if(idx >= 0 && idx < plan.length){
+      const oldDate2 = plan[idx].date;
+      plan[idx].date = newDateStr; // PED usa ISO
+      pedPlans[pkey] = plan;
+      autoSave();
+      renderCalendar();
+      renderPEDCal();
+      showUndoToast('Slot UGC spostato al '+newDateIt, ()=>{
+        plan[idx].date = oldDate2;
+        pedPlans[pkey] = plan;
+        autoSave();
+        renderCalendar();
+        renderPEDCal();
+      });
+    }
+  }
+  else {
+    showToast('Tipo evento non spostabile', 'warn');
+  }
+}
+
+// Helper: formatta data ISO → italiano es. "Lun 15 giugno"
+function formatItalianDate(isoStr){
+  if(!isoStr) return '';
+  const d = new Date(isoStr+'T00:00:00');
+  if(isNaN(d)) return '';
+  const GIORNI_SHORT = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const MESI_IT = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  return GIORNI_SHORT[d.getDay()]+' '+d.getDate()+' '+MESI_IT[d.getMonth()];
+}
+
+/* ── Date picker per modal collaborazione ── */
+function _openCollabDatePicker(triggerEl, hiddenInp, onChangeCb){
+  let popup=document.getElementById('global-date-picker');
+  if(!popup){popup=document.createElement('div');popup.id='global-date-picker';popup.className='date-picker-popup';document.body.appendChild(popup);}
+  const curVal=hiddenInp?.value;
+  if(curVal){const d=new Date(curVal+'T00:00:00');dpMonth=d.getMonth();dpYear=d.getFullYear();}
+  else{dpMonth=new Date().getMonth();dpYear=new Date().getFullYear();}
+  const _render=()=>{
+    popup.innerHTML='';
+    const hd=document.createElement('div');hd.className='dp-nav';
+    const prev=document.createElement('button');prev.className='btn sm icon';prev.textContent='‹';
+    prev.onclick=e=>{e.stopPropagation();dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}_render();};
+    const next=document.createElement('button');next.className='btn sm icon';next.textContent='›';
+    next.onclick=e=>{e.stopPropagation();dpMonth++;if(dpMonth>11){dpMonth=0;dpYear++;}_render();};
+    const lbl=document.createElement('span');lbl.className='dp-month-lbl';lbl.textContent=MONTHS[dpMonth]+' '+dpYear;
+    hd.appendChild(prev);hd.appendChild(lbl);hd.appendChild(next);popup.appendChild(hd);
+    const grid=document.createElement('div');grid.className='dp-grid';
+    GIORNIW.forEach(g=>{const h=document.createElement('div');h.className='dp-weekday';h.textContent=g[0];grid.appendChild(h);});
+    const firstDow=(new Date(dpYear,dpMonth,1).getDay()+6)%7;
+    const daysInMonth=new Date(dpYear,dpMonth+1,0).getDate();
+    const todayStr=todayISO();
+    for(let pad=0;pad<firstDow;pad++){grid.appendChild(document.createElement('div'));}
+    for(let d=1;d<=daysInMonth;d++){
+      const ds=isoDate(dpYear,dpMonth+1,d);
+      const btn=document.createElement('button');btn.type='button';
+      btn.className='dp-day'+(ds===todayStr?' dp-today':'')+(ds===hiddenInp?.value?' dp-sel':'');
+      btn.textContent=d;btn.setAttribute('aria-label',d+' '+MONTHS[dpMonth]+' '+dpYear);
+      btn.onclick=e=>{e.stopPropagation();if(hiddenInp)hiddenInp.value=ds;if(onChangeCb)onChangeCb(ds);closeDatePicker();};
+      grid.appendChild(btn);
+    }
+    popup.appendChild(grid);
+    popup.classList.remove('mobile-sheet');
+    const rect=triggerEl.getBoundingClientRect();
+    const popW=220;
+    popup.style.width=Math.max(rect.width,popW)+'px';
+    popup.style.top=(rect.bottom+4)+'px';
+    popup.style.left=Math.max(8,Math.min(rect.left,window.innerWidth-popW-8))+'px';
+    popup.style.display='';
+    popup.classList.add('open');
+  };
+  _render();
+  const closeOnOut=e=>{if(!popup.contains(e.target)&&e.target!==triggerEl){closeDatePicker();document.removeEventListener('click',closeOnOut,true);}};
+  setTimeout(()=>document.addEventListener('click',closeOnOut,true),50);
+}
 /* ── Genera piano / Svuota ── */
 function pedGenerate(){
   if(currentClientIdx<0||!currentMonth)return;
