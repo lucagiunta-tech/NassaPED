@@ -3089,6 +3089,7 @@ streamLoad();
 /* ══ JOB DETAIL PAGE — stile Streamtime ══ */
 let _sjdCurrentId = null;
 let _sjdCollapsed = {};
+let _sjdExpandedItem = null;
 let _sjdTab = 'plan';
 const STATI_CYCLE = ['todo','inprogress','done'];
 const STATI_LABEL = {todo:'Da fare',inprogress:'In corso',done:'Fatto'};
@@ -3106,6 +3107,7 @@ function sjdSetTab(tab){
 function sjdRender(id){
   _sjdCurrentId = id;
   _sjdCollapsed = {};
+  _sjdExpandedItem = null;
   const j = stream_v1[id];
   if(!j) return;
   // Header
@@ -3278,6 +3280,37 @@ function sjdRenderPlan(id){
       items.forEach(function(item,ii){
         sjdBuildItemRow(tbody, id, pi, ii, item, phase);
       });
+
+      // ── Riga "+ Aggiungi item" ──
+      var addTr = document.createElement('tr');
+      addTr.className = 'sjd-add-row';
+      var addTd = document.createElement('td');
+      addTd.colSpan = 9;
+      var addInp = document.createElement('input');
+      addInp.className = 'sjd-add-inp';
+      addInp.placeholder = '+ Aggiungi item... (premi Invio)';
+      addInp.onclick = function(e){ e.stopPropagation(); };
+      (function(ph, jId){
+        addInp.onkeydown = function(e){
+          if(e.key === 'Enter' && addInp.value.trim()){
+            if(!ph.items) ph.items = [];
+            ph.items.push({
+              id: streamUID(), title: addInp.value.trim(),
+              stato: 'todo', team: [], teamOre: {},
+              oreStimate: 0, oreUsate: 0, budget: 0,
+              tariffaOraria: 0, dataStart: '', dataEnd: '',
+              note: '', checklist: [], links: []
+            });
+            addInp.value = '';
+            streamPersist();
+            sjdRenderPlan(jId);
+            sjdRenderKpi(jId);
+          }
+        };
+      })(phase, id);
+      addTd.appendChild(addInp);
+      addTr.appendChild(addTd);
+      tbody.appendChild(addTr);
 
       tbl.appendChild(tbody);phEl.appendChild(tbl);
     }
