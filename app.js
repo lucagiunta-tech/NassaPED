@@ -348,12 +348,12 @@ const CLOUD = {
     // ── DIAGNOSTICA LOAD ─────────────────────────────────────────────────
     console.group('%c[NassaPED] apply() — loading from DB', 'color:#60a5fa;font-weight:700');
     const _feedKeys = Object.keys(data.feeds||{});
-    console.log('Feed keys in DB:', _feedKeys.length);
+    // [PROD] console.log('Feed keys in DB:', _feedKeys.length);
     _feedKeys.forEach(k => {
       const items = data.feeds[k]||[];
       const withUrl = items.filter(i=>i.externalUrl&&i.externalUrl.startsWith('http')).length;
       const noUrl   = items.filter(i=>!i.externalUrl && i.name).length;
-      if(items.length) console.log('  '+k+': '+items.length+' items, '+withUrl+' con externalUrl, '+noUrl+' senza (needsReload)');
+      // [PROD] if(items.length) console.log('  '+k+': '+items.length+' items, '+withUrl+' con externalUrl, '+noUrl+' senza (needsReload)');
     });
     console.groupEnd();
     // ─────────────────────────────────────────────────────────────────────
@@ -466,7 +466,7 @@ const DROPBOX = {
       const uploadData = await uploadRes.json();
       if(!uploadData.id) throw new Error('Upload failed: ' + JSON.stringify(uploadData));
 
-      console.log('%c[DROPBOX] ✅ File uploaded: '+uploadData.path_display, 'color:#22c97a;font-weight:700');
+      // [PROD] console.log('%c[DROPBOX] ✅ File uploaded: '+uploadData.path_display, 'color:#22c97a;font-weight:700');
 
       // Step 2: Create shared link via our server (avoids CSP restrictions)
       const linkRes = await fetch('/api/dropbox-link', {
@@ -476,12 +476,12 @@ const DROPBOX = {
         body: JSON.stringify({ path: uploadData.path_display })
       });
       const linkText = await linkRes.text();
-      console.log('[DROPBOX] dropbox-link response:', linkRes.status, linkText.slice(0,300));
+      // [PROD] console.log('[DROPBOX] dropbox-link response:', linkRes.status, linkText.slice(0,300));
       if(!linkRes.ok) throw new Error('Link creation failed: HTTP ' + linkRes.status + ' — ' + linkText.slice(0,200));
       const linkData = JSON.parse(linkText);
       const finalUrl = linkData.url;
       if(!finalUrl) throw new Error('No shared link URL returned: ' + linkText.slice(0,200));
-      console.log('%c[DROPBOX] ✅ Shared URL: '+finalUrl.slice(0,80), 'color:#22c97a;font-weight:700');
+      // [PROD] console.log('%c[DROPBOX] ✅ Shared URL: '+finalUrl.slice(0,80), 'color:#22c97a;font-weight:700');
 
       DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
       if(DROPBOX.uploading === 0) { const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
@@ -490,7 +490,7 @@ const DROPBOX = {
     } catch(e) {
       DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
       if(DROPBOX.uploading === 0) { const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
-      if(e.name === 'AbortError') { console.log('[DROPBOX] Upload aborted'); return null; }
+      // [PROD] if(e.name === 'AbortError') { console.log('[DROPBOX] Upload aborted'); return null; }
       console.error('%c[DROPBOX] Upload failed: '+e.message, 'color:#ef4444;font-weight:700');
       return null;
     }
@@ -868,14 +868,14 @@ function queueFeedFiles(files){
 
       // ── DIAGNOSTICA ──────────────────────────────────────────────────────
       console.group('%c[NassaPED] Upload callback: '+f.name, 'color:#0dff00;font-weight:700');
-      console.log('uploadFeedKey (captured at start):', uploadFeedKey);
-      console.log('currentFeedKey() (now, at callback):', currentFeedKey());
-      console.log('Keys match?', uploadFeedKey === currentFeedKey());
-      console.log('uploadId:', uploadId);
-      console.log('match index:', match, match>=0 ? '✅' : '❌ MISS');
-      console.log('sharedUrl from Dropbox:', sharedUrl ? sharedUrl.slice(0,80)+'…' : '❌ NULL');
-      console.log('arr length:', arr.length);
-      if(match>=0) console.log('Matched item:', JSON.stringify({name:arr[match].name, _uploadId:arr[match]._uploadId, externalUrl:arr[match].externalUrl?.slice(0,50)}));
+      // [PROD] console.log('uploadFeedKey (captured at start):', uploadFeedKey);
+      // [PROD] console.log('currentFeedKey() (now, at callback):', currentFeedKey());
+      // [PROD] console.log('Keys match?', uploadFeedKey === currentFeedKey());
+      // [PROD] console.log('uploadId:', uploadId);
+      // [PROD] console.log('match index:', match, match>=0 ? '✅' : '❌ MISS');
+      // [PROD] console.log('sharedUrl from Dropbox:', sharedUrl ? sharedUrl.slice(0,80)+'…' : '❌ NULL');
+      // [PROD] console.log('arr length:', arr.length);
+      // [PROD] if(match>=0) console.log('Matched item:', JSON.stringify({name:arr[match].name, _uploadId:arr[match]._uploadId, externalUrl:arr[match].externalUrl?.slice(0,50)}));
       // ─────────────────────────────────────────────────────────────────────
 
       if(sharedUrl){
@@ -885,7 +885,7 @@ function queueFeedFiles(files){
           arr[match].externalUrl=sharedUrl;arr[match].url=sharedUrl;
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
-          console.log('✅ externalUrl written to item['+match+']:', sharedUrl.slice(0,80)+'…');
+          // [PROD] console.log('✅ externalUrl written to item['+match+']:', sharedUrl.slice(0,80)+'…');
         } else {
           console.warn('❌ match=-1: externalUrl NOT written! Item will be needsReload on refresh.');
         }
@@ -898,13 +898,13 @@ function queueFeedFiles(files){
         const snap = CLOUD.snapshot();
         const snapArr = snap.feeds[uploadFeedKey]||[];
         const snapItem = snapArr[match>=0?match:0];
-        console.log('Snapshot item['+Math.max(0,match)+'] externalUrl:', snapItem?.externalUrl?.slice(0,80)||'❌ MISSING');
+        // [PROD] console.log('Snapshot item['+Math.max(0,match)+'] externalUrl:', snapItem?.externalUrl?.slice(0,80)||'❌ MISSING');
         const snapSize = JSON.stringify(snap).length;
-        console.log('Snapshot size:', Math.round(snapSize/1024)+'KB', snapSize > 15*1024*1024 ? '❌ TOO LARGE' : '✅ OK');
+        // [PROD] console.log('Snapshot size:', Math.round(snapSize/1024)+'KB', snapSize > 15*1024*1024 ? '❌ TOO LARGE' : '✅ OK');
         // Cancel any pending debounce save — avoids a stale write racing against this authoritative one
         clearTimeout(CLOUD._saveTimer);
         await CLOUD.saveNow(snap);
-        console.log('✅ saveNow completed');
+        // [PROD] console.log('✅ saveNow completed');
         console.groupEnd();
       } else {
         console.warn('❌ Dropbox upload returned null — network error or auth failure');
@@ -982,7 +982,7 @@ async function batchReuploadFromFiles(files){
       if(arr[idx].type==='pending') arr[idx].type='image';
       if(capturedKey) feeds[capturedKey]=arr;
       matched++;
-      console.log('[batch] ✅ matched+uploaded:', f.name, '→', url.slice(0,60));
+      // [PROD] console.log('[batch] ✅ matched+uploaded:', f.name, '→', url.slice(0,60));
     } else {
       failed++;
       console.warn('[batch] ❌ upload failed:', f.name);
@@ -2501,19 +2501,19 @@ async function saveCarousel(){
 
   for(let i=0;i<carouselTmp.length;i++){
     const s=carouselTmp[i];
-    console.log('[Carousel] Slide '+i+': url='+s.url?.slice(0,60)+' externalUrl='+s.externalUrl?.slice(0,60));
+    // [PROD] console.log('[Carousel] Slide '+i+': url='+s.url?.slice(0,60)+' externalUrl='+s.externalUrl?.slice(0,60));
     if(s.url&&s.url.startsWith('blob:')){
       try{
-        console.log('[Carousel] Uploading slide '+i+' (blob)…');
+        // [PROD] console.log('[Carousel] Uploading slide '+i+' (blob)…');
         const resp=await fetch(s.url);
         if(!resp.ok) throw new Error('blob fetch failed: '+resp.status);
         const blob=await resp.blob();
-        console.log('[Carousel] blob size: '+blob.size+' type: '+blob.type);
+        // [PROD] console.log('[Carousel] blob size: '+blob.size+' type: '+blob.type);
         const ext = blob.type.includes('png')?'.png':blob.type.includes('gif')?'.gif':'.jpg';
         const file=new File([blob],s.name||('slide_'+i+ext),{type:blob.type});
         const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/carousel/'+file.name;
         const url=await DROPBOX.upload(file,destPath);
-        console.log('[Carousel] slide '+i+' upload result:', url?'✅ '+url.slice(0,60):'❌ null');
+        // [PROD] console.log('[Carousel] slide '+i+' upload result:', url?'✅ '+url.slice(0,60):'❌ null');
         if(url){carouselTmp[i].url=url;carouselTmp[i].externalUrl=url;}
         else { showToast('⚠ Slide '+(i+1)+' non caricata','warn'); }
       }catch(e){
@@ -2521,7 +2521,7 @@ async function saveCarousel(){
         showToast('⚠ Errore slide '+(i+1)+': '+e.message,'warn');
       }
     } else {
-      console.log('[Carousel] Slide '+i+' already has external URL, skipping upload');
+      // [PROD] console.log('[Carousel] Slide '+i+' already has external URL, skipping upload');
     }
   }
 
@@ -7251,7 +7251,7 @@ function migrateAdsCampaignsKeys(adsData, clientList){
       if(match){
         // Migra alla chiave id
         result[match.id]=(result[match.id]||[]).concat(adsData[key]);
-        console.log('[ADS] Migrated adsCampaigns key:',key,'→',match.id);
+        // [PROD] console.log('[ADS] Migrated adsCampaigns key:',key,'→',match.id);
       } else {
         // Cliente non trovato — mantieni la chiave (potrebbe essere dato orfano)
         result[key]=adsData[key];
