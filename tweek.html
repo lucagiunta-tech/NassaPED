@@ -2922,6 +2922,7 @@ function streamOpenPanel(id){
   sjdRender(id);
 }
 function streamCloseDetail(){
+  _sjdExpandedItem = null;
   document.getElementById('stream-job-detail').style.display='none';
   document.getElementById('stream-new-btn').style.display='';
   document.getElementById('stream-search').style.display='';
@@ -3110,6 +3111,7 @@ function sjdSetTab(tab){
 function sjdRender(id){
   _sjdCurrentId = id;
   _sjdCollapsed = {};
+  _sjdExpandedItem = null;
   const j = stream_v1[id];
   if(!j) return;
   // Header
@@ -3264,18 +3266,21 @@ function sjdRenderPlan(id){
       // Table
       const tbl = document.createElement('table');
       tbl.className = 'sjd-tbl';
-      tbl.style.tableLayout = 'fixed';
       tbl.innerHTML = `<colgroup>
-        <col style="width:32px"><col style="width:auto">
-        <col style="width:100px"><col style="width:90px"><col style="width:90px">
-        <col style="width:90px"><col style="width:90px"><col style="width:90px">
-        <col style="width:100px"><col style="width:32px">
+        <col style="width:28px"><col><col style="width:130px">
+        <col style="width:80px"><col style="width:100px"><col style="width:70px">
+        <col style="width:140px"><col style="width:90px"><col style="width:28px">
       </colgroup>
       <thead><tr>
-        <th></th><th>ITEM NAME</th>
-        <th>TEAM</th><th class="r">STARTS</th><th class="r">ENDS</th>
-        <th class="r">ORE</th><th class="r">BUDGET</th><th class="r">USATO</th>
-        <th>STATO</th><th></th>
+        <th></th>
+        <th>ITEM NAME</th>
+        <th>DATE</th>
+        <th>TEAM</th>
+        <th style="text-align:right;">ORE</th>
+        <th style="text-align:right;">TARIFFA</th>
+        <th style="text-align:right;">USATO / BUDGET</th>
+        <th>STATO</th>
+        <th></th>
       </tr></thead>`;
       const tbody = document.createElement('tbody');
 
