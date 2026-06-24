@@ -685,6 +685,125 @@ body{
 }
 .tv-add-btn:hover{border-color:var(--green);color:var(--green-dk);}
 [data-theme="dark"] .tv-add-btn:hover{color:var(--green);}
+
+/* ══ CARD INLINE EXPANDED ══ */
+.tv-card-expanded{
+  background:var(--surface);
+  box-shadow:var(--shadow-lg);
+  border:.5px solid var(--border);
+  border-radius:var(--r);
+  z-index:10;position:relative;
+}
+.tv-card-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.tv-inline-check{
+  width:16px;height:16px;border-radius:50%;
+  border:1.5px solid var(--border);flex-shrink:0;
+  cursor:pointer;background:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);
+}
+.tv-inline-check:hover{border-color:var(--green);}
+.tv-inline-check.done{background:var(--green);border-color:var(--green);}
+.tv-inline-check.done::after{content:'';width:5px;height:3px;border-left:1.5px solid var(--green-text);border-bottom:1.5px solid var(--green-text);transform:rotate(-45deg) translateY(-1px);display:block;}
+.tv-card-title{flex:1;font-size:var(--fs-sm);font-weight:600;color:var(--text);line-height:1.3;}
+.tv-card-title.done{text-decoration:line-through;opacity:.5;}
+.tv-card-del{
+  opacity:0;background:none;border:none;cursor:pointer;
+  color:var(--text-3);font-size:11px;padding:2px 4px;
+  border-radius:var(--r-xs);transition:all var(--t);flex-shrink:0;
+}
+.tv-card:hover .tv-card-del{opacity:1;}
+.tv-card-del:hover{background:var(--red-lt);color:var(--red-dk);}
+.tv-card-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+.tv-chip{
+  font-size:10px;font-weight:500;
+  padding:2px 6px;border-radius:var(--r-pill);
+  background:var(--bg);border:.5px solid var(--border);
+  color:var(--text-2);display:inline-flex;align-items:center;gap:3px;
+}
+.tv-progress{height:2px;background:var(--border);border-radius:var(--r-pill);margin-top:6px;overflow:hidden;}
+.tv-progress-bar{height:100%;background:var(--green);border-radius:var(--r-pill);transition:width .3s;}
+
+/* Card espansa — campi inline */
+.tv-title-inp{
+  flex:1;border:none;outline:none;background:transparent;
+  font-size:var(--fs-sm);font-weight:700;font-family:var(--font);
+  color:var(--text);padding:0;
+}
+.tv-collapse-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--text-3);font-size:12px;padding:3px 5px;
+  border-radius:var(--r-xs);flex-shrink:0;
+  transition:all var(--t);
+}
+.tv-collapse-btn:hover{background:var(--bg);color:var(--text);}
+
+.tv-fields{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin:8px 0;padding:8px;
+  background:var(--bg);border-radius:var(--rs);
+  border:.5px solid var(--border);
+}
+.tv-field-item{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.tv-field-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);}
+.tv-field-sel{
+  font-size:var(--fs-xs);font-family:var(--font);
+  border:.5px solid var(--border);border-radius:var(--rs);
+  background:var(--surface);color:var(--text);
+  padding:3px 6px;
+}
+.tv-field-sel:focus{outline:none;border-color:var(--green);}
+
+.tv-note-inp{
+  width:100%;font-size:var(--fs-xs);font-family:var(--font);
+  border:.5px solid var(--border);border-radius:var(--rs);
+  background:var(--bg);color:var(--text);
+  padding:6px 8px;resize:none;min-height:48px;
+  margin:4px 0;line-height:1.5;
+}
+.tv-note-inp:focus{outline:none;border-color:var(--green);}
+
+.tv-subtasks-wrap{margin-top:8px;}
+.tv-sub-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px;}
+.tv-subtask{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg);margin-bottom:4px;}
+.tv-sub-check{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;background:none;margin-top:2px;transition:all var(--t);}
+.tv-sub-check:hover{border-color:var(--green);}
+.tv-sub-check.done{background:var(--green);border-color:var(--green);}
+.tv-sub-body{flex:1;min-width:0;}
+.tv-sub-title{width:100%;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-weight:500;font-family:var(--font);color:var(--text);padding:0;}
+.tv-sub-title.done{text-decoration:line-through;opacity:.5;}
+.tv-sub-meta{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;}
+.tv-sub-field{font-size:10px;font-family:var(--font);border:none;background:transparent;color:var(--text-3);padding:0;outline:none;border-bottom:.5px solid var(--border);}
+.tv-sub-field:focus{border-color:var(--green);}
+.tv-sub-del{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;opacity:0;transition:opacity var(--t);flex-shrink:0;padding:2px;}
+.tv-subtask:hover .tv-sub-del{opacity:1;}
+.tv-sub-del:hover{color:var(--red-dk);}
+
+/* Steps */
+.tv-steps{margin:4px 0 2px 4px;}
+.tv-step{display:flex;align-items:center;gap:5px;padding:2px 0;}
+.tv-step-check{width:10px;height:10px;border-radius:2px;border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;background:none;transition:all var(--t);}
+.tv-step-check.done{background:var(--green);border-color:var(--green);}
+.tv-step-title{flex:1;font-size:10px;color:var(--text-2);outline:none;line-height:1.4;}
+.tv-step-title.done{text-decoration:line-through;opacity:.5;}
+.tv-step-del{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:9px;opacity:0;transition:opacity var(--t);}
+.tv-step:hover .tv-step-del{opacity:1;}
+.tv-add-step{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;padding:2px 4px;font-family:var(--font);transition:color var(--t);}
+.tv-add-step:hover{color:var(--green-dk);}
+[data-theme="dark"] .tv-add-step:hover{color:var(--green);}
+.tv-add-inline{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:var(--fs-xs);padding:4px 0;font-family:var(--font);transition:color var(--t);display:block;margin-top:4px;}
+.tv-add-inline:hover{color:var(--green-dk);}
+[data-theme="dark"] .tv-add-inline:hover{color:var(--green);}
+
+/* Colonna add button */
+.tv-col-add{
+  width:100%;text-align:left;border:.5px dashed var(--border);
+  background:none;border-radius:var(--rs);padding:7px 10px;
+  font-size:var(--fs-xs);color:var(--text-3);cursor:pointer;
+  font-family:var(--font);transition:all var(--t);margin-top:2px;
+}
+.tv-col-add:hover{border-color:var(--green);color:var(--green-dk);}
+[data-theme="dark"] .tv-col-add:hover{color:var(--green);}
 </style>
 </head>
 <body>
@@ -824,17 +943,7 @@ body{
 
 </div>
 
-<!-- ══ TASK DETAIL PANEL (slide-in) ══ -->
-<div id="task-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:440px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:400;flex-direction:column;overflow:hidden;font-family:var(--font);">
-  <div class="tp-head">
-    <button class="btn btn-icon" onclick="tvClosePanel()" style="margin-right:8px;" aria-label="Chiudi">✕</button>
-    <span class="tp-title" id="tp-title">Task</span>
-    <div style="flex:1;"></div>
-    <button class="btn btn-danger" onclick="tvDeleteTask(_tvCurrentId)" style="font-size:var(--fs-xs);padding:4px 10px;border:.5px solid var(--border);background:none;color:var(--text-3);">Elimina</button>
-  </div>
-  <div class="tp-body" id="tp-body"></div>
-</div>
-<div id="task-panel-overlay" onclick="tvClosePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:399;"></div>
+<!-- task panel rimosso — editing inline nelle card -->
 
 <!-- ══ BOTTOM SECTIONS ══ -->
 <div class="bottom-sections">
@@ -1003,375 +1112,268 @@ renderLegend();renderWeek();renderBottom();
 tvLoad();
 
 /* ══════════════════════════════════════════════════════════
-   TASK MANAGER — Tab Task in Tweek
-   Storage: nassaped_tweek_v8 (aggiunge tasks_v2)
-   Struttura: Task → Subtask → Step (3 livelli)
+   TASK MANAGER — Tab Task in Tweek — Inline editing stile Streamtime
+   Storage: nassaped_tweek_v8.tasks_v2
 ══════════════════════════════════════════════════════════ */
 
-let tasks_v2 = {};        // { [id]: TaskObject }
-let _tvLayout = 'kanban'; // 'kanban' | 'list'
-let _tvCurrentId = null;  // id task aperta nel pannello
+let tasks_v2 = {};
+let _tvLayout = 'kanban';
+let _tvExpandedId = null;
 
-const TV_STATI = { todo:'todo', inprogress:'inprogress', done:'done' };
-const TV_PRIORITY = { alta:'alta', media:'media', bassa:'bassa' };
+const PRIO_CFG = {
+  alta:  {label:'Alta',  icon:'🔴'},
+  media: {label:'Media', icon:'🟡'},
+  bassa: {label:'Bassa', icon:'🟢'},
+};
+const STATO_CFG = {
+  todo:       {label:'Da fare'},
+  inprogress: {label:'In corso'},
+  done:       {label:'Completato'},
+};
 
-// ── Load/Save ────────────────────────────────────────────
 function tvLoad(){
-  try {
-    const raw = localStorage.getItem(SK);
-    if(raw){ const p = JSON.parse(raw); tasks_v2 = p.tasks_v2 || {}; }
-  } catch(e){}
+  try{ const raw=localStorage.getItem(SK); if(raw){const p=JSON.parse(raw);tasks_v2=p.tasks_v2||{};} }catch(e){}
 }
 function tvPersist(){
-  try {
-    const raw = localStorage.getItem(SK);
-    const p = raw ? JSON.parse(raw) : {};
-    p.tasks_v2 = tasks_v2;
-    localStorage.setItem(SK, JSON.stringify(p));
-    flashSave();
-  } catch(e){}
+  try{ const raw=localStorage.getItem(SK);const p=raw?JSON.parse(raw):{};p.tasks_v2=tasks_v2;localStorage.setItem(SK,JSON.stringify(p));flashSave(); }catch(e){}
 }
-function tvUID(){ return 'tv_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+let _tvSaveTimer=null;
+function tvSaveLazy(){clearTimeout(_tvSaveTimer);_tvSaveTimer=setTimeout(tvPersist,500);}
+function tvUID(){return 'tv_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 
-// setView è ora unificata nella funzione principale
-
-// ── Filtri ────────────────────────────────────────────────
 function tvPopulateClientFilter(){
-  const sel = document.getElementById('tf-client');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Tutti i clienti</option>';
-  clients.forEach(cl => {
-    const o = document.createElement('option');
-    o.value = cl.id; o.textContent = cl.label;
-    if(cl.id === cur) o.selected = true;
-    sel.appendChild(o);
-  });
+  const sel=document.getElementById('tf-client');if(!sel)return;
+  const cur=sel.value;sel.innerHTML='<option value="">Tutti i clienti</option>';
+  clients.forEach(cl=>{const o=document.createElement('option');o.value=cl.id;o.textContent=cl.label;if(cl.id===cur)o.selected=true;sel.appendChild(o);});
 }
-
 function tvGetFiltered(){
-  const fcl = document.getElementById('tf-client')?.value || '';
-  const fst = document.getElementById('tf-stato')?.value || '';
-  const fpr = document.getElementById('tf-priority')?.value || '';
-  return Object.values(tasks_v2).filter(t =>
-    (!fcl || t.client === fcl) &&
-    (!fst || t.stato === fst) &&
-    (!fpr || t.priority === fpr)
-  );
+  const fcl=document.getElementById('tf-client')?.value||'';
+  const fst=document.getElementById('tf-stato')?.value||'';
+  const fpr=document.getElementById('tf-priority')?.value||'';
+  return Object.values(tasks_v2).filter(t=>(!fcl||t.client===fcl)&&(!fst||t.stato===fst)&&(!fpr||t.priority===fpr));
 }
-
 function tvSetLayout(l){
-  _tvLayout = l;
-  document.getElementById('tog-kanban').classList.toggle('active', l==='kanban');
-  document.getElementById('tog-list').classList.toggle('active', l==='list');
-  document.getElementById('tv-kanban').style.display = l==='kanban' ? 'flex' : 'none';
-  document.getElementById('tv-list').style.display = l==='list' ? 'block' : 'none';
+  _tvLayout=l;
+  document.getElementById('tog-kanban').classList.toggle('active',l==='kanban');
+  document.getElementById('tog-list').classList.toggle('active',l==='list');
+  document.getElementById('tv-kanban').style.display=l==='kanban'?'flex':'none';
+  document.getElementById('tv-list').style.display=l==='list'?'block':'none';
   tvRender();
 }
+function tvRender(){if(_tvLayout==='kanban')tvRenderKanban();else tvRenderList();}
 
-// ── Render ────────────────────────────────────────────────
-function tvRender(){
-  if(_tvLayout === 'kanban') tvRenderKanban();
-  else tvRenderList();
-}
+function tvBuildCard(t){
+  const cl=getClient(t.client);
+  const {bg,txt,border}=clientStyles(cl);
+  const isExp=t.id===_tvExpandedId;
+  const totalSub=(t.subtasks||[]).length;
+  const doneSub=(t.subtasks||[]).filter(s=>s.stato==='done').length;
+  const prog=totalSub>0?Math.round(doneSub/totalSub*100):0;
+  const prioC=PRIO_CFG[t.priority]||PRIO_CFG.media;
+  let scadStyle='color:var(--text-3)';
+  if(t.scadenza){const days=Math.round((new Date(t.scadenza)-new Date())/864e5);if(days<0)scadStyle='color:#dc2626;font-weight:600;';else if(days<3)scadStyle='color:#d97706;font-weight:600;';}
 
-function tvCardHTML(t){
-  const cl = getClient(t.client);
-  const {bg, txt, border} = clientStyles(cl);
-  const totalSub = (t.subtasks||[]).length;
-  const doneSub = (t.subtasks||[]).filter(s => s.stato==='done').length;
-  const progress = totalSub > 0 ? Math.round(doneSub/totalSub*100) : (t.stato==='done'?100:0);
-  const today = iso(TODAY);
-  let scadClass = '';
-  if(t.scadenza){
-    const days = Math.round((new Date(t.scadenza)-new Date())/(864e5));
-    scadClass = days < 0 ? 'expired' : days < 3 ? 'soon' : '';
+  const card=document.createElement('div');
+  card.className='tv-card'+(isExp?' tv-card-expanded':'');
+  card.dataset.id=t.id;
+  card.style.borderLeftColor=border;
+
+  if(!isExp){
+    card.innerHTML=`
+      <div class="tv-card-top">
+        <button class="tv-inline-check${t.stato==='done'?' done':''}" onclick="tvToggleDone(event,'${t.id}')" title="Completa"></button>
+        <span class="tv-card-title${t.stato==='done'?' done':''}">${esc(t.title||'Nuova task…')}</span>
+        <button class="tv-card-del" onclick="tvDeleteTask(event,'${t.id}')" title="Elimina">✕</button>
+      </div>
+      <div class="tv-card-chips">
+        <span class="tv-chip" style="background:${bg};color:${txt};"><span style="width:6px;height:6px;border-radius:50%;background:${cl.color};display:inline-block;flex-shrink:0;"></span>${esc(cl.label)}</span>
+        ${t.priority?`<span class="tv-chip">${prioC.icon} ${prioC.label}</span>`:''}
+        ${t.scadenza?`<span class="tv-chip" style="${scadStyle}">⏱ ${t.scadenza}</span>`:''}
+        ${t.assegnatario?`<span class="tv-chip">👤 ${esc(t.assegnatario)}</span>`:''}
+        ${totalSub?`<span class="tv-chip" style="margin-left:auto;">${doneSub}/${totalSub}</span>`:''}
+      </div>
+      ${totalSub?`<div class="tv-progress"><div class="tv-progress-bar" style="width:${prog}%"></div></div>`:''}
+    `;
+    card.onclick=e=>{if(e.target.closest('.tv-inline-check')||e.target.closest('.tv-card-del'))return;tvExpand(t.id);};
+  } else {
+    card.innerHTML=`
+      <div class="tv-card-top">
+        <button class="tv-inline-check${t.stato==='done'?' done':''}" onclick="tvToggleDone(event,'${t.id}')"></button>
+        <input class="tv-title-inp" value="${esc(t.title||'')}" placeholder="Nome task…"
+          oninput="tasks_v2['${t.id}'].title=this.value;tvSaveLazy();"
+          onkeydown="if(event.key==='Escape')tvCollapse();" autocomplete="off"/>
+        <button class="tv-collapse-btn" onclick="tvCollapse()">✕</button>
+      </div>
+      <div class="tv-fields">
+        <div class="tv-field-item">
+          <label class="tv-field-lbl">Cliente</label>
+          <select class="tv-field-sel" onchange="tasks_v2['${t.id}'].client=this.value;tvSaveLazy();tvRender();">
+            ${clients.map(c=>`<option value="${c.id}"${c.id===t.client?' selected':''}>${esc(c.label)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="tv-field-item">
+          <label class="tv-field-lbl">Stato</label>
+          <select class="tv-field-sel" onchange="tasks_v2['${t.id}'].stato=this.value;tvSaveLazy();tvRender();">
+            ${Object.entries(STATO_CFG).map(([v,s])=>`<option value="${v}"${v===t.stato?' selected':''}>${s.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="tv-field-item">
+          <label class="tv-field-lbl">Priorità</label>
+          <select class="tv-field-sel" onchange="tasks_v2['${t.id}'].priority=this.value;tvSaveLazy();tvRender();">
+            ${Object.entries(PRIO_CFG).map(([v,p])=>`<option value="${v}"${v===t.priority?' selected':''}>${p.icon} ${p.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="tv-field-item">
+          <label class="tv-field-lbl">Scadenza</label>
+          <input type="date" class="tv-field-sel" value="${t.scadenza||''}"
+            onchange="tasks_v2['${t.id}'].scadenza=this.value;tvSaveLazy();">
+        </div>
+        <div class="tv-field-item">
+          <label class="tv-field-lbl">Assegnatario</label>
+          <input type="text" class="tv-field-sel" value="${esc(t.assegnatario||'')}" placeholder="Nome…"
+            oninput="tasks_v2['${t.id}'].assegnatario=this.value;tvSaveLazy();">
+        </div>
+      </div>
+      <textarea class="tv-note-inp" placeholder="Note…"
+        oninput="tasks_v2['${t.id}'].note=this.value;tvSaveLazy();">${esc(t.note||'')}</textarea>
+      <div class="tv-subtasks-wrap">
+        <div class="tv-sub-label">Subtask</div>
+        <div id="tv-subs-${t.id}"></div>
+        <button class="tv-add-inline" onclick="tvAddSubtask('${t.id}')">+ Subtask</button>
+      </div>
+    `;
+    requestAnimationFrame(()=>{tvRenderSubtasks(t.id);card.querySelector('.tv-title-inp')?.select();});
   }
-  const card = document.createElement('div');
-  card.className = 'tv-card';
-  card.style.borderLeftColor = border;
-  card.innerHTML = `
-    <div class="tv-card-title">${esc(t.title||'Senza titolo')}</div>
-    <div class="tv-card-meta">
-      <span class="tv-client-dot" style="background:${cl.color}"></span>
-      <span style="font-size:10px;color:var(--text-3);">${esc(cl.label)}</span>
-      ${t.priority ? `<span class="tv-priority ${t.priority}">${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>` : ''}
-      ${t.scadenza ? `<span class="tv-scadenza ${scadClass}">⏱ ${t.scadenza}</span>` : ''}
-      ${t.assegnatario ? `<span class="tv-assegnatario">👤 ${esc(t.assegnatario)}</span>` : ''}
-      ${totalSub ? `<span class="tv-subtask-count" style="margin-left:auto;">${doneSub}/${totalSub} subtask</span>` : ''}
-    </div>
-    ${totalSub ? `<div class="tv-card-progress"><div class="tv-card-progress-bar" style="width:${progress}%"></div></div>` : ''}
-  `;
-  card.onclick = () => tvOpenPanel(t.id);
   return card;
 }
 
+function tvRenderSubtasks(taskId){
+  const t=tasks_v2[taskId];if(!t)return;
+  const wrap=document.getElementById('tv-subs-'+taskId);if(!wrap)return;
+  wrap.innerHTML='';
+  (t.subtasks||[]).forEach((st,si)=>{
+    const el=document.createElement('div');el.className='tv-subtask';
+    el.innerHTML=`
+      <button class="tv-sub-check${st.stato==='done'?' done':''}" onclick="tvToggleSubtask('${taskId}',${si})"></button>
+      <div class="tv-sub-body">
+        <input class="tv-sub-title${st.stato==='done'?' done':''}" value="${esc(st.title||'')}" placeholder="Subtask…"
+          oninput="tasks_v2['${taskId}'].subtasks[${si}].title=this.value;tvSaveLazy();"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();tvAddSubtask('${taskId}',${si+1});}"/>
+        <div class="tv-sub-meta">
+          <input type="text" class="tv-sub-field" value="${esc(st.assegnatario||'')}" placeholder="👤 Assegnatario"
+            oninput="tasks_v2['${taskId}'].subtasks[${si}].assegnatario=this.value;tvSaveLazy();">
+          <input type="date" class="tv-sub-field" value="${st.scadenza||''}"
+            onchange="tasks_v2['${taskId}'].subtasks[${si}].scadenza=this.value;tvSaveLazy();">
+        </div>
+        <div id="tv-steps-${taskId}-${si}"></div>
+        <button class="tv-add-step" onclick="tvAddStep('${taskId}',${si})">+ Step</button>
+      </div>
+      <button class="tv-sub-del" onclick="tvDelSubtask('${taskId}',${si})">✕</button>
+    `;
+    wrap.appendChild(el);
+    tvRenderSteps(taskId,si);
+  });
+}
+
+function tvRenderSteps(taskId,si){
+  const st=tasks_v2[taskId]?.subtasks?.[si];if(!st)return;
+  const wrap=document.getElementById(`tv-steps-${taskId}-${si}`);if(!wrap)return;
+  wrap.innerHTML='';
+  (st.steps||[]).forEach((step,pi)=>{
+    const el=document.createElement('div');el.className='tv-step';
+    el.innerHTML=`
+      <button class="tv-step-check${step.done?' done':''}" onclick="tvToggleStep('${taskId}',${si},${pi})"></button>
+      <span class="tv-step-title${step.done?' done':''}" contenteditable="true"
+        oninput="tasks_v2['${taskId}'].subtasks[${si}].steps[${pi}].title=this.textContent;tvSaveLazy();"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();tvAddStep('${taskId}',${si},${pi+1});}"
+        >${esc(step.title||'')}</span>
+      <button class="tv-step-del" onclick="tvDelStep('${taskId}',${si},${pi})">✕</button>
+    `;
+    wrap.appendChild(el);
+  });
+}
+
+function tvAddSubtask(taskId,insertAt){
+  const t=tasks_v2[taskId];if(!t)return;
+  if(!t.subtasks)t.subtasks=[];
+  const ns={id:tvUID(),title:'',stato:'todo',assegnatario:'',scadenza:'',steps:[]};
+  if(insertAt!==undefined)t.subtasks.splice(insertAt,0,ns);else t.subtasks.push(ns);
+  tvSaveLazy();tvRenderSubtasks(taskId);
+  const idx=insertAt!==undefined?insertAt:t.subtasks.length-1;
+  setTimeout(()=>{document.querySelectorAll('#tv-subs-'+taskId+' .tv-sub-title')[idx]?.focus();},30);
+}
+function tvToggleSubtask(taskId,si){const st=tasks_v2[taskId]?.subtasks?.[si];if(!st)return;st.stato=st.stato==='done'?'todo':'done';tvSaveLazy();tvRenderSubtasks(taskId);tvRender();}
+function tvDelSubtask(taskId,si){const t=tasks_v2[taskId];if(!t?.subtasks)return;t.subtasks.splice(si,1);tvSaveLazy();tvRenderSubtasks(taskId);tvRender();}
+function tvAddStep(taskId,si,insertAt){
+  const st=tasks_v2[taskId]?.subtasks?.[si];if(!st)return;
+  if(!st.steps)st.steps=[];
+  const ns={id:tvUID(),title:'',done:false};
+  if(insertAt!==undefined)st.steps.splice(insertAt,0,ns);else st.steps.push(ns);
+  tvSaveLazy();tvRenderSteps(taskId,si);
+  const idx=insertAt!==undefined?insertAt:st.steps.length-1;
+  setTimeout(()=>{document.querySelectorAll(`#tv-steps-${taskId}-${si} .tv-step-title`)[idx]?.focus();},30);
+}
+function tvToggleStep(taskId,si,pi){const step=tasks_v2[taskId]?.subtasks?.[si]?.steps?.[pi];if(!step)return;step.done=!step.done;tvSaveLazy();tvRenderSteps(taskId,si);tvRender();}
+function tvDelStep(taskId,si,pi){const st=tasks_v2[taskId]?.subtasks?.[si];if(!st?.steps)return;st.steps.splice(pi,1);tvSaveLazy();tvRenderSteps(taskId,si);}
+
+function tvExpand(id){_tvExpandedId=id;tvRender();}
+function tvCollapse(){_tvExpandedId=null;tvRender();}
+function tvToggleDone(e,id){e.stopPropagation();const t=tasks_v2[id];if(!t)return;t.stato=t.stato==='done'?'todo':'done';tvPersist();tvRender();}
+
+function tvNewTask(){
+  const id=tvUID();
+  tasks_v2[id]={id,title:'',client:clients[0]?.id||'',priority:'media',stato:'todo',scadenza:'',assegnatario:'',note:'',subtasks:[]};
+  tvPersist();_tvExpandedId=id;tvRender();
+}
+function tvDeleteTask(e,id){
+  e.stopPropagation();
+  const snap={...tasks_v2[id],subtasks:[...(tasks_v2[id]?.subtasks||[])]};
+  delete tasks_v2[id];
+  if(_tvExpandedId===id)_tvExpandedId=null;
+  tvPersist();tvRender();
+  showToast('"'+(snap.title||'Task')+'" eliminata',true);
+  undoStack={type:'tvDelete',snap};
+}
+
 function tvRenderKanban(){
-  ['todo','inprogress','done'].forEach(stato => {
-    const body = document.getElementById('kb-body-'+stato);
-    const count = document.getElementById('kb-count-'+stato);
-    if(!body) return;
-    body.innerHTML = '';
-    const filtered = tvGetFiltered().filter(t => (t.stato||'todo') === stato);
-    count.textContent = filtered.length;
-    if(!filtered.length){
-      const em = document.createElement('div');
-      em.style.cssText = 'padding:20px;text-align:center;color:var(--text-3);font-size:var(--fs-xs);';
-      em.textContent = 'Nessuna task';
-      body.appendChild(em);
-    }
-    filtered.sort((a,b) => {
-      const po = {alta:0,media:1,bassa:2};
-      return (po[a.priority]??1) - (po[b.priority]??1);
-    }).forEach(t => body.appendChild(tvCardHTML(t)));
+  const filtered=tvGetFiltered();
+  ['todo','inprogress','done'].forEach(stato=>{
+    const body=document.getElementById('kb-body-'+stato);
+    const count=document.getElementById('kb-count-'+stato);
+    if(!body)return;
+    body.innerHTML='';
+    const col=filtered.filter(t=>(t.stato||'todo')===stato)
+      .sort((a,b)=>{const po={alta:0,media:1,bassa:2};return(po[a.priority]??1)-(po[b.priority]??1);});
+    count.textContent=col.length;
+    col.forEach(t=>body.appendChild(tvBuildCard(t)));
+    const addBtn=document.createElement('button');
+    addBtn.className='tv-col-add';addBtn.textContent='+ Task';
+    addBtn.onclick=()=>{const id=tvUID();tasks_v2[id]={id,title:'',client:clients[0]?.id||'',priority:'media',stato,scadenza:'',assegnatario:'',note:'',subtasks:[]};tvPersist();_tvExpandedId=id;tvRender();};
+    body.appendChild(addBtn);
   });
 }
 
 function tvRenderList(){
-  const el = document.getElementById('tv-list');
-  if(!el) return;
-  el.innerHTML = '';
-  const filtered = tvGetFiltered();
-  if(!filtered.length){
-    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3);">Nessuna task. <button class="btn btn-primary" onclick="tvNewTask()" style="font-size:var(--fs-xs);padding:4px 10px;margin-left:8px;">+ Nuova</button></div>';
-    return;
-  }
-  // Raggruppa per cliente
-  const byClient = {};
-  filtered.forEach(t => {
-    if(!byClient[t.client]) byClient[t.client] = [];
-    byClient[t.client].push(t);
-  });
-  clients.filter(cl => byClient[cl.id]).forEach(cl => {
-    const {border} = clientStyles(cl);
-    const group = document.createElement('div');
-    group.className = 'tv-list-group';
-    const gh = document.createElement('div');
-    gh.className = 'tv-list-group-title';
-    gh.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${cl.color};display:inline-block;"></span>${esc(cl.label)} <span style="font-weight:400;opacity:.6;">(${byClient[cl.id].length})</span>`;
-    group.appendChild(gh);
-    byClient[cl.id].sort((a,b)=>{const po={alta:0,media:1,bassa:2};return(po[a.priority]??1)-(po[b.priority]??1);}).forEach(t => {
-      const row = document.createElement('div');
-      row.className = 'tv-list-row';
-      row.style.borderLeftColor = border;
-      const done = t.stato === 'done';
-      row.innerHTML = `
-        <button class="tv-list-check${done?' done':''}" onclick="event.stopPropagation();tvToggleDone('${t.id}')"></button>
-        <span class="tv-list-title${done?' done':''}">${esc(t.title||'Senza titolo')}</span>
-        ${t.priority?`<span class="tv-priority ${t.priority}">${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>`:''}
-        ${t.scadenza?`<span class="tv-scadenza" style="font-size:10px;color:var(--text-3);">⏱ ${t.scadenza}</span>`:''}
-        ${t.assegnatario?`<span style="font-size:10px;color:var(--text-3);">👤 ${esc(t.assegnatario)}</span>`:''}
-      `;
-      row.onclick = () => tvOpenPanel(t.id);
-      group.appendChild(row);
-    });
-    el.appendChild(group);
+  const el=document.getElementById('tv-list');if(!el)return;
+  el.innerHTML='';
+  const filtered=tvGetFiltered();
+  if(!filtered.length){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text-3);font-size:var(--fs-xs);">Nessuna task.<br><br><button class="tv-col-add" onclick="tvNewTask()" style="display:inline-block;width:auto;padding:6px 14px;">+ Nuova task</button></div>';return;}
+  const byClient={};
+  filtered.forEach(t=>{if(!byClient[t.client])byClient[t.client]=[];byClient[t.client].push(t);});
+  clients.filter(cl=>byClient[cl.id]).forEach(cl=>{
+    const g=document.createElement('div');g.className='tv-list-group';
+    const gh=document.createElement('div');gh.className='tv-list-group-title';
+    gh.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${cl.color};display:inline-block;"></span>${esc(cl.label)}<span style="font-weight:400;opacity:.5;margin-left:4px;">(${byClient[cl.id].length})</span>`;
+    g.appendChild(gh);
+    byClient[cl.id].sort((a,b)=>{const po={alta:0,media:1,bassa:2};return(po[a.priority]??1)-(po[b.priority]??1);}).forEach(t=>g.appendChild(tvBuildCard(t)));
+    el.appendChild(g);
   });
 }
 
-// ── Nuova task ────────────────────────────────────────────
-function tvNewTask(){
-  const id = tvUID();
-  tasks_v2[id] = {
-    id, title:'', client: clients[0]?.id||'',
-    priority:'media', stato:'todo',
-    scadenza:'', assegnatario:'', note:'',
-    subtasks: []
-  };
-  tvPersist();
-  tvRender();
-  tvOpenPanel(id);
-}
-
-// ── Toggle done rapido ────────────────────────────────────
-function tvToggleDone(id){
-  const t = tasks_v2[id];
-  if(!t) return;
-  t.stato = t.stato === 'done' ? 'todo' : 'done';
-  tvPersist();
-  tvRender();
-  if(_tvCurrentId === id) tvRenderPanel(id);
-}
-
-// ── Elimina task ──────────────────────────────────────────
-function tvDeleteTask(id){
-  if(!tasks_v2[id]) return;
-  const snap = {...tasks_v2[id]};
-  delete tasks_v2[id];
-  tvPersist();
-  tvClosePanel();
-  tvRender();
-  showToast('"'+esc(snap.title||'Task')+'" eliminata', true);
-  undoStack = { type:'tvDelete', snap };
-}
-
-// ── Panel ─────────────────────────────────────────────────
-function tvOpenPanel(id){
-  _tvCurrentId = id;
-  document.getElementById('task-panel').style.display = 'flex';
-  document.getElementById('task-panel-overlay').style.display = 'block';
-  tvRenderPanel(id);
-}
-function tvClosePanel(){
-  _tvCurrentId = null;
-  document.getElementById('task-panel').style.display = 'none';
-  document.getElementById('task-panel-overlay').style.display = 'none';
-}
-
-function tvRenderPanel(id){
-  const t = tasks_v2[id];
-  if(!t) return;
-  document.getElementById('tp-title').textContent = t.title || 'Nuova task';
-  const body = document.getElementById('tp-body');
-  body.innerHTML = '';
-
-  const mk = (tag,cls,style) => { const el=document.createElement(tag); if(cls)el.className=cls; if(style)el.style.cssText=style; return el; };
-  const section = (label) => {
-    const s=mk('div','tp-section'); const l=mk('span','tp-label'); l.textContent=label; s.appendChild(l); body.appendChild(s); return s;
-  };
-
-  // Titolo
-  const sTit = section('Titolo');
-  const inpTit = mk('input','tp-input'); inpTit.type='text'; inpTit.value=t.title||''; inpTit.placeholder='Nome task…';
-  inpTit.oninput = e => { t.title=e.target.value; document.getElementById('tp-title').textContent=t.title||'Nuova task'; tvSaveLazy(); };
-  sTit.appendChild(inpTit);
-
-  // Riga: Cliente + Stato
-  const rowCS = mk('div','tp-row'); body.appendChild(rowCS);
-  const sClient = mk('div','tp-section'); const lClient=mk('span','tp-label');lClient.textContent='Cliente';sClient.appendChild(lClient);
-  const selClient=mk('select','tp-select');
-  clients.forEach(cl=>{const o=document.createElement('option');o.value=cl.id;o.textContent=cl.label;if(cl.id===t.client)o.selected=true;selClient.appendChild(o);});
-  selClient.onchange=e=>{t.client=e.target.value;tvSaveLazy();tvRender();};
-  sClient.appendChild(selClient);rowCS.appendChild(sClient);
-  const sStato=mk('div','tp-section');const lStato=mk('span','tp-label');lStato.textContent='Stato';sStato.appendChild(lStato);
-  const selStato=mk('select','tp-select');
-  [{v:'todo',l:'Da fare'},{v:'inprogress',l:'In corso'},{v:'done',l:'Completato'}].forEach(({v,l})=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===t.stato)o.selected=true;selStato.appendChild(o);});
-  selStato.onchange=e=>{t.stato=e.target.value;tvSaveLazy();tvRender();};
-  sStato.appendChild(selStato);rowCS.appendChild(sStato);
-
-  // Riga: Priorità + Scadenza
-  const rowPA = mk('div','tp-row'); body.appendChild(rowPA);
-  const sPrio=mk('div','tp-section');const lPrio=mk('span','tp-label');lPrio.textContent='Priorità';sPrio.appendChild(lPrio);
-  const selPrio=mk('select','tp-select');
-  [{v:'alta',l:'🔴 Alta'},{v:'media',l:'🟡 Media'},{v:'bassa',l:'🟢 Bassa'}].forEach(({v,l})=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===t.priority)o.selected=true;selPrio.appendChild(o);});
-  selPrio.onchange=e=>{t.priority=e.target.value;tvSaveLazy();tvRender();};
-  sPrio.appendChild(selPrio);rowPA.appendChild(sPrio);
-  const sScad=mk('div','tp-section');const lScad=mk('span','tp-label');lScad.textContent='Scadenza';sScad.appendChild(lScad);
-  const inpScad=mk('input','tp-input');inpScad.type='date';inpScad.value=t.scadenza||'';
-  inpScad.onchange=e=>{t.scadenza=e.target.value;tvSaveLazy();tvRender();};
-  sScad.appendChild(inpScad);rowPA.appendChild(sScad);
-
-  // Assegnatario
-  const sAss=section('Assegnatario');
-  const inpAss=mk('input','tp-input');inpAss.type='text';inpAss.value=t.assegnatario||'';inpAss.placeholder='Nome…';
-  inpAss.oninput=e=>{t.assegnatario=e.target.value;tvSaveLazy();};
-  sAss.appendChild(inpAss);
-
-  // Note
-  const sNote=section('Note');
-  const ta=mk('textarea','tp-textarea');ta.placeholder='Aggiungi note…';ta.value=t.note||'';
-  ta.oninput=e=>{t.note=e.target.value;tvSaveLazy();};
-  sNote.appendChild(ta);
-
-  // Separator
-  const sep=mk('div','',`border-top:.5px solid var(--border);margin:4px 0 16px;`);
-  body.appendChild(sep);
-
-  // SUBTASK
-  const sSubLabel=mk('span','tp-label');sSubLabel.textContent='Subtask';sSubLabel.style.display='block';sSubLabel.style.marginBottom='8px';body.appendChild(sSubLabel);
-
-  (t.subtasks||[]).forEach((st,si) => {
-    const stWrap=mk('div','st-item');
-
-    // Checkbox subtask
-    const stCheck=mk('button','st-check'+(st.stato==='done'?' done':''));
-    stCheck.onclick=()=>{st.stato=st.stato==='done'?'todo':'done';tvSaveLazy();tvRenderPanel(id);tvRender();};
-    stWrap.appendChild(stCheck);
-
-    const stBody=mk('div','st-body');
-    // Titolo subtask editabile
-    const stTit=mk('input','',`width:100%;border:none;background:transparent;font-size:var(--fs-sm);font-weight:500;color:var(--text);font-family:var(--font);padding:0;outline:none;${st.stato==='done'?'text-decoration:line-through;opacity:.5':''}`);
-    stTit.value=st.title||'';stTit.placeholder='Titolo subtask…';
-    stTit.oninput=e=>{st.title=e.target.value;tvSaveLazy();};
-    stBody.appendChild(stTit);
-
-    // Meta subtask
-    const stMeta=mk('div','st-meta');
-    // Assegnatario subtask
-    const stAss=mk('input','',`font-size:10px;border:none;background:transparent;color:var(--text-3);font-family:var(--font);width:90px;padding:0;outline:none;`);
-    stAss.value=st.assegnatario||'';stAss.placeholder='👤 Assegnatario';
-    stAss.oninput=e=>{st.assegnatario=e.target.value;tvSaveLazy();};
-    stMeta.appendChild(stAss);
-    // Scadenza subtask
-    const stScad=mk('input','',`font-size:10px;border:none;background:transparent;color:var(--text-3);font-family:var(--font);padding:0;outline:none;`);
-    stScad.type='date';stScad.value=st.scadenza||'';
-    stScad.onchange=e=>{st.scadenza=e.target.value;tvSaveLazy();};
-    stMeta.appendChild(stScad);
-    stBody.appendChild(stMeta);
-
-    // STEPS
-    const stepList=mk('div','step-list');
-    (st.steps||[]).forEach((step,pi) => {
-      const stepRow=mk('div','step-item');
-      const stepChk=mk('button','step-check'+(step.done?' done':''));
-      stepChk.onclick=()=>{step.done=!step.done;tvSaveLazy();tvRenderPanel(id);};
-      const stepTit=mk('span','step-title'+(step.done?' done':''));stepTit.textContent=step.title||'';
-      stepTit.contentEditable='true';stepTit.style.outline='none';
-      stepTit.oninput=e=>{step.title=e.target.textContent;tvSaveLazy();};
-      const stepDel=mk('button','step-del');stepDel.textContent='✕';
-      stepDel.onclick=()=>{st.steps.splice(pi,1);tvSaveLazy();tvRenderPanel(id);};
-      stepRow.appendChild(stepChk);stepRow.appendChild(stepTit);stepRow.appendChild(stepDel);
-      stepList.appendChild(stepRow);
-    });
-    stBody.appendChild(stepList);
-
-    // + Aggiungi step
-    const addStep=mk('button','tv-add-btn');addStep.textContent='+ Step';addStep.style.fontSize='10px';addStep.style.padding='3px 8px';
-    addStep.onclick=()=>{if(!st.steps)st.steps=[];st.steps.push({id:tvUID(),title:'',done:false});tvSaveLazy();tvRenderPanel(id);};
-    stBody.appendChild(addStep);
-
-    stWrap.appendChild(stBody);
-
-    // Elimina subtask
-    const stDel=mk('button','',`background:none;border:none;cursor:pointer;color:var(--text-3);font-size:12px;padding:2px 4px;flex-shrink:0;opacity:0;transition:opacity .1s;`);
-    stDel.textContent='✕';
-    stDel.onmouseenter=()=>stDel.style.opacity='1';stDel.onmouseleave=()=>stDel.style.opacity='0';
-    stWrap.addEventListener('mouseenter',()=>stDel.style.opacity='1');
-    stWrap.addEventListener('mouseleave',()=>stDel.style.opacity='0');
-    stDel.onclick=()=>{t.subtasks.splice(si,1);tvSaveLazy();tvRenderPanel(id);tvRender();};
-    stWrap.appendChild(stDel);
-
-    body.appendChild(stWrap);
-  });
-
-  // + Aggiungi subtask
-  const addSub=mk('button','tv-add-btn');addSub.textContent='+ Subtask';
-  addSub.onclick=()=>{
-    if(!t.subtasks)t.subtasks=[];
-    t.subtasks.push({id:tvUID(),title:'',stato:'todo',assegnatario:'',scadenza:'',steps:[]});
-    tvSaveLazy();tvRenderPanel(id);
-  };
-  body.appendChild(addSub);
-}
-
-let _tvSaveTimer=null;
-function tvSaveLazy(){
-  clearTimeout(_tvSaveTimer);
-  _tvSaveTimer=setTimeout(()=>{tvPersist();tvRender();},600);
-}
-
-// ── Undo esteso per tvDelete ──────────────────────────────
-const _origExecUndo = execUndo;
-execUndo = function(){
-  if(undoStack?.type === 'tvDelete'){
-    clearTimeout(toastTimer);
-    document.getElementById('toast').classList.remove('show');
-    tasks_v2[undoStack.snap.id] = undoStack.snap;
-    tvPersist(); tvRender();
-    showToast('Task ripristinata');
-    undoStack = null;
-    return;
-  }
-  _origExecUndo();
+const _origExecUndo2=execUndo;
+execUndo=function(){
+  if(undoStack?.type==='tvDelete'){clearTimeout(toastTimer);document.getElementById('toast').classList.remove('show');tasks_v2[undoStack.snap.id]=undoStack.snap;tvPersist();tvRender();showToast('Task ripristinata');undoStack=null;return;}
+  _origExecUndo2();
 };
 
 // ── Init ──────────────────────────────────────────────────
