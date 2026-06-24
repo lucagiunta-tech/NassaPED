@@ -1067,6 +1067,151 @@ body{
 .sp-item-budget{width:70px;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-family:var(--font);color:var(--text-3);text-align:right;}
 .sp-add-inp{width:100%;border:none;outline:none;background:transparent;font-size:var(--fs-xs);font-family:var(--font);color:var(--text-3);padding:6px 12px;font-style:italic;}
 .sp-add-inp:focus{color:var(--text);font-style:normal;}
+
+/* ══ STREAM JOB DETAIL ══ */
+.sjd-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 20px;background:var(--surface);
+  border-bottom:.5px solid var(--border);flex-shrink:0;
+}
+.sjd-back{
+  display:flex;align-items:center;gap:4px;
+  background:none;border:none;cursor:pointer;
+  font-size:var(--fs-xs);font-weight:600;color:var(--text-3);
+  font-family:var(--font);padding:4px 8px;border-radius:var(--rs);
+  transition:all var(--t);
+}
+.sjd-back:hover{background:var(--bg);color:var(--text);}
+.sjd-sep{color:var(--border);font-size:var(--fs-xs);}
+.sjd-job-title{font-size:var(--fs-sm);font-weight:700;color:var(--text);letter-spacing:var(--ls-tight);}
+.sjd-stato-sel{
+  font-size:var(--fs-xs);font-weight:700;font-family:var(--font);
+  border:.5px solid var(--border);border-radius:var(--r-pill);
+  padding:4px 10px;background:var(--bg);color:var(--text);cursor:pointer;
+}
+.sjd-action-btn{
+  font-size:var(--fs-xs);font-family:var(--font);
+  border:.5px solid var(--border);border-radius:var(--rs);
+  padding:4px 10px;background:none;color:var(--text-3);cursor:pointer;
+  transition:all var(--t);
+}
+.sjd-action-btn:hover{background:var(--red-lt);color:var(--red-dk);border-color:var(--red);}
+
+/* KPI row */
+.sjd-kpi-row{
+  display:flex;gap:0;flex-shrink:0;
+  border-bottom:.5px solid var(--border);background:var(--surface);
+}
+.sjd-kpi-card{
+  flex:1;padding:14px 20px;border-right:.5px solid var(--border);
+}
+.sjd-kpi-card:last-child{border-right:none;}
+.sjd-kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:4px;}
+.sjd-kpi-value{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.2;}
+.sjd-kpi-sub{font-size:var(--fs-xs);color:var(--text-3);margin-top:2px;}
+.sjd-ore-bar{height:4px;background:var(--border);border-radius:var(--r-pill);overflow:hidden;margin-top:6px;}
+.sjd-ore-fill{height:100%;border-radius:var(--r-pill);transition:width .3s;}
+
+/* Tabs */
+.sjd-tabs{
+  display:flex;align-items:center;gap:0;
+  padding:0 20px;border-bottom:.5px solid var(--border);
+  background:var(--surface);flex-shrink:0;
+}
+.sjd-tab{
+  padding:10px 16px;font-size:var(--fs-xs);font-weight:600;
+  border:none;background:none;cursor:pointer;color:var(--text-3);
+  font-family:var(--font);border-bottom:2px solid transparent;
+  transition:all var(--t);margin-bottom:-1px;
+}
+.sjd-tab.active{color:var(--text);border-bottom-color:var(--green);}
+.sjd-tab:not(.active):hover{color:var(--text);background:var(--bg);}
+.sjd-add-phase{
+  font-size:var(--fs-xs);font-weight:700;font-family:var(--font);
+  border:none;background:none;cursor:pointer;
+  color:var(--green-dk);padding:4px 8px;
+}
+[data-theme="dark"] .sjd-add-phase{color:var(--green);}
+
+/* Job Plan — fasi */
+.sjd-phase{border-bottom:.5px solid var(--border);}
+.sjd-phase-header{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;background:var(--bg);
+  cursor:pointer;transition:background var(--t);
+  border-bottom:.5px solid var(--border);
+  position:sticky;top:0;z-index:2;
+}
+.sjd-phase-header:hover{background:var(--border-lt);}
+.sjd-phase-emoji{font-size:18px;flex-shrink:0;}
+.sjd-phase-name{flex:1;font-size:var(--fs-sm);font-weight:700;color:var(--text);}
+.sjd-phase-name-inp{
+  flex:1;border:none;outline:none;background:transparent;
+  font-size:var(--fs-sm);font-weight:700;font-family:var(--font);color:var(--text);
+}
+.sjd-phase-kpi{display:flex;gap:16px;font-size:var(--fs-xs);color:var(--text-3);}
+.sjd-phase-kpi strong{color:var(--text);}
+.sjd-phase-del{
+  background:none;border:none;cursor:pointer;
+  color:var(--text-3);font-size:11px;padding:3px 5px;
+  opacity:0;transition:opacity var(--t);
+}
+.sjd-phase-header:hover .sjd-phase-del{opacity:1;}
+
+/* Item table */
+.sjd-items-table{width:100%;border-collapse:collapse;}
+.sjd-items-table th{
+  font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-3);
+  padding:7px 12px;text-align:left;
+  border-bottom:.5px solid var(--border);
+  background:var(--surface);
+}
+.sjd-items-table th.r{text-align:right;}
+.sjd-item-row{transition:background var(--t);cursor:pointer;}
+.sjd-item-row:hover{background:var(--bg);}
+.sjd-item-row td{padding:9px 12px;border-bottom:.5px solid var(--border-lt);font-size:var(--fs-xs);color:var(--text);vertical-align:middle;}
+.sjd-item-row:last-child td{border-bottom:none;}
+.sjd-item-check{
+  width:16px;height:16px;border-radius:50%;flex-shrink:0;
+  border:1.5px solid var(--border);cursor:pointer;background:none;
+  transition:all var(--t);display:flex;align-items:center;justify-content:center;
+}
+.sjd-item-check.done{background:var(--green);border-color:var(--green);}
+.sjd-item-title{
+  font-size:var(--fs-xs);font-weight:500;color:var(--text);
+  flex:1;border:none;outline:none;background:transparent;
+  font-family:var(--font);min-width:120px;
+}
+.sjd-item-title.done{text-decoration:line-through;opacity:.5;}
+.sjd-item-num{
+  font-size:var(--fs-xs);font-weight:700;color:var(--text-3);
+  border:none;outline:none;background:transparent;
+  font-family:var(--font);text-align:right;width:56px;
+}
+.sjd-item-num:focus{color:var(--text);}
+.sjd-stato-badge{
+  display:inline-flex;align-items:center;font-size:9px;font-weight:700;
+  padding:2px 8px;border-radius:var(--r-pill);
+}
+.sjd-stato-badge.todo{background:var(--bg);color:var(--text-3);border:.5px solid var(--border);}
+.sjd-stato-badge.inprogress{background:#dbeafe;color:#1e40af;}
+.sjd-stato-badge.done{background:#dcfce7;color:#166534;}
+[data-theme="dark"] .sjd-stato-badge.inprogress{background:#1e3a5f;color:#93c5fd;}
+[data-theme="dark"] .sjd-stato-badge.done{background:#0d2b0c;color:#4ade80;}
+.sjd-team-avs{display:flex;gap:2px;}
+.sjd-av{
+  width:20px;height:20px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:800;color:#fff;
+}
+.sjd-add-item-row td{padding:6px 12px;}
+.sjd-add-item-inp{
+  width:100%;border:none;outline:none;background:transparent;
+  font-size:var(--fs-xs);font-family:var(--font);color:var(--text-3);
+  font-style:italic;
+}
+.sjd-add-item-inp:focus{color:var(--text);font-style:normal;}
 </style>
 </head>
 <body>
@@ -1248,6 +1393,44 @@ body{
 
   <!-- Jobs view -->
   <div id="stream-jobs-view" style="display:none;flex:1;overflow-y:auto;"></div>
+
+  <!-- Job detail — pagina completa dentro stream-view -->
+  <div id="stream-job-detail" style="display:none;flex:1;flex-direction:column;overflow:hidden;background:var(--bg);">
+    <!-- Breadcrumb header -->
+    <div class="sjd-header">
+      <button class="sjd-back" onclick="streamCloseDetail()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Jobs
+      </button>
+      <span class="sjd-sep">/</span>
+      <span class="sjd-job-title" id="sjd-title">—</span>
+      <div style="flex:1;"></div>
+      <select class="sjd-stato-sel" id="sjd-stato" onchange="streamDetailSetStato(this.value)">
+        <option value="inplay">⏵ In Play</option>
+        <option value="completed">✓ Completed</option>
+        <option value="archived">○ Archived</option>
+        <option value="onhold">⏸ On Hold</option>
+      </select>
+      <button class="sjd-action-btn" onclick="streamDeleteJobDetail()">Elimina</button>
+    </div>
+
+    <!-- KPI row -->
+    <div class="sjd-kpi-row" id="sjd-kpi-row"></div>
+
+    <!-- Tab: Job Plan / Timeline -->
+    <div class="sjd-tabs">
+      <button class="sjd-tab active" id="sjd-tab-plan" onclick="sjdSetTab('plan')">Job Plan</button>
+      <button class="sjd-tab" id="sjd-tab-info" onclick="sjdSetTab('info')">Info</button>
+      <div style="flex:1;"></div>
+      <button class="sjd-add-phase" onclick="sjdAddPhase()">+ Fase</button>
+    </div>
+
+    <!-- Job Plan -->
+    <div id="sjd-plan" style="flex:1;overflow-y:auto;"></div>
+
+    <!-- Info tab -->
+    <div id="sjd-info" style="display:none;flex:1;overflow-y:auto;padding:20px 24px;"></div>
+  </div>
 
 </div>
 
@@ -2601,18 +2784,25 @@ function streamDeleteJob(id){
 /* ── Panel job ───────────────────────────────────────── */
 function streamOpenPanel(id){
   _streamCurrentJobId = id;
-  const panel = document.getElementById('stream-panel');
-  const overlay = document.getElementById('stream-panel-overlay');
-  if(!panel){console.error('[Stream] panel not found');return;}
-  panel.style.display='flex';
-  overlay.style.display='block';
-  streamRenderPanel(id);
+  // Apre la vista dettaglio job (pagina completa dentro stream-view)
+  document.getElementById('stream-clients-view').style.display='none';
+  document.getElementById('stream-jobs-view').style.display='none';
+  document.getElementById('stream-job-detail').style.display='flex';
+  document.getElementById('stream-new-btn').style.display='none';
+  document.getElementById('stream-search').style.display='none';
+  // Reset tab
+  sjdSetTab('plan');
+  sjdRender(id);
+}
+function streamCloseDetail(){
+  document.getElementById('stream-job-detail').style.display='none';
+  document.getElementById('stream-new-btn').style.display='';
+  document.getElementById('stream-search').style.display='';
+  streamSetTab(_streamTab);
 }
 function streamClosePanel(){
-  document.getElementById('stream-panel').style.display='none';
-  document.getElementById('stream-panel-overlay').style.display='none';
-  _streamCurrentJobId=null;
-  streamRender();streamRenderKpi();
+  // Legacy — usa streamCloseDetail
+  streamCloseDetail();
 }
 function streamPanelSetStato(v){
   const j=stream_v1[_streamCurrentJobId];if(!j)return;
@@ -2770,6 +2960,305 @@ function streamRenderPanel(id){
 
 // ── Init ──────────────────────────────────────────────────
 streamLoad();
+
+
+/* ══ JOB DETAIL PAGE ══ */
+let _sjdCurrentId = null;
+let _sjdCollapsed = {};
+let _sjdTab = 'plan';
+
+function sjdSetTab(tab){
+  _sjdTab = tab;
+  document.getElementById('sjd-tab-plan').classList.toggle('active', tab==='plan');
+  document.getElementById('sjd-tab-info').classList.toggle('active', tab==='info');
+  document.getElementById('sjd-plan').style.display = tab==='plan' ? 'block' : 'none';
+  document.getElementById('sjd-info').style.display = tab==='info' ? 'block' : 'none';
+  document.getElementById('sjd-add-phase').style.display = tab==='plan' ? '' : 'none';
+  if(tab==='info') sjdRenderInfo(_sjdCurrentId);
+}
+
+function sjdRender(id){
+  _sjdCurrentId = id;
+  const j = stream_v1[id];
+  if(!j) return;
+
+  // Header
+  document.getElementById('sjd-title').textContent = (j.emoji||'📋') + ' ' + (j.title||'Job senza titolo');
+  const statoSel = document.getElementById('sjd-stato');
+  if(statoSel) statoSel.value = j.stato||'inplay';
+
+  // KPI
+  sjdRenderKpi(id);
+
+  // Plan
+  sjdRenderPlan(id);
+}
+
+function sjdRenderKpi(id){
+  const j = stream_v1[id];
+  const el = document.getElementById('sjd-kpi-row');
+  if(!j||!el) return;
+
+  const allItems = (j.phases||[]).flatMap(p=>p.items||[]);
+  const oreStim  = allItems.reduce((s,it)=>s+(it.oreStimate||0),0);
+  const oreUsed  = allItems.reduce((s,it)=>s+(it.oreUsate||0),0);
+  const budget   = streamJobBudget(j);
+  const used     = streamJobUsed(j);
+  const profit   = budget - used;
+  const pct      = oreStim>0 ? Math.min(100,Math.round(oreUsed/oreStim*100)) : 0;
+  const doneIt   = allItems.filter(it=>it.stato==='done').length;
+  const barCol   = pct>90?'#dc2626':pct>70?'#d97706':'var(--green)';
+  const cl       = jvGetClient?.(j.client) || {n:streamClientName(j.client),c:streamClientColor(j.client)};
+
+  el.innerHTML = `
+    <div class="sjd-kpi-card">
+      <div class="sjd-kpi-label">Cliente</div>
+      <div class="sjd-kpi-value" style="font-size:var(--fs-sm);display:flex;align-items:center;gap:6px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${cl.c};display:inline-block;flex-shrink:0;"></span>
+        ${esc(cl.n)}
+      </div>
+      <div class="sjd-kpi-sub">${j.dataStart||'—'} → ${j.dataEnd||'—'}</div>
+    </div>
+    <div class="sjd-kpi-card">
+      <div class="sjd-kpi-label">Budget</div>
+      <div class="sjd-kpi-value">€ ${budget.toLocaleString('it-IT')}</div>
+      <div class="sjd-kpi-sub">Usato: € ${used.toLocaleString('it-IT')}</div>
+    </div>
+    <div class="sjd-kpi-card">
+      <div class="sjd-kpi-label">Ore</div>
+      <div class="sjd-kpi-value">${oreUsed}h <span style="font-size:var(--fs-sm);font-weight:400;color:var(--text-3);">/ ${oreStim}h</span></div>
+      <div class="sjd-ore-bar"><div class="sjd-ore-fill" style="width:${pct}%;background:${barCol};"></div></div>
+    </div>
+    <div class="sjd-kpi-card">
+      <div class="sjd-kpi-label">Profitto</div>
+      <div class="sjd-kpi-value" style="color:${profit>=0?'#16a34a':'#dc2626'};">€ ${profit.toLocaleString('it-IT')}</div>
+      <div class="sjd-kpi-sub">${doneIt}/${allItems.length} item completati</div>
+    </div>
+  `;
+}
+
+function sjdRenderPlan(id){
+  const j = stream_v1[id];
+  const el = document.getElementById('sjd-plan');
+  if(!j||!el) return;
+  el.innerHTML = '';
+
+  if(!(j.phases||[]).length){
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3);"><div style="font-size:32px;margin-bottom:8px;">📋</div>Nessuna fase. Clicca "+ Fase" per iniziare.</div>';
+    return;
+  }
+
+  (j.phases||[]).forEach((phase, pi) => {
+    const collapsed = _sjdCollapsed[pi];
+    const phOreStim = (phase.items||[]).reduce((s,it)=>s+(it.oreStimate||0),0);
+    const phOreUsed = (phase.items||[]).reduce((s,it)=>s+(it.oreUsate||0),0);
+    const phBudget  = (phase.items||[]).reduce((s,it)=>s+(it.budget||0),0);
+    const phDone    = (phase.items||[]).filter(it=>it.stato==='done').length;
+    const phTotal   = (phase.items||[]).length;
+    const phPct     = phTotal>0?Math.round(phDone/phTotal*100):0;
+
+    const phEl = document.createElement('div');
+    phEl.className = 'sjd-phase';
+
+    // Phase header
+    const phHd = document.createElement('div');
+    phHd.className = 'sjd-phase-header';
+    phHd.innerHTML = `
+      <span style="font-size:10px;color:var(--text-3);margin-right:2px;">${collapsed?'▶':'▼'}</span>
+      <span class="sjd-phase-emoji">${phase.emoji||'📁'}</span>
+      <input class="sjd-phase-name-inp" value="${esc(phase.title||'')}" placeholder="Nome fase…"
+        onclick="event.stopPropagation();"
+        oninput="stream_v1['${id}'].phases[${pi}].title=this.value;streamPersist();">
+      <div class="sjd-phase-kpi">
+        <span>${phDone}/${phTotal} <strong>${phPct}%</strong></span>
+        <span>${phOreUsed}h/${phOreStim}h</span>
+        <span>€${phBudget.toLocaleString('it-IT')}</span>
+      </div>
+      <button class="sjd-phase-del" onclick="event.stopPropagation();if(confirm('Eliminare la fase?')){stream_v1['${id}'].phases.splice(${pi},1);streamPersist();sjdRender('${id}');}">✕</button>
+    `;
+    phHd.onclick = () => { _sjdCollapsed[pi]=!collapsed; sjdRenderPlan(id); };
+    phEl.appendChild(phHd);
+
+    if(!collapsed){
+      // Table
+      const table = document.createElement('table');
+      table.className = 'sjd-items-table';
+      table.innerHTML = `<thead><tr>
+        <th style="width:30px;"></th>
+        <th>Item</th>
+        <th style="width:100px;">Stato</th>
+        <th style="width:80px;" class="r">Ore stim.</th>
+        <th style="width:80px;" class="r">Ore usate</th>
+        <th style="width:90px;" class="r">Budget €</th>
+        <th style="width:90px;">Inizio</th>
+        <th style="width:90px;">Fine</th>
+        <th style="width:30px;"></th>
+      </tr></thead>`;
+      const tbody = document.createElement('tbody');
+
+      (phase.items||[]).forEach((item, ii) => {
+        const tr = document.createElement('tr');
+        tr.className = 'sjd-item-row';
+
+        // Checkbox
+        const chkTd = document.createElement('td');
+        const chk = document.createElement('button');
+        chk.className = 'sjd-item-check' + (item.stato==='done'?' done':'');
+        if(item.stato==='done') chk.innerHTML='<svg viewBox="0 0 12 12" width="8" height="8" fill="none"><polyline points="2,6 5,9 10,3" stroke="var(--green-text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        chk.onclick=(e)=>{e.stopPropagation();item.stato=item.stato==='done'?'todo':'done';streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);streamRenderJobs();};
+        chkTd.appendChild(chk);tr.appendChild(chkTd);
+
+        // Titolo
+        const titTd=document.createElement('td');
+        const titInp=document.createElement('input');titInp.className='sjd-item-title'+(item.stato==='done'?' done':'');
+        titInp.value=item.title||'';titInp.placeholder='Nome item…';
+        titInp.onclick=e=>e.stopPropagation();
+        titInp.oninput=e=>{item.title=e.target.value;streamPersist();};
+        titTd.appendChild(titInp);tr.appendChild(titTd);
+
+        // Stato
+        const stTd=document.createElement('td');
+        const stSel=document.createElement('select');
+        stSel.style.cssText='font-size:9px;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--text-3);font-family:var(--font);';
+        [{v:'todo',l:'Da fare'},{v:'inprogress',l:'In corso'},{v:'done',l:'Fatto'}].forEach(({v,l})=>{
+          const o=document.createElement('option');o.value=v;o.textContent=l;if(v===(item.stato||'todo'))o.selected=true;stSel.appendChild(o);
+        });
+        stSel.onchange=e=>{e.stopPropagation();item.stato=e.target.value;streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);streamRenderJobs();};
+        stSel.onclick=e=>e.stopPropagation();
+        stTd.appendChild(stSel);tr.appendChild(stTd);
+
+        // Ore stimate
+        const oreStimTd=document.createElement('td');oreStimTd.style.textAlign='right';
+        const oreStimInp=document.createElement('input');oreStimInp.type='number';oreStimInp.className='sjd-item-num';
+        oreStimInp.value=item.oreStimate||0;oreStimInp.min=0;oreStimInp.step=0.25;
+        oreStimInp.onclick=e=>e.stopPropagation();
+        oreStimInp.onchange=e=>{item.oreStimate=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
+        oreStimTd.appendChild(oreStimInp);tr.appendChild(oreStimTd);
+
+        // Ore usate
+        const oreUsedTd=document.createElement('td');oreUsedTd.style.textAlign='right';
+        const oreUsedInp=document.createElement('input');oreUsedInp.type='number';oreUsedInp.className='sjd-item-num';
+        oreUsedInp.value=item.oreUsate||0;oreUsedInp.min=0;oreUsedInp.step=0.25;oreUsedInp.style.color='var(--text-3)';
+        oreUsedInp.onclick=e=>e.stopPropagation();
+        oreUsedInp.onchange=e=>{item.oreUsate=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
+        oreUsedTd.appendChild(oreUsedInp);tr.appendChild(oreUsedTd);
+
+        // Budget
+        const budTd=document.createElement('td');budTd.style.textAlign='right';
+        const budInp=document.createElement('input');budInp.type='number';budInp.className='sjd-item-num';
+        budInp.value=item.budget||0;budInp.min=0;
+        budInp.onclick=e=>e.stopPropagation();
+        budInp.onchange=e=>{item.budget=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderKpi();streamRenderJobs();};
+        budTd.appendChild(budInp);tr.appendChild(budTd);
+
+        // Date
+        const startTd=document.createElement('td');
+        const startInp=document.createElement('input');startInp.type='date';startInp.className='sjd-item-num';startInp.style.width='88px';
+        startInp.value=item.dataStart||'';startInp.onclick=e=>e.stopPropagation();
+        startInp.onchange=e=>{item.dataStart=e.target.value;streamPersist();};
+        startTd.appendChild(startInp);tr.appendChild(startTd);
+
+        const endTd=document.createElement('td');
+        const endInp=document.createElement('input');endInp.type='date';endInp.className='sjd-item-num';endInp.style.width='88px';
+        endInp.value=item.dataEnd||'';endInp.onclick=e=>e.stopPropagation();
+        endInp.onchange=e=>{item.dataEnd=e.target.value;streamPersist();};
+        endTd.appendChild(endInp);tr.appendChild(endTd);
+
+        // Del
+        const delTd=document.createElement('td');
+        const delBtn=document.createElement('button');delBtn.style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;opacity:0;transition:opacity .1s;';delBtn.textContent='✕';
+        tr.addEventListener('mouseenter',()=>delBtn.style.opacity='1');
+        tr.addEventListener('mouseleave',()=>delBtn.style.opacity='0');
+        delBtn.onclick=e=>{e.stopPropagation();phase.items.splice(ii,1);streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);streamRenderJobs();};
+        delTd.appendChild(delBtn);tr.appendChild(delTd);
+
+        tbody.appendChild(tr);
+      });
+
+      // Add item row
+      const addTr=document.createElement('tr');addTr.className='sjd-add-item-row';
+      const addTd=document.createElement('td');addTd.colSpan=9;
+      const addInp=document.createElement('input');addInp.className='sjd-add-item-inp';addInp.placeholder='+ Aggiungi item… (Invio)';
+      addInp.onkeydown=e=>{if(e.key==='Enter'&&addInp.value.trim()){if(!phase.items)phase.items=[];phase.items.push({id:streamUID(),title:addInp.value.trim(),stato:'todo',oreStimate:0,oreUsate:0,budget:0,tariffaOraria:0,dataStart:'',dataEnd:''});addInp.value='';streamPersist();sjdRenderPlan(id);sjdRenderKpi(id);}};
+      addTd.appendChild(addInp);addTr.appendChild(addTd);tbody.appendChild(addTr);
+
+      table.appendChild(tbody);phEl.appendChild(table);
+    }
+    el.appendChild(phEl);
+  });
+}
+
+function sjdRenderInfo(id){
+  const j = stream_v1[id];
+  const el = document.getElementById('sjd-info');
+  if(!j||!el) return;
+  el.innerHTML = '';
+
+  const g = (lbl,inp) => {
+    const d=document.createElement('div');d.style.marginBottom='14px';
+    const l=document.createElement('label');l.style.cssText='font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:5px;';l.textContent=lbl;
+    d.appendChild(l);d.appendChild(inp);el.appendChild(d);
+  };
+
+  // Titolo
+  const inpT=document.createElement('input');inpT.className='sp-inp';inpT.value=j.title||'';inpT.placeholder='Titolo job…';inpT.style.fontSize='var(--fs-md)';inpT.style.fontWeight='800';
+  inpT.oninput=e=>{j.title=e.target.value;streamPersist();document.getElementById('sjd-title').textContent=(j.emoji||'📋')+' '+j.title;streamRenderJobs();};
+  g('Titolo',inpT);
+
+  // Grid 2col
+  const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:14px;';
+
+  const gRow=(lbl,inp)=>{const d=document.createElement('div');const l=document.createElement('label');l.style.cssText='font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);display:block;margin-bottom:5px;';l.textContent=lbl;d.appendChild(l);d.appendChild(inp);row.appendChild(d);};
+
+  const selCl=document.createElement('select');selCl.className='sp-inp';
+  _streamClients.forEach(c=>{const o=document.createElement('option');o.value=c.slug;o.textContent=c.n;if(c.slug===j.client)o.selected=true;selCl.appendChild(o);});
+  if(!_streamClients.length){clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.label;if(c.id===j.client)o.selected=true;selCl.appendChild(o);});}
+  selCl.onchange=e=>{j.client=e.target.value;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
+  gRow('Cliente',selCl);
+
+  const inpBud=document.createElement('input');inpBud.type='number';inpBud.className='sp-inp';inpBud.value=j.budget||0;inpBud.min=0;
+  inpBud.onchange=e=>{j.budget=parseFloat(e.target.value)||0;streamPersist();sjdRenderKpi(id);streamRenderKpi();streamRenderJobs();};
+  gRow('Budget €',inpBud);
+
+  const inpStart=document.createElement('input');inpStart.type='date';inpStart.className='sp-inp';inpStart.value=j.dataStart||'';
+  inpStart.onchange=e=>{j.dataStart=e.target.value;streamPersist();};
+  gRow('Data inizio',inpStart);
+
+  const inpEnd=document.createElement('input');inpEnd.type='date';inpEnd.className='sp-inp';inpEnd.value=j.dataEnd||'';
+  inpEnd.onchange=e=>{j.dataEnd=e.target.value;streamPersist();sjdRenderKpi(id);streamRenderJobs();};
+  gRow('Data fine',inpEnd);
+
+  const inpNum=document.createElement('input');inpNum.type='number';inpNum.className='sp-inp';inpNum.value=j.num||'';
+  inpNum.onchange=e=>{j.num=parseInt(e.target.value)||0;streamPersist();};
+  gRow('N° Job',inpNum);
+
+  const inpEmoji=document.createElement('input');inpEmoji.className='sp-inp';inpEmoji.value=j.emoji||'📋';inpEmoji.style.fontSize='18px';inpEmoji.style.textAlign='center';
+  inpEmoji.oninput=e=>{j.emoji=e.target.value;streamPersist();document.getElementById('sjd-title').textContent=j.emoji+' '+(j.title||'');};
+  gRow('Emoji',inpEmoji);
+
+  el.appendChild(row);
+}
+
+function sjdAddPhase(){
+  const j=stream_v1[_sjdCurrentId];if(!j)return;
+  if(!j.phases)j.phases=[];
+  j.phases.push({id:streamUID(),title:'Nuova fase',emoji:'📁',items:[]});
+  streamPersist();sjdRenderPlan(_sjdCurrentId);
+}
+
+function streamDetailSetStato(v){
+  const j=stream_v1[_sjdCurrentId];if(!j)return;
+  j.stato=v;streamPersist();streamRenderJobs();streamRenderKpi();
+}
+
+function streamDeleteJobDetail(){
+  if(!confirm('Eliminare questo job?'))return;
+  const snap={...stream_v1[_sjdCurrentId]};
+  delete stream_v1[_sjdCurrentId];
+  streamPersist();streamCloseDetail();
+  showToast('"'+(snap.title||'Job')+'" eliminato',true);
+  undoStack={type:'streamDel',snap};
+}
 
 </script>
 </body>
