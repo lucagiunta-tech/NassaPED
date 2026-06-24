@@ -943,28 +943,6 @@ body{
   font-style:italic;
 }
 .jv-add-item-inp:focus{color:var(--text);font-style:normal;}
-
-/* ── Item inline expanded ── */
-.jv-item-expanded-row{background:var(--bg) !important;}
-.jv-item-exp-row{background:var(--bg);}
-.jv-item-exp{
-  padding:12px 14px 14px;
-  border-top:.5px dashed var(--border);
-  border-bottom:.5px solid var(--border);
-  background:var(--bg);
-}
-.jv-exp-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
-.jv-exp-row:last-child{margin-bottom:0;}
-.jv-exp-field{display:flex;flex-direction:column;gap:3px;min-width:80px;}
-.jv-exp-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);}
-.jv-exp-inp{
-  font-size:var(--fs-xs);font-family:var(--font);
-  border:.5px solid var(--border);border-radius:var(--rs);
-  background:var(--surface);color:var(--text);
-  padding:5px 7px;
-}
-.jv-exp-inp:focus{outline:none;border-color:var(--green);}
-textarea.jv-exp-inp{resize:none;}
 </style>
 </head>
 <body>
@@ -1131,7 +1109,7 @@ textarea.jv-exp-inp{resize:none;}
 
 </div>
 
-<!-- Job Modal — solo per nuovo job (item editabili inline) -->
+<!-- Job Modal -->
 <div id="job-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)jvCloseModal()">
   <div style="background:var(--surface);border-radius:var(--r);width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-xl);">
     <div style="display:flex;align-items:center;padding:16px 20px;border-bottom:.5px solid var(--border);">
@@ -1636,7 +1614,6 @@ let _jvModalType = null; // 'job' | 'item'
 let _jvModalPhaseIdx = null;
 let _jvModalItemIdx = null;
 let _jvCollapsed = {}; // { phaseIdx: true/false }
-let _jvExpandedItem = null; // 'jobId-phaseIdx-itemIdx'
 
 function jvLoad(){
   try{const raw=localStorage.getItem(SK);if(raw){const p=JSON.parse(raw);jobs_v1=p.jobs_v1||{};}}catch(e){}
@@ -1819,12 +1796,19 @@ function jvRenderDetail(){
       const tbody = document.createElement('tbody');
 
       (phase.items||[]).forEach((item, ii) => {
-        const isExpItem = _jvExpandedItem === `${j.id}-${pi}-${ii}`;
-        // ── Riga compatta ──
         const tr = document.createElement('tr');
-        tr.className = 'jv-item-row' + (isExpItem ? ' jv-item-expanded-row' : '');
-        tr.dataset.jobId = j.id; tr.dataset.phaseIdx = pi; tr.dataset.itemIdx = ii;
-        const teamHTML = (item.team||[]).slice(0,3).map(mid=>{const m=jvGetMember(mid);return `<span class="jv-avatar" title="${esc(m.n)}" style="background:${m.c};">${m.n[0].toUpperCase()}</span>`;}).join('')+(item.team?.length>3?`<span class="jv-avatar" style="background:var(--border);color:var(--text-3);">+${item.team.length-3}</span>`:'');
+        tr.className = 'jv-item-row';
+        tr.draggable = true;
+        tr.dataset.jobId = j.id;
+        tr.dataset.phaseIdx = pi;
+        tr.dataset.itemIdx = ii;
+
+        // Avatars team
+        const teamHTML = (item.team||[]).slice(0,3).map(mid => {
+          const m = jvGetMember(mid);
+          return `<span class="jv-avatar" title="${esc(m.n)}" style="background:${m.c};">${m.n[0].toUpperCase()}</span>`;
+        }).join('') + (item.team?.length > 3 ? `<span class="jv-avatar" style="background:var(--border);color:var(--text-3);">+${item.team.length-3}</span>` : '');
+
         tr.innerHTML = `
           <td><span class="jv-item-drag" title="Trascina nel calendario">⠿</span></td>
           <td><span class="jv-item-title">${esc(item.title||'—')}</span></td>
@@ -1835,75 +1819,23 @@ function jvRenderDetail(){
           <td style="text-align:right;">€${(item.budget||0).toLocaleString('it-IT')}</td>
           <td style="color:var(--text-3);">${item.dataStart||'—'}</td>
           <td style="color:var(--text-3);">${item.dataEnd||'—'}</td>
-          <td><button class="jv-item-del-btn" onclick="event.stopPropagation();jvDelItem('${j.id}',${pi},${ii})">✕</button></td>
+          <td><button onclick="event.stopPropagation();jvOpenItemModal('${j.id}',${pi},${ii})" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:2px 5px;border-radius:var(--rs);">✏️</button></td>
         `;
-        tr.querySelector('.jv-item-del-btn').style.cssText='background:none;border:none;cursor:pointer;color:var(--text-3);font-size:10px;padding:2px 4px;opacity:0;transition:opacity .1s;';
-        tr.addEventListener('mouseenter',()=>tr.querySelector('.jv-item-del-btn').style.opacity='1');
-        tr.addEventListener('mouseleave',()=>tr.querySelector('.jv-item-del-btn').style.opacity='0');
-        tr.onclick = e => {
-          if(e.target.closest('.jv-item-del-btn')||e.target.closest('.jv-item-drag'))return;
-          _jvExpandedItem = isExpItem ? null : `${j.id}-${pi}-${ii}`;
-          jvRenderDetail();
-        };
-        tr.querySelector('.jv-item-drag').setAttribute('draggable','true');
-        tr.querySelector('.jv-item-drag').addEventListener('dragstart', e => {
-          e.stopPropagation();e.dataTransfer.effectAllowed='copy';
-          e.dataTransfer.setData('nassa-job-item',JSON.stringify({jobId:j.id,phaseIdx:pi,itemIdx:ii,text:(phase.title?phase.title+' — ':'')+(item.title||'Item'),client:j.client,color:cl.c}));
+
+        // Click → apri modal item
+        tr.onclick = e => { if(!e.target.closest('button'))jvOpenItemModal(j.id, pi, ii); };
+
+        // Drag → trascina nel calendario
+        tr.addEventListener('dragstart', e => {
+          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.setData('nassa-job-item', JSON.stringify({
+            jobId: j.id, phaseIdx: pi, itemIdx: ii,
+            text: (phase.title ? phase.title+' — ' : '') + (item.title||'Item'),
+            client: j.client, color: cl.c,
+          }));
         });
+
         tbody.appendChild(tr);
-        // ── Riga espansa inline ──
-        if(isExpItem){
-          const expTr=document.createElement('tr');expTr.className='jv-item-exp-row';
-          const expTd=document.createElement('td');expTd.colSpan=10;expTd.style.padding='0';
-          const expDiv=document.createElement('div');expDiv.className='jv-item-exp';
-          expDiv.innerHTML=`
-            <div class="jv-exp-row">
-              <div class="jv-exp-field" style="flex:2;"><label class="jv-exp-lbl">Titolo</label>
-                <input class="jv-exp-inp" value="${esc(item.title||'')}" placeholder="Nome item…"
-                  oninput="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].title=this.value;jvPersist();document.querySelector('.jv-item-expanded-row .jv-item-title').textContent=this.value||'—';"></div>
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Stato</label>
-                <select class="jv-exp-inp" onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].stato=this.value;jvPersist();jvRenderDetail();">
-                  ${Object.entries(JV_STATI_ITEM).map(([v,s])=>`<option value="${v}"${v===(item.stato||'todo')?' selected':''}>${s.l}</option>`).join('')}
-                </select></div>
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Tariffa €/h</label>
-                <input type="number" class="jv-exp-inp" value="${item.tariffaOraria||0}" min="0"
-                  onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].tariffaOraria=parseFloat(this.value)||0;jvPersist();"></div>
-            </div>
-            <div class="jv-exp-row">
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Ore stimate</label>
-                <input type="number" class="jv-exp-inp" value="${item.oreStimate||0}" min="0" step="0.25"
-                  onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].oreStimate=parseFloat(this.value)||0;jvPersist();jvRenderDetail();"></div>
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Ore usate</label>
-                <input type="number" class="jv-exp-inp" value="${item.oreUsate||0}" min="0" step="0.25"
-                  onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].oreUsate=parseFloat(this.value)||0;jvPersist();jvRenderDetail();"></div>
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Budget €</label>
-                <input type="number" class="jv-exp-inp" value="${item.budget||0}" min="0"
-                  onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].budget=parseFloat(this.value)||0;jvPersist();jvRenderDetail();"></div>
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Inizio</label>
-                <input type="date" class="jv-exp-inp" value="${item.dataStart||''}"
-                  onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].dataStart=this.value;jvPersist();"></div>
-              <div class="jv-exp-field"><label class="jv-exp-lbl">Fine</label>
-                <input type="date" class="jv-exp-inp" value="${item.dataEnd||''}"
-                  onchange="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].dataEnd=this.value;jvPersist();"></div>
-            </div>
-            <div class="jv-exp-row" style="align-items:flex-start;">
-              <div class="jv-exp-field" style="flex:1;"><label class="jv-exp-lbl">Team</label>
-                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;" id="jv-team-${j.id}-${pi}-${ii}">
-                  ${JV_MEMBERS.map(m=>{const sel=(item.team||[]).includes(m.id);return `<button type="button" id="jv-tm-${j.id}-${pi}-${ii}-${m.id}"
-                    onclick="jvToggleItemTeam('${j.id}',${pi},${ii},'${m.id}')"
-                    style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--r-pill);border:.5px solid ${sel?m.c:'var(--border)'};background:${sel?m.c+'22':'var(--bg)'};cursor:pointer;font-size:var(--fs-xs);color:${sel?m.c:'var(--text-3)'};font-family:var(--font);">
-                    <span style="width:14px;height:14px;border-radius:50%;background:${m.c};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;">${m.n[0]}</span>${esc(m.n)}</button>`;}).join('')}
-                </div>
-              </div>
-              <div class="jv-exp-field" style="flex:1;"><label class="jv-exp-lbl">Note</label>
-                <textarea class="jv-exp-inp" style="resize:none;min-height:44px;line-height:1.4;" placeholder="Note…"
-                  oninput="jobs_v1['${j.id}'].phases[${pi}].items[${ii}].note=this.value;jvPersist();">${esc(item.note||'')}</textarea>
-              </div>
-            </div>
-          `;
-          expTd.appendChild(expDiv);expTr.appendChild(expTd);tbody.appendChild(expTr);
-        }
-      });
       });
 
       // Add item row
@@ -2147,28 +2079,6 @@ function jvSaveModal(){
     jvPersist();jvCloseModal();jvRenderDetail();
     showToast('Item aggiornato');
   }
-}
-
-function jvDelItem(jobId, pi, ii){
-  const j=jobs_v1[jobId];if(!j?.phases?.[pi])return;
-  const snap={...j.phases[pi].items[ii]};
-  j.phases[pi].items.splice(ii,1);
-  if(_jvExpandedItem===`${jobId}-${pi}-${ii}`)_jvExpandedItem=null;
-  jvPersist();jvRenderDetail();
-  showToast('"'+(snap.title||'Item')+'" eliminato',true);
-  undoStack={type:'jvDelItem',snap,jobId,pi,ii};
-}
-
-function jvToggleItemTeam(jobId,pi,ii,mid){
-  const item=jobs_v1[jobId]?.phases?.[pi]?.items?.[ii];if(!item)return;
-  if(!item.team)item.team=[];
-  const idx=item.team.indexOf(mid);
-  if(idx>=0)item.team.splice(idx,1);else item.team.push(mid);
-  jvPersist();
-  // Aggiorna visivamente il bottone senza re-render completo
-  const m=jvGetMember(mid);const sel=item.team.includes(mid);
-  const btn=document.getElementById(`jv-tm-${jobId}-${pi}-${ii}-${mid}`);
-  if(btn){btn.style.borderColor=sel?m.c:'var(--border)';btn.style.background=sel?m.c+'22':'var(--bg)';btn.style.color=sel?m.c:'var(--text-3)';}
 }
 
 function jvCloseModal(){
