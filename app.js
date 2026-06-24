@@ -153,7 +153,7 @@ function triggerUndo(){
 ══════════════════════════════════════════ */
 const CLOUD = {
   apiUrl: window.location.origin + '/api/project',
-  apiKey: 'NASSA_SECRET_2026', // Verrà aggiornato dopo login JWT
+  apiKey: 'NASSA_SECRET_2026', // Ripristinato temporaneamente — rimosso quando login UI è pronto
   user: localStorage.getItem('nassa_user') || 'shared',
   _saveTimer: null,
   _status: 'idle',
@@ -6635,10 +6635,10 @@ function switchAccount(accountIdx){
 function rebuildGlobalClientSelect(){updateGlobalClientUI();}
 
 /* CLOUD SYNC UI */
-function toggleUserSwitcher(){const sw=document.getElementById('user-switcher');if(!sw)return;const nameEl=document.getElementById('user-switcher-name');if(nameEl)nameEl.textContent=CLOUD.user?CLOUD.user.charAt(0).toUpperCase()+CLOUD.user.slice(1):'Utente';sw.classList.toggle('open');}
+function toggleUserSwitcher(){const sw=document.getElementById('user-switcher');if(!sw)return;sw.classList.toggle('open');sw.querySelectorAll('.user-btn').forEach(b=>{b.classList.toggle('active',b.getAttribute('onclick').includes("'"+CLOUD.user+"'"));});}
 document.addEventListener('click',e=>{const sw=document.getElementById('user-switcher');if(sw&&!e.target.closest('#user-switcher')&&!e.target.closest('#user-avatar'))sw.classList.remove('open');});
 
-// switchUser rimosso — ora si usa doLogin()/doLogout() con sessione JWT
+async function switchUser(username){CLOUD.user=username;localStorage.setItem('nassa_user',username);const av=document.getElementById('user-avatar');if(av)av.textContent=username.slice(0,2).toUpperCase();document.getElementById('user-switcher')?.classList.remove('open');await loadFromCloud();}
 
 async function loadFromCloud(){
   // Show loading overlay during boot
@@ -8707,150 +8707,9 @@ window.addEventListener('offline', () => {
   showToast('⚠ Connessione persa — le modifiche vengono salvate localmente', 'warn');
 });
 
-
-/* ══ AUTH — LOGIN / SESSIONE / LOGOUT ══ */
-
-// Mostra/nasconde overlay login
-function showLoginOverlay(show){
-  const el = document.getElementById('login-overlay');
-  if(!el) return;
-  el.style.display = show ? 'flex' : 'none';
-  if(show){
-    // Precompila utente dall'ultimo login (localStorage)
-    const lastUser = localStorage.getItem('nassa_last_user');
-    const userInp = document.getElementById('login-user');
-    if(lastUser && userInp) userInp.value = lastUser;
-    // Focus sul campo giusto
-    setTimeout(()=>{
-      const pass = document.getElementById('login-pass');
-      const user = document.getElementById('login-user');
-      if(lastUser && pass) pass.focus();
-      else if(user) user.focus();
-    }, 100);
-  }
-}
-
-function toggleLoginPass(){
-  const inp = document.getElementById('login-pass');
-  if(!inp) return;
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
-
-function setLoginError(msg){
-  const el = document.getElementById('login-error');
-  if(!el) return;
-  if(msg){ el.textContent = msg; el.style.display = 'block'; }
-  else { el.style.display = 'none'; }
-}
-
-function setLoginLoading(loading){
-  const btn = document.getElementById('login-btn');
-  const userInp = document.getElementById('login-user');
-  const passInp = document.getElementById('login-pass');
-  if(btn) { btn.textContent = loading ? 'Accesso…' : 'Accedi'; btn.disabled = loading; btn.style.opacity = loading ? '.7' : '1'; }
-  if(userInp) userInp.disabled = loading;
-  if(passInp) passInp.disabled = loading;
-}
-
-async function doLogin(){
-  const user = document.getElementById('login-user')?.value.trim().toLowerCase();
-  const pass = document.getElementById('login-pass')?.value;
-
-  if(!user){ setLoginError('Inserisci il tuo nome utente'); document.getElementById('login-user')?.focus(); return; }
-  if(!pass){ setLoginError('Inserisci la password'); document.getElementById('login-pass')?.focus(); return; }
-
-  setLoginError('');
-  setLoginLoading(true);
-
-  try {
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ user, password: pass })
-    });
-    const data = await res.json();
-
-    if(!res.ok || !data.ok){
-      setLoginLoading(false);
-      setLoginError(data.error || 'Credenziali non corrette');
-      document.getElementById('login-pass')?.select();
-      return;
-    }
-
-    // Login OK
-    localStorage.setItem('nassa_last_user', data.user);
-    CLOUD.user = data.user;
-    CLOUD.apiKey = ''; // sessione JWT attiva — apiKey non necessaria
-    const av = document.getElementById('user-avatar');
-    if(av) av.textContent = data.user.slice(0,2).toUpperCase();
-    showLoginOverlay(false);
-    setLoginLoading(false);
-    // Carica i dati
-    await loadFromCloud();
-
-  } catch(e) {
-    setLoginLoading(false);
-    setLoginError('Errore di rete — riprova');
-  }
-}
-
-async function doLogout(){
-  try {
-    await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
-  } catch(_){}
-  CLOUD.user = 'shared';
-  // Reset stato app
-  clients=[]; feeds={}; stories={}; pedPlans={}; notesData={};
-  showLoginOverlay(true);
-  // Ricarica la pagina per pulire tutto lo stato
-  setTimeout(()=>location.reload(), 300);
-}
-
-async function checkSession(){
-  try {
-    const res = await fetch('/api/auth', { method: 'GET', credentials: 'include' });
-    const data = await res.json();
-    if(res.ok && data.ok){
-      CLOUD.user = data.user;
-      CLOUD.apiKey = '';
-      const av = document.getElementById('user-avatar');
-      if(av) av.textContent = data.user.slice(0,2).toUpperCase();
-      return true;
-    }
-  } catch(_){}
-  return false;
-}
-
 document.addEventListener('DOMContentLoaded',async()=>{
-  init();
-  const av=document.getElementById('user-avatar');
-  // Recupera utente dall'ultimo login
-  const lastUser = localStorage.getItem('nassa_last_user') || localStorage.getItem('nassa_user') || 'shared';
-  CLOUD.user = lastUser;
-  if(av) av.textContent = lastUser.slice(0,2).toUpperCase();
-  // Verifica sessione JWT
-  const authed = await checkSession();
-  if(authed){
-    showLoginOverlay(false);
-    await loadFromCloud();
-  } else {
-    // Tenta caricamento con cookie esistente (retrocompatibilità)
-    try {
-      const testRes = await fetch(CLOUD.apiUrl+'?user='+CLOUD.user, {
-        headers: { 'x-nassa-key': CLOUD.apiKey },
-        credentials: 'include'
-      });
-      if(testRes.ok){
-        showLoginOverlay(false);
-        await loadFromCloud();
-        return;
-      }
-    } catch(_){}
-    // Mostra login
-    showLoginOverlay(true);
-    setLoginLoading(false);
-  }
+  init();const av=document.getElementById('user-avatar');if(av)av.textContent=CLOUD.user.slice(0,2).toUpperCase();
+  await loadFromCloud();
 });
 
 
