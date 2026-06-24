@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, pilastri, adsCampaigns, sbBozze,
+      highlights, pedPlans, notesData, pilastri, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -394,6 +394,7 @@ const CLOUD = {
     notesData  = data.notesData  || {};
     pilastri   = data.pilastri   || {};
     sbBozze    = data.sbBozze    || {};
+    ugcInfluencer = data.ugcInfluencer || {};
     if (data.meta) {
       showAllDates = data.meta.showAllDates !== false;
       showAllCopy  = data.meta.showAllCopy  !== false;
@@ -4719,6 +4720,66 @@ function pedRenderDrawer(){
   const sl=pedDrawerTmp;
   const mk=(tag,cls,style)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(style)el.style.cssText=style;return el;};
   const addLabel=(text)=>{const l=mk('div','ped-field-label');l.textContent=text;body.appendChild(l);};
+
+  // ── SEZIONE INFLUENCER (in cima) ──
+  const inflBox=mk('div','ped-infl-box');
+  // Header collassabile
+  const inflHead=mk('div','ped-infl-head');
+  const inflIcon=mk('span');inflIcon.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+  const inflLbl=mk('span','ped-infl-lbl');
+  // Mostra nome influencer se già assegnato
+  const inflNome=sl.influencerNome||(sl.influencerId?_getInfluencerNome(sl.influencerId):'');
+  inflLbl.textContent=inflNome?('Collaborazione: '+inflNome):'+ Collega influencer';
+  inflLbl.style.color=inflNome?'var(--text)':'var(--text-3)';
+  inflHead.appendChild(inflIcon);inflHead.appendChild(inflLbl);
+  // Toggle expand
+  const inflArrow=mk('span','ped-collapse-arrow'+(sl._inflOpen?' open':''));inflArrow.textContent='›';
+  inflHead.appendChild(inflArrow);
+  inflHead.onclick=()=>{pedDrawerTmp._inflOpen=!pedDrawerTmp._inflOpen;pedRenderDrawer();};
+  inflBox.appendChild(inflHead);
+  // Body espanso
+  if(sl._inflOpen){
+    const inflBody=mk('div','ped-infl-body');
+    // Selezione influencer esistente
+    const inflSel=mk('select','ped-field-inp');
+    const optNone=document.createElement('option');optNone.value='';optNone.textContent='— Nessun influencer —';inflSel.appendChild(optNone);
+    const collabs=_getClientCollabs();
+    collabs.forEach(inf=>{
+      const o=document.createElement('option');o.value=inf.id;
+      o.textContent=inf.nome+(inf.profiloIG?' (@'+inf.profiloIG+')':'');
+      if(inf.id===sl.influencerId)o.selected=true;
+      inflSel.appendChild(o);
+    });
+    inflSel.onchange=e=>{
+      pedDrawerTmp.influencerId=e.target.value||null;
+      const sel=collabs.find(c=>c.id===e.target.value);
+      pedDrawerTmp.influencerNome=sel?sel.nome:'';
+      pedRenderDrawer();
+    };
+    inflBody.appendChild(inflSel);
+    // Bottone nuovo influencer
+    const newInflBtn=mk('button','btn sm ghost','margin-top:6px;width:100%;gap:5px;');
+    newInflBtn.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuovo influencer';
+    newInflBtn.onclick=()=>{pedCloseDrawer();pedOpenCollabPanel();setTimeout(()=>pedOpenCollabNew(sl.id),100);};
+    inflBody.appendChild(newInflBtn);
+    // Se influencer selezionato, mostra badge stato collaborazione
+    if(sl.influencerId){
+      const inf=collabs.find(c=>c.id===sl.influencerId);
+      if(inf){
+        const badge=mk('div','ped-infl-badge');
+        const STATI_COL={contattato:{l:'Contattato',bg:'#fef3c7',t:'#92400e'},confermato:{l:'Confermato',bg:'#dbeafe',t:'#1e40af'},consegnato:{l:'Consegnato',bg:'#dcfce7',t:'#166534'},pagato:{l:'Pagato',bg:'#d1fae5',t:'#065f46'}};
+        const sc=STATI_COL[inf.stato]||{l:inf.stato||'—',bg:'var(--bg)',t:'var(--text-3)'};
+        badge.style.cssText='display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:var(--fs-xs);font-weight:600;background:'+sc.bg+';color:'+sc.t+';margin-top:6px;';
+        badge.textContent=sc.l;
+        if(inf.scadenza){const sd=mk('span');sd.style.cssText='font-size:10px;color:var(--text-3);margin-left:8px;';sd.textContent='Scad. '+inf.scadenza;badge.appendChild(sd);}
+        inflBody.appendChild(badge);
+      }
+    }
+    inflBox.appendChild(inflBody);
+  }
+  body.appendChild(inflBox);
+  // ── FINE SEZIONE INFLUENCER ──
+
   // Tipo chips
   addLabel('Tipo');
   const tipoWrap=mk('div','ped-tipo-chips');
@@ -4813,6 +4874,193 @@ function pedDrawerDelete(){
     showToast('✓ Slot ripristinato');
   });
 }
+
+/* ══ UGC COLLABORAZIONI — INFLUENCER MANAGEMENT ══ */
+let ugcInfluencer = {};
+
+function _getClientCollabs(){
+  const ci = feedClientIdx>=0 ? feedClientIdx : globalClientIdx;
+  const cl = clients[ci];
+  if(!cl) return [];
+  return ugcInfluencer[cl.name] || [];
+}
+function _setClientCollabs(arr){
+  const ci = feedClientIdx>=0 ? feedClientIdx : globalClientIdx;
+  const cl = clients[ci];
+  if(!cl) return;
+  ugcInfluencer[cl.name] = arr;
+}
+function _getInfluencerNome(id){
+  return _getClientCollabs().find(c=>c.id===id)?.nome || '';
+}
+
+function pedOpenCollabPanel(){
+  const panel = document.getElementById('ped-collab-panel');
+  if(!panel) return;
+  panel.style.display = 'flex';
+  document.getElementById('btn-collab')?.classList.add('active');
+  pedRenderCollabPanel();
+}
+function pedCloseCollabPanel(){
+  const panel = document.getElementById('ped-collab-panel');
+  if(panel) panel.style.display = 'none';
+  document.getElementById('btn-collab')?.classList.remove('active');
+}
+
+let _collabFilterStato = '';
+
+function pedRenderCollabPanel(){
+  const ci = feedClientIdx>=0 ? feedClientIdx : globalClientIdx;
+  const cl = clients[ci];
+  const lbl = document.getElementById('collab-client-lbl');
+  if(lbl) lbl.textContent = cl ? cl.name : '';
+  const collabs = _getClientCollabs();
+  // KPI
+  const kpiEl = document.getElementById('collab-kpi');
+  if(kpiEl){
+    const totComp = collabs.reduce((s,c)=>s+(parseFloat(c.compenso)||0),0);
+    const pagati = collabs.filter(c=>c.stato==='pagato').length;
+    kpiEl.innerHTML = `<span><strong>${collabs.length}</strong> influencer</span><span style="margin:0 6px;color:var(--border);">·</span><span><strong>€${totComp.toLocaleString('it-IT')}</strong> budget</span><span style="margin:0 6px;color:var(--border);">·</span><span><strong>${pagati}</strong> pagati</span>`;
+  }
+  // Filtri
+  const filtersEl = document.getElementById('collab-filters');
+  if(filtersEl){
+    filtersEl.innerHTML = '';
+    [{id:'',l:'Tutti'},{id:'contattato',l:'Contattato'},{id:'confermato',l:'Confermato'},{id:'consegnato',l:'Consegnato'},{id:'pagato',l:'Pagato'}].forEach(s=>{
+      const btn=document.createElement('button');
+      btn.className='ped-tipo-chip'+(s.id===_collabFilterStato?' active':'');
+      btn.textContent=s.l;
+      btn.onclick=()=>{_collabFilterStato=s.id;pedRenderCollabPanel();};
+      filtersEl.appendChild(btn);
+    });
+  }
+  // Lista
+  const listEl = document.getElementById('collab-list');
+  if(!listEl) return;
+  listEl.innerHTML = '';
+  const filtered = _collabFilterStato ? collabs.filter(c=>c.stato===_collabFilterStato) : collabs;
+  if(!filtered.length){
+    const em=document.createElement('div');
+    em.style.cssText='padding:40px;text-align:center;color:var(--text-3);font-size:var(--fs-sm);';
+    em.innerHTML='Nessun influencer'+(collabs.length&&_collabFilterStato?' con questo stato':'')+'.<br><br>';
+    const nb=document.createElement('button');nb.className='btn sm primary';nb.textContent='+ Nuovo influencer';nb.onclick=()=>pedOpenCollabNew();
+    em.appendChild(nb);listEl.appendChild(em);return;
+  }
+  const STATI_COL={contattato:{l:'Contattato',bg:'#fef3c7',t:'#92400e'},confermato:{l:'Confermato',bg:'#dbeafe',t:'#1e40af'},consegnato:{l:'Consegnato',bg:'#dcfce7',t:'#166534'},pagato:{l:'Pagato',bg:'#d1fae5',t:'#065f46'}};
+  filtered.forEach(inf=>{
+    const sc=STATI_COL[inf.stato]||{l:inf.stato||'—',bg:'var(--bg)',t:'var(--text-3)'};
+    const card=document.createElement('div');card.className='ped-collab-card';
+    const main=document.createElement('div');main.className='ped-collab-card-main';
+    // Nome + IG + badge
+    const top=document.createElement('div');top.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+    const nm=document.createElement('span');nm.style.cssText='font-size:var(--fs-sm);font-weight:700;color:var(--text);';nm.textContent=inf.nome||'—';top.appendChild(nm);
+    if(inf.profiloIG){const ig=document.createElement('a');ig.href='https://instagram.com/'+inf.profiloIG.replace('@','');ig.target='_blank';ig.style.cssText='font-size:var(--fs-xs);color:var(--text-3);';ig.textContent='@'+inf.profiloIG.replace('@','');top.appendChild(ig);}
+    const bdg=document.createElement('span');bdg.style.cssText=`padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:${sc.bg};color:${sc.t};`;bdg.textContent=sc.l;top.appendChild(bdg);
+    main.appendChild(top);
+    // Meta
+    const meta=document.createElement('div');meta.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;align-items:center;font-size:var(--fs-xs);color:var(--text-2);';
+    if(inf.compenso){const s=document.createElement('span');s.textContent='€ '+parseFloat(inf.compenso).toLocaleString('it-IT');meta.appendChild(s);}
+    if(inf.scadenza){const days=Math.round((new Date(inf.scadenza)-new Date())/(864e5));const sd=document.createElement('span');sd.style.color=days<0?'#dc2626':days<7?'#d97706':'var(--text-3)';sd.textContent='⏱ '+inf.scadenza+(days<0?' (scaduto)':days<7?' ('+days+'gg)':'');meta.appendChild(sd);}
+    const slot=inf.slotId?currentPedPlan().find(s=>s.id===inf.slotId):null;
+    if(slot){const sl=document.createElement('span');sl.style.cssText='cursor:pointer;color:var(--text-3);';sl.textContent='→ Slot '+(fmtDate(slot.date)||slot.date);sl.onclick=()=>{pedCloseCollabPanel();pedOpenDrawer(slot.id,slot.date);};meta.appendChild(sl);}
+    if(inf.linkContenuto){const lk=document.createElement('a');lk.href=inf.linkContenuto;lk.target='_blank';lk.style.color='var(--blue-dk,#1e40af)';lk.textContent='🔗 Contenuto';meta.appendChild(lk);}
+    main.appendChild(meta);
+    if(inf.brief){const br=document.createElement('div');br.style.cssText='font-size:var(--fs-xs);color:var(--text-3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px;';br.textContent=inf.brief;main.appendChild(br);}
+    card.appendChild(main);
+    // Azioni
+    const acts=document.createElement('div');acts.className='ped-collab-card-actions';
+    const eb=document.createElement('button');eb.className='btn sm';eb.textContent='Modifica';eb.onclick=()=>pedOpenCollabEdit(inf.id);
+    const db=document.createElement('button');db.className='btn sm danger';db.textContent='✕';db.onclick=()=>pedDeleteCollab(inf.id);
+    acts.appendChild(eb);acts.appendChild(db);card.appendChild(acts);
+    listEl.appendChild(card);
+  });
+}
+
+let _collabEditId=null;
+function pedOpenCollabNew(preselSlotId){_collabEditId=null;_renderCollabModal({stato:'contattato',slotId:preselSlotId||''});}
+function pedOpenCollabEdit(id){_collabEditId=id;const inf=_getClientCollabs().find(c=>c.id===id);if(inf)_renderCollabModal({...inf});}
+function pedCloseCollabModal(){const m=document.getElementById('collab-modal');if(m)m.style.display='none';}
+
+function _renderCollabModal(data){
+  const modal=document.getElementById('collab-modal');
+  const body=document.getElementById('collab-modal-body');
+  const title=document.getElementById('collab-modal-title');
+  if(!modal||!body)return;
+  title.textContent=_collabEditId?'Modifica influencer':'Nuovo influencer';
+  body.innerHTML='';
+  const fld=(id,lbl,type,val,ph,ac,im)=>{
+    const d=document.createElement('div');d.className='field';
+    const l=document.createElement('label');l.textContent=lbl;d.appendChild(l);
+    const i=document.createElement('input');i.type=type;i.id=id;i.value=val;i.placeholder=ph;i.autocomplete=ac||'off';if(im)i.inputMode=im;
+    d.appendChild(i);body.appendChild(d);
+  };
+  fld('ci-nome','Nome *','text',data.nome||'','Nome influencer','name');
+  fld('ci-ig','Profilo Instagram','text',data.profiloIG||'','@handle','off');
+  fld('ci-email','Email','email',data.email||'','email@esempio.com','email','email');
+  fld('ci-tel','Telefono','tel',data.tel||'','+39 …','tel','tel');
+  // Compenso + Scadenza
+  const row=document.createElement('div');row.className='field-row';
+  ['Compenso (€)','Scadenza'].forEach((lbl,i)=>{
+    const d=document.createElement('div');d.className='field';
+    const l=document.createElement('label');l.textContent=lbl;d.appendChild(l);
+    const inp=document.createElement('input');inp.id=i===0?'ci-comp':'ci-scad';inp.type=i===0?'number':'date';inp.value=i===0?(data.compenso||''):(data.scadenza||'');if(i===0){inp.min='0';inp.placeholder='0';inp.inputMode='numeric';}
+    d.appendChild(inp);row.appendChild(d);
+  });
+  body.appendChild(row);
+  // Stato
+  const sd=document.createElement('div');sd.className='field';const sl=document.createElement('label');sl.textContent='Stato';sd.appendChild(sl);
+  const ss=document.createElement('select');ss.id='ci-stato';
+  ['contattato','confermato','consegnato','pagato'].forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s.charAt(0).toUpperCase()+s.slice(1);if(data.stato===s)o.selected=true;ss.appendChild(o);});
+  sd.appendChild(ss);body.appendChild(sd);
+  // Brief
+  const bd=document.createElement('div');bd.className='field';const bl=document.createElement('label');bl.textContent='Brief / Note creator';bd.appendChild(bl);
+  const bt=document.createElement('textarea');bt.id='ci-brief';bt.rows=3;bt.placeholder='Istruzioni, mood, hashtag…';bt.value=data.brief||'';bd.appendChild(bt);body.appendChild(bd);
+  // Link
+  fld('ci-link','Link contenuto prodotto','url',data.linkContenuto||'','https://…','url','url');
+  // Note
+  const nd=document.createElement('div');nd.className='field';const nl=document.createElement('label');nl.textContent='Note interne';nd.appendChild(nl);
+  const nt=document.createElement('textarea');nt.id='ci-note';nt.rows=2;nt.placeholder='Solo per uso interno…';nt.value=data.note||'';nd.appendChild(nt);body.appendChild(nd);
+  // Slot
+  const sld=document.createElement('div');sld.className='field';const sll=document.createElement('label');sll.textContent='Collega a slot UGC';sld.appendChild(sll);
+  const slsel=document.createElement('select');slsel.id='ci-slot';
+  const o0=document.createElement('option');o0.value='';o0.textContent='— Nessuno slot —';slsel.appendChild(o0);
+  currentPedPlan().forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=(fmtDate(s.date)||s.date)+' · '+(UGC_STATI[s.ugcStato]?.label||s.ugcStato||'—');if(data.slotId===s.id)o.selected=true;slsel.appendChild(o);});
+  sld.appendChild(slsel);body.appendChild(sld);
+  modal.style.display='flex';
+  setTimeout(()=>document.getElementById('ci-nome')?.focus(),50);
+}
+
+function pedSaveCollab(){
+  const nome=(document.getElementById('ci-nome')?.value||'').trim();
+  if(!nome){document.getElementById('ci-nome')?.focus();showToast('Nome obbligatorio','warn');return;}
+  const inf={
+    id:_collabEditId||('inf_'+Date.now().toString(36)),
+    nome,
+    profiloIG:(document.getElementById('ci-ig')?.value||'').trim().replace(/^@/,''),
+    email:(document.getElementById('ci-email')?.value||'').trim(),
+    tel:(document.getElementById('ci-tel')?.value||'').trim(),
+    compenso:document.getElementById('ci-comp')?.value||'',
+    scadenza:document.getElementById('ci-scad')?.value||'',
+    stato:document.getElementById('ci-stato')?.value||'contattato',
+    brief:(document.getElementById('ci-brief')?.value||'').trim(),
+    linkContenuto:(document.getElementById('ci-link')?.value||'').trim(),
+    note:(document.getElementById('ci-note')?.value||'').trim(),
+    slotId:document.getElementById('ci-slot')?.value||'',
+  };
+  const collabs=_getClientCollabs();
+  if(_collabEditId){const idx=collabs.findIndex(c=>c.id===_collabEditId);if(idx>=0)collabs[idx]=inf;else collabs.push(inf);}
+  else collabs.push(inf);
+  _setClientCollabs(collabs);autoSave();
+  pedCloseCollabModal();pedRenderCollabPanel();
+  showToast(_collabEditId?'✓ Influencer aggiornato':'✓ Influencer aggiunto');
+}
+
+function pedDeleteCollab(id){
+  const collabs=_getClientCollabs();const idx=collabs.findIndex(c=>c.id===id);if(idx<0)return;
+  const snap={...collabs[idx]};collabs.splice(idx,1);_setClientCollabs(collabs);autoSave();pedRenderCollabPanel();
+  showUndoToast('Influencer eliminato',()=>{const cur=_getClientCollabs();cur.splice(idx,0,{...snap});_setClientCollabs(cur);autoSave();pedRenderCollabPanel();});
+}
+
 
 /* ── Genera piano / Svuota ── */
 function pedGenerate(){
