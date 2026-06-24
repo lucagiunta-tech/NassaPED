@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+
+
+<title>Nassa Studio</title>
+  <meta name="description" content="Nassa Studio — piattaforma interna di pianificazione contenuti social">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Open Graph — solo per condivisione interna -->
+  <meta property="og:title" content="Nassa Studio">
+  <meta property="og:description" content="Pianificazione contenuti social per i clienti Nassa">
+  <meta property="og:type" content="website">
+  <!-- Sicurezza: disabilita detection automatica numeri/email -->
+  <meta name="format-detection" content="telephone=no, email=no, address=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
+<link rel="stylesheet" href="/style.css?v=1782171720"/>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar" id="subtopbar">
+  <!-- Brand — sempre visibile, click → lista clienti -->
+  <div class="topbar-brand" id="topbar-brand" onclick="switchTab('studio')" title="Torna ai clienti" role="button" aria-label="Torna alla lista clienti">
+    <div class="brand-mark">N</div>
+    <div class="brand-name" id="brand-name-text">Nassa Studio</div>
+  </div>
+
+  <!-- Sezione cliente — visibile solo quando un cliente è aperto -->
+  <div class="topbar-client-section" id="topbar-client-section" style="display:none;">
+    <div class="subtopbar-client" onclick="backToClients()" aria-label="Torna ai clienti" title="Torna ai clienti">
+      <span class="subtopbar-back">‹</span>
+      <div>
+        <div class="subtopbar-name" id="subtopbar-name">—</div>
+        <div class="subtopbar-pkg" id="subtopbar-pkg"></div>
+      </div>
+    </div>
+    <div class="acc-switcher" id="acc-switcher" style="display:none;">
+      <div id="acc-btns" style="display:flex;gap:4px;"></div>
+    </div>
+    <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
+      <div class="sub-tab" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
+      <div class="sub-tab" id="sub-tab-pilastri"   onclick="switchTab('pilastri')">Pilastri</div>
+      <div class="sub-tab" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
+      <div class="sub-tab" id="sub-tab-feed"       onclick="switchTab('feed')">Feed</div>
+      <div class="sub-tab" id="sub-tab-stories"    onclick="switchTab('stories')">Stories</div>
+      <div class="sub-tab" id="sub-tab-ped"        onclick="switchTab('ped')">UGC</div>
+      <div class="sub-tab" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
+      <div class="sub-tab" id="sub-tab-cal"        onclick="switchTab('cal')">Calendario</div>
+      <div class="sub-tab" id="sub-tab-anno"       onclick="switchTab('anno')">Piano annuale</div>
+      <div class="sub-tab" id="sub-tab-preview"    onclick="switchTab('preview')">Preview</div>
+    </div>
+  </div>
+
+  <!-- tab-studio hidden (JS compat) -->
+  <div id="tab-studio" style="display:none;"></div>
+
+  <!-- Right: cloud + dark mode + avatar -->
+  <div class="topbar-right">
+    <span class="cloud-badge" id="cloud-status" title="Cloud sync">☁ Cloud</span>
+    <button id="theme-toggle" onclick="toggleDarkMode()" title="Cambia tema" aria-label="Dark/Light mode" style="width:32px;height:32px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background var(--t-fast);">🌙</button>
+    <div style="position:relative;display:inline-block;">
+      <div class="avatar" id="user-avatar" onclick="toggleUserSwitcher()" aria-label="Cambia utente">AA</div>
+      <div class="avatar-online-dot" title="Sessione attiva"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUBTOPBAR rimossa — contenuto spostato nella topbar -->
+<div style="display:none;" aria-hidden="true">
+  <div id="subtopbar-compat" style="display:none;"></div>
+</div>
+
+<!-- USER SWITCHER -->
+<div class="user-switcher" id="user-switcher">
+  <div class="user-switcher-title">Utente</div>
+  <button class="user-btn" onclick="switchUser('shared')">Shared (team)</button>
+  <button class="user-btn" onclick="switchUser('luca')">Luca</button>
+  <button class="user-btn" onclick="switchUser('alberto')">Alberto</button>
+  <button class="user-btn" onclick="switchUser('giacomo')">Giacomo</button>
+  <button class="user-btn" onclick="switchUser('paolone')">Paolone</button>
+  <button class="user-btn" onclick="switchUser('akash')">Akash</button>
+  <button class="user-btn" onclick="switchUser('hermes')">Hermes</button>
+  <button class="user-btn" onclick="switchUser('matteo')">Matteo</button>
+</div>
+
+<div class="body">
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <!-- Main icon sidebar — always visible -->
+  <div class="sb-main-nav" id="sb-main-nav">
+    <div class="sb-nav-top">
+
+      <!-- HOME -->
+      <div class="sb-nav-item active" id="si-studio" onclick="switchTab('studio')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="sb-nav-label">Clienti</span>
+      </div>
+
+      <div class="sb-nav-sep"></div>
+
+      <!-- GRUPPO 1: CONTENUTO -->
+      <div class="sb-group-lbl">Contenuto</div>
+      <div class="sb-nav-item" id="si-notes" onclick="switchTab('notes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span class="sb-nav-label">Piano</span>
+      </div>
+      <div class="sb-nav-item" id="si-pilastri" onclick="switchTab('pilastri')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="sb-nav-label">Pilastri</span>
+      </div>
+      <div class="sb-nav-item" id="si-storyboard" onclick="switchTab('storyboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <span class="sb-nav-label">Storyboard</span>
+      </div>
+      <div class="sb-nav-item" id="si-feed" onclick="switchTab('feed')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span class="sb-nav-label">Feed</span>
+      </div>
+      <div class="sb-nav-item" id="si-stories" onclick="switchTab('stories')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
+        <span class="sb-nav-label">Stories</span>
+      </div>
+      <div class="sb-nav-item" id="si-ped" onclick="switchTab('ped')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="sb-nav-label">UGC</span>
+      </div>
+
+      <div class="sb-nav-sep"></div>
+
+      <!-- GRUPPO 2: PIANIFICAZIONE -->
+      <div class="sb-group-lbl">Pianificazione</div>
+      <div class="sb-nav-item" id="si-cal" onclick="switchTab('cal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="sb-nav-label">Calendario</span>
+      </div>
+      <div class="sb-nav-item" id="si-anno" onclick="switchTab('anno')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+        <span class="sb-nav-label">Piano annuale</span>
+      </div>
+
+      <div class="sb-nav-sep"></div>
+
+      <!-- GRUPPO 3: GESTIONE -->
+      <div class="sb-group-lbl">Gestione</div>
+      <div class="sb-nav-item" id="si-ads" onclick="switchTab('ads')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        <span class="sb-nav-label">Ads</span>
+      </div>
+      <div class="sb-nav-item" id="si-preview" onclick="switchTab('preview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="sb-nav-label">Preview</span>
+      </div>
+
+    </div>
+    <div class="sb-nav-foot">
+      <div class="sb-nav-sep"></div>
+      <div class="sb-nav-item" style="color:var(--text-3);" onclick="toggleUserSwitcher()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="sb-nav-label">Utente</span>
+      </div>
+      <button class="sb-toggle-btn" id="sb-toggle-btn" onclick="toggleSidebar()" title="Espandi/comprimi" aria-label="Espandi/comprimi">
+        <svg id="sb-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Content panels (feed, stories etc) — shown when in content tabs -->
+  <div id="sidebar-studio" style="display:none;"></div>
+
+  <!-- Feed sidebar panel removed — moved to page-feed context bar -->
+  <div id="sidebar-feed" style="display:none;"></div>
+
+  <!-- Stories sidebar panel removed — moved to page-stories context bar -->
+  <div id="sidebar-stories" style="display:none;"></div>
+
+  <!-- sidebar-studio-add moved to modal -->
+  <div id="sidebar-studio-add" style="display:none;"></div>
+</div><!-- /sidebar -->
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STUDIO -->
+  <div class="tab-page active" id="page-studio">
+    <div class="content-bar">
+      <span class="content-title">Studio</span>
+      <span class="content-tag" id="studio-count">0 clienti</span>
+      <div class="content-space"></div>
+      <button class="btn sm primary" onclick="showStudioAdd()">+ Aggiungi</button>
+    </div>
+    <div class="studio-main">
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">Fatturato mensile</div>
+          <div style="display:flex;align-items:baseline;gap:3px;"><span style="font-size:14px;font-weight:500;color:var(--green)">€</span><div class="kpi-val" id="kpi-revenue">0</div></div>
+          <div class="kpi-sub" id="kpi-rev-sub">da 0 clienti attivi</div>
+        </div>
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">Clienti attivi</div>
+          <div class="kpi-val" style="color:var(--blue);" id="kpi-active">0</div>
+          <div class="kpi-sub">retainer in corso</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Account totali</div>
+          <div class="kpi-val" style="color:var(--teal);" id="kpi-accounts">0</div>
+          <div class="kpi-sub">profili social gestiti</div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">Ore stimate</div>
+          <div style="display:flex;align-items:baseline;gap:3px;"><input class="kpi-inp" id="kpi-hours" type="text" value="0" style="color:var(--amber-dk);"/><span style="font-size:12px;color:var(--text-2);">h</span></div>
+          <div class="kpi-sub">questo mese</div>
+        </div>
+      </div>
+      <div class="table-hd"><h3>Clienti</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Account</th><th>Pacchetto</th><th>Stato</th><th>€/mese</th><th></th></tr></thead>
+          <tbody id="clients-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIANO TESTO -->
+  <div class="tab-page" id="page-notes">
+    <div class="docs-layout">
+
+      <!-- ── COL 1: Cartelle ── -->
+      <div class="docs-folders" id="docs-folders">
+        <div class="docs-col-head">
+          <span class="docs-col-title">Cartelle</span>
+          <button class="docs-add-btn" onclick="docsNewFolder()" title="Nuova cartella" aria-label="Nuova cartella">+</button>
+        </div>
+        <div class="docs-folder-list" id="docs-folder-list"></div>
+      </div>
+
+      <!-- ── COL 2: Lista documenti ── -->
+      <div class="docs-list-col" id="docs-list-col">
+        <div class="docs-col-head">
+          <span class="docs-col-title" id="docs-list-title">Documenti</span>
+          <button class="docs-add-btn" onclick="docsNewDoc()" title="Nuovo documento" aria-label="Nuovo documento">+</button>
+        </div>
+        <div class="docs-doc-list" id="docs-doc-list"></div>
+      </div>
+
+      <!-- ── COL 3: Editor ── -->
+      <div class="docs-editor-col" id="docs-editor-col">
+        <!-- Empty state -->
+        <div class="docs-empty" id="docs-empty">
+          <div class="docs-empty-icon">📄</div>
+          <div class="docs-empty-title">Nessun documento aperto</div>
+          <div class="docs-empty-sub">Seleziona un documento o creane uno nuovo</div>
+          <button class="btn primary" onclick="docsNewDoc()">+ Nuovo documento</button>
+        </div>
+
+        <!-- Editor attivo -->
+        <div class="docs-editor-wrap" id="docs-editor-wrap" style="display:none;">
+          <!-- Titlebar -->
+          <div class="docs-titlebar">
+            <input class="docs-title-inp" id="docs-title-inp" type="text"
+              placeholder="Titolo documento…" autocomplete="off"
+              oninput="docsSaveTitle(this.value)"/>
+            <div class="docs-meta" id="docs-meta"></div>
+            <button class="ntb" onclick="docsTogglePreview()" id="docs-preview-btn" title="Preview">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview
+            </button>
+          </div>
+
+          <!-- Block toolbar -->
+          <div class="docs-toolbar" id="docs-toolbar">
+            <button class="ntb" onclick="docsInsertBlock('h1')" title="Titolo H1">H1</button>
+            <button class="ntb" onclick="docsInsertBlock('h2')" title="Titolo H2">H2</button>
+            <button class="ntb" onclick="docsInsertBlock('h3')" title="Titolo H3">H3</button>
+            <div class="ntb-sep"></div>
+            <button class="ntb" onclick="docsInsertBlock('paragraph')" title="Paragrafo">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('bullet')" title="Lista puntata">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('numbered')" title="Lista numerata">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('callout')" title="Callout/nota">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('image')" title="Immagine / link Dropbox">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+            <button class="ntb" onclick="docsInsertBlock('divider')" title="Separatore">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <div style="flex:1;"></div>
+            <span class="notes-wc" id="notes-wc"></span>
+          </div>
+
+          <!-- Blocchi editor -->
+          <div class="docs-blocks" id="docs-blocks"></div>
+
+          <!-- Preview -->
+          <div class="docs-preview" id="docs-preview" style="display:none;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Hidden compat -->
+    <select id="notes-month-sel" style="display:none;"></select>
+    <select id="notes-client-sel" style="display:none;"><option value="">—</option></select>
+    <div id="notes-month-pills" style="display:none;"></div>
+    <div id="notes-toc" style="display:none;"><div id="notes-toc-list"></div></div>
+  </div>
+
+    <!-- FEED -->
+  <div class="tab-page" id="page-feed">
+    <!-- Feed context bar — 2 righe fisse -->
+    <div class="feed-ctx-bar">
+
+      <!-- RIGA 1: navigazione -->
+      <div class="feed-ctx-row1">
+        <button class="fbar-btn" id="toggle-view" onclick="toggleFeedView()" aria-label="Cambia vista" title="Griglia/Lista">
+          <svg id="toggle-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <button class="fbar-pill" id="feed-all-months-btn" onclick="toggleAllMonthsMode()" aria-label="Tutti i mesi">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="all-months-lbl">Tutti</span>
+        </button>
+        <button class="fbar-pill" id="feed-backlog-btn" onclick="toggleBacklogFilter()" aria-label="Backlog">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4" stroke-width="2"/></svg>
+          Backlog
+        </button>
+        <select id="feed-account-sel" class="ctx-select" onchange="onFeedAccountChange()"></select>
+        <select id="feed-client-sel" onchange="onFeedClientChange()" style="display:none;"><option value="">—</option></select>
+        <div class="fbar-sep"></div>
+        <div id="feed-month-pills" class="feed-month-pills-inline"></div>
+        <div class="fbar-sep"></div>
+        <button class="ctx-fmt-badge" id="feed-fmt-badge" onclick="toggleFmtDropdown()" aria-label="Cambia piattaforma">Instagram · 4:5 ▾</button>
+        <!-- + Carica con popover -->
+        <div style="position:relative;" id="feed-upload-anchor">
+          <button class="feed-upload-quick-btn" id="feed-upload-btn" onclick="openFeedUploadPanel()" aria-label="Carica foto o video">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            + Carica
+            <svg id="feed-upload-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:1px;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="feed-ctx-panel" class="feed-upload-popover">
+            <div class="feed-dz" id="feed-drop-zone">
+              <input type="file" id="feed-file-input" accept="image/*,video/*" multiple onchange="queueFeedFiles(this.files)"/>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div class="dz-title">Trascina o <strong>sfoglia</strong></div>
+              <div class="dz-sub">JPG · PNG · MP4 · MOV</div>
+            </div>
+            <div class="fup-divider">oppure incolla link</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="link-tabs" style="margin-bottom:0;">
+                <button class="link-tab active" id="fl-tab-frame" onclick="setFeedLinkTab('frame')">Frame.io</button>
+                <button class="link-tab" id="fl-tab-other" onclick="setFeedLinkTab('other')">Link</button>
+              </div>
+              <div class="link-row">
+                <input type="text" id="feed-link-inp" placeholder="Incolla link…" autocomplete="url" inputmode="url" onkeydown="if(event.key==='Enter')addFeedLink()"/>
+                <button onclick="addFeedLink()">+</button>
+              </div>
+            </div>
+            <div class="fup-divider">aggiungi</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn sm" onclick="openEditorialModal();closeFeedUploadPanel();" style="flex:1;justify-content:center;gap:5px;font-size:11px;">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Card
+              </button>
+              <button class="btn sm" onclick="addPendingSlot();closeFeedUploadPanel();" style="flex:1;justify-content:center;gap:5px;font-size:11px;">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Slot
+              </button>
+            </div>
+            <div id="batch-reupload-wrap" style="display:none;">
+              <button class="btn sm" id="batch-reupload-btn" onclick="batchReuploadMissing()" style="width:100%;justify-content:center;gap:5px;background:#f59e0b;color:#111;border:none;font-size:11px;">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+                <span id="batch-reupload-label">Ricarica mancanti</span>
+              </button>
+              <input type="file" id="batch-reupload-input" accept="image/*,video/*" multiple style="display:none;" onchange="batchReuploadFromFiles(this.files)"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGA 2: stat + toggle + azioni — sempre visibile -->
+      <div class="feed-bar-r2">
+        <div class="fbr2-stats">
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-tot">0</span><span class="fbr2-l">post</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-vid">0</span><span class="fbr2-l">reel</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-car">0</span><span class="fbr2-l">caros.</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-stories">0</span><span class="fbr2-l">stories</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="stat-hl">0</span><span class="fbr2-l">evid.</span></span>
+          <span class="fbar-sep"></span>
+          <button class="fbr2-toggle" id="toggle-dates" onclick="toggleAllDates()" aria-label="Mostra/nascondi date">
+            Data <span class="gtoggle-chip" id="toggle-dates-chip">ON</span>
+          </button>
+          <button class="fbr2-toggle" id="toggle-copy" onclick="toggleAllCopy()" aria-label="Mostra/nascondi copy">
+            Copy <span class="gtoggle-chip" id="toggle-copy-chip">ON</span>
+          </button>
+        </div>
+        <div class="fbr2-actions">
+          <button class="fbr2-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" aria-label="Profilo">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profilo
+          </button>
+          <button class="fbr2-btn" onclick="openEditorialModal()" aria-label="Card editoriale">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Card
+          </button>
+          <button class="fbr2-btn" onclick="addPendingSlot()" aria-label="Slot vuoto">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Slot
+          </button>
+          <span class="fbar-sep"></span>
+          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendario
+          </button>
+          <span class="fbr2-hint">⠿ trascina · hover → opzioni</span>
+        </div>
+      </div>
+
+    </div><!-- /feed-ctx-bar -->
+    <!-- Feed grid full width -->
+    <div class="feed-grid-area">
+
+      <!-- Blocco profilo Instagram-style — collassabile -->
+      <div id="feed-ig-profile" class="feed-ig-profile" style="display:none;">
+        <div class="fig-inner">
+          <!-- Avatar -->
+          <div class="fig-avatar-wrap">
+            <div class="fig-avatar" id="fig-avatar" onclick="feedProfileAvatarClick()" title="Cambia foto profilo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+          <!-- Info -->
+          <div class="fig-info">
+            <!-- Riga username + edit -->
+            <div class="fig-top">
+              <input id="fig-username" class="fig-username-inp" type="text" placeholder="@username" maxlength="30" autocomplete="username"
+                oninput="figSaveField('username',this.value)" />
+              <button class="btn ghost sm" onclick="feedProfileAvatarClick()" style="font-size:11px;padding:3px 8px;gap:4px;">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Cambia foto
+              </button>
+            </div>
+            <!-- Stats row -->
+            <div class="fig-stats">
+              <div class="fig-stat">
+                <span class="fig-stat-n" id="fig-stat-post">0</span>
+                <span class="fig-stat-l">post</span>
+              </div>
+              <div class="fig-stat" style="cursor:pointer;">
+                <input class="fig-stat-inp" id="fig-followers" type="text" placeholder="0" maxlength="8"
+                  oninput="figSaveField('followers',this.value)" />
+                <span class="fig-stat-l">follower</span>
+              </div>
+              <div class="fig-stat" style="cursor:pointer;">
+                <input class="fig-stat-inp" id="fig-following" type="text" placeholder="0" maxlength="8"
+                  oninput="figSaveField('following',this.value)" />
+                <span class="fig-stat-l">seguiti</span>
+              </div>
+            </div>
+            <!-- Nome account -->
+            <div class="fig-name" id="fig-name"></div>
+            <!-- Bio multiriga -->
+            <textarea id="fig-bio" class="fig-bio" autocomplete="off" rows="3" placeholder="Scrivi la bio…&#10;Puoi andare a capo liberamente."
+              oninput="figSaveField('bio',this.value);figBioCounter(this.value)"></textarea>
+            <div id="fig-bio-counter" class="fig-bio-counter"></div>
+            <!-- Link -->
+            <input id="fig-link" class="fig-link-inp" type="url" inputmode="url" placeholder="https://linkinbio.it/…" maxlength="100" autocomplete="url"
+              oninput="figSaveField('link',this.value)" />
+          </div>
+        </div>
+      </div>
+
+      <div id="feed-grid" class="feed-grid"></div>
+      <div id="feed-all-months-wrap" style="display:none;flex-direction:column;gap:0;overflow-y:auto;flex:1;min-height:0;"></div>
+      <div id="feed-backlog-wrap" style="display:none;flex-direction:column;flex:1;overflow-y:auto;min-height:0;"></div>
+    </div>
+  </div>
+
+  <!-- STORIES -->
+  <div class="tab-page" id="page-stories">
+    <div class="feed-ctx-bar">
+      <!-- Riga 1 -->
+      <div class="feed-ctx-row1">
+        <button class="fbar-btn" id="sb-toggle-view-stories" onclick="toggleStoriesView?.()" aria-label="Cambia vista" title="Griglia/Lista">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <select id="stories-account-sel" class="ctx-select" onchange="onStoriesAccountChange()"></select>
+        <select id="stories-client-sel" onchange="onStoriesClientChange()" style="display:none;"><option value="">—</option></select>
+        <div class="fbar-sep"></div>
+        <div id="stories-month-pills" class="feed-month-pills-inline"></div>
+        <div class="fbar-sep"></div>
+        <!-- Popover upload Stories -->
+        <div style="position:relative;" id="stories-upload-anchor">
+          <button class="feed-upload-quick-btn" id="stories-upload-btn" onclick="openStoriesUploadPanel()" aria-label="Carica storia">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            + Carica
+            <svg id="stories-upload-chevron" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:1px;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="stories-ctx-panel" class="feed-upload-popover">
+            <div class="feed-dz" id="stories-drop-zone">
+              <input type="file" id="stories-file-input" accept="image/*,video/*" multiple onchange="queueStoryFiles(this.files)"/>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div class="dz-title">Trascina o <strong>sfoglia</strong></div>
+              <div class="dz-sub">JPG · PNG · MP4 · MOV</div>
+            </div>
+            <div class="fup-divider">oppure incolla link</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="link-tabs" style="margin-bottom:0;">
+                <button class="link-tab active" id="sl-tab-frame" onclick="setStoriesLinkTab('frame')">Frame.io</button>
+                <button class="link-tab" id="sl-tab-other" onclick="setStoriesLinkTab('other')">Link</button>
+              </div>
+              <div class="link-row">
+                <input type="text" id="stories-link-inp" placeholder="Incolla link…" autocomplete="url" inputmode="url" onkeydown="if(event.key==='Enter')addStoryLink()"/>
+                <button onclick="addStoryLink()">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Riga 2 -->
+      <div class="feed-bar-r2">
+        <div class="fbr2-stats">
+          <span class="fbr2-stat"><span class="fbr2-n" id="sst-stories">0</span><span class="fbr2-l">stories</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="sst-sb">0</span><span class="fbr2-l">storyboard</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="sst-hl">0</span><span class="fbr2-l">evidenze</span></span>
+        </div>
+        <div class="fbr2-actions">
+          <button class="fbr2-btn" onclick="openCopyModal('stories')" aria-label="Copia da feed">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copia da…
+          </button>
+          <span class="fbar-sep"></span>
+          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendario
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Grid -->
+    <div class="content-area">
+      <!-- Banner collegamento Storyboard -->
+      <div id="stories-sb-banner" style="display:none;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--green-lt);border-bottom:1px solid var(--green-mid);gap:10px;font-size:var(--fs-sm);font-weight:500;color:var(--green-text);"></div>
+      <div class="stories-section-lbl">In evidenza</div>
+      <div class="hl-row" id="hl-row"></div>
+      <div style="margin-top:20px;">
+        <div class="stories-section-lbl">Stories del mese</div>
+        <div class="stories-grid" id="stories-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UGC -->
+  <!-- PILASTRI TAB -->
+  <div class="tab-page" id="page-pilastri">
+    <div class="studio-main" id="pilastri-main">
+      <div id="pilastri-body"></div>
+    </div>
+  </div>
+
+  <div class="tab-page" id="page-ped">
+    <!-- UGC Header bar -->
+    <div class="ped-topbar">
+      <span class="ped-topbar-title" id="ped-title">UGC</span>
+      <span class="ped-topbar-client" id="ped-client-label">— seleziona cliente nel Feed</span>
+      <div class="ped-topbar-space"></div>
+      <span class="ped-topbar-meta" id="ped-meta"></span>
+    </div>
+    <!-- Tab switcher -->
+    <div class="ped-tabs-bar" id="ped-tabs-bar">
+      <button class="ped-tab-btn active" id="ped-tab-calendario" onclick="pedSwitchTab('calendario')">Calendario</button>
+      <button class="ped-tab-btn" id="ped-tab-piano" onclick="pedSwitchTab('piano')">Piano</button>
+      <button class="ped-tab-btn" id="ped-tab-anno" onclick="pedSwitchTab('anno')">Anno</button>
+    </div>
+    <!-- Tab Calendario -->
+    <div class="ped-tab-panel active" id="ped-panel-calendario" style="position:relative;">
+      <!-- Cal header (giorni + controlli) -->
+      <div class="ped-cal-toolbar" id="ped-cal-toolbar">
+        <div class="ped-cal-nav">
+          <button class="btn sm icon" onclick="pedCalNav(-1)" aria-label="Mese precedente">‹</button>
+          <span class="ped-cal-month-lbl" id="ped-cal-month-lbl">—</span>
+          <button class="btn sm icon" onclick="pedCalNav(1)" aria-label="Mese successivo">›</button>
+        </div>
+        <div class="ped-cal-legend">
+          <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#d4a800;"></span>Raccolto</span>
+          <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#1D9E75;"></span>Selezionato</span>
+          <span class="ped-legend-item"><span class="ped-legend-dot" style="background:#7F77DD;"></span>Autonoma</span>
+        </div>
+        <div class="ped-cal-toolbar-right">
+          <div class="freq-days-mini" id="ped-freq-days"></div>
+          <button class="btn sm primary" onclick="pedOpenDrawerNew()" style="gap:5px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Aggiungi slot
+          </button>
+          <button class="btn sm" id="btn-collab" onclick="pedOpenCollabPanel()" style="gap:5px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Collaborazioni
+          </button>
+          <button class="btn sm ghost" onclick="pedGenerate()">Genera piano</button>
+          <button class="btn sm ghost" onclick="pedClear()">Svuota</button>
+        </div>
+      </div>
+      <!-- Empty state -->
+      <div class="ped-empty-ped" id="ped-empty" style="display:none;">
+        <span class="pe-icon">📝</span>
+        <p>Vai nel <strong>Feed</strong>, seleziona un cliente e un mese.<br>Poi torna qui per pianificare le UGC.</p>
+      </div>
+      <!-- Flex row: griglia + drawer -->
+      <div class="ped-cal-row">
+        <div class="ped-cal-body" id="ped-cal-body">
+          <div class="ped-cal-head" id="ped-cal-head"></div>
+          <div class="ped-cal-grid" id="ped-cal-grid"></div>
+        </div>
+        <!-- UGC Slot Modal (popover centrato) — fuori dal flow della griglia -->
+      </div><!-- /ped-cal-row -->
+    </div>
+
+    <!-- Pannello Collaborazioni (overlay sopra il calendario) -->
+    <div id="ped-collab-panel" style="display:none;position:absolute;inset:0;background:var(--surface);z-index:50;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button class="btn sm icon" onclick="pedCloseCollabPanel()" aria-label="Chiudi">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><line x1="5" y1="5" x2="19" y2="19"/></svg>
+        </button>
+        <span style="font-size:var(--fs-base);font-weight:700;color:var(--text);">Collaborazioni</span>
+        <span id="collab-client-lbl" style="font-size:var(--fs-sm);color:var(--text-3);"></span>
+        <div style="flex:1;"></div>
+        <div id="collab-kpi" style="display:flex;gap:16px;font-size:var(--fs-xs);color:var(--text-2);"></div>
+        <button class="btn sm primary" onclick="pedOpenCollabNew()" style="gap:5px;">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuovo influencer
+        </button>
+      </div>
+      <!-- Filtri stato -->
+      <div id="collab-filters" style="display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border-lt);flex-shrink:0;flex-wrap:wrap;"></div>
+      <!-- Lista influencer -->
+      <div id="collab-list" style="flex:1;overflow-y:auto;padding:8px 16px;"></div>
+    </div>
+
+    <!-- Modal nuovo/modifica influencer -->
+    <div id="collab-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseCollabModal()">
+      <div class="modal-box" style="width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;" role="dialog" aria-modal="true" aria-labelledby="collab-modal-title">
+        <div class="modal-hd">
+          <h3 id="collab-modal-title" class="modal-title">Influencer</h3>
+          <button class="modal-close" onclick="pedCloseCollabModal()" aria-label="Chiudi">✕</button>
+        </div>
+        <div class="modal-body" id="collab-modal-body"></div>
+        <div class="modal-footer">
+          <button class="btn ghost" onclick="pedCloseCollabModal()">Annulla</button>
+          <button class="btn primary" onclick="pedSaveCollab()">Salva</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Piano -->
+    <div class="ped-tab-panel" id="ped-panel-piano">
+      <div class="ped-piano-list" id="ped-piano-list"></div>
+    </div>
+    <!-- Tab Anno -->
+    <div class="ped-tab-panel" id="ped-panel-anno">
+      <div class="ped-anno-grid" id="ped-anno-grid"></div>
+    </div>
+  </div>
+
+  <!-- STORYBOARD TAB -->
+  <div class="tab-page" id="page-storyboard">
+    <div class="feed-ctx-bar">
+      <!-- Riga 1 -->
+      <div class="feed-ctx-row1">
+        <button class="fbar-btn" id="sb-toggle-view" onclick="toggleSbView()" aria-label="Cambia vista" title="Griglia/Lista">
+          <svg id="sb-toggle-view-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <select id="sb-tab-account-sel" class="ctx-select" onchange="onSbTabAccountChange()"></select>
+        <div class="fbar-sep"></div>
+        <div id="sb-tab-month-pills" class="feed-month-pills-inline"></div>
+        <div class="fbar-sep"></div>
+        <button class="feed-upload-quick-btn" onclick="openStoryboardModal(-1)" aria-label="Nuovo storyboard">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          + Nuovo storyboard
+        </button>
+      </div>
+      <!-- Riga 2 -->
+      <div class="feed-bar-r2">
+        <div class="fbr2-stats">
+          <span class="fbr2-stat"><span class="fbr2-n" id="sbt-tot">0</span><span class="fbr2-l">storyboard</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="sbt-bozze">0</span><span class="fbr2-l">bozze</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="sbt-lav">0</span><span class="fbr2-l">in lav.</span></span>
+          <span class="fbr2-stat"><span class="fbr2-n" id="sbt-pub">0</span><span class="fbr2-l">pubblicati</span></span>
+        </div>
+        <div class="fbr2-actions">
+          <button class="fbr2-btn" onclick="toggleArchivioBozze()" aria-label="Archivio bozze">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+            Archivio bozze
+          </button>
+          <span class="fbar-sep"></span>
+          <button class="fbr2-btn fbr2-cal-btn" onclick="switchTab('cal')" aria-label="Calendario">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Calendario
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Griglia storyboard -->
+    <div class="content-area" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:0;">
+      <div id="sb-tab-grid" class="sb-tab-grid"></div>
+
+      <!-- Archivio Bozze -->
+      <div id="archivio-bozze-section" style="border-top:1px solid var(--border);margin-top:8px;padding:12px 16px 24px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;" onclick="toggleArchivioBozze()">
+          <span style="font-size:var(--fs-xs);font-weight:600;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);opacity:.8;">Archivio bozze</span>
+          <span id="archivio-bozze-count" style="font-size:11px;color:var(--text-3);"></span>
+          <svg id="archivio-bozze-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="archivio-bozze-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="tab-page" id="page-cal">
+    <div class="feed-ctx-bar">
+      <div class="feed-ctx-row1">
+        <!-- Nav mese -->
+        <button class="fbar-btn" onclick="calNav(-1)" aria-label="Mese precedente">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="cal-month-label" id="cal-month-label" style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">—</span>
+        <button class="fbar-btn" onclick="calNav(1)" aria-label="Mese successivo">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="fbar-pill" onclick="calGoToday()" style="font-size:11px;">Oggi</button>
+        <div class="fbar-sep"></div>
+        <!-- Legenda inline compatta -->
+        <div class="cal-legend-inline">
+          <span><span class="cal-legend-dot" style="background:var(--green);"></span>Feed</span>
+          <span><span class="cal-legend-dot" style="background:var(--blue-dk);"></span>Stories</span>
+          <span><span class="cal-legend-dot" style="background:var(--amber);"></span>Evidenza</span>
+          <span><span class="cal-legend-dot" style="background:#7c3aed;"></span>UGC</span>
+          <span><span class="cal-legend-dot" style="background:#7c3aed;border-radius:2px;"></span>Paid</span>
+        </div>
+        <div style="flex:1;"></div>
+        <!-- Switcher vista -->
+        <div class="cal-view-toggle">
+          <button class="cal-view-btn active" id="cal-btn-month" onclick="setCalView('month')">Mese</button>
+          <button class="cal-view-btn" id="cal-btn-week" onclick="setCalView('week')">Settimana</button>
+          <button class="cal-view-btn" id="cal-btn-year" onclick="setCalView('year')">Anno</button>
+        </div>
+        <!-- Link Piano annuale -->
+        <div class="fbar-sep"></div>
+        <button class="fbr2-btn" onclick="switchTab('anno')" style="height:30px;font-size:11px;" aria-label="Piano annuale">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="16" y1="14" x2="16" y2="18"/></svg>
+          Piano annuale
+        </button>
+      </div>
+    </div>
+    <div class="cal-body" id="cal-body"></div>
+    <div class="cal-day-panel" id="cal-day-panel">
+      <div class="cal-day-panel-head">
+        <h3 id="cal-panel-date">—</h3>
+        <button class="btn ghost sm icon" onclick="closeCalPanel()" aria-label="Chiudi pannello">✕</button>
+      </div>
+      <div class="cal-day-panel-body" id="cal-panel-body"></div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="tab-page" id="page-preview">
+    <div class="preview-wrap">
+      <div class="preview-topbar">
+        <div class="brand-mark" style="width:26px;height:26px;font-size:12px;">N</div>
+        <span style="font-size:13px;font-weight:600;color:var(--text);" id="preview-client-name">—</span>
+        <div style="flex:1;"></div>
+        <select class="preview-sel" id="preview-month-sel" onchange="renderPreview()" style="display:none;font-size:12px;"></select>
+        <!-- Account/Platform switcher (visible only with 2+ accounts) -->
+        <button class="ctx-fmt-badge" id="preview-acc-badge" onclick="togglePreviewAccDropdown()" aria-label="Cambia piattaforma" style="display:none;cursor:pointer;font-size:12px;"></button>
+        <!-- Toggle modalità approvazione -->
+        <div style="position:relative;display:inline-block;">
+        <button class="appr-toggle-btn" id="appr-toggle-btn" onclick="toggleApprMode()" aria-label="Attiva modalità approvazione" title="Modalità Approvazione">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="appr-toggle-lbl">Approvazione</span>
+        </button>
+        <div id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#e03;color:#fff;font-size:9px;font-weight:700;font-family:var(--font);align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--surface);">0</div>
+      </div>
+      </div>
+      <div class="preview-body" id="preview-body">
+        <!-- Stats bar inside scrollable body — scrolls with content -->
+        <div class="appr-stats-bar" id="appr-stats-bar" style="display:none;">
+          <div class="appr-stat-cell" id="appr-stat-bozza">
+            <div class="appr-stat-num">0</div>
+            <div class="appr-stat-lbl">Bozza</div>
+            <div class="appr-stat-bar" style="background:#999;width:0%;"></div>
+          </div>
+          <div class="appr-stat-cell" id="appr-stat-approvare">
+            <div class="appr-stat-num">0</div>
+            <div class="appr-stat-lbl">Da Approvare</div>
+            <div class="appr-stat-bar" style="background:#d4a800;width:0%;"></div>
+          </div>
+          <div class="appr-stat-cell" id="appr-stat-approvato">
+            <div class="appr-stat-num">0</div>
+            <div class="appr-stat-lbl">Approvato</div>
+            <div class="appr-stat-bar" style="background:#1a7a4a;width:0%;"></div>
+          </div>
+          <div class="appr-stat-cell" style="border-right:none;">
+            <div class="appr-stat-num" id="appr-stat-totale">0</div>
+            <div class="appr-stat-lbl">Totale</div>
+          </div>
+          <div class="appr-filter-row" id="appr-filter-row"></div>
+        </div>
+        <div id="preview-empty" class="preview-empty"><p>Nessun cliente selezionato.</p></div>
+      </div>
+    </div>
+
+  </div>
+
+
+
+  <!-- PAGE ANNO — Calendario Editoriale Annuale -->
+  <div class="tab-page" id="page-anno">
+    <div class="anno-page">
+      <!-- Barra superiore allineata al design Feed -->
+      <div class="feed-ctx-bar">
+        <div class="feed-ctx-row1">
+          <!-- Nav anno -->
+          <button class="fbar-btn" onclick="annoPrevYear()" aria-label="Anno precedente">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="anno-year-lbl" id="anno-year-lbl" style="font-size:15px;font-weight:700;color:var(--text);min-width:40px;text-align:center;">2026</span>
+          <button class="fbar-btn" onclick="annoNextYear()" aria-label="Anno successivo">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div class="fbar-sep"></div>
+          <!-- Filtri tag -->
+          <div class="anno-tag-filters" id="anno-tag-filters" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></div>
+        </div>
+      </div>
+      <div class="anno-col-headers">
+        <div class="anno-col-hdr-month"></div>
+        <div class="anno-col-hdr">Feed principale</div>
+        <div class="anno-col-hdr">Note · Deadline</div>
+        <div class="anno-col-hdr">Stories · UGC</div>
+      </div>
+      <div class="anno-bands" id="anno-bands"></div>
+      <div class="anno-footer" id="anno-footer"></div>
+    </div><!-- /anno-page -->
+  </div>
+
+  <!-- PAGE ADS -->
+  <div class="tab-page" id="page-ads">
+    <div class="ads-page">
+      <div class="ads-toprow">
+        <div>
+          <div class="ads-page-title" id="ads-page-title">Performance Ads</div>
+          <div class="ads-page-sub">Dati manuali · sola lettura</div>
+        </div>
+        <button class="btn sm" onclick="openAddAdsCampaignModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuova campagna
+        </button>
+      </div>
+      <div class="content-area">
+        <div class="ads-metrics" id="ads-metrics"></div>
+        <div class="ads-alert" id="ads-alert" style="display:none;"></div>
+        <div class="ads-chart-card">
+          <div class="ads-chart-head">
+            <span class="ads-chart-title">Spesa per canale</span>
+            <div class="ads-filter-row" id="ads-filter-row"></div>
+          </div>
+          <div class="ads-bars" id="ads-bars"></div>
+        </div>
+        <!-- Gantt timeline -->
+        <div class="ads-gantt-card">
+          <div class="ads-gantt-head">
+            <span class="ads-chart-title">Timeline campagne</span>
+          </div>
+          <!-- Month pills — same pattern as Feed/Stories -->
+          <div id="ads-month-pills" class="feed-month-pills-inline" style="margin-bottom:10px;"></div>
+          <div class="ads-gantt-legend">
+            <span class="ads-leg"><span class="ads-leg-dot" style="background:#378ADD;"></span>Instagram</span>
+            <span class="ads-leg"><span class="ads-leg-dot" style="background:#7F77DD;"></span>Meta/FB</span>
+            <span class="ads-leg"><span class="ads-leg-dot" style="background:#1D9E75;"></span>LinkedIn</span>
+            <span class="ads-leg"><span class="ads-leg-dot" style="background:#BA7517;"></span>Google</span>
+            <span class="ads-leg"><span class="ads-leg-dot" style="background:#E24B4A;border-radius:50%;"></span>Spesa</span>
+          </div>
+          <div class="ads-gantt-wrap">
+            <div class="ads-gantt" id="ads-gantt"></div>
+          </div>
+        </div>
+        <div class="sec-lbl" style="margin:16px 0 8px;">Campagne</div>
+        <div class="ads-camp-list" id="ads-camp-list"></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /main -->
+</div><!-- /body --
+
+>
+</div><!-- /app -->
+
+<!-- UGC SLOT MODAL -->
+<div id="ped-slot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseDrawer()">
+  <div style="background:var(--surface);border-radius:14px;width:360px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span id="ped-drawer-date" style="font-size:14px;font-weight:700;color:var(--text);">—</span>
+      <button class="btn ghost sm icon" onclick="pedCloseDrawer()" aria-label="Chiudi">✕</button>
+    </div>
+    <div id="ped-drawer-body" style="overflow-y:auto;flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0;">
+      <button class="btn sm danger" id="ped-drawer-del" onclick="pedDrawerDelete()">Elimina</button>
+      <div style="flex:1;"></div>
+      <button class="btn sm" onclick="pedCloseDrawer()">Annulla</button>
+      <button class="btn sm primary" onclick="pedDrawerSave()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIDEO COVER MODAL -->
+<div id="video-cover-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeVideoCoverModal()">
+  <div style="background:var(--surface);width:320px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:13px;font-weight:600;color:var(--text);">Cover reel</div>
+      <button onclick="closeVideoCoverModal()" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:2px 6px;">✕</button>
+    </div>
+    <div id="vcm-preview" style="display:none;margin:12px 16px 0;aspect-ratio:4/5;border-radius:var(--rs);overflow:hidden;background:var(--cell-bg);"></div>
+    <div style="padding:12px 16px;">
+      <!-- Input nascosto correttamente con position absolute -->
+      <input type="file" id="vcm-file-inp" accept="image/*"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"
+        onchange="setVideoCover(this.files[0])"/>
+      <!-- Bottone che triggera l input — supporta anche drag & drop -->
+      <button onclick="document.getElementById('vcm-file-inp').click()"
+        style="width:100%;border:1.5px dashed var(--border);border-radius:var(--rs);padding:20px;text-align:center;cursor:pointer;background:transparent;transition:border-color .15s;"
+        onmouseover="this.style.borderColor='var(--green)'"
+        onmouseout="this.style.borderColor='var(--border)'"
+        ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='var(--green-lt)';"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent';"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='transparent';const f=event.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))setVideoCover(f);">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div style="font-size:12px;font-weight:600;color:var(--text);">Seleziona immagine cover</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px;">JPG, PNG · rapporto 4:5</div>
+      </button>
+    </div>
+    <div style="padding:10px 16px 14px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);">
+      <button onclick="removeVideoCover()" style="font-size:11px;font-family:var(--font);padding:5px 12px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--red);cursor:pointer;">Rimuovi cover</button>
+      <button onclick="closeVideoCoverModal()" style="font-size:11px;font-family:var(--font);padding:5px 12px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- BRIEF CREATOR MODAL (Gruppo C) -->
+<div id="brief-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeBriefModal()">
+  <div style="background:var(--surface);width:440px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;border:1px solid var(--border);">
+    <!-- Header -->
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div>
+        <div style="font-size:9px;font-family:var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:3px;">Brief UGC</div>
+        <div id="brief-modal-title" style="font-size:13px;font-weight:600;color:var(--text);">—</div>
+      </div>
+      <button onclick="closeBriefModal()" aria-label="Chiudi" style="background:none;border:none;font-size:18px;color:var(--text-2);cursor:pointer;padding:4px 8px;">✕</button>
+    </div>
+    <!-- Nota info -->
+    <div style="padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);font-size:11px;color:var(--text-2);flex-shrink:0;">
+      Il creator vede questo brief tramite link — senza accedere all'app
+    </div>
+    <!-- Lista slide -->
+    <div id="brief-modal-list" style="flex:1;overflow-y:auto;padding:12px 18px;display:flex;flex-direction:column;gap:8px;"></div>
+    <!-- Link box -->
+    <div style="padding:12px 18px;border-top:1px solid var(--border);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;">
+        <span id="brief-modal-link" style="flex:1;font-size:11px;font-family:var(--font);color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <button onclick="copyBriefLink()" style="font-size:10px;font-family:var(--font);padding:3px 10px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--text);cursor:pointer;white-space:nowrap;">Copia link</button>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;">
+      <button onclick="closeBriefModal()" style="font-size:12px;font-family:var(--font);padding:6px 14px;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;">Annulla</button>
+      <button id="brief-modal-invia" onclick="inviaBreifCreator()" style="font-size:12px;font-family:var(--font);padding:6px 14px;border:none;border-radius:var(--rs);background:#7F77DD;color:#fff;cursor:pointer;font-weight:600;">Invia brief al creator</button>
+    </div>
+  </div>
+</div>
+
+
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Anteprima contenuto" onclick="lbBg(event)">
+      <div class="lb-wrap">
+        <button class="lb-nav lb-prev" id="lb-prev" onclick="lbNav(-1)" aria-label="Post precedente">‹</button>
+        <div class="lb-inner" id="lb-inner"></div>
+        <button class="lb-nav lb-next" id="lb-next" onclick="lbNav(1)" aria-label="Post successivo">›</button>
+        <div class="lb-counter" id="lb-counter"></div>
+        <div class="lb-copy" id="lb-copy"></div>
+        <div class="lb-stories-strip" id="lb-stories-strip"></div>
+      </div>
+    </div>
+
+
+  <!-- MODAL APPROVAZIONE -->
+  <div class="appr-modal-bg" id="appr-modal-bg" onclick="closeApprModal()" style="display:none;">
+    <div class="appr-modal" onclick="event.stopPropagation()">
+      <div class="appr-modal-head">
+        <div>
+          <div class="appr-modal-title" id="appr-modal-title">Dettaglio Post</div>
+        </div>
+        <button onclick="closeApprModal()" class="appr-modal-close" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="appr-modal-body">
+        <div class="appr-modal-thumb" id="appr-modal-thumb"></div>
+        <div class="appr-modal-controls">
+          <div class="appr-modal-section-lbl">Stato</div>
+          <div class="appr-stato-pills" id="appr-stato-pills"></div>
+          <!-- Client message bubble (read-only) -->
+          <div id="appr-client-note-wrap" style="display:none;margin-top:12px;">
+            <div class="appr-modal-section-lbl" style="color:#7a2e00;">Messaggio del cliente</div>
+            <div id="appr-client-note-bubble" style="background:rgba(224,92,0,0.08);border:1px solid rgba(224,92,0,0.25);border-radius:var(--r);padding:10px 12px;font-size:13px;color:#7a2e00;line-height:1.5;margin-top:4px;position:relative;">
+              <div style="font-size:10px;font-weight:700;color:#e05c00;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;" id="appr-client-note-sender"></div>
+              <div id="appr-client-note-text"></div>
+            </div>
+          </div>
+          <div class="appr-modal-section-lbl" style="margin-top:12px;">Note interne agenzia</div>
+          <textarea class="appr-note-area" id="appr-note-area" rows="3" placeholder="Aggiungi note interne…"></textarea>
+        </div>
+      </div>
+      <div class="appr-modal-foot">
+        <button class="btn sm" onclick="closeApprModal()">Annulla</button>
+        <button class="btn sm" id="appr-approva-btn" onclick="apprModalApprova()" style="background:#1a7a4a;color:#fff;border-color:#1a7a4a;">✓ Approva</button>
+        <button class="btn" onclick="apprModalSalva()" style="margin-left:auto;">Salva</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+<!-- ADS CAMPAIGN MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="ads-camp-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-top"><h3 id="ads-modal-title">Nuova campagna Ads</h3><button class="btn ghost sm icon" onclick="closeModal('ads-camp-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="field"><label>Nome campagna</label><input type="text" id="adm-name" placeholder="es. Estate 2026 — Awareness"/></div>
+    <div class="field"><label>Piattaforma</label>
+      <select id="adm-platform">
+        <option value="instagram">Instagram</option>
+        <option value="facebook">Facebook</option>
+        <option value="meta">Meta (IG+FB)</option>
+        <option value="linkedin">LinkedIn</option>
+        <option value="google">Google</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Budget totale (€)</label><input type="number" id="adm-budget" placeholder="1000" min="0"/></div>
+      <div class="field"><label>Spesa attuale (€)</label><input type="number" id="adm-spent" placeholder="0" min="0"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="field"><label>ROAS</label><input type="number" id="adm-roas" placeholder="4.2" step="0.1" min="0"/></div>
+      <div class="field"><label>CPC (€)</label><input type="number" id="adm-cpc" placeholder="0.35" step="0.01" min="0"/></div>
+      <div class="field"><label>Impression</label><input type="number" id="adm-imp" placeholder="48000" min="0"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Stato</label>
+        <select id="adm-status">
+          <option value="active">Attiva</option>
+          <option value="paused">In pausa</option>
+          <option value="draft">Bozza</option>
+          <option value="ended">Terminata</option>
+        </select>
+      </div>
+      <div class="field"><label>ROAS target</label><input type="number" id="adm-roas-target" placeholder="4.0" step="0.1" min="0"/></div>
+    </div>
+    <!-- Date campagna -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><label>Inizio (giorno del mese)</label><input type="number" id="adm-start" placeholder="1" min="1" max="31"/></div>
+      <div class="field"><label>Fine (giorno del mese)</label><input type="number" id="adm-end" placeholder="30" min="1" max="31"/></div>
+    </div>
+    <!-- Creative asset -->
+    <div class="field">
+      <label>Creativo da sponsorizzare</label>
+      <div class="ads-creative-zone" id="adm-creative-zone" onclick="document.getElementById('adm-creative-inp').click()">
+        <input type="file" id="adm-creative-inp" accept="image/*,video/*" style="display:none;" onchange="adsPreviewCreative(this)"/>
+        <div id="adm-creative-preview" style="display:none;position:relative;">
+          <img id="adm-creative-img" style="max-width:100%;max-height:140px;border-radius:var(--rs);display:none;"/>
+          <video id="adm-creative-vid" muted playsinline preload="metadata" style="max-width:100%;max-height:140px;border-radius:var(--rs);display:none;"></video>
+          <button class="ads-creative-clear" onclick="event.stopPropagation();adsClearCreative()" aria-label="Rimuovi immagine">✕</button>
+        </div>
+        <div id="adm-creative-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:var(--fs-xs);color:var(--text-3);margin-top:6px;">Immagine o reel da sponsorizzare</div>
+          <div style="font-size:10px;color:var(--text-3);">JPG · PNG · MP4 · MOV</div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:6px;">
+        <input type="text" id="adm-creative-url" placeholder="Oppure incolla URL esterno (Dropbox, Frame.io…)" style="font-size:var(--fs-xs);"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('ads-camp-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="saveAdsCampaign()">Salva</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CONFIRM MODAL — sostituisce tutti i confirm() nativi -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="confirm-modal" data-no-close="1">
+  <div class="modal" style="width:380px;gap:12px;">
+    <div class="modal-top" style="border-bottom:none;padding-bottom:0;">
+      <div class="confirm-icon" id="confirm-icon"></div>
+      <button class="btn ghost sm icon" onclick="confirmCancel()" aria-label="Annulla">✕</button>
+    </div>
+    <div style="padding:0 18px 4px;">
+      <div class="confirm-title" id="confirm-title"></div>
+      <div class="confirm-body" id="confirm-body"></div>
+    </div>
+    <div class="modal-actions" style="padding:12px 18px;">
+      <button class="btn sm" id="confirm-cancel-btn" onclick="confirmCancel()">Annulla</button>
+      <button class="btn sm" id="confirm-ok-btn" onclick="confirmOk()">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CLIENT MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="edit-client-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-top">
+      <h3 id="edit-client-title">Modifica cliente</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('edit-client-modal')" aria-label="Chiudi">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="ec-name" placeholder="Nome"/></div>
+      <div class="field"><label>Pacchetto</label>
+        <select id="ec-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
+      </div>
+      <div class="field"><label>Stato</label>
+        <select id="ec-status"><option>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
+      </div>
+      <div class="field"><label>€/mese</label><input type="number" id="ec-revenue" placeholder="1200"/></div>
+    </div>
+    <div class="divider" style="margin:4px -18px;"></div>
+    <div>
+      <div class="sec-lbl">Account</div>
+      <div id="ec-accounts-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px;">
+        <div class="sec-lbl" style="margin-bottom:8px;">+ Aggiungi account</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
+          <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="ec-new-acc-name" placeholder="Es: Modica IG"/></div>
+          <div class="field" style="margin:0;"><label>Piattaforma</label>
+            <select id="ec-new-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Pin Idea</option><option>Altro</option></select>
+          </div>
+          <button class="btn primary sm" onclick="ecAddAccount()" style="margin-bottom:1px;">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="divider" style="margin:12px -18px;"></div>
+    <div class="sec-lbl">🎨 Palette brand</div>
+    <div class="ec-palette-grid">
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Primario</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-primary"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-primary"></div>
+          <input class="ec-pal-inp" id="ec-pal-primary" type="text" placeholder="#1a3c5e" maxlength="7" oninput="ecPalUpdate('primary')"/>
+        </div>
+      </div>
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Secondario</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-secondary"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-secondary"></div>
+          <input class="ec-pal-inp" id="ec-pal-secondary" type="text" placeholder="#c8a96e" maxlength="7" oninput="ecPalUpdate('secondary')"/>
+        </div>
+      </div>
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Sfondo</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-bg"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-bg"></div>
+          <input class="ec-pal-inp" id="ec-pal-bg" type="text" placeholder="#f5f0e8" maxlength="7" oninput="ecPalUpdate('bg')"/>
+        </div>
+      </div>
+      <div class="ec-pal-slot">
+        <label class="ec-pal-lbl">Testo</label>
+        <div class="ec-pal-preview" id="ec-pal-preview-text"></div>
+        <div class="ec-pal-row">
+          <div class="ec-pal-swatch" id="ec-pal-swatch-text"></div>
+          <input class="ec-pal-inp" id="ec-pal-text" type="text" placeholder="#111111" maxlength="7" oninput="ecPalUpdate('text')"/>
+        </div>
+      </div>
+    </div>
+    <!-- Live preview -->
+    <div class="ec-pal-preview-wrap" id="ec-pal-live-wrap">
+      <div class="ec-pal-card" id="ec-pal-card-feed"></div>
+      <div class="ec-pal-card ec-pal-card-story" id="ec-pal-card-story"></div>
+      <div class="ec-pal-hint">Anteprima card editoriale con i colori brand</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm danger" onclick="ecDeleteClient()">Elimina cliente</button>
+      <div style="flex:1;"></div>
+      <button class="btn sm" onclick="closeModal('edit-client-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="ecSave()">Salva modifiche</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAROUSEL MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="carousel-modal">
+  <div class="modal" style="max-width:540px;width:95vw;">
+    <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')" aria-label="Chiudi">✕</button></div>
+    <p class="modal-hint">La prima slide appare nella griglia. Ogni slide può avere un copy dedicato.</p>
+    <div class="c-upload-zone" id="c-upload-zone">
+      <input type="file" id="c-file-input" accept="image/*" multiple onchange="addCarouselFiles(this.files)"/>
+      <p>Trascina immagini o <strong>clicca per sfogliare</strong></p>
+    </div>
+    <div class="c-thumbs" id="c-thumbs"></div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('carousel-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="saveCarousel()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- STORYBOARD MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="storyboard-modal" data-no-close="1">
+  <div class="modal sb-modal-wide">
+    <!-- Header -->
+    <div class="modal-top">
+      <h3>Slide Builder</h3>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <button class="btn sm" onclick="sbDownloadPNG()" aria-label="Esporta PNG" title="Esporta PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          PNG
+        </button>
+        <button class="btn ghost sm icon" onclick="closeModal('storyboard-modal')" aria-label="Chiudi Slide Builder">✕</button>
+      </div>
+    </div>
+    <!-- 3-col layout -->
+    <div class="sb-builder">
+      <!-- COL 1: Thumbnails -->
+      <div class="sbcol-nav">
+        <div class="sbcol-head">
+          <span class="sec-lbl">Slide</span>
+          <button class="btn sm" onclick="addSbSlide()" aria-label="Aggiungi slide">+</button>
+        </div>
+        <div id="sb-thumbs"></div>
+      </div>
+      <!-- COL 2: Fields + upload -->
+      <div class="sb-fields">
+        <!-- Tab switcher + azioni salvataggio -->
+        <div class="sb-tab-row">
+          <button class="sb-tab active" id="sb-tab-editor" onclick="sbSwitchTab('editor',this)" aria-label="Tab editor">Editor</button>
+          <button class="sb-tab" id="sb-tab-parser" onclick="sbSwitchTab('parser',this)" aria-label="Tab parser note">Parser note</button>
+          <div id="sb-save-bozza-wrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+            <!-- Input nome bozza (inline, nascosto di default) -->
+            <div id="sb-save-bozza-inline" style="display:none;align-items:center;gap:4px;">
+              <input id="sb-bozza-name-inp" type="text" placeholder="Nome bozza…" style="font-size:11px;padding:3px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);width:120px;" onkeydown="if(event.key==='Enter')_sbDoSaveArchivio(this.value);if(event.key==='Escape')sbHideBozzaInput();"/>
+              <button class="btn primary sm" onclick="_sbDoSaveArchivio(document.getElementById('sb-bozza-name-inp').value)" style="font-size:11px;padding:3px 8px;">OK</button>
+              <button class="btn ghost sm" onclick="sbHideBozzaInput()" style="font-size:11px;padding:3px 6px;">✕</button>
+            </div>
+            <!-- Bottoni normali -->
+            <button id="sb-save-bozza-btn" class="btn ghost sm" onclick="sbShowBozzaInput()" style="font-size:11px;gap:4px;" title="Salva come bozza (non collega alle Stories)">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Bozza
+            </button>
+            <button class="btn primary sm" onclick="saveStoryboard()" style="font-size:11px;gap:4px;" title="Salva storyboard e collega alle Stories">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Salva
+            </button>
+          </div>
+        </div>
+        <!-- TAB: Editor -->
+        <div class="sb-fields-scroll" id="sb-panel-editor">
+          <div class="sec-lbl" style="margin-bottom:8px;">Contenuto slide</div>
+          <!-- Image upload -->
+          <div class="sb-img-zone" id="sb-img-zone">
+            <input type="file" id="sb-file-inp" accept="image/*" onchange="sbSetImage(this.files[0])"/>
+            <div id="sb-img-preview" style="display:none;position:absolute;inset:0;">
+              <img id="sb-img-el" style="width:100%;height:100%;object-fit:cover;"/>
+              <button class="sb-img-clear" onclick="sbClearImage()" aria-label="Rimuovi immagine">✕</button>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;opacity:.3;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span class="sb-img-lbl">Foto slide (opzionale)</span>
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label>Numero grande</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="text" id="sb-f-num" placeholder="1." oninput="sbSync()" style="flex:1;"/>
+              <div id="sb-num-color-swatch" title="Colore numero (dalla palette sfondo)" style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;background:#0dff00;"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Occhiello</label>
+            <input type="text" id="sb-f-eye" placeholder="CATEGORIA" oninput="sbSync()"/>
+          </div>
+          <div class="field">
+            <label>Titolo</label>
+            <input type="text" id="sb-f-tit" placeholder="Titolo principale" oninput="sbSync()"/>
+          </div>
+          <div class="field">
+            <label>Copy / note regia</label>
+            <textarea id="sb-f-cop" rows="3" placeholder="Descrivi il contenuto…" oninput="sbSync()"></textarea>
+          </div>
+          <!-- Gruppo A: sfondo, nota regia, placeholder -->
+          <div class="field">
+            <label>Sfondo</label>
+            <select id="sb-f-sfondo" oninput="sbSync()" style="width:100%;font-size:var(--fs-sm);font-family:var(--font);border:.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;background:var(--surface);color:var(--text);">
+              <option value="Avorio">Avorio</option>
+              <option value="Righe">Righe</option>
+              <option value="Quadr.">Quadr.</option>
+              <option value="Dark">Dark</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nota regia</label>
+            <textarea id="sb-f-nota-regia" rows="2" placeholder="Istruzioni per il creator…" oninput="sbSync()" style="width:100%;resize:none;border:.5px solid var(--border-lt);border-left:2px solid #d4a800;border-radius:var(--rs);padding:6px 8px;font-size:var(--fs-sm);font-family:var(--font);color:#7a5c00;background:rgba(212,168,0,0.05);outline:none;"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+            <input type="checkbox" id="sb-f-placeholder" onchange="sbSync()" style="width:14px;height:14px;accent-color:var(--green);cursor:pointer;"/>
+            <label for="sb-f-placeholder" style="font-size:var(--fs-sm);color:var(--text-2);cursor:pointer;">Slide per video creator</label>
+          </div>
+          <div class="sb-style-section">
+            <div class="sec-lbl" style="margin-bottom:8px;">Stile</div>
+            <label class="sb-style-lbl">Sfondo</label>
+            <div class="sb-bg-row">
+              <button class="sb-bg-btn active" data-bg="lined" onclick="sbSetBg('lined',this)">Righe</button>
+              <button class="sb-bg-btn" data-bg="grid" onclick="sbSetBg('grid',this)">Quadr.</button>
+              <button class="sb-bg-btn" data-bg="ivory" onclick="sbSetBg('ivory',this)">Avorio</button>
+              <button class="sb-bg-btn" data-bg="dark" onclick="sbSetBg('dark',this)">Dark</button>
+            </div>
+            <label class="sb-style-lbl" style="margin-top:8px;">Colore numero</label>
+            <div class="sb-color-row">
+              <div class="sb-color-dot active" style="background:#2563eb;" data-c="#2563eb" onclick="sbSetColor('#2563eb',this)"></div>
+              <div class="sb-color-dot" style="background:#e8593c;" data-c="#e8593c" onclick="sbSetColor('#e8593c',this)"></div>
+              <div class="sb-color-dot" style="background:#16a34a;" data-c="#16a34a" onclick="sbSetColor('#16a34a',this)"></div>
+              <div class="sb-color-dot" style="background:#0dff00;border:.5px solid #ccc;" data-c="#0dff00" onclick="sbSetColor('#0dff00',this)"></div>
+              <div class="sb-color-dot" style="background:#1c1c1e;" data-c="#1c1c1e" onclick="sbSetColor('#1c1c1e',this)"></div>
+            </div>
+          </div>
+        </div>
+        </div><!-- end sb-panel-editor -->
+
+        <!-- TAB: Parser note -->
+        <div class="sb-fields-scroll" id="sb-panel-parser" style="display:none;">
+          <div class="sec-lbl" style="margin-bottom:8px;">Parser note</div>
+          <p style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Usa i tag <strong>[NUM]</strong> <strong>[OCCHIELLO]</strong> <strong>[TITOLO]</strong> <strong>[COPY]</strong> per compilare la slide automaticamente.</p>
+          <textarea id="sb-parser-input" rows="8" oninput="sbLivePreview()" placeholder="[NUM] 1.&#10;[OCCHIELLO] Strategia&#10;[TITOLO] Documenta tutto&#10;[COPY] Cattura screenshot e file..." style="width:100%;resize:none;border:.5px solid var(--border);border-radius:var(--rs);padding:8px;font-size:var(--fs-sm);font-family:var(--font);color:var(--text);background:var(--surface);line-height:1.5;outline:none;"></textarea>
+          <button class="btn primary sm" onclick="sbParseNote()" style="margin-top:8px;width:100%;">Applica alla slide attiva</button>
+          <!-- Live preview -->
+          <div id="sb-live-preview" class="sb-live-preview" style="display:none;">
+            <div class="sb-live-lbl">Anteprima live</div>
+            <div class="sb-live-num" id="sb-live-num"></div>
+            <div class="sb-live-eye" id="sb-live-eye"></div>
+            <div class="sb-live-tit" id="sb-live-tit"></div>
+            <div class="sb-live-cop" id="sb-live-cop"></div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:var(--rs);cursor:pointer;" onclick="sbFillParserExample()">
+            <div class="sec-lbl" style="margin-bottom:4px;">Esempio — clicca per inserire</div>
+            <pre style="font-size:10px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;">[NUM] 1.
+[OCCHIELLO] Strategia
+[TITOLO] Documenta tutto
+[COPY] Cattura screenshot, timestamp e file. La prova di quando hai creato è la tua difesa.</pre>
+          </div>
+        </div>
+
+
+      </div><!-- end sb-fields -->
+      <!-- COL 3: Live preview -->
+      <div class="sb-preview-col">
+        <div class="sec-lbl" style="margin-bottom:8px;">Anteprima</div>
+        <div class="sb-fmt-row">
+          <button class="sb-fmt-btn" data-fmt="stories" onclick="sbSetFmt('stories',this)">9:16</button>
+          <button class="sb-fmt-btn active" data-fmt="feed" onclick="sbSetFmt('feed',this)">4:5</button>
+          <button class="sb-fmt-btn" data-fmt="square" onclick="sbSetFmt('square',this)">1:1</button>
+        </div>
+        <div class="sb-preview-wrap">
+          <div class="sb-canvas lined" id="sb-canvas">
+            <div class="sb-binder"><div class="sb-hole"></div><div class="sb-hole"></div><div class="sb-hole"></div></div>
+            <div class="sb-canvas-img" id="sb-canvas-img" style="display:none;"></div>
+            <span class="sb-p-num" id="sb-p-num" style="color:#2563eb;">1.</span>
+            <span class="sb-p-eye" id="sb-p-eye">CATEGORIA</span>
+            <span class="sb-p-tit" id="sb-p-tit">Titolo slide</span>
+            <p class="sb-p-cop" id="sb-p-cop">Corpo del testo.</p>
+          </div>
+        </div>
+        <div class="sb-slide-count" id="sb-slide-count">Slide 1 di 1</div>
+      </div>
+    </div>
+    <!-- Bottom nav mobile (nascosta su desktop) -->
+    <div class="sb-mob-nav" id="sb-mob-nav">
+      <button class="sb-mob-nav-btn" id="sb-mob-slide-btn" onclick="sbMobTab('slides')" aria-label="Slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/></svg>
+        Slide
+      </button>
+      <button class="sb-mob-nav-btn active" id="sb-mob-editor-btn" onclick="sbMobTab('editor')" aria-label="Campi editor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Campi
+      </button>
+      <button class="sb-mob-nav-btn" id="sb-mob-preview-btn" onclick="sbMobTab('preview')" aria-label="Anteprima">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Anteprima
+      </button>
+    </div>
+  </div>
+
+<!-- HIGHLIGHT MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="highlight-modal">
+  <div class="modal" style="width:360px;">
+    <div class="modal-top"><h3>In evidenza</h3><button class="btn ghost sm icon" onclick="closeModal('highlight-modal')" aria-label="Chiudi">✕</button></div>
+    <div class="field"><label>Nome</label><input type="text" id="hl-name" placeholder="Es: Menu · Estate · Team"/></div>
+    <div class="c-upload-zone" id="hl-upload-zone">
+      <input type="file" id="hl-file-input" accept="image/*" onchange="setHlCover(this.files)"/>
+      <p id="hl-upload-lbl">Carica copertina · <strong>clicca per sfogliare</strong></p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('highlight-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="saveHighlight()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- LINK STORIES MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="link-stories-modal">
+  <div class="modal">
+    <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')" aria-label="Chiudi">✕</button></div>
+    <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare a questo post.</p>
+    <div class="link-modal-grid" id="link-modal-grid"></div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('link-stories-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="saveLinkStories()">Collega</button>
+    </div>
+  </div>
+</div>
+
+<!-- COPY CONTENT MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="copy-content-modal">
+  <div class="modal">
+    <div class="modal-top"><h3>Copia contenuti</h3><button class="btn ghost sm icon" onclick="closeModal('copy-content-modal')" aria-label="Chiudi">✕</button></div>
+    <p class="modal-hint">Copia da un altro account o mese.</p>
+    <div class="field"><label>Account sorgente</label><select id="copy-src-account" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
+    <div class="field"><label>Mese</label><select id="copy-src-month" onchange="loadCopyItems()"><option value="">— seleziona —</option></select></div>
+    <div class="copy-content-list" id="copy-content-list"></div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('copy-content-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="executeCopy()">Copia</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLIENT MODAL -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="add-client-modal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-top">
+      <h3>Aggiungi cliente</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('add-client-modal')" aria-label="Chiudi">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field" style="grid-column:1/-1;"><label>Nome cliente</label><input type="text" id="nc-name" placeholder="Es: Edilizia Mediterranea" autocomplete="organization" onkeydown="if(event.key==='Enter')addClient()"/></div>
+      <div class="field"><label>Pacchetto</label>
+        <select id="nc-pkg"><option>🥉 Starter</option><option>🥈 Essential</option><option selected>🥇 Professional</option><option>💎 Premium</option><option>🚀 Full Service</option></select>
+      </div>
+      <div class="field"><label>Stato</label>
+        <select id="nc-status"><option selected>Attivo</option><option>In onboarding</option><option>In pausa</option><option>Perso</option></select>
+      </div>
+      <div class="field"><label>€/mese</label><input type="number" id="nc-revenue" placeholder="1200" min="0" autocomplete="off" inputmode="numeric"/></div>
+    </div>
+    <div class="divider" style="margin:4px -18px;"></div>
+    <div>
+      <div class="sec-lbl">Account principale</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+        <div class="field" style="margin:0;"><label>Nome account</label><input type="text" id="nc-acc-name" placeholder="Es: Modica IG"/></div>
+        <div class="field" style="margin:0;"><label>Piattaforma</label>
+          <select id="nc-acc-platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Pinterest</option><option>Pin Idea</option><option>Altro</option></select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px;">Puoi aggiungere altri account dopo dalla scheda cliente.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn sm" onclick="closeModal('add-client-modal')">Annulla</button>
+      <button class="btn primary sm" onclick="addClient()">Aggiungi cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- DROPBOX UPLOAD BAR -->
+<div class="dbx-upload-bar" id="dbx-upload-bar">
+  <div class="dbx-spinner"></div>
+  <span id="dbx-upload-text">Caricamento su Dropbox…</span>
+  <button id="dbx-cancel-btn" onclick="cancelDropboxUpload()" aria-label="Annulla upload" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:var(--rs);padding:2px 8px;font-size:11px;font-family:var(--font);color:var(--text-2);cursor:pointer;flex-shrink:0;">✕ Annulla</button>
+</div>
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <span class="save-bar-label">💾</span>
+  <button class="btn sm" onclick="importProject()">Importa</button>
+  <button class="btn sm primary" onclick="exportProject()">Esporta</button>
+  <input type="file" id="import-input" class="import-hidden" accept=".json" onchange="loadProjectFile(this)"/>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/app.js?v=1782305303"></script>
+
+<!-- ══ MODAL CARD EDITORIALE ══ -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
+  <div class="modal-box ed-modal-box">
+    <div class="modal-top">
+      <h3>Card editoriale</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('editorial-modal')" aria-label="Chiudi">✕</button>
+    </div>
+    <!-- Layout 2 colonne: anteprima | campi -->
+    <div class="ed-modal-body">
+      <!-- COL SINISTRA: anteprima live -->
+      <div class="ed-preview-col">
+        <!-- Selezione tema e formato -->
+        <div class="ed-controls">
+          <div class="ed-ctrl-row">
+            <button class="ed-theme-btn" data-theme="light" onclick="setEdTheme('light')">☀ Chiaro</button>
+            <button class="ed-theme-btn" data-theme="dark" onclick="setEdTheme('dark')">🌙 Scuro</button>
+            <button class="ed-theme-btn" data-theme="brand" onclick="setEdTheme('brand')">🎨 Brand</button>
+          </div>
+          <div class="ed-ctrl-row">
+            <button class="ed-fmt-btn active" data-fmt="feed" onclick="setEdFmt('feed')">Feed 4:5</button>
+            <button class="ed-fmt-btn" data-fmt="story" onclick="setEdFmt('story')">Story 9:16</button>
+          </div>
+        </div>
+        <!-- Canvas anteprima -->
+        <div id="ed-preview-wrap" class="ed-preview-wrap">
+          <div id="ed-preview-inner" class="ed-preview-inner">
+            <div id="ed-prev-eyebrow" class="ed-prev-eyebrow"></div>
+            <div id="ed-prev-title" class="ed-prev-title">Titolo</div>
+            <div class="ed-prev-sep"></div>
+            <div id="ed-prev-copy" class="ed-prev-copy"></div>
+          </div>
+          <div id="ed-prev-badge" class="ed-prev-badge">N</div>
+        </div>
+      </div>
+      <!-- COL DESTRA: campi -->
+      <div class="ed-fields-col">
+        <div class="field"><label>Occhiello</label>
+          <input type="text" id="ed-eyebrow" placeholder="es. Insight · Cliente" oninput="renderEdPreview()"/></div>
+        <div class="field"><label>Titolo *</label>
+          <input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
+        <div class="field"><label>Parola colorata</label>
+          <input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
+        <div class="field"><label>Copy / sottotitolo</label>
+          <textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
+        <div class="field"><label>Firma</label>
+          <input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('editorial-modal')">Annulla</button>
+      <button class="btn primary" onclick="saveEditorialCard()">+ Aggiungi al feed</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

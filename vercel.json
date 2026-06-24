@@ -8,16 +8,12 @@
   },
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/home.html"
-    },
-    {
       "source": "/app",
-      "destination": "/index.html"
+      "destination": "/ped.html"
     },
     {
       "source": "/app/",
-      "destination": "/index.html"
+      "destination": "/ped.html"
     },
     {
       "source": "/tweek",
@@ -37,7 +33,7 @@
     },
     {
       "source": "/a/:path*",
-      "destination": "/index.html"
+      "destination": "/ped.html"
     },
     {
       "source": "/client/:path*",
@@ -45,7 +41,7 @@
     },
     {
       "source": "/(feed|stories|storyboard|ped|cal|anno|preview|ads|notes|pilastri|studio)",
-      "destination": "/index.html"
+      "destination": "/ped.html"
     }
   ],
   "headers": [
