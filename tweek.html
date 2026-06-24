@@ -3337,7 +3337,7 @@ function streamDetailSetStato(v){
   j.stato=v;streamPersist();sjdRenderKpi(_sjdCurrentId);streamRenderJobs();streamRenderKpi();
 }
 
-function function streamDeleteJobDetail(){
+function streamDeleteJobDetail(){
   if(!confirm('Eliminare questo job?'))return;
   const snap={...stream_v1[_sjdCurrentId]};
   delete stream_v1[_sjdCurrentId];
