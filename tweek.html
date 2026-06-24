@@ -1672,7 +1672,7 @@ body{
     <div id="sjd-plan" style="flex:1;overflow-y:auto;"></div>
 
     <!-- Kanban tab -->
-    <div id="sjd-kanban" style="display:none;flex:1;overflow:hidden;display:none;"></div>
+    <div id="sjd-kanban" style="display:none;flex:1;flex-direction:row;overflow:hidden;"></div>
 
     <!-- Info tab -->
     <div id="sjd-info" style="display:none;flex:1;overflow-y:auto;padding:20px 28px;max-width:600px;"></div>
@@ -3224,7 +3224,7 @@ function sjdSetTab(tab){
   document.getElementById('sjd-tab-info').classList.toggle('active', tab==='info');
   document.getElementById('sjd-plan').style.display = tab==='plan' ? 'block' : 'none';
   var kb = document.getElementById('sjd-kanban');
-  if(kb) kb.style.display = tab==='kanban' ? 'flex' : 'none';
+  if(kb){ kb.style.display = tab==='kanban' ? 'flex' : 'none'; if(tab==='kanban') kb.style.flexDirection='row'; }
   document.getElementById('sjd-info').style.display = tab==='info' ? 'flex' : 'none';
   var addPh = document.querySelector('.sjd-add-phase-btn');
   if(addPh) addPh.style.display = tab==='plan' ? '' : 'none';
