@@ -512,6 +512,177 @@ body{
   .pf-check.done::after{content:'';display:block;width:4pt;height:2.5pt;border-left:1pt solid #fff;border-bottom:1pt solid #fff;transform:rotate(-45deg) translateY(-1pt)}
   .pf-footer{text-align:center;font-size:8pt;color:#aaa;margin-top:16pt;border-top:.3pt solid #eee;padding-top:8pt}
 }
+
+/* ══ TASK VIEW ══ */
+.tv-toolbar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;border-bottom:.5px solid var(--border);
+  flex-wrap:wrap;flex-shrink:0;background:var(--surface);
+}
+.tv-filter{
+  font-size:var(--fs-xs);font-weight:600;font-family:var(--font);
+  padding:4px 8px;border-radius:var(--rs);
+  border:.5px solid var(--border);background:var(--bg);
+  color:var(--text);cursor:pointer;
+}
+.tv-filter:focus{outline:none;border-color:var(--green);}
+.tv-toggle{display:flex;border:.5px solid var(--border);border-radius:var(--rs);overflow:hidden;}
+.tv-tog-btn{
+  display:flex;align-items:center;gap:4px;
+  padding:4px 10px;font-size:var(--fs-xs);font-weight:600;
+  border:none;background:transparent;cursor:pointer;
+  color:var(--text-3);font-family:var(--font);
+  transition:all var(--t);
+}
+.tv-tog-btn.active{background:var(--green);color:var(--green-text);}
+.tv-tog-btn:not(.active):hover{background:var(--bg);color:var(--text);}
+
+/* Kanban */
+.kb-col{
+  flex:1;display:flex;flex-direction:column;
+  border-right:.5px solid var(--border);
+  min-width:240px;
+}
+.kb-col:last-child{border-right:none;}
+.kb-col-head{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-bottom:.5px solid var(--border);
+  flex-shrink:0;
+}
+.kb-col-title{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);}
+.kb-col-count{
+  font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:var(--r-pill);
+  background:var(--bg);color:var(--text-3);
+}
+.kb-col-body{flex:1;overflow-y:auto;padding:10px 10px 20px;}
+
+/* Task card */
+.tv-card{
+  background:var(--surface);border:.5px solid var(--border);
+  border-radius:var(--r);padding:10px 12px;
+  margin-bottom:8px;cursor:pointer;
+  transition:box-shadow var(--t),transform var(--t),border-color var(--t);
+  border-left:3px solid transparent;
+}
+.tv-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);border-color:var(--green);}
+.tv-card-title{font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.3;}
+.tv-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.tv-priority{font-size:10px;font-weight:700;padding:1px 6px;border-radius:var(--r-pill);}
+.tv-priority.alta{background:#fee2e2;color:#991b1b;}
+.tv-priority.media{background:#fef3c7;color:#92400e;}
+.tv-priority.bassa{background:#dcfce7;color:#166534;}
+[data-theme="dark"] .tv-priority.alta{background:#450a0a;color:#fca5a5;}
+[data-theme="dark"] .tv-priority.media{background:#3a2800;color:#fcd34d;}
+[data-theme="dark"] .tv-priority.bassa{background:#0d2b0c;color:#4ade80;}
+.tv-scadenza{font-size:10px;color:var(--text-3);}
+.tv-scadenza.expired{color:#dc2626;}
+.tv-scadenza.soon{color:#d97706;}
+.tv-assegnatario{font-size:10px;color:var(--text-3);}
+.tv-client-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.tv-subtask-count{font-size:10px;color:var(--text-3);margin-left:auto;}
+.tv-card-progress{
+  margin-top:7px;height:3px;border-radius:var(--r-pill);
+  background:var(--border);overflow:hidden;
+}
+.tv-card-progress-bar{height:100%;background:var(--green);border-radius:var(--r-pill);transition:width .3s;}
+
+/* Lista view */
+.tv-list-group{margin-bottom:20px;}
+.tv-list-group-title{
+  font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-3);
+  padding:6px 0;border-bottom:.5px solid var(--border);
+  margin-bottom:6px;display:flex;align-items:center;gap:8px;
+}
+.tv-list-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:var(--rs);
+  cursor:pointer;transition:background var(--t);
+  border-left:3px solid transparent;
+}
+.tv-list-row:hover{background:var(--bg);}
+.tv-list-check{
+  width:16px;height:16px;border-radius:50%;
+  border:1.5px solid var(--border);flex-shrink:0;
+  cursor:pointer;background:none;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t);
+}
+.tv-list-check.done{background:var(--green);border-color:var(--green);}
+.tv-list-check.done::after{content:'';width:5px;height:3px;border-left:1.5px solid var(--green-text);border-bottom:1.5px solid var(--green-text);transform:rotate(-45deg) translateY(-1px);display:block;}
+.tv-list-title{flex:1;font-size:var(--fs-sm);font-weight:500;color:var(--text);}
+.tv-list-title.done{text-decoration:line-through;opacity:.5;}
+
+/* Task panel */
+.tp-head{
+  display:flex;align-items:center;
+  padding:12px 16px;border-bottom:.5px solid var(--border);
+  flex-shrink:0;
+}
+.tp-title{font-size:var(--fs-base);font-weight:700;color:var(--text);letter-spacing:-.01em;}
+.tp-body{flex:1;overflow-y:auto;padding:20px 20px 40px;}
+.tp-section{margin-bottom:20px;}
+.tp-label{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px;display:block;}
+.tp-input,.tp-select,.tp-textarea{
+  width:100%;font-size:var(--fs-sm);font-family:var(--font);
+  padding:7px 10px;border-radius:var(--rs);
+  border:.5px solid var(--border);background:var(--bg);color:var(--text);
+}
+.tp-input:focus,.tp-select:focus,.tp-textarea:focus{outline:none;border-color:var(--green);}
+.tp-textarea{resize:vertical;min-height:64px;line-height:1.5;}
+.tp-row{display:flex;gap:10px;}
+.tp-row .tp-section{flex:1;}
+
+/* Subtask */
+.st-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 10px;border-radius:var(--rs);
+  border:.5px solid var(--border);background:var(--bg);
+  margin-bottom:6px;
+}
+.st-check{
+  width:14px;height:14px;border-radius:50%;
+  border:1.5px solid var(--border);flex-shrink:0;
+  cursor:pointer;background:none;margin-top:2px;
+  transition:all var(--t);
+}
+.st-check.done{background:var(--green);border-color:var(--green);}
+.st-body{flex:1;min-width:0;}
+.st-title{font-size:var(--fs-sm);font-weight:500;color:var(--text);cursor:pointer;}
+.st-title.done{text-decoration:line-through;opacity:.5;}
+.st-meta{display:flex;gap:8px;margin-top:3px;font-size:10px;color:var(--text-3);}
+.st-expand{width:16px;height:16px;border:none;background:none;cursor:pointer;color:var(--text-3);font-size:10px;padding:0;flex-shrink:0;margin-top:2px;}
+
+/* Steps */
+.step-list{margin-top:6px;padding-left:4px;}
+.step-item{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 0;border-bottom:.5px solid var(--border-lt);
+}
+.step-item:last-child{border-bottom:none;}
+.step-check{
+  width:12px;height:12px;border-radius:3px;
+  border:1.5px solid var(--border);flex-shrink:0;
+  cursor:pointer;background:none;transition:all var(--t);
+}
+.step-check.done{background:var(--green);border-color:var(--green);}
+.step-title{flex:1;font-size:var(--fs-xs);color:var(--text-2);}
+.step-title.done{text-decoration:line-through;opacity:.5;}
+.step-del{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:0 3px;opacity:0;transition:opacity var(--t);}
+.step-item:hover .step-del{opacity:1;}
+
+/* Add buttons */
+.tv-add-btn{
+  width:100%;text-align:left;
+  border:.5px dashed var(--border);background:none;
+  border-radius:var(--rs);padding:6px 10px;
+  font-size:var(--fs-xs);color:var(--text-3);
+  cursor:pointer;font-family:var(--font);
+  transition:all var(--t);margin-top:4px;
+}
+.tv-add-btn:hover{border-color:var(--green);color:var(--green-dk);}
+[data-theme="dark"] .tv-add-btn:hover{color:var(--green);}
 </style>
 </head>
 <body>
@@ -538,6 +709,7 @@ body{
   <div class="view-toggle">
     <button class="vt-btn active" id="vt-week" onclick="setView('week')">Settimana</button>
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
+    <button class="vt-btn" id="vt-tasks" onclick="setView('tasks')">Task</button>
   </div>
 
   <div class="topbar-spacer"></div>
@@ -592,6 +764,75 @@ body{
   <div class="month-grid" id="month-grid"></div>
   <div class="day-detail" id="day-detail"></div>
 </div>
+
+<!-- ══ TASK VIEW ══ -->
+<div id="task-view" style="display:none;flex-direction:column;flex:1;min-height:0;">
+
+  <!-- Toolbar task -->
+  <div class="tv-toolbar">
+    <!-- Filtri -->
+    <select class="tv-filter" id="tf-client" onchange="tvRender()">
+      <option value="">Tutti i clienti</option>
+    </select>
+    <select class="tv-filter" id="tf-stato" onchange="tvRender()">
+      <option value="">Tutti gli stati</option>
+      <option value="todo">Da fare</option>
+      <option value="inprogress">In corso</option>
+      <option value="done">Completato</option>
+    </select>
+    <select class="tv-filter" id="tf-priority" onchange="tvRender()">
+      <option value="">Tutte le priorità</option>
+      <option value="alta">🔴 Alta</option>
+      <option value="media">🟡 Media</option>
+      <option value="bassa">🟢 Bassa</option>
+    </select>
+    <div style="flex:1;"></div>
+    <!-- Toggle vista -->
+    <div class="tv-toggle">
+      <button class="tv-tog-btn active" id="tog-kanban" onclick="tvSetLayout('kanban')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+        Kanban
+      </button>
+      <button class="tv-tog-btn" id="tog-list" onclick="tvSetLayout('list')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Lista
+      </button>
+    </div>
+    <button class="btn btn-primary" onclick="tvNewTask()" style="font-size:var(--fs-xs);padding:5px 12px;">+ Nuova task</button>
+  </div>
+
+  <!-- Kanban board -->
+  <div id="tv-kanban" style="display:flex;gap:0;flex:1;overflow:hidden;">
+    <div class="kb-col" id="kb-todo">
+      <div class="kb-col-head"><span class="kb-col-title">Da fare</span><span class="kb-col-count" id="kb-count-todo">0</span></div>
+      <div class="kb-col-body" id="kb-body-todo"></div>
+    </div>
+    <div class="kb-col" id="kb-inprogress">
+      <div class="kb-col-head"><span class="kb-col-title">In corso</span><span class="kb-col-count" id="kb-count-inprogress">0</span></div>
+      <div class="kb-col-body" id="kb-body-inprogress"></div>
+    </div>
+    <div class="kb-col" id="kb-done">
+      <div class="kb-col-head"><span class="kb-col-title">Completato</span><span class="kb-col-count" id="kb-count-done">0</span></div>
+      <div class="kb-col-body" id="kb-body-done"></div>
+    </div>
+  </div>
+
+  <!-- Lista view -->
+  <div id="tv-list" style="display:none;flex:1;overflow-y:auto;padding:16px 20px;"></div>
+
+</div>
+
+<!-- ══ TASK DETAIL PANEL (slide-in) ══ -->
+<div id="task-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:420px;max-width:95vw;background:var(--surface);border-left:.5px solid var(--border);box-shadow:var(--shadow-xl);z-index:400;flex-direction:column;overflow:hidden;">
+  <div class="tp-head">
+    <button class="btn btn-icon" onclick="tvClosePanel()" style="margin-right:8px;" aria-label="Chiudi">✕</button>
+    <span class="tp-title" id="tp-title">Task</span>
+    <div style="flex:1;"></div>
+    <button class="btn btn-danger" onclick="tvDeleteTask(_tvCurrentId)" style="font-size:var(--fs-xs);padding:4px 10px;border:.5px solid var(--border);background:none;color:var(--text-3);">Elimina</button>
+  </div>
+  <div class="tp-body" id="tp-body"></div>
+</div>
+<div id="task-panel-overlay" onclick="tvClosePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:399;"></div>
 
 <!-- ══ BOTTOM SECTIONS ══ -->
 <div class="bottom-sections">
@@ -743,6 +984,401 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor();closeDayDetail();}});
 document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 renderLegend();renderWeek();renderBottom();
+tvLoad();
+
+/* ══════════════════════════════════════════════════════════
+   TASK MANAGER — Tab Task in Tweek
+   Storage: nassaped_tweek_v8 (aggiunge tasks_v2)
+   Struttura: Task → Subtask → Step (3 livelli)
+══════════════════════════════════════════════════════════ */
+
+let tasks_v2 = {};        // { [id]: TaskObject }
+let _tvLayout = 'kanban'; // 'kanban' | 'list'
+let _tvCurrentId = null;  // id task aperta nel pannello
+
+const TV_STATI = { todo:'todo', inprogress:'inprogress', done:'done' };
+const TV_PRIORITY = { alta:'alta', media:'media', bassa:'bassa' };
+
+// ── Load/Save ────────────────────────────────────────────
+function tvLoad(){
+  try {
+    const raw = localStorage.getItem(SK);
+    if(raw){ const p = JSON.parse(raw); tasks_v2 = p.tasks_v2 || {}; }
+  } catch(e){}
+}
+function tvPersist(){
+  try {
+    const raw = localStorage.getItem(SK);
+    const p = raw ? JSON.parse(raw) : {};
+    p.tasks_v2 = tasks_v2;
+    localStorage.setItem(SK, JSON.stringify(p));
+    flashSave();
+  } catch(e){}
+}
+function tvUID(){ return 'tv_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+// ── setView esteso ───────────────────────────────────────
+const _origSetView = setView;
+setView = function(v){
+  document.getElementById('vt-tasks').classList.toggle('active', v==='tasks');
+  document.getElementById('task-view').style.display = v==='tasks' ? 'flex' : 'none';
+  if(v === 'tasks'){
+    view = 'tasks';
+    document.getElementById('vt-week').classList.remove('active');
+    document.getElementById('vt-month').classList.remove('active');
+    document.getElementById('week-view').style.display = 'none';
+    document.getElementById('month-view').style.display = 'none';
+    document.getElementById('hint-text').textContent = 'Clicca una card per aprire i dettagli · Trascina per cambiare stato';
+    document.getElementById('period-label').textContent = 'Task';
+    tvPopulateClientFilter();
+    tvRender();
+  } else {
+    _origSetView(v);
+  }
+};
+
+// ── Filtri ────────────────────────────────────────────────
+function tvPopulateClientFilter(){
+  const sel = document.getElementById('tf-client');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tutti i clienti</option>';
+  clients.forEach(cl => {
+    const o = document.createElement('option');
+    o.value = cl.id; o.textContent = cl.label;
+    if(cl.id === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function tvGetFiltered(){
+  const fcl = document.getElementById('tf-client')?.value || '';
+  const fst = document.getElementById('tf-stato')?.value || '';
+  const fpr = document.getElementById('tf-priority')?.value || '';
+  return Object.values(tasks_v2).filter(t =>
+    (!fcl || t.client === fcl) &&
+    (!fst || t.stato === fst) &&
+    (!fpr || t.priority === fpr)
+  );
+}
+
+function tvSetLayout(l){
+  _tvLayout = l;
+  document.getElementById('tog-kanban').classList.toggle('active', l==='kanban');
+  document.getElementById('tog-list').classList.toggle('active', l==='list');
+  document.getElementById('tv-kanban').style.display = l==='kanban' ? 'flex' : 'none';
+  document.getElementById('tv-list').style.display = l==='list' ? 'block' : 'none';
+  tvRender();
+}
+
+// ── Render ────────────────────────────────────────────────
+function tvRender(){
+  if(_tvLayout === 'kanban') tvRenderKanban();
+  else tvRenderList();
+}
+
+function tvCardHTML(t){
+  const cl = getClient(t.client);
+  const {bg, txt, border} = clientStyles(cl);
+  const totalSub = (t.subtasks||[]).length;
+  const doneSub = (t.subtasks||[]).filter(s => s.stato==='done').length;
+  const progress = totalSub > 0 ? Math.round(doneSub/totalSub*100) : (t.stato==='done'?100:0);
+  const today = iso(TODAY);
+  let scadClass = '';
+  if(t.scadenza){
+    const days = Math.round((new Date(t.scadenza)-new Date())/(864e5));
+    scadClass = days < 0 ? 'expired' : days < 3 ? 'soon' : '';
+  }
+  const card = document.createElement('div');
+  card.className = 'tv-card';
+  card.style.borderLeftColor = border;
+  card.innerHTML = `
+    <div class="tv-card-title">${esc(t.title||'Senza titolo')}</div>
+    <div class="tv-card-meta">
+      <span class="tv-client-dot" style="background:${cl.color}"></span>
+      <span style="font-size:10px;color:var(--text-3);">${esc(cl.label)}</span>
+      ${t.priority ? `<span class="tv-priority ${t.priority}">${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>` : ''}
+      ${t.scadenza ? `<span class="tv-scadenza ${scadClass}">⏱ ${t.scadenza}</span>` : ''}
+      ${t.assegnatario ? `<span class="tv-assegnatario">👤 ${esc(t.assegnatario)}</span>` : ''}
+      ${totalSub ? `<span class="tv-subtask-count" style="margin-left:auto;">${doneSub}/${totalSub} subtask</span>` : ''}
+    </div>
+    ${totalSub ? `<div class="tv-card-progress"><div class="tv-card-progress-bar" style="width:${progress}%"></div></div>` : ''}
+  `;
+  card.onclick = () => tvOpenPanel(t.id);
+  return card;
+}
+
+function tvRenderKanban(){
+  ['todo','inprogress','done'].forEach(stato => {
+    const body = document.getElementById('kb-body-'+stato);
+    const count = document.getElementById('kb-count-'+stato);
+    if(!body) return;
+    body.innerHTML = '';
+    const filtered = tvGetFiltered().filter(t => (t.stato||'todo') === stato);
+    count.textContent = filtered.length;
+    if(!filtered.length){
+      const em = document.createElement('div');
+      em.style.cssText = 'padding:20px;text-align:center;color:var(--text-3);font-size:var(--fs-xs);';
+      em.textContent = 'Nessuna task';
+      body.appendChild(em);
+    }
+    filtered.sort((a,b) => {
+      const po = {alta:0,media:1,bassa:2};
+      return (po[a.priority]??1) - (po[b.priority]??1);
+    }).forEach(t => body.appendChild(tvCardHTML(t)));
+  });
+}
+
+function tvRenderList(){
+  const el = document.getElementById('tv-list');
+  if(!el) return;
+  el.innerHTML = '';
+  const filtered = tvGetFiltered();
+  if(!filtered.length){
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3);">Nessuna task. <button class="btn btn-primary" onclick="tvNewTask()" style="font-size:var(--fs-xs);padding:4px 10px;margin-left:8px;">+ Nuova</button></div>';
+    return;
+  }
+  // Raggruppa per cliente
+  const byClient = {};
+  filtered.forEach(t => {
+    if(!byClient[t.client]) byClient[t.client] = [];
+    byClient[t.client].push(t);
+  });
+  clients.filter(cl => byClient[cl.id]).forEach(cl => {
+    const {border} = clientStyles(cl);
+    const group = document.createElement('div');
+    group.className = 'tv-list-group';
+    const gh = document.createElement('div');
+    gh.className = 'tv-list-group-title';
+    gh.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${cl.color};display:inline-block;"></span>${esc(cl.label)} <span style="font-weight:400;opacity:.6;">(${byClient[cl.id].length})</span>`;
+    group.appendChild(gh);
+    byClient[cl.id].sort((a,b)=>{const po={alta:0,media:1,bassa:2};return(po[a.priority]??1)-(po[b.priority]??1);}).forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'tv-list-row';
+      row.style.borderLeftColor = border;
+      const done = t.stato === 'done';
+      row.innerHTML = `
+        <button class="tv-list-check${done?' done':''}" onclick="event.stopPropagation();tvToggleDone('${t.id}')"></button>
+        <span class="tv-list-title${done?' done':''}">${esc(t.title||'Senza titolo')}</span>
+        ${t.priority?`<span class="tv-priority ${t.priority}">${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>`:''}
+        ${t.scadenza?`<span class="tv-scadenza" style="font-size:10px;color:var(--text-3);">⏱ ${t.scadenza}</span>`:''}
+        ${t.assegnatario?`<span style="font-size:10px;color:var(--text-3);">👤 ${esc(t.assegnatario)}</span>`:''}
+      `;
+      row.onclick = () => tvOpenPanel(t.id);
+      group.appendChild(row);
+    });
+    el.appendChild(group);
+  });
+}
+
+// ── Nuova task ────────────────────────────────────────────
+function tvNewTask(){
+  const id = tvUID();
+  tasks_v2[id] = {
+    id, title:'', client: clients[0]?.id||'',
+    priority:'media', stato:'todo',
+    scadenza:'', assegnatario:'', note:'',
+    subtasks: []
+  };
+  tvPersist();
+  tvRender();
+  tvOpenPanel(id);
+}
+
+// ── Toggle done rapido ────────────────────────────────────
+function tvToggleDone(id){
+  const t = tasks_v2[id];
+  if(!t) return;
+  t.stato = t.stato === 'done' ? 'todo' : 'done';
+  tvPersist();
+  tvRender();
+  if(_tvCurrentId === id) tvRenderPanel(id);
+}
+
+// ── Elimina task ──────────────────────────────────────────
+function tvDeleteTask(id){
+  if(!tasks_v2[id]) return;
+  const snap = {...tasks_v2[id]};
+  delete tasks_v2[id];
+  tvPersist();
+  tvClosePanel();
+  tvRender();
+  showToast('"'+esc(snap.title||'Task')+'" eliminata', true);
+  undoStack = { type:'tvDelete', snap };
+}
+
+// ── Panel ─────────────────────────────────────────────────
+function tvOpenPanel(id){
+  _tvCurrentId = id;
+  document.getElementById('task-panel').style.display = 'flex';
+  document.getElementById('task-panel-overlay').style.display = 'block';
+  tvRenderPanel(id);
+}
+function tvClosePanel(){
+  _tvCurrentId = null;
+  document.getElementById('task-panel').style.display = 'none';
+  document.getElementById('task-panel-overlay').style.display = 'none';
+}
+
+function tvRenderPanel(id){
+  const t = tasks_v2[id];
+  if(!t) return;
+  document.getElementById('tp-title').textContent = t.title || 'Nuova task';
+  const body = document.getElementById('tp-body');
+  body.innerHTML = '';
+
+  const mk = (tag,cls,style) => { const el=document.createElement(tag); if(cls)el.className=cls; if(style)el.style.cssText=style; return el; };
+  const section = (label) => {
+    const s=mk('div','tp-section'); const l=mk('span','tp-label'); l.textContent=label; s.appendChild(l); body.appendChild(s); return s;
+  };
+
+  // Titolo
+  const sTit = section('Titolo');
+  const inpTit = mk('input','tp-input'); inpTit.type='text'; inpTit.value=t.title||''; inpTit.placeholder='Nome task…';
+  inpTit.oninput = e => { t.title=e.target.value; document.getElementById('tp-title').textContent=t.title||'Nuova task'; tvSaveLazy(); };
+  sTit.appendChild(inpTit);
+
+  // Riga: Cliente + Stato
+  const rowCS = mk('div','tp-row'); body.appendChild(rowCS);
+  const sClient = mk('div','tp-section'); const lClient=mk('span','tp-label');lClient.textContent='Cliente';sClient.appendChild(lClient);
+  const selClient=mk('select','tp-select');
+  clients.forEach(cl=>{const o=document.createElement('option');o.value=cl.id;o.textContent=cl.label;if(cl.id===t.client)o.selected=true;selClient.appendChild(o);});
+  selClient.onchange=e=>{t.client=e.target.value;tvSaveLazy();tvRender();};
+  sClient.appendChild(selClient);rowCS.appendChild(sClient);
+  const sStato=mk('div','tp-section');const lStato=mk('span','tp-label');lStato.textContent='Stato';sStato.appendChild(lStato);
+  const selStato=mk('select','tp-select');
+  [{v:'todo',l:'Da fare'},{v:'inprogress',l:'In corso'},{v:'done',l:'Completato'}].forEach(({v,l})=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===t.stato)o.selected=true;selStato.appendChild(o);});
+  selStato.onchange=e=>{t.stato=e.target.value;tvSaveLazy();tvRender();};
+  sStato.appendChild(selStato);rowCS.appendChild(sStato);
+
+  // Riga: Priorità + Scadenza
+  const rowPA = mk('div','tp-row'); body.appendChild(rowPA);
+  const sPrio=mk('div','tp-section');const lPrio=mk('span','tp-label');lPrio.textContent='Priorità';sPrio.appendChild(lPrio);
+  const selPrio=mk('select','tp-select');
+  [{v:'alta',l:'🔴 Alta'},{v:'media',l:'🟡 Media'},{v:'bassa',l:'🟢 Bassa'}].forEach(({v,l})=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===t.priority)o.selected=true;selPrio.appendChild(o);});
+  selPrio.onchange=e=>{t.priority=e.target.value;tvSaveLazy();tvRender();};
+  sPrio.appendChild(selPrio);rowPA.appendChild(sPrio);
+  const sScad=mk('div','tp-section');const lScad=mk('span','tp-label');lScad.textContent='Scadenza';sScad.appendChild(lScad);
+  const inpScad=mk('input','tp-input');inpScad.type='date';inpScad.value=t.scadenza||'';
+  inpScad.onchange=e=>{t.scadenza=e.target.value;tvSaveLazy();tvRender();};
+  sScad.appendChild(inpScad);rowPA.appendChild(sScad);
+
+  // Assegnatario
+  const sAss=section('Assegnatario');
+  const inpAss=mk('input','tp-input');inpAss.type='text';inpAss.value=t.assegnatario||'';inpAss.placeholder='Nome…';
+  inpAss.oninput=e=>{t.assegnatario=e.target.value;tvSaveLazy();};
+  sAss.appendChild(inpAss);
+
+  // Note
+  const sNote=section('Note');
+  const ta=mk('textarea','tp-textarea');ta.placeholder='Aggiungi note…';ta.value=t.note||'';
+  ta.oninput=e=>{t.note=e.target.value;tvSaveLazy();};
+  sNote.appendChild(ta);
+
+  // Separator
+  const sep=mk('div','',`border-top:.5px solid var(--border);margin:4px 0 16px;`);
+  body.appendChild(sep);
+
+  // SUBTASK
+  const sSubLabel=mk('span','tp-label');sSubLabel.textContent='Subtask';sSubLabel.style.display='block';sSubLabel.style.marginBottom='8px';body.appendChild(sSubLabel);
+
+  (t.subtasks||[]).forEach((st,si) => {
+    const stWrap=mk('div','st-item');
+
+    // Checkbox subtask
+    const stCheck=mk('button','st-check'+(st.stato==='done'?' done':''));
+    stCheck.onclick=()=>{st.stato=st.stato==='done'?'todo':'done';tvSaveLazy();tvRenderPanel(id);tvRender();};
+    stWrap.appendChild(stCheck);
+
+    const stBody=mk('div','st-body');
+    // Titolo subtask editabile
+    const stTit=mk('input','',`width:100%;border:none;background:transparent;font-size:var(--fs-sm);font-weight:500;color:var(--text);font-family:var(--font);padding:0;outline:none;${st.stato==='done'?'text-decoration:line-through;opacity:.5':''}`);
+    stTit.value=st.title||'';stTit.placeholder='Titolo subtask…';
+    stTit.oninput=e=>{st.title=e.target.value;tvSaveLazy();};
+    stBody.appendChild(stTit);
+
+    // Meta subtask
+    const stMeta=mk('div','st-meta');
+    // Assegnatario subtask
+    const stAss=mk('input','',`font-size:10px;border:none;background:transparent;color:var(--text-3);font-family:var(--font);width:90px;padding:0;outline:none;`);
+    stAss.value=st.assegnatario||'';stAss.placeholder='👤 Assegnatario';
+    stAss.oninput=e=>{st.assegnatario=e.target.value;tvSaveLazy();};
+    stMeta.appendChild(stAss);
+    // Scadenza subtask
+    const stScad=mk('input','',`font-size:10px;border:none;background:transparent;color:var(--text-3);font-family:var(--font);padding:0;outline:none;`);
+    stScad.type='date';stScad.value=st.scadenza||'';
+    stScad.onchange=e=>{st.scadenza=e.target.value;tvSaveLazy();};
+    stMeta.appendChild(stScad);
+    stBody.appendChild(stMeta);
+
+    // STEPS
+    const stepList=mk('div','step-list');
+    (st.steps||[]).forEach((step,pi) => {
+      const stepRow=mk('div','step-item');
+      const stepChk=mk('button','step-check'+(step.done?' done':''));
+      stepChk.onclick=()=>{step.done=!step.done;tvSaveLazy();tvRenderPanel(id);};
+      const stepTit=mk('span','step-title'+(step.done?' done':''));stepTit.textContent=step.title||'';
+      stepTit.contentEditable='true';stepTit.style.outline='none';
+      stepTit.oninput=e=>{step.title=e.target.textContent;tvSaveLazy();};
+      const stepDel=mk('button','step-del');stepDel.textContent='✕';
+      stepDel.onclick=()=>{st.steps.splice(pi,1);tvSaveLazy();tvRenderPanel(id);};
+      stepRow.appendChild(stepChk);stepRow.appendChild(stepTit);stepRow.appendChild(stepDel);
+      stepList.appendChild(stepRow);
+    });
+    stBody.appendChild(stepList);
+
+    // + Aggiungi step
+    const addStep=mk('button','tv-add-btn');addStep.textContent='+ Step';addStep.style.fontSize='10px';addStep.style.padding='3px 8px';
+    addStep.onclick=()=>{if(!st.steps)st.steps=[];st.steps.push({id:tvUID(),title:'',done:false});tvSaveLazy();tvRenderPanel(id);};
+    stBody.appendChild(addStep);
+
+    stWrap.appendChild(stBody);
+
+    // Elimina subtask
+    const stDel=mk('button','',`background:none;border:none;cursor:pointer;color:var(--text-3);font-size:12px;padding:2px 4px;flex-shrink:0;opacity:0;transition:opacity .1s;`);
+    stDel.textContent='✕';
+    stDel.onmouseenter=()=>stDel.style.opacity='1';stDel.onmouseleave=()=>stDel.style.opacity='0';
+    stWrap.addEventListener('mouseenter',()=>stDel.style.opacity='1');
+    stWrap.addEventListener('mouseleave',()=>stDel.style.opacity='0');
+    stDel.onclick=()=>{t.subtasks.splice(si,1);tvSaveLazy();tvRenderPanel(id);tvRender();};
+    stWrap.appendChild(stDel);
+
+    body.appendChild(stWrap);
+  });
+
+  // + Aggiungi subtask
+  const addSub=mk('button','tv-add-btn');addSub.textContent='+ Subtask';
+  addSub.onclick=()=>{
+    if(!t.subtasks)t.subtasks=[];
+    t.subtasks.push({id:tvUID(),title:'',stato:'todo',assegnatario:'',scadenza:'',steps:[]});
+    tvSaveLazy();tvRenderPanel(id);
+  };
+  body.appendChild(addSub);
+}
+
+let _tvSaveTimer=null;
+function tvSaveLazy(){
+  clearTimeout(_tvSaveTimer);
+  _tvSaveTimer=setTimeout(()=>{tvPersist();tvRender();},600);
+}
+
+// ── Undo esteso per tvDelete ──────────────────────────────
+const _origExecUndo = execUndo;
+execUndo = function(){
+  if(undoStack?.type === 'tvDelete'){
+    clearTimeout(toastTimer);
+    document.getElementById('toast').classList.remove('show');
+    tasks_v2[undoStack.snap.id] = undoStack.snap;
+    tvPersist(); tvRender();
+    showToast('Task ripristinata');
+    undoStack = null;
+    return;
+  }
+  _origExecUndo();
+};
+
+// ── Init ──────────────────────────────────────────────────
+tvLoad();
+
 </script>
 </body>
 </html>
