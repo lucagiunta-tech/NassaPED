@@ -1377,6 +1377,76 @@ body{
   padding:3px 6px;background:var(--surface);color:var(--text);min-width:80px;
 }
 .sjd-exp-inp:focus{outline:none;border-color:var(--green);}
+
+/* ══ JOB KANBAN ══ */
+.sjd-kb-col{
+  flex:1;display:flex;flex-direction:column;
+  border-right:.5px solid var(--border);min-width:200px;
+}
+.sjd-kb-col:last-child{border-right:none;}
+.sjd-kb-col-head{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-bottom:.5px solid var(--border);
+  flex-shrink:0;background:var(--surface);
+}
+.sjd-kb-col-title{
+  font-size:var(--fs-xs);font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);
+}
+.sjd-kb-col-count{
+  font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:var(--r-pill);
+  background:var(--bg);color:var(--text-3);
+}
+.sjd-kb-col-body{
+  flex:1;overflow-y:auto;padding:10px 10px 20px;
+}
+.sjd-kb-col-body.sjd-kb-drop-over{
+  background:var(--green-lt);
+  outline:1.5px dashed var(--green);outline-offset:-4px;
+}
+
+/* Card Kanban */
+.sjd-kb-card{
+  background:var(--surface);border:.5px solid var(--border);
+  border-radius:var(--r);padding:10px 12px;
+  margin-bottom:8px;cursor:grab;
+  transition:box-shadow var(--t),transform var(--t),border-color var(--t);
+  border-left:3px solid var(--green);
+  user-select:none;
+}
+.sjd-kb-card:hover{
+  box-shadow:var(--shadow-md);transform:translateY(-1px);
+  border-color:var(--green);
+}
+.sjd-kb-card:active{cursor:grabbing;}
+.sjd-kb-card-title{
+  font-size:var(--fs-sm);font-weight:600;color:var(--text);
+  margin-bottom:6px;line-height:1.3;
+}
+.sjd-kb-card-meta{
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:4px;
+}
+.sjd-kb-progress{
+  height:3px;background:var(--border);border-radius:var(--r-pill);
+  overflow:hidden;margin-top:6px;
+}
+.sjd-kb-progress-bar{
+  height:100%;background:var(--green);border-radius:var(--r-pill);
+  transition:width .3s;
+}
+
+.sjd-kb-add-btn{
+  width:100%;text-align:left;
+  border:.5px dashed var(--border);background:none;
+  border-radius:var(--rs);padding:6px 10px;
+  font-size:var(--fs-xs);color:var(--text-3);
+  cursor:pointer;font-family:var(--font);
+  transition:all var(--t);margin-top:4px;
+}
+.sjd-kb-add-btn:hover{border-color:var(--green);color:var(--green-dk);}
+[data-theme="dark"] .sjd-kb-add-btn:hover{color:var(--green);}
 </style>
 </head>
 <body>
@@ -1589,6 +1659,7 @@ body{
     <!-- ── JOB PLAN ── -->
     <div class="sjd-plan-header">
       <button class="sjd-tab active" id="sjd-tab-plan" onclick="sjdSetTab('plan')">Job Plan</button>
+      <button class="sjd-tab" id="sjd-tab-kanban" onclick="sjdSetTab('kanban')">Kanban</button>
       <button class="sjd-tab" id="sjd-tab-info" onclick="sjdSetTab('info')">Info</button>
       <div style="flex:1;"></div>
       <button class="sjd-add-phase-btn" onclick="sjdAddPhase()">
@@ -1599,6 +1670,9 @@ body{
 
     <!-- Plan content -->
     <div id="sjd-plan" style="flex:1;overflow-y:auto;"></div>
+
+    <!-- Kanban tab -->
+    <div id="sjd-kanban" style="display:none;flex:1;overflow:hidden;display:none;"></div>
 
     <!-- Info tab -->
     <div id="sjd-info" style="display:none;flex:1;overflow-y:auto;padding:20px 28px;max-width:600px;"></div>
@@ -3146,11 +3220,16 @@ const STATI_LABEL = {todo:'Da fare',inprogress:'In corso',done:'Fatto'};
 function sjdSetTab(tab){
   _sjdTab = tab;
   document.getElementById('sjd-tab-plan').classList.toggle('active', tab==='plan');
+  document.getElementById('sjd-tab-kanban').classList.toggle('active', tab==='kanban');
   document.getElementById('sjd-tab-info').classList.toggle('active', tab==='info');
   document.getElementById('sjd-plan').style.display = tab==='plan' ? 'block' : 'none';
+  var kb = document.getElementById('sjd-kanban');
+  if(kb) kb.style.display = tab==='kanban' ? 'flex' : 'none';
   document.getElementById('sjd-info').style.display = tab==='info' ? 'flex' : 'none';
-  document.getElementById('sjd-add-phase-btn') && (document.querySelector('.sjd-add-phase-btn').style.display = tab==='plan' ? '' : 'none');
+  var addPh = document.querySelector('.sjd-add-phase-btn');
+  if(addPh) addPh.style.display = tab==='plan' ? '' : 'none';
   if(tab==='info') sjdRenderInfo(_sjdCurrentId);
+  if(tab==='kanban') sjdRenderKanban(_sjdCurrentId);
 }
 
 function sjdRender(id){
@@ -3691,6 +3770,161 @@ function sjdShowMemberPicker(jobId,pi,ii,anchor){
   });
   document.body.appendChild(picker);
   setTimeout(function(){document.addEventListener('click',function rm(){picker.remove();document.removeEventListener('click',rm);},{once:true});},80);
+}
+
+
+
+/* ══ JOB KANBAN ══ */
+function sjdRenderKanban(id){
+  var j = stream_v1[id];
+  var el = document.getElementById('sjd-kanban');
+  if(!j || !el) return;
+
+  // Raccogli tutti gli item da tutte le fasi
+  var allItems = [];
+  (j.phases||[]).forEach(function(phase, pi){
+    (phase.items||[]).forEach(function(item, ii){
+      allItems.push({item:item, phase:phase, pi:pi, ii:ii});
+    });
+  });
+
+  el.innerHTML = '';
+  el.style.cssText = 'display:flex;flex:1;overflow:hidden;';
+
+  var COLS = [
+    {key:'todo',       label:'Da fare',   count:0},
+    {key:'inprogress', label:'In corso',  count:0},
+    {key:'done',       label:'Fatto',     count:0},
+  ];
+
+  COLS.forEach(function(col){
+    var items = allItems.filter(function(x){ return (x.item.stato||'todo') === col.key; });
+
+    var colEl = document.createElement('div');
+    colEl.className = 'sjd-kb-col';
+    colEl.dataset.stato = col.key;
+
+    // Header colonna
+    var head = document.createElement('div');
+    head.className = 'sjd-kb-col-head';
+    head.innerHTML = '<span class="sjd-kb-col-title">'+col.label+'</span>'
+      +'<span class="sjd-kb-col-count">'+items.length+'</span>';
+    colEl.appendChild(head);
+
+    // Body
+    var body = document.createElement('div');
+    body.className = 'sjd-kb-col-body';
+    body.dataset.stato = col.key;
+
+    // Drag-over handlers
+    body.addEventListener('dragover', function(e){
+      e.preventDefault();
+      body.classList.add('sjd-kb-drop-over');
+    });
+    body.addEventListener('dragleave', function(e){
+      if(!body.contains(e.relatedTarget)) body.classList.remove('sjd-kb-drop-over');
+    });
+    body.addEventListener('drop', function(e){
+      e.preventDefault();
+      body.classList.remove('sjd-kb-drop-over');
+      var raw = e.dataTransfer.getData('sjd-item');
+      if(!raw) return;
+      var d = JSON.parse(raw);
+      var targetItem = stream_v1[id].phases[d.pi].items[d.ii];
+      if(!targetItem) return;
+      var newStato = col.key;
+      if(targetItem.stato === newStato) return;
+      targetItem.stato = newStato;
+      streamPersist();
+      sjdRenderKanban(id);
+      sjdRenderKpi(id);
+      streamRenderJobs();
+    });
+
+    items.forEach(function(x){
+      body.appendChild(sjdBuildKanbanCard(x.item, x.phase, x.pi, x.ii, id));
+    });
+
+    // Add card button
+    var addBtn = document.createElement('button');
+    addBtn.className = 'sjd-kb-add-btn';
+    addBtn.textContent = '+ Item';
+    addBtn.onclick = function(){
+      var title = prompt('Nome item:');
+      if(!title) return;
+      // Aggiunge alla prima fase o crea una fase se non esiste
+      var j2 = stream_v1[id];
+      if(!(j2.phases||[]).length){
+        j2.phases = [{id:streamUID(),title:'Fase 1',emoji:'📋',items:[]}];
+      }
+      j2.phases[0].items.push({
+        id:streamUID(), title:title, stato:col.key,
+        team:[], teamOre:{}, oreStimate:0, oreUsate:0,
+        budget:0, tariffaOraria:0, dataStart:'', dataEnd:'',
+        note:'', checklist:[], links:[]
+      });
+      streamPersist();
+      sjdRenderKanban(id);
+      sjdRenderKpi(id);
+    };
+    body.appendChild(addBtn);
+
+    colEl.appendChild(body);
+    el.appendChild(colEl);
+  });
+}
+
+function sjdBuildKanbanCard(item, phase, pi, ii, jobId){
+  var card = document.createElement('div');
+  card.className = 'sjd-kb-card';
+  card.draggable = true;
+
+  // Calcola info
+  var clDone = (item.checklist||[]).filter(function(c){return c.done;}).length;
+  var clTot  = (item.checklist||[]).length;
+  var clPct  = clTot>0 ? Math.round(clDone/clTot*100) : 0;
+  var teamAv = (item.team||[]).slice(0,3).map(function(mid){
+    var m = JV_MEMBERS.find(function(x){return x.id===mid;})||{n:mid,c:'#888'};
+    return '<span class="sjd-av-mini" title="'+esc(m.n)+'" style="background:'+m.c+';width:18px;height:18px;font-size:7px;">'+m.n[0].toUpperCase()+'</span>';
+  }).join('');
+
+  var stMap = {todo:'sjd-item-status todo',inprogress:'sjd-item-status inprogress',done:'sjd-item-status done'};
+  var lbMap = {todo:'Da fare',inprogress:'In corso',done:'Fatto'};
+
+  card.innerHTML = ''
+    +'<div class="sjd-kb-card-title">'+esc(item.title||'Item senza titolo')+'</div>'
+    +'<div class="sjd-kb-card-meta">'
+    +  '<span style="font-size:10px;color:var(--text-3);">'+esc(phase.phase||phase.title||'')+'</span>'
+    +  '<div style="flex:1;"></div>'
+    +  (teamAv ? '<div class="sjd-team-mini">'+teamAv+'</div>' : '')
+    +'</div>'
+    +(clTot>0 ? '<div class="sjd-kb-progress"><div class="sjd-kb-progress-bar" style="width:'+clPct+'%"></div></div>'
+              + '<div style="font-size:9px;color:var(--text-3);text-align:right;margin-top:2px;">'+clDone+'/'+clTot+'</div>' : '')
+    +(item.note ? '<div style="font-size:10px;color:var(--text-3);margin-top:5px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">'+esc(item.note)+'</div>' : '');
+
+  // Drag
+  card.addEventListener('dragstart', function(e){
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('sjd-item', JSON.stringify({pi:pi, ii:ii}));
+    setTimeout(function(){ card.style.opacity='0.4'; }, 0);
+  });
+  card.addEventListener('dragend', function(){
+    card.style.opacity='';
+  });
+
+  // Click → vai a Job Plan sull'item
+  card.onclick = function(){
+    sjdSetTab('plan');
+    _sjdExpandedItem = jobId+'-'+pi+'-'+ii;
+    sjdRenderPlan(jobId);
+    // Scroll verso l'item espanso
+    setTimeout(function(){
+      var rows = document.querySelectorAll('.sjd-item-expanded');
+      if(rows.length) rows[0].scrollIntoView({behavior:'smooth', block:'center'});
+    }, 100);
+  };
+
+  return card;
 }
 
 </script>
