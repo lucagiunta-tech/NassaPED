@@ -1,52 +1,51 @@
 /**
- * /api/auth
- * POST { user, password } → cookie HttpOnly nassa_session (JWT)
- * GET                     → verifica sessione corrente
+ * /api/auth — senza dipendenze esterne (usa crypto nativo Node.js)
+ * POST { user, password } → cookie HttpOnly session
+ * GET                     → verifica sessione
  * DELETE                  → logout
- *
- * Credenziali in Vercel env:
- *   NASSA_USERS = JSON con mappa { "luca":"pass1", "alberto":"pass2", ... }
- *   oppure fallback NASSA_PASSWORD per password unica
- *   JWT_SECRET per firmare i token
  */
 
-import { SignJWT, jwtVerify } from 'jose';
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 const SESSION_COOKIE = 'nassa_session';
 const SESSION_DAYS   = 30;
 
-async function getSecret(){
-  const s = process.env.JWT_SECRET || process.env.NASSA_API_KEY || 'nassa_fallback_secret_2026';
-  return new TextEncoder().encode(s);
+function getSecret(){
+  return process.env.JWT_SECRET || process.env.NASSA_API_KEY || 'nassa_fallback_2026';
 }
 
-async function createToken(payload){
-  const secret = await getSecret();
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(`${SESSION_DAYS}d`)
-    .sign(secret);
+// Token semplice: base64(payload).base64(hmac) — no dipendenze
+function createToken(payload){
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig  = createHmac('sha256', getSecret()).update(data).digest('base64url');
+  return `${data}.${sig}`;
 }
 
-async function verifyToken(token){
+function verifyToken(token){
   try {
-    const secret = await getSecret();
-    const { payload } = await jwtVerify(token, secret);
+    const [data, sig] = token.split('.');
+    if(!data || !sig) return null;
+    const expected = createHmac('sha256', getSecret()).update(data).digest('base64url');
+    // timing-safe compare
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    if(a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString());
+    if(payload.exp && payload.exp < Date.now()/1000) return null;
     return payload;
   } catch { return null; }
 }
 
 function setCookie(res, value, maxAge){
-  const cookie = [
+  const parts = [
     `${SESSION_COOKIE}=${value}`,
     `Max-Age=${maxAge}`,
     'Path=/',
     'HttpOnly',
     'SameSite=Strict',
-    process.env.NODE_ENV !== 'development' ? 'Secure' : '',
-  ].filter(Boolean).join('; ');
-  res.setHeader('Set-Cookie', cookie);
+  ];
+  if(process.env.NODE_ENV !== 'development') parts.push('Secure');
+  res.setHeader('Set-Cookie', parts.join('; '));
 }
 
 function getCookie(req){
@@ -55,28 +54,22 @@ function getCookie(req){
   return match ? match[1] : null;
 }
 
-// Verifica credenziali — supporta utenti multipli o password unica
 function checkCredentials(user, password){
-  // Prima: prova con NASSA_USERS (JSON map)
+  // NASSA_USERS: JSON map {"luca":"pass1","alberto":"pass2"}
   const usersEnv = process.env.NASSA_USERS;
   if(usersEnv){
     try {
       const users = JSON.parse(usersEnv);
-      // Normalizza: chiavi lowercase
-      const userKey = (user || '').toLowerCase().trim();
-      if(users[userKey] && users[userKey] === password) return userKey;
-      // Cerca anche chiavi non-lowercase
-      const match = Object.entries(users).find(([k,v]) =>
-        k.toLowerCase() === userKey && v === password
+      const key = (user||'').toLowerCase().trim();
+      const found = Object.entries(users).find(([k,v]) =>
+        k.toLowerCase() === key && v === password
       );
-      if(match) return match[0];
-    } catch(e) {
-      console.warn('[auth] NASSA_USERS parse error:', e.message);
-    }
+      if(found) return found[0];
+    } catch(e) {}
   }
-  // Fallback: password unica (retrocompatibilità)
+  // Fallback: password unica
   const PASS = process.env.NASSA_PASSWORD || process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
-  if(password === PASS) return (user || 'shared').toLowerCase().trim();
+  if(password === PASS) return (user||'shared').toLowerCase().trim();
   return null;
 }
 
@@ -105,31 +98,32 @@ export default async function handler(req, res){
     if(!validUser)
       return res.status(401).json({ error: 'Credenziali non corrette' });
 
-    const token = await createToken({ app: 'nassa', user: validUser, v: 2 });
+    const exp = Math.floor(Date.now()/1000) + SESSION_DAYS * 86400;
+    const token = createToken({ app:'nassa', user:validUser, exp, v:2 });
     setCookie(res, token, SESSION_DAYS * 86400);
-    return res.status(200).json({ ok: true, user: validUser });
+    return res.status(200).json({ ok:true, user:validUser });
   }
 
   // GET — verifica sessione
   if(req.method === 'GET'){
     const token = getCookie(req);
-    if(!token) return res.status(401).json({ ok: false, reason: 'no_session' });
-    const payload = await verifyToken(token);
-    if(!payload) return res.status(401).json({ ok: false, reason: 'invalid_token' });
-    // Rinnova cookie se scade entro 7 giorni
-    const exp = payload.exp || 0;
-    if(exp - Date.now()/1000 < 7 * 86400){
-      const newToken = await createToken({ app: 'nassa', user: payload.user, v: 2 });
-      setCookie(res, newToken, SESSION_DAYS * 86400);
+    if(!token) return res.status(401).json({ ok:false, reason:'no_session' });
+    const payload = verifyToken(token);
+    if(!payload) return res.status(401).json({ ok:false, reason:'invalid_token' });
+    // Rinnova se scade entro 7 giorni
+    if(payload.exp - Date.now()/1000 < 7*86400){
+      const exp = Math.floor(Date.now()/1000) + SESSION_DAYS*86400;
+      const newToken = createToken({ app:'nassa', user:payload.user, exp, v:2 });
+      setCookie(res, newToken, SESSION_DAYS*86400);
     }
-    return res.status(200).json({ ok: true, user: payload.user });
+    return res.status(200).json({ ok:true, user:payload.user });
   }
 
   // DELETE — logout
   if(req.method === 'DELETE'){
     setCookie(res, '', 0);
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok:true });
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  return res.status(405).json({ error:'Method not allowed' });
 }
