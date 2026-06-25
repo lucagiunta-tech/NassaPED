@@ -889,16 +889,17 @@ function queueFeedFiles(files){
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
         } else {
-          // match=-1 — item was removed or reordered during upload.
-          // Rather than losing the Dropbox URL, append it as a new item so the file is never lost.
-          console.warn('[NassaPED] match=-1 for', f.name, '— appending as new item with URL preserved');
-          arr.unshift({
-            type: f.type?.startsWith('video')?'video':'image',
-            url: sharedUrl, externalUrl: sharedUrl, name: f.name,
-            isExternalLink: true, linkSource: 'dropbox',
-            date:'', showDate:false, copy:'', linkedStories:[], slides:[],
-            needsReload: false, _uid: _feedUID()
-          });
+          // match=-1 — try to find the broken placeholder by name before giving up
+          const fallback = arr.findIndex(it=>it.name===f.name && (it.needsReload||!it.externalUrl));
+          if(fallback>=0){
+            if(arr[fallback].url&&arr[fallback].url.startsWith('blob:')) URL.revokeObjectURL(arr[fallback].url);
+            arr[fallback].externalUrl=sharedUrl;arr[fallback].url=sharedUrl;
+            arr[fallback].isExternalLink=true;arr[fallback].linkSource='dropbox';
+            arr[fallback].needsReload=false;delete arr[fallback]._uploadId;
+          }
+          // If still no match — the item was explicitly deleted by user during upload, do nothing.
+          // The URL is safely in Dropbox; they can paste it as a link if needed.
+          console.warn('[NassaPED] match=-1 for', f.name, fallback>=0 ? '— fixed via name fallback' : '— item deleted during upload, URL in Dropbox');
         }
         if(uploadFeedKey) feeds[uploadFeedKey]=arr;
         if(currentFeedKey()===uploadFeedKey) refreshFeed(true);
@@ -1037,8 +1038,11 @@ function queueStoryFiles(files){
           if(a[match].url&&a[match].url.startsWith('blob:'))URL.revokeObjectURL(a[match].url);
           a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;delete a[match]._uploadId;
         } else {
-          // match=-1 — append as new item, URL never lost
-          a.unshift({type:f.type?.startsWith('video')?'video':'image',url:sharedUrl,externalUrl:sharedUrl,name:f.name,isExternalLink:true,date:'',note:'',isStoryboard:false,slides:[],needsReload:false,_uid:_feedUID()});
+          const fallback=a.findIndex(it=>it.name===f.name&&(it.needsReload||!it.externalUrl));
+          if(fallback>=0){
+            if(a[fallback].url&&a[fallback].url.startsWith('blob:'))URL.revokeObjectURL(a[fallback].url);
+            a[fallback].externalUrl=sharedUrl;a[fallback].url=sharedUrl;a[fallback].isExternalLink=true;a[fallback].needsReload=false;delete a[fallback]._uploadId;
+          }
         }
         if(uploadStoriesKey) stories[uploadStoriesKey]=a;
         if(currentStoriesKey()===uploadStoriesKey) refreshStories();
