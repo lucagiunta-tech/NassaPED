@@ -1920,11 +1920,11 @@ function renderFeedGrid(){
         const topBar=document.createElement('div');topBar.className='cell-top-bar';
         const handle=document.createElement('div');handle.className='drag-handle';handle.innerHTML=SVG_DOTS;
         const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;
-        // ← → move buttons
+        // ← → move buttons — read current idx from data-drag-idx at click time (not closure)
         const btnL=document.createElement('button');btnL.className='move-btn move-btn-l';btnL.innerHTML='←';btnL.title='Sposta a sinistra';
-        btnL.onclick=e=>{e.stopPropagation();moveFeedItem(idx,-1);};
+        btnL.onclick=e=>{e.stopPropagation();const curIdx=parseInt(cell.dataset.dragIdx);if(!isNaN(curIdx))moveFeedItem(curIdx,-1);};
         const btnR=document.createElement('button');btnR.className='move-btn move-btn-r';btnR.innerHTML='→';btnR.title='Sposta a destra';
-        btnR.onclick=e=>{e.stopPropagation();moveFeedItem(idx,1);};
+        btnR.onclick=e=>{e.stopPropagation();const curIdx=parseInt(cell.dataset.dragIdx);if(!isNaN(curIdx))moveFeedItem(curIdx,1);};
         topBar.appendChild(handle);topBar.appendChild(btnL);topBar.appendChild(btnR);topBar.appendChild(num);topBar.appendChild(badge);
         cell.appendChild(topBar);
 
