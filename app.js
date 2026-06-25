@@ -9221,9 +9221,139 @@ window.addEventListener('offline', () => {
   showToast('⚠ Connessione persa — le modifiche vengono salvate localmente', 'warn');
 });
 
-document.addEventListener('DOMContentLoaded',async()=>{
-  init();const av=document.getElementById('user-avatar');if(av)av.textContent=CLOUD.user.slice(0,2).toUpperCase();
-  await loadFromCloud();
+/* ══ AUTH — Login gate ══
+   Checks session on load. Shows login screen if not authenticated.
+   Client preview (/client/*) never loads this file so it's unaffected.
+══════════════════════════════════════════ */
+let _nassaUser = null; // { username, role } — set after successful auth
+
+function _showLoginScreen(errorMsg) {
+  // Hide the whole app while login is shown
+  document.querySelector('.app')?.style.setProperty('display','none');
+  // Remove any existing login screen
+  document.getElementById('nassa-login-screen')?.remove();
+
+  const screen = document.createElement('div');
+  screen.id = 'nassa-login-screen';
+  screen.style.cssText = [
+    'position:fixed','inset:0','z-index:99999',
+    'display:flex','align-items:center','justify-content:center',
+    'background:var(--bg,#f5f4f0)',
+    'font-family:var(--font,"Inter",sans-serif)',
+  ].join(';');
+
+  screen.innerHTML = `
+    <div style="width:100%;max-width:380px;padding:0 24px;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="width:52px;height:52px;border-radius:14px;background:#1a8c3f;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;font-weight:800;color:#fff;">N</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text,#111);letter-spacing:-.5px;">Nassa Studio</div>
+        <div style="font-size:13px;color:var(--text-3,#888);margin-top:4px;">Accedi al tuo account</div>
+      </div>
+      <div id="login-error" style="display:${errorMsg?'block':'none'};background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;">${errorMsg||''}</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <input id="login-username" type="text" placeholder="Username" autocomplete="username"
+          style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border,#ddd);border-radius:10px;font-size:15px;font-family:inherit;background:var(--surface,#fff);color:var(--text,#111);outline:none;transition:border-color .15s;"
+          onfocus="this.style.borderColor='#1a8c3f'" onblur="this.style.borderColor=''" />
+        <div style="position:relative;">
+          <input id="login-password" type="password" placeholder="Password" autocomplete="current-password"
+            style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border,#ddd);border-radius:10px;font-size:15px;font-family:inherit;background:var(--surface,#fff);color:var(--text,#111);outline:none;transition:border-color .15s;"
+            onfocus="this.style.borderColor='#1a8c3f'" onblur="this.style.borderColor=''"
+            onkeydown="if(event.key==='Enter')_doLogin()" />
+          <button onclick="const p=document.getElementById('login-password');p.type=p.type==='password'?'text':'password';"
+            style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-3,#888);font-size:13px;padding:4px;">
+            👁
+          </button>
+        </div>
+        <button id="login-btn" onclick="_doLogin()"
+          style="padding:13px;background:#1a8c3f;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;margin-top:4px;"
+          onmouseover="this.style.background='#157a34'" onmouseout="this.style.background='#1a8c3f'">
+          Accedi
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(screen);
+  setTimeout(()=>document.getElementById('login-username')?.focus(), 50);
+}
+
+async function _doLogin() {
+  const username = document.getElementById('login-username')?.value.trim();
+  const password = document.getElementById('login-password')?.value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+
+  if(!username||!password){ _setLoginError('Inserisci username e password'); return; }
+
+  btn.textContent = 'Accesso…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if(!res.ok) {
+      _setLoginError(data.error || 'Credenziali non corrette');
+      btn.textContent = 'Accedi'; btn.disabled = false;
+      return;
+    }
+    // Success — hide login, boot app
+    _nassaUser = { username: data.username, role: data.role };
+    document.getElementById('nassa-login-screen')?.remove();
+    document.querySelector('.app').style.display = '';
+    _bootApp();
+  } catch(e) {
+    _setLoginError('Errore di connessione — riprova');
+    btn.textContent = 'Accedi'; btn.disabled = false;
+  }
+}
+
+function _setLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if(el){ el.textContent = msg; el.style.display = 'block'; }
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-password').focus();
+}
+
+async function nassaLogout() {
+  await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+  _nassaUser = null;
+  _showLoginScreen();
+}
+
+function _bootApp() {
+  // Update avatar with logged-in username
+  const av = document.getElementById('user-avatar');
+  if(av && _nassaUser) av.textContent = _nassaUser.username.slice(0,2).toUpperCase();
+  // Run main init
+  init();
+  loadFromCloud();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Hide app until auth is confirmed
+  const app = document.querySelector('.app');
+  if(app) app.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/auth', { method: 'GET', credentials: 'include' });
+    if(res.ok) {
+      const data = await res.json();
+      if(data.ok) {
+        _nassaUser = { username: data.username, role: data.role };
+        if(app) app.style.display = '';
+        _bootApp();
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('[auth] session check failed:', e.message);
+  }
+  // Not authenticated — show login
+  _showLoginScreen();
 });
 
 
