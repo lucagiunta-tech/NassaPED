@@ -1810,6 +1810,15 @@ function renderFeedGrid(){
         const uploadBtn=document.createElement('button');uploadBtn.className='type-btn';uploadBtn.style.cssText='background:var(--green);color:#fff;border-color:var(--green);width:100%;justify-content:center;margin-bottom:4px;';
         uploadBtn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg> Carica file';
         uploadBtn.onclick=e=>{e.stopPropagation();slotInp.click();};pk.appendChild(uploadBtn);
+        // URL input row
+        const urlRow=document.createElement('div');urlRow.style.cssText='display:flex;gap:4px;width:100%;margin-bottom:4px;';
+        const urlInp=document.createElement('input');urlInp.type='text';urlInp.placeholder='Incolla link Dropbox…';
+        urlInp.style.cssText='flex:1;font-size:10px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:var(--font);min-width:0;';
+        urlInp.onclick=e=>e.stopPropagation();
+        const urlBtn=document.createElement('button');urlBtn.textContent='+';
+        urlBtn.style.cssText='padding:4px 8px;font-size:12px;font-weight:700;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;flex-shrink:0;';
+        urlBtn.onclick=e=>{e.stopPropagation();const u=urlInp.value.trim();if(!u)return;const items=currentFeedItems();const type=detectType(u);items[idx]={...items[idx],type,url:u,externalUrl:u,isExternalLink:true,linkSource:'other',name:u.split('/').pop().split('?')[0]||'link'};setFeedItems(items);refreshFeed();autoSave();};
+        urlRow.appendChild(urlInp);urlRow.appendChild(urlBtn);pk.appendChild(urlRow);
         const btns=document.createElement('div');btns.className='type-btns';
         [['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>','Foto','image'],
          ['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>','Reel','video'],
@@ -7264,13 +7273,8 @@ function addPendingSlot(){
 }
 
 function openEditorialModal(){
-  // Chiudi il pannello filtri se aperto
-  const ctxPanel=document.getElementById('feed-ctx-panel');
-  if(ctxPanel&&ctxPanel.classList.contains('open')){
-    ctxPanel.classList.remove('open');
-    const icon=document.getElementById('feed-expand-icon');
-    if(icon)icon.innerHTML='<polyline points="6 9 12 15 18 9"/>';
-  }
+  // Properly close the upload panel (removes outside-click listener too)
+  closeFeedUploadPanel();
   // Pre-fill client name in eyebrow
   const cl=clients[globalClientIdx>=0?globalClientIdx:0];
   if(cl){
@@ -9367,13 +9371,13 @@ async function nassaLogout() {
   _showLoginScreen();
 }
 
-function _bootApp() {
+async function _bootApp() {
   // Update avatar with logged-in username
   const av = document.getElementById('user-avatar');
   if(av && _nassaUser) av.textContent = _nassaUser.username.slice(0,2).toUpperCase();
   // Run main init
   init();
-  loadFromCloud();
+  await loadFromCloud();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
