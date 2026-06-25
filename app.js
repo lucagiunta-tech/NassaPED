@@ -2035,8 +2035,9 @@ function renderFeedGrid(){
     else{cell.classList.add('empty-slot');addEmptyFeedListeners(cell);wrap.appendChild(cell);}
     grid.appendChild(wrap);
   }
-
-
+  // Set up pointer-based drag-and-drop on the freshly-rendered grid
+  _setupFeedDrag(grid);
+}
 
 function renderNotesEditor(){ docsInit(); }
 function rebuildNotesSelects(){ docsInit(); }
@@ -2539,6 +2540,7 @@ function _reconcileFeedOrder(grid, items){
   });
 }
 
+function _setupFeedDrag(grid){
   // ── POINTER-BASED DRAG & DROP ──
   // Sostituisce HTML drag API (lagosa) con pointer events (60fps fluidi)
   let _pd = {
