@@ -528,6 +528,10 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-cell:not(.empty-slot):hover .drag-handle{opacity:1;}
 .drag-handle:active{cursor:grabbing;}
 .drag-handle svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;}
+.move-btn{width:26px;height:26px;border-radius:var(--rs);background:rgba(0,0,0,.35);backdrop-filter:blur(4px);color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:opacity var(--t-base),background var(--t-fast);pointer-events:all;line-height:1;}
+.move-btn:hover{background:rgba(0,0,0,.6);}
+.move-btn:active{background:rgba(13,255,0,.5);}
+.feed-cell:not(.empty-slot):hover .move-btn{opacity:1;}
 .cell-num{font-size:var(--fs-md);font-weight:800;color:#fff;line-height:1;flex:1;text-shadow:0 1px 4px rgba(0,0,0,.6);letter-spacing:var(--ls-tight);}
 /* TYPE BADGE — inside top-bar */
 .cell-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:var(--rs);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--ls-wide);pointer-events:none;}

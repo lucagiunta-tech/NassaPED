@@ -1916,11 +1916,16 @@ function renderFeedGrid(){
           }[item.type]||'—';
         }
 
-        // ── TOP BAR: drag + number + badge, in a flex row with gradient ──
+        // ── TOP BAR: drag + move buttons + number + badge ──
         const topBar=document.createElement('div');topBar.className='cell-top-bar';
         const handle=document.createElement('div');handle.className='drag-handle';handle.innerHTML=SVG_DOTS;
         const num=document.createElement('span');num.className='cell-num';num.textContent=i+1;
-        topBar.appendChild(handle);topBar.appendChild(num);topBar.appendChild(badge);
+        // ← → move buttons
+        const btnL=document.createElement('button');btnL.className='move-btn move-btn-l';btnL.innerHTML='←';btnL.title='Sposta a sinistra';
+        btnL.onclick=e=>{e.stopPropagation();moveFeedItem(idx,-1);};
+        const btnR=document.createElement('button');btnR.className='move-btn move-btn-r';btnR.innerHTML='→';btnR.title='Sposta a destra';
+        btnR.onclick=e=>{e.stopPropagation();moveFeedItem(idx,1);};
+        topBar.appendChild(handle);topBar.appendChild(btnL);topBar.appendChild(btnR);topBar.appendChild(num);topBar.appendChild(badge);
         cell.appendChild(topBar);
 
         // Extra badges
@@ -2769,6 +2774,26 @@ function removeFeedItem(i){
     const cur=currentFeedItems();
     cur.splice(snapshot.idx,0,{...snapshot.item,url:snapshot.item.externalUrl||''});
     setFeedItems(cur);refreshFeed();autoSave();
+  });
+}
+
+function moveFeedItem(idx, dir){
+  // dir: -1 = move left, +1 = move right
+  const arr = currentFeedItems().slice();
+  const target = idx + dir;
+  if(target < 0 || target >= arr.length) return;
+  // Swap
+  [arr[idx], arr[target]] = [arr[target], arr[idx]];
+  setFeedItems(arr);
+  autoSave();
+  const grid = document.getElementById('feed-grid');
+  if(grid) _reconcileFeedOrder(grid, arr);
+  showUndoToast('Post spostato', ()=>{
+    const ar = currentFeedItems().slice();
+    [ar[idx], ar[target]] = [ar[target], ar[idx]];
+    setFeedItems(ar);
+    if(grid) _reconcileFeedOrder(grid, ar);
+    autoSave();
   });
 }
 function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;
