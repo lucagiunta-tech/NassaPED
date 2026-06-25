@@ -405,6 +405,23 @@ const CLOUD = {
 };
 
 /* ══════════════════════════════════════════
+   DROPBOX PATH BUILDER
+   Builds structured paths under /Nassa Studio/NassaPortal/
+   Structure: /Nassa Studio/NassaPortal/{ClientName}/{Subfolder}/{filename}
+   Client folders are created automatically by Dropbox on first upload.
+══════════════════════════════════════════ */
+const DBX_ROOT = '/Nassa Studio/NassaPortal';
+
+function _dbxPath(clientIdx, subfolder, filename) {
+  // Get client name — fall back to "Condiviso" if no client selected
+  const cl = (clientIdx >= 0 && clientIdx < clients.length) ? clients[clientIdx] : null;
+  const clientFolder = cl ? cl.name : 'Condiviso';
+  // Keep filename as-is (Dropbox handles spaces); just strip path separators
+  const safeName = String(filename).replace(/[/\\]/g, '_');
+  return `${DBX_ROOT}/${clientFolder}/${subfolder}/${safeName}`;
+}
+
+/* ══════════════════════════════════════════
    DROPBOX UPLOAD — via /api/dropbox-upload
    Uses DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN
    All three are Vercel env vars — never sent to browser.
@@ -441,8 +458,8 @@ const DROPBOX = {
 
       // Step 1: Upload file directly from browser to Dropbox
       // No size limit — goes directly browser→Dropbox, not through Vercel
-      const safeName = (destPath || '/nassa/' + file.name)
-        .replace(/[^a-zA-Z0-9._\-/]/g, '_');
+      const safeName = (destPath || `${DBX_ROOT}/Condiviso/${file.name}`)
+        .replace(/[^a-zA-Z0-9._\-/ àáâãäåèéêëìíîïòóôõöùúûüñçÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÑÇ]/g, '_');
 
       const uploadRes = await fetch('https://content.dropboxapi.com/2/files/upload', {
         method: 'POST',
@@ -858,7 +875,7 @@ function queueFeedFiles(files){
 
     for(const f of filesArr){
       updateProgress();
-      const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
+      const destPath=_dbxPath(feedClientIdx, f.type?.startsWith('video')?'Video':'Immagini', f.name);
       const sharedUrl=await DROPBOX.upload(f,destPath);
       // CRITICAL: use the captured key, not currentFeedItems() which depends on current state
       const arr = uploadFeedKey ? (feeds[uploadFeedKey]||[]) : currentFeedItems();
@@ -975,7 +992,7 @@ async function batchReuploadFromFiles(files){
     }
     if(idx<0){ console.warn('[batch] No match for:', f.name); failed++; continue; }
 
-    const destPath = '/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+f.name;
+    const destPath = _dbxPath(feedClientIdx, f.type?.startsWith('video')?'Video':'Immagini', f.name);
     const url = await DROPBOX.upload(f, destPath);
     if(url){
       arr[idx].url=url; arr[idx].externalUrl=url;
@@ -1025,7 +1042,7 @@ function queueStoryFiles(files){
   const uploadStoriesKey = currentStoriesKey();
   (async()=>{
     for(const f of filesArr){
-      const destPath='/nassa/'+CLOUD.user+'/stories/'+(storiesMonth||'misc')+'/'+f.name;
+      const destPath=_dbxPath(storiesClientIdx, f.type?.startsWith('video')?'Stories/Video':'Stories/Immagini', f.name);
       const sharedUrl=await DROPBOX.upload(f,destPath);
       // Use captured key — not currentStoryItems() which depends on current state
       const a = uploadStoriesKey ? (stories[uploadStoriesKey]||[]) : currentStoryItems();
@@ -1800,7 +1817,7 @@ function renderFeedGrid(){
         if(item.needsReload&&!item.url){
           const _icon=item.type==='video'?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>':item.type==='carousel'?'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>':'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
           const _rfn=async(file)=>{
-            const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/'+file.name;
+            const destPath=_dbxPath(feedClientIdx, file.type?.startsWith('video')?'Video':'Immagini', file.name);
             showToast('⟳ Caricamento…');
             const url=await DROPBOX.upload(file,destPath);
             if(url){currentFeedItems()[idx].url=url;currentFeedItems()[idx].externalUrl=url;currentFeedItems()[idx].isExternalLink=true;currentFeedItems()[idx].needsReload=false;if(currentFeedItems()[idx].type==='pending')currentFeedItems()[idx].type='image';setFeedItems(currentFeedItems());refreshFeed();showToast('✓ Media ricaricato');}
@@ -2893,7 +2910,7 @@ async function feedProfileImgChange(files){
   const acc=getAccount(feedClientIdx,feedAccountIdx);
   if(!acc)return;
   showToast('⟳ Caricamento foto profilo…');
-  const destPath='/nassa/'+CLOUD.user+'/profiles/'+Date.now()+'_'+file.name;
+  const destPath=_dbxPath(feedClientIdx, 'Profilo', Date.now()+'_'+file.name);
   const url=await DROPBOX.upload(file,destPath);
   const finalUrl=url||URL.createObjectURL(file);
   clients[feedClientIdx].accounts[feedAccountIdx].profileImg=finalUrl;
@@ -3007,7 +3024,7 @@ async function saveCarousel(){
         // [PROD] console.log('[Carousel] blob size: '+blob.size+' type: '+blob.type);
         const ext = blob.type.includes('png')?'.png':blob.type.includes('gif')?'.gif':'.jpg';
         const file=new File([blob],s.name||('slide_'+i+ext),{type:blob.type});
-        const destPath='/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/carousel/'+file.name;
+        const destPath=_dbxPath(feedClientIdx, 'Immagini/Caroselli', file.name);
         const url=await DROPBOX.upload(file,destPath);
         // [PROD] console.log('[Carousel] slide '+i+' upload result:', url?'✅ '+url.slice(0,60):'❌ null');
         if(url){carouselTmp[i].url=url;carouselTmp[i].externalUrl=url;}
@@ -3299,7 +3316,7 @@ function renderStoriesGrid(){
           upInp.onchange=async(e)=>{
             const file=e.target.files[0];if(!file)return;
             showToast('⟳ Caricamento…');
-            const destPath='/nassa/'+CLOUD.user+'/ped-stories/'+pedMonth+'/'+file.name;
+            const destPath=_dbxPath(feedClientIdx>=0?feedClientIdx:globalClientIdx, file.type?.startsWith('video')?'Stories/Video':'Stories/PED', file.name);
             const url=await DROPBOX.upload(file,destPath);
             if(url){
               // Update the PED plan entry with the uploaded URL
@@ -3557,7 +3574,7 @@ async function saveStoryboard(){
       try{
         const resp=await fetch(s.url);const blob=await resp.blob();
         const file=new File([blob],s.name||('sb_slide_'+i+'.jpg'),{type:blob.type});
-        const destPath='/nassa/'+CLOUD.user+'/storyboard/'+file.name;
+        const destPath=_dbxPath(storiesClientIdx>=0?storiesClientIdx:globalClientIdx, 'Stories/Storyboard', file.name);
         const url=await DROPBOX.upload(file,destPath);
         if(url){sbTmpSlides[i].url=url;sbTmpSlides[i].externalUrl=url;}
       }catch(e){console.warn('Storyboard slide upload failed',e);}
@@ -4081,7 +4098,7 @@ async function saveHighlight(){
       showToast('⟳ Caricamento copertina…');
       const resp=await fetch(coverUrl);const blob=await resp.blob();
       const file=new File([blob],'highlight_'+name.replace(/\s+/g,'_')+'.jpg',{type:blob.type});
-      const destPath='/nassa/'+CLOUD.user+'/highlights/'+file.name;
+      const destPath=_dbxPath(storiesClientIdx>=0?storiesClientIdx:globalClientIdx, 'Stories/Evidenze', file.name);
       const uploaded=await DROPBOX.upload(file,destPath);
       if(uploaded)coverUrl=uploaded;
     }catch(e){console.warn('Highlight cover upload failed',e);}
@@ -6178,7 +6195,7 @@ async function sbRenderAndUploadSlides(sb) {
       if(!blob) continue;
       const fname = (sb.name||'slide').replace(/[^a-zA-Z0-9]/g,'_')+'_slide'+(i+1)+'.png';
       const file = new File([blob], fname, {type:'image/png'});
-      const destPath = '/nassa/'+CLOUD.user+'/storyboard-export/'+Date.now()+'_'+fname;
+      const destPath = _dbxPath(storiesClientIdx>=0?storiesClientIdx:globalClientIdx, 'Stories/Storyboard', Date.now()+'_'+fname);
       showToast('⟳ Caricamento slide '+(i+1)+'/'+slides.length+'…');
       const url = await DROPBOX.upload(file, destPath);
       if(url) results.push({url, name:fname, type:'image'});
@@ -6348,7 +6365,7 @@ function sbTabMoveToFeed(sb, origIdx, key){
       showToast('⟳ Caricamento su Dropbox…');
       const uploaded = [];
       for(const file of files){
-        const destPath = '/nassa/'+CLOUD.user+'/'+(destIsStory?'ped-stories':'feed')+'/'+Date.now()+'_'+file.name;
+        const destPath = _dbxPath(sbTabClientIdx, destIsStory?(file.type?.startsWith('video')?'Stories/Video':'Stories/Immagini'):(file.type?.startsWith('video')?'Video':'Immagini'), Date.now()+'_'+file.name);
         const url = await DROPBOX.upload(file, destPath);
         if(url) uploaded.push({url, name:file.name, type:file.type.startsWith('video/')?'video':'image'});
       }
@@ -6636,7 +6653,7 @@ async function notesUploadAndInsert(file) {
   }
   showToast('⬆ Caricamento immagine…');
   const ext = file.name.split('.').pop() || 'jpg';
-  const path = '/nassa/notes/' + Date.now() + '.' + ext;
+  const path = _dbxPath(notesClientIdx>=0?notesClientIdx:globalClientIdx, 'Note', Date.now()+'.'+ext);
   const url = await DROPBOX.upload(file, path);
   if(url) {
     notesInsertImage(url, file.name.replace(/\.[^.]+$/, ''));
@@ -6925,7 +6942,7 @@ function renderEcAccounts(){
     avatarInp.onchange=async e=>{
       const file=e.target.files[0]; if(!file) return;
       showToast('⟳ Caricamento foto profilo…');
-      const destPath='/nassa/'+CLOUD.user+'/profiles/'+file.name;
+      const destPath=_dbxPath(globalClientIdx, 'Profilo', file.name);
       const url=await DROPBOX.upload(file,destPath);
       if(url){
         ecTmpAccounts[i].profileImg=url;
@@ -8030,7 +8047,8 @@ async function saveAdsCampaign(){
       const file=_adsCreativeFile;
       creativeType=file.type.startsWith('video')?'video':'image';
       const ext=file.name.split('.').pop();
-      const destPath='/nassa/'+(CLOUD.user||'shared')+'/ads/'+campId+'.'+ext;
+      const cl = globalClientIdx>=0 ? clients[globalClientIdx] : null;
+      const destPath=`${DBX_ROOT}/${cl?cl.name:'Condiviso'}/Ads/${campId}.${ext}`;
       const formData=new FormData();
       formData.append('file',file);
       formData.append('path',destPath);
@@ -9039,7 +9057,7 @@ async function setVideoCover(file){
 
   showToast('⟳ Caricamento cover…');
   // Upload su Dropbox
-  const destPath = '/nassa/'+CLOUD.user+'/'+(feedMonth||'misc')+'/covers/'+file.name;
+  const destPath = _dbxPath(feedClientIdx, 'Immagini/Cover', file.name);
   const url = await DROPBOX.upload(file, destPath);
   if(url){
     items[videoCoverEditIdx].coverUrl = url;
