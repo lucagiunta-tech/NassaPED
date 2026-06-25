@@ -1993,12 +1993,29 @@ function renderFeedGrid(){
   }
 };cpanel_body.appendChild(ct);
         const prev=document.createElement('div');prev.className='copy-preview'+(item.copy?'':' empty');prev.textContent=item.copy||'Caption…';
+        const closeCopy=()=>{
+          expBtn.classList.remove('open');
+          cpanel_body.classList.remove('open');
+          prev.style.display='block';
+          // Refresh preview text after editing
+          prev.textContent=ct.value||'Caption…';
+          prev.classList.toggle('empty',!ct.value);
+        };
         const toggleCopy=()=>{
           const open=expBtn.classList.toggle('open');
           cpanel_body.classList.toggle('open',open);
           prev.style.display=open?'none':'block';
           if(open)setTimeout(()=>ct.focus(),0);
+          else{ prev.textContent=ct.value||'Caption…'; prev.classList.toggle('empty',!ct.value); }
         };
+        // Collapse back when clicking outside the caption panel
+        ct.addEventListener('blur',e=>{
+          // Small delay so clicks on the header (toggle) don't double-fire
+          setTimeout(()=>{
+            if(!cp.contains(document.activeElement)) closeCopy();
+          },120);
+        });
+        ct.addEventListener('keydown',e=>{ if(e.key==='Escape'){ ct.blur(); closeCopy(); } });
         cph.onclick=toggleCopy;prev.onclick=toggleCopy;
         // Caption sempre collassata di default — si espande solo a click
         cp.appendChild(cph);cp.appendChild(prev);cp.appendChild(cpanel_body);
@@ -2540,7 +2557,13 @@ function _reconcileFeedOrder(grid, items){
   });
 }
 
+let _feedDragReady = false;
 function _setupFeedDrag(grid){
+  // Guard: attach listeners only ONCE across all renderFeedGrid calls.
+  // grid.innerHTML='' does NOT remove the grid element itself, so listeners
+  // on `grid` and `document` would stack on every render — breaking drop.
+  if(_feedDragReady) return;
+  _feedDragReady = true;
   // ── POINTER-BASED DRAG & DROP ──
   // Sostituisce HTML drag API (lagosa) con pointer events (60fps fluidi)
   let _pd = {
