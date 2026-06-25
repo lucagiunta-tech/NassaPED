@@ -7203,7 +7203,15 @@ async function loadFromCloud(){
     notesClientIdx=-1;notesMonth='';
     updateGlobalClientUI();
     renderStudio();rebuildAllSelects();rebuildGlobalClientSelect();
-    renderFeedGrid();renderStoriesGrid();updateFeedHeader();updateStoriesHeader();
+    // Auto-select first client so feedAccountIdx is set — without this
+    // feedAccountIdx stays -1 and ALL uploads silently fail with "Seleziona cliente"
+    if(clients.length>0){
+      const sel=document.getElementById('global-client-sel');
+      if(sel){sel.value='0';setGlobalClient('0');}
+      else setGlobalClient('0');
+    } else {
+      renderFeedGrid();renderStoriesGrid();updateFeedHeader();updateStoriesHeader();
+    }
     showToast('✓ Dati caricati dal cloud');
   } else {
     CLOUD.setStatus('idle');
