@@ -1800,9 +1800,24 @@ function renderFeedGrid(){
       if(item.type==='pending'){
         cell.classList.add('empty-slot');cell.style.overflow='hidden';
         const bg=document.createElement('img');bg.className='picker-bg';bg.src=item.url;bg.alt='';bg.setAttribute('aria-hidden','true');cell.appendChild(bg);
-        const pk=document.createElement('div');pk.className='type-picker';const lbl=document.createElement('div');lbl.className='type-picker-lbl';lbl.textContent='Tipo post';pk.appendChild(lbl);
-        const btns=document.createElement('div');btns.className='type-btns';[['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>','Foto','image'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>','Reel','video'],['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>','Caros.','carousel']].forEach(([icon,label,type])=>{const b=document.createElement('button');b.className='type-btn';b.innerHTML=`<span class="ti">${icon}</span>${label}`;b.onclick=()=>setFeedItemType(idx,type);btns.appendChild(b);});pk.appendChild(btns);
-        const rm=document.createElement('button');rm.className='picker-rm';rm.textContent='✕ rimuovi';rm.onclick=()=>removeFeedItem(idx);pk.appendChild(rm);cell.appendChild(pk);wrap.appendChild(cell);
+        const pk=document.createElement('div');pk.className='type-picker';
+        const lbl=document.createElement('div');lbl.className='type-picker-lbl';lbl.textContent='Carica o scegli tipo';pk.appendChild(lbl);
+        // Hidden file input — triggered by upload button
+        const slotInp=document.createElement('input');slotInp.type='file';slotInp.accept='image/*,video/*';slotInp.style.cssText='display:none;';
+        slotInp.onchange=e=>{if(e.target.files[0])queueFeedFiles([e.target.files[0]]);};
+        cell.appendChild(slotInp);
+        // Upload button
+        const uploadBtn=document.createElement('button');uploadBtn.className='type-btn';uploadBtn.style.cssText='background:var(--green);color:#fff;border-color:var(--green);width:100%;justify-content:center;margin-bottom:4px;';
+        uploadBtn.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg> Carica file';
+        uploadBtn.onclick=e=>{e.stopPropagation();slotInp.click();};pk.appendChild(uploadBtn);
+        const btns=document.createElement('div');btns.className='type-btns';
+        [['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>','Foto','image'],
+         ['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>','Reel','video'],
+         ['<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v18M16 3v18"/></svg>','Caros.','carousel']
+        ].forEach(([icon,label,type])=>{const b=document.createElement('button');b.className='type-btn';b.innerHTML=`<span class="ti">${icon}</span>${label}`;b.onclick=e=>{e.stopPropagation();setFeedItemType(idx,type);};btns.appendChild(b);});
+        pk.appendChild(btns);
+        const rm=document.createElement('button');rm.className='picker-rm';rm.textContent='✕ rimuovi';rm.onclick=e=>{e.stopPropagation();removeFeedItem(idx);};pk.appendChild(rm);
+        cell.appendChild(pk);wrap.appendChild(cell);
       } else {
         const _itemUrl=item.url||item.externalUrl||'';
       const coverUrl=item.type==='carousel'&&item.slides?.length?(item.slides[0].url||item.slides[0].externalUrl||''):_itemUrl;
@@ -1816,8 +1831,8 @@ function renderFeedGrid(){
             else showToast('Errore upload','warn');
           };
           const ph=needsReloadPh(_icon,item.name,_rfn);
-          // Give the file input highest z-index so overlay never blocks it
-          ph.style.zIndex='10';
+          // Give the file input highest z-index so date-add-btn / cover pill never block it
+          ph.style.zIndex='20';
           cell.appendChild(ph);
           // For needsReload: only show delete button, NO full overlay (would block reupload)
           const delOnly=document.createElement('div');delOnly.className='nr-del-btn';

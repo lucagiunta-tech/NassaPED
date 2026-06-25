@@ -2568,7 +2568,7 @@ tbody tr:hover .tr-actions{opacity:1;}
   letter-spacing:var(--ls-normal);
   background:rgba(0,0,0,.62);color:#fff;
   border:1px solid rgba(255,255,255,.2);
-  cursor:pointer;z-index:12;
+  cursor:pointer;z-index:18;
   transition:background var(--t-base);
   backdrop-filter:blur(4px);
 }
