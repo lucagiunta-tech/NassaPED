@@ -809,7 +809,7 @@ async function validateUploadFiles(files){
     // 2. Dimensione
     if(file.size > UPLOAD_MAX_BYTES){
       const mb = (file.size/1024/1024).toFixed(1);
-      rejected.push({name:file.name, reason:`File troppo grande (${mb}MB, max ${UPLOAD_MAX_MB}MB)`});
+      rejected.push({name:file.name, reason:`Troppo grande (${mb}MB, max ${UPLOAD_MAX_MB}MB) — incolla il link Dropbox direttamente nel feed`});
       continue;
     }
     // 3. Magic bytes (verifica contenuto reale)
@@ -838,24 +838,21 @@ function queueFeedFiles(files){
     if(!filesArr.length) return;
   // Add all new items first, then upload each one
   const items=currentFeedItems();
-  const uploadStartTimes = new Map(); // track unique ID per file for matching
   const now = Date.now();
   const newItems=filesArr.map((f,fi)=>{
-    const uid = f.name+'_'+(now+fi);
-    uploadStartTimes.set(f, now+fi);
+    const stableUid = _feedUID(); // generated once here
+    f._nassaUid = stableUid;     // attach to File object — survives the async loop safely
     return {
       type:detectType(f)==='video'?'video':'pending',
       url:URL.createObjectURL(f),name:f.name,
       date:'',showDate:false,copy:'',linkedStories:[],slides:[],mimeType:f.type,
       coverUrl:'',
-      _uid: _feedUID(), // stable key for DOM reconciliation
-      _uploadId: uid // unique id to track this specific upload
+      _uid: stableUid,      // stable DOM reconciliation key
+      _uploadId: stableUid  // used for upload match — same stable value, not filename+timestamp
     };
   });
-  setFeedItems([...newItems,...items]);refreshFeed(true); // skipAutoSave=true — don't schedule a stale save before upload completes
+  setFeedItems([...newItems,...items]);refreshFeed(true);
   // Capture the feed key NOW — before user can navigate to another month/account
-  // This is the ROOT CAUSE of anteprime scompaiono: if feedMonth or feedAccountIdx
-  // changes during upload, currentFeedItems() in the callback reads the WRONG feed.
   const uploadFeedKey = currentFeedKey();
 
   // Upload each file to Dropbox sequentially to avoid race conditions
@@ -879,22 +876,10 @@ function queueFeedFiles(files){
       const sharedUrl=await DROPBOX.upload(f,destPath);
       // CRITICAL: use the captured key, not currentFeedItems() which depends on current state
       const arr = uploadFeedKey ? (feeds[uploadFeedKey]||[]) : currentFeedItems();
-      // Match by _uploadId first (unique per upload session), fallback to name
-      const uploadId = f.name+'_'+uploadStartTimes.get(f);
-      let match = arr.findIndex(it=>it._uploadId===uploadId);
+      // Match by _uid stored directly on the File object — never undefined, never a filename collision
+      let match = arr.findIndex(it=>it._uploadId===f._nassaUid);
+      // Fallback: name match (handles items loaded from older saves without _nassaUid)
       if(match<0) match=arr.findIndex(it=>it.name===f.name&&!it.externalUrl);
-
-      // ── DIAGNOSTICA ──────────────────────────────────────────────────────
-      console.group('%c[NassaPED] Upload callback: '+f.name, 'color:#0dff00;font-weight:700');
-      // [PROD] console.log('uploadFeedKey (captured at start):', uploadFeedKey);
-      // [PROD] console.log('currentFeedKey() (now, at callback):', currentFeedKey());
-      // [PROD] console.log('Keys match?', uploadFeedKey === currentFeedKey());
-      // [PROD] console.log('uploadId:', uploadId);
-      // [PROD] console.log('match index:', match, match>=0 ? '✅' : '❌ MISS');
-      // [PROD] console.log('sharedUrl from Dropbox:', sharedUrl ? sharedUrl.slice(0,80)+'…' : '❌ NULL');
-      // [PROD] console.log('arr length:', arr.length);
-      // [PROD] if(match>=0) console.log('Matched item:', JSON.stringify({name:arr[match].name, _uploadId:arr[match]._uploadId, externalUrl:arr[match].externalUrl?.slice(0,50)}));
-      // ─────────────────────────────────────────────────────────────────────
 
       if(sharedUrl){
         done++;
@@ -903,35 +888,29 @@ function queueFeedFiles(files){
           arr[match].externalUrl=sharedUrl;arr[match].url=sharedUrl;
           arr[match].isExternalLink=true;arr[match].linkSource='dropbox';
           arr[match].needsReload=false;delete arr[match]._uploadId;
-          // [PROD] console.log('✅ externalUrl written to item['+match+']:', sharedUrl.slice(0,80)+'…');
         } else {
-          console.warn('❌ match=-1: externalUrl NOT written! Item will be needsReload on refresh.');
+          // match=-1 — item was removed or reordered during upload.
+          // Rather than losing the Dropbox URL, append it as a new item so the file is never lost.
+          console.warn('[NassaPED] match=-1 for', f.name, '— appending as new item with URL preserved');
+          arr.unshift({
+            type: f.type?.startsWith('video')?'video':'image',
+            url: sharedUrl, externalUrl: sharedUrl, name: f.name,
+            isExternalLink: true, linkSource: 'dropbox',
+            date:'', showDate:false, copy:'', linkedStories:[], slides:[],
+            needsReload: false, _uid: _feedUID()
+          });
         }
         if(uploadFeedKey) feeds[uploadFeedKey]=arr;
-        // Refresh UI only if still on same feed
         if(currentFeedKey()===uploadFeedKey) refreshFeed(true);
         if(currentTab==='preview') renderPreview();
-
-        // Verify snapshot before saving
-        const snap = CLOUD.snapshot();
-        const snapArr = snap.feeds[uploadFeedKey]||[];
-        const snapItem = snapArr[match>=0?match:0];
-        // [PROD] console.log('Snapshot item['+Math.max(0,match)+'] externalUrl:', snapItem?.externalUrl?.slice(0,80)||'❌ MISSING');
-        const snapSize = JSON.stringify(snap).length;
-        // [PROD] console.log('Snapshot size:', Math.round(snapSize/1024)+'KB', snapSize > 15*1024*1024 ? '❌ TOO LARGE' : '✅ OK');
-        // Cancel any pending debounce save — avoids a stale write racing against this authoritative one
         clearTimeout(CLOUD._saveTimer);
-        await CLOUD.saveNow(snap);
-        // [PROD] console.log('✅ saveNow completed');
-        console.groupEnd();
+        await CLOUD.saveNow(CLOUD.snapshot());
       } else {
-        console.warn('❌ Dropbox upload returned null — network error or auth failure');
-        console.groupEnd();
         failed++;
-        if(match>=0){ arr[match].needsReload=true; }
+        if(match>=0){ arr[match].needsReload=true; arr[match]._uploadFailed=true; }
         if(uploadFeedKey) feeds[uploadFeedKey]=arr;
         if(currentFeedKey()===uploadFeedKey) refreshFeed(true);
-        showToast('⚠ Upload fallito: '+f.name,'warn');
+        showToast('⚠ Upload fallito: '+f.name+' — riprova o incolla il link Dropbox','warn');
       }
     }
     // Upload completato
@@ -1036,8 +1015,12 @@ function queueStoryFiles(files){
     const filesArr = await validateUploadFiles(Array.from(files));
     if(!filesArr.length) return;
   const arr=currentStoryItems();
-  const newItems=filesArr.map(f=>({type:detectType(f),url:URL.createObjectURL(f),name:f.name,date:'',note:'',isStoryboard:false,slides:[]}));
-  setStoryItems([...newItems,...arr]);renderStoriesGrid();updateStoriesStats(); // skipAutoSave — don't schedule a stale save before upload completes
+  const newItems=filesArr.map(f=>{
+    const stableUid = _feedUID();
+    f._nassaUid = stableUid;
+    return {type:detectType(f),url:URL.createObjectURL(f),name:f.name,date:'',note:'',isStoryboard:false,slides:[],_uid:stableUid,_uploadId:stableUid};
+  });
+  setStoryItems([...newItems,...arr]);renderStoriesGrid();updateStoriesStats();
   // Capture stories key NOW — before user can navigate to another month/account
   const uploadStoriesKey = currentStoriesKey();
   (async()=>{
@@ -1046,11 +1029,16 @@ function queueStoryFiles(files){
       const sharedUrl=await DROPBOX.upload(f,destPath);
       // Use captured key — not currentStoryItems() which depends on current state
       const a = uploadStoriesKey ? (stories[uploadStoriesKey]||[]) : currentStoryItems();
-      const match=a.findIndex(it=>it.name===f.name&&!it.externalUrl);
+      // Match by _uid on File object — stable, never undefined
+      let match=a.findIndex(it=>it._uploadId===f._nassaUid);
+      if(match<0) match=a.findIndex(it=>it.name===f.name&&!it.externalUrl);
       if(sharedUrl){
         if(match>=0){
           if(a[match].url&&a[match].url.startsWith('blob:'))URL.revokeObjectURL(a[match].url);
-          a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;
+          a[match].externalUrl=sharedUrl;a[match].url=sharedUrl;a[match].isExternalLink=true;a[match].needsReload=false;delete a[match]._uploadId;
+        } else {
+          // match=-1 — append as new item, URL never lost
+          a.unshift({type:f.type?.startsWith('video')?'video':'image',url:sharedUrl,externalUrl:sharedUrl,name:f.name,isExternalLink:true,date:'',note:'',isStoryboard:false,slides:[],needsReload:false,_uid:_feedUID()});
         }
         if(uploadStoriesKey) stories[uploadStoriesKey]=a;
         if(currentStoriesKey()===uploadStoriesKey) refreshStories();
@@ -2598,7 +2586,8 @@ function _setupFeedDrag(grid){
     lastTarget: null,
     insertBefore: undefined,
     dropBefore: null,
-    rafId: null
+    rafId: null,
+    _crossMonthToastShown: false
   };
 
   // _pd.indicator is now the TARGET cell-wrap we highlight, not a DOM node injected into grid
@@ -2687,6 +2676,17 @@ function _setupFeedDrag(grid){
       _pd.ghost.style.display='none';
       const el = document.elementFromPoint(e.clientX, e.clientY);
       _pd.ghost.style.display='';
+
+      // If hovering over a month separator, show feedback and bail
+      if(el?.closest('.feed-month-sep')){
+        _pdClearHighlight();
+        if(!_pd._crossMonthToastShown){
+          _pd._crossMonthToastShown = true;
+          showToast('Trascina solo dentro lo stesso mese','warn');
+          setTimeout(()=>{ _pd._crossMonthToastShown=false; }, 3000);
+        }
+        return;
+      }
 
       const wrap = el?.closest('.cell-wrap');
       const cell = wrap?.querySelector('[data-drag-idx]');
