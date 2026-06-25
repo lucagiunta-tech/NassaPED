@@ -489,6 +489,8 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* FEED GRID */
 .cell-wrap{display:flex;flex-direction:column;min-width:0;border-radius:var(--r);transition:box-shadow var(--t-fast),transform var(--t-fast);}
 .cell-wrap:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);z-index:2;}
+.cell-wrap.dragging:hover{transform:none;box-shadow:none;}
+.cell-wrap.drag-drop-left:hover,.cell-wrap.drag-drop-right:hover{transform:none;}
 .cell-wrap:focus-within{box-shadow:var(--shadow-focus);z-index:2;}
 .feed-cell{position:relative;aspect-ratio:4/5;border-radius:var(--r) var(--r) 0 0;overflow:hidden;background:var(--cell-bg);width:100%;} /* aspect-ratio overridden inline per platform */
 .feed-cell.empty-slot{
@@ -1196,8 +1198,10 @@ tbody tr:hover .tr-actions{opacity:1;}
 .client-badge.video{background:rgba(0,0,0,.6);color:#fff;}
 .client-badge.carousel{background:var(--overlay-light);color:var(--text);font-weight:700;}
 .client-copy{padding:8px 10px;font-size:var(--fs-sm);color:var(--text);line-height:var(--lh-relaxed);word-break:break-word;border-top:1px solid var(--border-lt);}
-.client-copy > div:last-child{max-height:3em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;transition:max-height .2s ease;cursor:pointer;white-space:pre-wrap;}
-.client-copy:hover > div:last-child{max-height:400px;-webkit-line-clamp:unset;overflow:visible;}
+.client-copy > div:last-child{max-height:3.2em;overflow:hidden;white-space:pre-wrap;cursor:pointer;position:relative;}
+.client-copy > div:last-child::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1.4em;background:linear-gradient(transparent,var(--surface,#fff));pointer-events:none;}
+.client-copy:hover > div:last-child{max-height:400px;overflow-y:auto;overflow-x:hidden;}
+.client-copy:hover > div:last-child::after{display:none;}
 .client-copy-lbl{font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);margin-bottom:3px;}
 .preview-footer{text-align:center;border-top:1px solid var(--border-lt);padding-top:16px;margin-top:20px;}
 .preview-footer p{font-size:var(--fs-sm);color:var(--text-2);margin-bottom:3px;}
@@ -3353,28 +3357,20 @@ tbody tr:hover .tr-actions{opacity:1;}
 .feed-month-sep-label{font-size:var(--fs-sm);font-weight:700;color:var(--text);}
 .feed-month-sep-count{font-size:var(--fs-xs);color:var(--text-3);}
 /* ── DRAG & DROP INSERT INDICATOR ── */
-.drag-insert-indicator{
-  width: 4px;
-  align-self: stretch;
-  background: var(--green);
-  border-radius: 99px;
-  margin: 0 2px;
-  box-shadow: 0 0 8px rgba(13,255,0,.6);
-  pointer-events: none;
-  animation: indicator-pulse .5s ease infinite alternate;
-  flex-shrink: 0;
-  min-height: 80px;
-  z-index: 10;
+.drag-insert-indicator{ display:none; } /* no longer injected into grid */
+/* Drop target highlights — border on the card you're hovering */
+.cell-wrap.drag-drop-left{
+  box-shadow: -4px 0 0 0 var(--green), var(--shadow-md);
+  border-radius: var(--r);
 }
-@keyframes indicator-pulse{
-  from{ opacity:.8; transform:scaleY(.98); box-shadow:0 0 4px rgba(13,255,0,.4); }
-  to{   opacity:1; transform:scaleY(1);    box-shadow:0 0 12px rgba(13,255,0,.8); }
+.cell-wrap.drag-drop-right{
+  box-shadow: 4px 0 0 0 var(--green), var(--shadow-md);
+  border-radius: var(--r);
 }
-/* Placeholder dove stava la card trascinata */
+/* Placeholder where the card came from — keeps grid space, fades it */
 .cell-wrap.dragging{
-  opacity:0;
+  opacity:0.18;
   pointer-events:none;
-  border:2px dashed var(--border);
   border-radius:var(--r);
 }
 .story-wrap.dragging{

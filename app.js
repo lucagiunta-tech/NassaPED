@@ -2574,31 +2574,34 @@ function _setupFeedDrag(grid){
     offsetX: 0,
     offsetY: 0,
     lastTarget: null,
-    insertBefore: null,
+    insertBefore: undefined,
+    dropBefore: null,
     rafId: null
   };
 
-  function _pdGetIndicator(){
-    if(!_pd.indicator){
-      _pd.indicator = document.createElement('div');
-      _pd.indicator.className = 'drag-insert-indicator';
-      _pd.indicator.setAttribute('aria-hidden','true');
+  // _pd.indicator is now the TARGET cell-wrap we highlight, not a DOM node injected into grid
+  // _pd.insertBefore: the cell-wrap we'll insertBefore on drop (null = append)
+  // _pd.dropBefore: true = drop left of target, false = drop right
+
+  function _pdClearHighlight(){
+    if(_pd.lastTarget){
+      _pd.lastTarget.classList.remove('drag-drop-left','drag-drop-right');
+      _pd.lastTarget = null;
     }
-    return _pd.indicator;
   }
 
   function _pdCleanup(){
-    _pd.active = false; // per sicurezza
+    _pd.active = false;
     if(_pd.rafId){ cancelAnimationFrame(_pd.rafId); _pd.rafId=null; }
     if(_pd.ghost){ _pd.ghost.remove(); _pd.ghost=null; }
-    if(_pd.indicator){ _pd.indicator.remove(); } // non null — riusato
+    _pdClearHighlight();
     grid.querySelectorAll('.cell-wrap').forEach(c=>{
-      c.classList.remove('dragging');
-      c.style.willChange='';
+      c.classList.remove('dragging','drag-drop-left','drag-drop-right');
+      c.style.opacity='';
     });
     document.body.style.userSelect='';
     document.body.style.cursor='';
-    _pd.srcIdx=null; _pd.lastTarget=null;
+    _pd.srcIdx=null; _pd.lastTarget=null; _pd.insertBefore=null; _pd.dropBefore=null;
   }
 
   // Attach al drag handle di ogni card
@@ -2637,9 +2640,9 @@ function _setupFeedDrag(grid){
     document.body.appendChild(ghost);
     _pd.ghost = ghost;
 
-    // La card originale diventa placeholder
+    // La card originale diventa placeholder semi-trasparente (mantiene lo spazio nella griglia)
     wrap.classList.add('dragging');
-    wrap.style.willChange = 'opacity';
+    wrap.style.opacity = '0.25';
 
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'grabbing';
@@ -2658,51 +2661,59 @@ function _setupFeedDrag(grid){
         _pd.ghost.style.left = (e.clientX - _pd.offsetX)+'px';
       }
 
-      // Trova la card sotto il cursore (escludi ghost e indicator)
+      // Trova la card sotto il cursore (escludi ghost)
       _pd.ghost.style.display='none';
       const el = document.elementFromPoint(e.clientX, e.clientY);
       _pd.ghost.style.display='';
 
       const wrap = el?.closest('.cell-wrap');
       const cell = wrap?.querySelector('[data-drag-idx]');
-      if(!wrap||!cell){ _pd.indicator?.remove(); return; }
+      if(!wrap||!cell){ _pdClearHighlight(); return; }
 
       const idx = parseInt(cell.dataset.dragIdx);
-      if(idx === _pd.srcIdx){ _pd.indicator?.remove(); return; }
+      if(idx === _pd.srcIdx){ _pdClearHighlight(); return; }
 
       const rect = wrap.getBoundingClientRect();
       const before = (e.clientX - rect.left) < rect.width / 2;
-      const target = before ? wrap : wrap.nextSibling;
 
-      // Inserisci indicatore solo se posizione cambiata
-      const ind = _pdGetIndicator();
-      if(ind.nextSibling !== target){
-        grid.insertBefore(ind, target || null);
+      // Highlight target with left/right border only — no DOM injection into grid
+      if(_pd.lastTarget !== wrap || _pd.dropBefore !== before){
+        _pdClearHighlight();
+        _pd.lastTarget = wrap;
+        _pd.dropBefore = before;
+        wrap.classList.add(before ? 'drag-drop-left' : 'drag-drop-right');
+        _pd.insertBefore = before ? wrap : wrap.nextSibling;
       }
     });
   });
 
   document.addEventListener('pointerup', e=>{
     if(!_pd.active) return;
-    // Stop SUBITO — evita che rAF in volo modifichi ancora
     _pd.active = false;
     if(_pd.rafId){ cancelAnimationFrame(_pd.rafId); _pd.rafId=null; }
 
-    // Leggi indicatore PRIMA di cleanup (che lo rimuove dal DOM)
-    const ind = _pd.indicator;
+    // Read drop target BEFORE cleanup clears it
     const srcIdx = _pd.srcIdx;
+    const insertBeforeNode = _pd.insertBefore; // cell-wrap to insert before, or null = append
     let insertIdx = srcIdx;
 
-    if(ind && ind.parentElement === grid){
+    if(insertBeforeNode !== undefined && insertBeforeNode !== null){
+      // Count how many real cell-wraps come before the target node in the grid
       let count = 0;
       for(const ch of grid.children){
-        if(ch === ind) break;
+        if(ch === insertBeforeNode) break;
         if(ch.classList.contains('cell-wrap') && ch.querySelector('[data-drag-idx]')) count++;
       }
       insertIdx = count;
+    } else if(insertBeforeNode === null){
+      // Append to end — count all real cell-wraps
+      let count = 0;
+      for(const ch of grid.children){
+        if(ch.classList.contains('cell-wrap') && ch.querySelector('[data-drag-idx]')) count++;
+      }
+      insertIdx = count - 1; // last real item
     }
 
-    // Ora cleanup (rimuove ghost, indicator, classi)
     _pdCleanup();
 
     if(insertIdx !== srcIdx){
@@ -2712,7 +2723,6 @@ function _setupFeedDrag(grid){
       arr.splice(fi, 0, moved);
       setFeedItems(arr);
       autoSave();
-      // Riconcilia l'ordine DOM senza ricostruire le card
       _reconcileFeedOrder(grid, arr);
       showUndoToast('Post riordinato', ()=>{
         const ar = currentFeedItems().slice();
