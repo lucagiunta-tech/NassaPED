@@ -1401,23 +1401,7 @@ function rebuildPreviewSelects(){
   msel.style.display='';msel.innerHTML='';
   months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;msel.appendChild(o);});
   if(previewMonth&&months.includes(previewMonth))msel.value=previewMonth;
-  else if(months.length){
-    // Prefer the current calendar month; fall back to the closest month that has content
-    const curMonth = MONTH_OPTIONS[new Date().getMonth()];
-    if(months.includes(curMonth)){ msel.value=curMonth; previewMonth=curMonth; }
-    else{
-      // Pick the month closest to today (by index in the sorted list)
-      const curIdx = MONTH_OPTIONS.indexOf(curMonth);
-      let best = months[months.length-1];
-      let bestDist = Infinity;
-      months.forEach(m=>{
-        const mi = MONTH_OPTIONS.indexOf(m);
-        const dist = Math.abs(mi - curIdx);
-        if(dist < bestDist){ bestDist=dist; best=m; }
-      });
-      msel.value=best; previewMonth=best;
-    }
-  }
+  else if(months.length){msel.value=months[months.length-1];previewMonth=msel.value;}
 }
 function rebuildStudioAccountSelect(){const sel=document.getElementById('na-client');if(!sel)return;sel.innerHTML='<option value="">— seleziona —</option>';clients.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.name;sel.appendChild(o);});}
 
