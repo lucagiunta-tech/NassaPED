@@ -2778,23 +2778,14 @@ function removeFeedItem(i){
 }
 
 function moveFeedItem(idx, dir){
-  // dir: -1 = move left, +1 = move right
   const arr = currentFeedItems().slice();
   const target = idx + dir;
   if(target < 0 || target >= arr.length) return;
-  // Swap
   [arr[idx], arr[target]] = [arr[target], arr[idx]];
   setFeedItems(arr);
   autoSave();
   const grid = document.getElementById('feed-grid');
   if(grid) _reconcileFeedOrder(grid, arr);
-  showUndoToast('Post spostato', ()=>{
-    const ar = currentFeedItems().slice();
-    [ar[idx], ar[target]] = [ar[target], ar[idx]];
-    setFeedItems(ar);
-    if(grid) _reconcileFeedOrder(grid, ar);
-    autoSave();
-  });
 }
 function updateFeedStats(){const f=currentFeedItems().filter(i=>i.type!=='pending');const s=currentStoryItems();const el=id=>document.getElementById(id);if(el('stat-tot'))el('stat-tot').textContent=f.length;if(el('stat-vid'))el('stat-vid').textContent=f.filter(i=>i.type==='video').length;if(el('stat-car'))el('stat-car').textContent=f.filter(i=>i.type==='carousel').length;if(el('stat-stories'))el('stat-stories').textContent=s.length;if(el('stat-stories-sb'))el('stat-stories-sb').textContent=s.filter(x=>x.isStoryboard).length;const aid=accountId(feedClientIdx,feedAccountIdx);if(el('stat-hl'))el('stat-hl').textContent=aid?(highlights[aid]||[]).length:0;if(el('feed-meta'))el('feed-meta').textContent=f.length+' post';const status=feedAccountIdx<0?'Seleziona cliente e account.':f.length===0?'Nessun contenuto per questo mese.':f.length+' contenut'+(f.length===1?'o pronti.':'i pronti.');if(el('feed-status'))el('feed-status').textContent=status;
   // Mostra bottone ricarica batch se ci sono media mancanti nel mese corrente
