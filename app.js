@@ -7281,6 +7281,7 @@ function openChangeMediaModal(idx){
 
   // Remove any existing change-media modal
   document.getElementById('change-media-modal')?.remove();
+  const bg = document.createElement('div');
   bg.id = 'change-media-modal';
   bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;';
   bg.onclick = e => { if(e.target===bg) bg.remove(); };
