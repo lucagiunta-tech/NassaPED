@@ -34,7 +34,7 @@
   /* Danger */
   --danger-bg:#fff5f5;--danger-border:#fca5a5;
   /* Overlay dark (cells, modals) */
-  --overlay-dark:var(--overlay-dark);--overlay-light:var(--overlay-light);
+  --overlay-dark:rgba(0,0,0,.55);--overlay-light:rgba(255,255,255,.92);
   /* Neutral cell bg */
   --cell-bg:#e8e8ea;--cell-bg-dark:#1a1a1a;
   /* Placeholder */
