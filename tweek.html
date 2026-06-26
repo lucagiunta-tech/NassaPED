@@ -1933,81 +1933,6 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor();closeDayDetail();}});
 document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 
-/* ══ FEED NASSAPED — Phase 2 ══════════════════════════════ */
-let _feedLoaded=false,_feedData=[],_showFeed=false;
-const _MESI={gennaio:1,febbraio:2,marzo:3,aprile:4,maggio:5,giugno:6,luglio:7,agosto:8,settembre:9,ottobre:10,novembre:11,dicembre:12};
-function _isoFromItalian(str){
-  if(!str)return null;
-  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
-  const low=str.toLowerCase();
-  const m1=low.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)\s+(\d{4})$/);
-  if(m1){const mo=_MESI[m1[2]];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(m1[1])).padStart(2,'0')}`;}
-  const m2=low.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)$/);
-  if(m2){const mo=_MESI[m2[2]];if(mo){const y=new Date().getFullYear();return `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(m2[1])).padStart(2,'0')}`;}}
-  return null;
-}
-function _feedTypeStyle(type){
-  if(type==='video')return{bg:'#fee2e2',tc:'#991b1b',label:'Reel'};
-  if(type==='carousel')return{bg:'#fef3c7',tc:'#92400e',label:'Caros.'};
-  return{bg:'#dbeafe',tc:'#1e40af',label:'Foto'};
-}
-async function loadFeedData(){
-  if(_feedLoaded)return;
-  try{
-    const res=await fetch(`${STREAM_API}?user=${STREAM_USER}`,{headers:{'x-nassa-key':STREAM_KEY},credentials:'include'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const raw=data?.data||data;
-    const cls=raw?.clients||[];
-    const feedsObj=raw?.feeds||{};
-    _feedData=[];
-    cls.forEach(cl=>{
-      (cl.accounts||[]).forEach(acc=>{
-        Object.keys(feedsObj).forEach(key=>{
-          if(!key.startsWith(acc.id+'|||'))return;
-          (feedsObj[key]||[]).forEach(item=>{
-            if(!item.date||item.type==='pending')return;
-            const ds=_isoFromItalian(item.date);
-            if(!ds)return;
-            _feedData.push({date:ds,client:cl.name,clientColor:cl.color||'#888',type:item.type||'image',copy:item.copy||''});
-          });
-        });
-      });
-    });
-    _feedLoaded=true;
-  }catch(e){_feedLoaded=true;console.warn('[Feed]',e.message);}
-}
-function _buildFeedChip(f){
-  const{bg,tc,label}=_feedTypeStyle(f.type);
-  const clBg=lighten(f.clientColor,.82);
-  const clTc=darken(f.clientColor,.55);
-  const chip=document.createElement('div');
-  chip.className='feed-chip';
-  chip.style.cssText=`background:${clBg};color:${clTc};`;
-  chip.title=f.client+(f.copy?' — '+f.copy.slice(0,80):'');
-  chip.innerHTML=`<span class="feed-chip-type" style="background:${bg};color:${tc};">${label}</span><span class="feed-chip-text">${f.copy?f.copy.slice(0,28):f.client}</span>`;
-  return chip;
-}
-function renderFeedChipsForDay(col,ds){
-  if(!_showFeed)return;
-  const items=_feedData.filter(f=>f.date===ds);
-  if(!items.length)return;
-  const wrap=document.createElement('div');wrap.className='feed-chip-wrap';
-  items.forEach(f=>wrap.appendChild(_buildFeedChip(f)));
-  col.insertBefore(wrap,col.firstChild);
-}
-function toggleFeedLayer(){
-  _showFeed=!_showFeed;
-  document.getElementById('feed-toggle-btn').classList.toggle('active',_showFeed);
-  rebuild();
-}
-async function initFeedLayer(){
-  await loadFeedData();
-  document.getElementById('feed-toggle-btn').classList.toggle('active',_showFeed);
-  if(_feedData.length)rebuild();
-}
-/* ══ END FEED NASSAPED ═══════════════════════════════════ */
-
 renderLegend();renderWeek();renderBottom();initTeamFilter();initFeedLayer();
 tvLoad();
 streamLoad();
@@ -2847,6 +2772,82 @@ jvSetupCalendarDrop();
 const STREAM_API  = '/api/project';
 const STREAM_KEY  = 'NASSA_SECRET_2026';
 const STREAM_USER = 'nassa_studio';
+
+/* ══ FEED NASSAPED — Phase 2 ══════════════════════════════ */
+let _feedLoaded=false,_feedData=[],_showFeed=false;
+const _MESI={gennaio:1,febbraio:2,marzo:3,aprile:4,maggio:5,giugno:6,luglio:7,agosto:8,settembre:9,ottobre:10,novembre:11,dicembre:12};
+function _isoFromItalian(str){
+  if(!str)return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  const low=str.toLowerCase();
+  const m1=low.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)\s+(\d{4})$/);
+  if(m1){const mo=_MESI[m1[2]];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(m1[1])).padStart(2,'0')}`;}
+  const m2=low.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)$/);
+  if(m2){const mo=_MESI[m2[2]];if(mo){const y=new Date().getFullYear();return `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(m2[1])).padStart(2,'0')}`;}}
+  return null;
+}
+function _feedTypeStyle(type){
+  if(type==='video')return{bg:'#fee2e2',tc:'#991b1b',label:'Reel'};
+  if(type==='carousel')return{bg:'#fef3c7',tc:'#92400e',label:'Caros.'};
+  return{bg:'#dbeafe',tc:'#1e40af',label:'Foto'};
+}
+async function loadFeedData(){
+  if(_feedLoaded)return;
+  try{
+    const res=await fetch(`${STREAM_API}?user=${STREAM_USER}`,{headers:{'x-nassa-key':STREAM_KEY},credentials:'include'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const raw=data?.data||data;
+    const cls=raw?.clients||[];
+    const feedsObj=raw?.feeds||{};
+    _feedData=[];
+    cls.forEach(cl=>{
+      (cl.accounts||[]).forEach(acc=>{
+        Object.keys(feedsObj).forEach(key=>{
+          if(!key.startsWith(acc.id+'|||'))return;
+          (feedsObj[key]||[]).forEach(item=>{
+            if(!item.date||item.type==='pending')return;
+            const ds=_isoFromItalian(item.date);
+            if(!ds)return;
+            _feedData.push({date:ds,client:cl.name,clientColor:cl.color||'#888',type:item.type||'image',copy:item.copy||''});
+          });
+        });
+      });
+    });
+    _feedLoaded=true;
+  }catch(e){_feedLoaded=true;console.warn('[Feed]',e.message);}
+}
+function _buildFeedChip(f){
+  const{bg,tc,label}=_feedTypeStyle(f.type);
+  const clBg=lighten(f.clientColor,.82);
+  const clTc=darken(f.clientColor,.55);
+  const chip=document.createElement('div');
+  chip.className='feed-chip';
+  chip.style.cssText=`background:${clBg};color:${clTc};`;
+  chip.title=f.client+(f.copy?' — '+f.copy.slice(0,80):'');
+  chip.innerHTML=`<span class="feed-chip-type" style="background:${bg};color:${tc};">${label}</span><span class="feed-chip-text">${f.copy?f.copy.slice(0,28):f.client}</span>`;
+  return chip;
+}
+function renderFeedChipsForDay(col,ds){
+  if(!_showFeed)return;
+  const items=_feedData.filter(f=>f.date===ds);
+  if(!items.length)return;
+  const wrap=document.createElement('div');wrap.className='feed-chip-wrap';
+  items.forEach(f=>wrap.appendChild(_buildFeedChip(f)));
+  col.insertBefore(wrap,col.firstChild);
+}
+function toggleFeedLayer(){
+  _showFeed=!_showFeed;
+  document.getElementById('feed-toggle-btn').classList.toggle('active',_showFeed);
+  rebuild();
+}
+async function initFeedLayer(){
+  await loadFeedData();
+  document.getElementById('feed-toggle-btn').classList.toggle('active',_showFeed);
+  if(_feedData.length)rebuild();
+}
+/* ══ END FEED NASSAPED ═══════════════════════════════════ */
+
 
 let stream_v1 = {};       // { [jobId]: Job }
 let _streamClients = [];  // clienti da NassaPED
