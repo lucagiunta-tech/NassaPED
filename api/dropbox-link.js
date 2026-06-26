@@ -5,26 +5,20 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ];
 
-async function getToken() {
-  const { DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, DROPBOX_ACCESS_TOKEN } = process.env;
-
-  // OAuth2 refresh (preferred — never expires)
-  if (DROPBOX_APP_KEY && DROPBOX_APP_SECRET && DROPBOX_REFRESH_TOKEN) {
-    const resp = await fetch('https://api.dropbox.com/oauth2/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + Buffer.from(DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET).toString('base64'),
-      },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: DROPBOX_REFRESH_TOKEN }),
-    });
-    const data = await resp.json();
-    if (data.access_token) return data.access_token;
-  }
-
-  // Fallback: static token
-  if (DROPBOX_ACCESS_TOKEN) return DROPBOX_ACCESS_TOKEN;
-  throw new Error('No Dropbox token available');
+async function getToken(req) {
+  // Reuse our own dropbox-token endpoint — it has OAuth2 + caching + fallback
+  const host = req.headers.host || 'nassa-ped-yp63.vercel.app';
+  const proto = host.includes('localhost') ? 'http' : 'https';
+  const res = await fetch(`${proto}://${host}/api/dropbox-token`, {
+    headers: {
+      'x-nassa-key': process.env.NASSA_API_KEY || 'NASSA_SECRET_2026',
+      'cookie': req.headers.cookie || ''
+    }
+  });
+  if (!res.ok) throw new Error('Token fetch failed: ' + res.status);
+  const d = await res.json();
+  if (!d.token) throw new Error('No token in response');
+  return d.token;
 }
 
 function toDirectUrl(url) {
@@ -51,7 +45,7 @@ export default async function handler(req, res) {
   if(!_cookie && key !== validKey) return res.status(401).json({error:'Non autorizzato'});
 
   try {
-    const token = await getToken();
+    const token = await getToken(req);
 
     let path = req.body?.path;
     if (!path) {
