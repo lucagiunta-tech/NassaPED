@@ -2,6 +2,7 @@
 <html lang="it" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
+<meta name="version" content="2026-06-27-v4"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Nassa Studio</title>
 <style>
@@ -78,9 +79,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 /* ── App cards ── */
 .apps-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
   gap:20px;
-  max-width:680px;width:100%;
+  max-width:960px;width:100%;
   margin:0 auto;padding:0 24px 80px;
 }
 
@@ -172,7 +173,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div class="hero">
   <span class="hero-tag">Suite di strumenti</span>
   <h1 class="hero-title">Scegli lo <span>strumento</span></h1>
-  <p class="hero-sub">Due app per gestire tutto il social media management di Nassa Studio.</p>
+  <p class="hero-sub">Quattro strumenti integrati per gestire contenuti, clienti, brand e strategia di Nassa Studio.</p>
 </div>
 
 <div class="apps-grid">
@@ -194,15 +195,47 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </a>
 
   <a class="app-card" href="/tweek">
-    <div class="app-icon tweek">T</div>
+    <div class="app-icon tweek">NT</div>
     <div class="app-body">
-      <div class="app-name">Tweek</div>
-      <div class="app-desc">Pianificatore settimanale — task per cliente, vista settimana e mese, drag & drop, export PDF.</div>
+      <div class="app-name">NassaTime</div>
+      <div class="app-desc">Pianifica il lavoro del team — task, feed NassaPED, vista settimana, mese e anno per cliente.</div>
       <div class="app-tags">
         <span class="app-tag">Task</span>
-        <span class="app-tag">Settimana</span>
-        <span class="app-tag">Mese</span>
-        <span class="app-tag">Export PDF</span>
+        <span class="app-tag">Team</span>
+        <span class="app-tag">Feed</span>
+        <span class="app-tag">Anno</span>
+        <span class="app-tag">Stream</span>
+      </div>
+    </div>
+    <div class="app-arrow">→</div>
+  </a>
+
+  <a class="app-card" href="/brand">
+    <div class="app-icon" style="background:#1A8C3F;font-size:14px;">NB</div>
+    <div class="app-body">
+      <div class="app-name">NassaBrand</div>
+      <div class="app-desc">Portale clienti — brand assets, approvazioni contenuti e moodboard per ogni cliente.</div>
+      <div class="app-tags">
+        <span class="app-tag">Brand</span>
+        <span class="app-tag">Approvazioni</span>
+        <span class="app-tag">Moodboard</span>
+        <span class="app-tag">Portale</span>
+      </div>
+    </div>
+    <div class="app-arrow">→</div>
+  </a>
+
+  <a class="app-card" href="/strategy">
+    <div class="app-icon" style="background:#185FA5;font-size:14px;">NS</div>
+    <div class="app-body">
+      <div class="app-name">NassaStrategy</div>
+      <div class="app-desc">Gestionale strategico — PDM, PDC, Brand Portal, Strategy Builder e Output seguendo la Staffetta Nassa.</div>
+      <div class="app-tags">
+        <span class="app-tag">PDM</span>
+        <span class="app-tag">PDC</span>
+        <span class="app-tag">Brand</span>
+        <span class="app-tag">Strategy</span>
+        <span class="app-tag">Output</span>
       </div>
     </div>
     <div class="app-arrow">→</div>
@@ -210,7 +243,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 </div>
 
-<div class="footer">Nassa Studio · NassaPED Suite © 2026</div>
+<div class="footer">Nassa Studio · NassaPED + NassaTime + NassaBrand + NassaStrategy © 2026</div>
 
 <script>
 function toggleTheme(){
