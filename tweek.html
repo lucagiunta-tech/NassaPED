@@ -1942,9 +1942,9 @@ streamLoad();
    Storage: nassaped_tweek_v8.tasks_v2
 ══════════════════════════════════════════════════════════ */
 
-let tasks_v2 = {};
-let _tvLayout = 'kanban';
-let _tvExpandedId = null;
+var tasks_v2 = {};
+var _tvLayout = 'kanban';
+var _tvExpandedId = null;
 
 const PRIO_CFG = {
   alta:  {label:'Alta',  icon:'🔴'},
@@ -2774,7 +2774,7 @@ const STREAM_KEY  = 'NASSA_SECRET_2026';
 const STREAM_USER = 'nassa_studio';
 
 /* ══ FEED NASSAPED — Phase 2 ══════════════════════════════ */
-let _feedLoaded=false,_feedData=[],_showFeed=false;
+var _feedLoaded=false,_feedData=[],_showFeed=false;
 const _MESI={gennaio:1,febbraio:2,marzo:3,aprile:4,maggio:5,giugno:6,luglio:7,agosto:8,settembre:9,ottobre:10,novembre:11,dicembre:12};
 function _isoFromItalian(str){
   if(!str)return null;
@@ -2851,7 +2851,7 @@ async function initFeedLayer(){
 
 let stream_v1 = {};       // { [jobId]: Job }
 let _streamClients = [];  // clienti da NassaPED
-let _streamLoaded  = false;
+var _streamLoaded  = false;
 let _streamTab     = 'clients'; // 'clients' | 'jobs'
 let _streamCurrentJobId = null;
 let _streamGroupCollapsed = {}; // { clientSlug: bool }
