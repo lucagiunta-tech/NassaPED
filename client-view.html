@@ -678,7 +678,11 @@ function cvLbOpen(idx, items) {
   cvLbRender();
   document.getElementById('cv-lb').classList.add('open');
 }
-function cvLbClose() { document.getElementById('cv-lb').classList.remove('open'); }
+function cvLbClose() {
+  const inner = document.getElementById('cv-lb-inner');
+  if(inner){ inner.querySelectorAll('video').forEach(v=>{ v.pause(); v.src=''; v.remove(); }); }
+  document.getElementById('cv-lb').classList.remove('open');
+}
 function cvLbNav(d) { cvLbIdx=(cvLbIdx+d+cvLbItems.length)%cvLbItems.length; cvLbRender(); }
 function cvLbRender() {
   const inner = document.getElementById('cv-lb-inner');
