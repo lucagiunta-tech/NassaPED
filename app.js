@@ -1840,7 +1840,6 @@ function renderFeedGrid(){
             showToast('⟳ Caricamento…');
             const url=await DROPBOX.upload(file,destPath);
             if(url){currentFeedItems()[idx].url=url;currentFeedItems()[idx].externalUrl=url;currentFeedItems()[idx].isExternalLink=true;currentFeedItems()[idx].needsReload=false;if(currentFeedItems()[idx].type==='pending')currentFeedItems()[idx].type='image';setFeedItems(currentFeedItems());refreshFeed();showToast('✓ Media ricaricato');}
-            else showToast('Errore upload','warn');
           };
           const ph=needsReloadPh(_icon,item.name,_rfn);
           // Give the file input highest z-index so date-add-btn / cover pill never block it
@@ -3371,10 +3370,9 @@ function renderStoriesGrid(){
                 plan[idx].type_media=file.type.startsWith('video')?'video':'image';
               }
               pedPlans[planKey]=plan;
-              // BUG #2 FIX: was calling renderStoriesGrid() — should call renderPED()
               autoSave();renderPED();renderCalendar();
               showToast('✓ Media caricato');
-            } else showToast('Errore upload','warn');
+            }
           };
           cell.appendChild(upBtn);cell.appendChild(upInp);
         }
