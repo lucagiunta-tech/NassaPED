@@ -1107,11 +1107,13 @@ function needsReloadPh(icon,name,reuploadFn){
     :icon;
   ph.innerHTML=`<div class="nr-icon">${svgIcon}</div><div class="nr-name">${name||'file'}</div><div class="nr-label">ricarica media</div>`;
   if(reuploadFn){
+    const wrap=document.createElement('div');wrap.style.cssText='position:relative;display:inline-block;margin-top:4px;';
+    const btn=document.createElement('div');btn.className='nr-reupload';btn.textContent='↑ Ricarica file';
     const inp=document.createElement('input');inp.type='file';inp.accept='image/*,video/*';
     inp.style.cssText='position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;';
     inp.onchange=e=>{if(e.target.files[0])reuploadFn(e.target.files[0]);};
-    const btn=document.createElement('div');btn.className='nr-reupload';btn.textContent='↑ Ricarica file';
-    ph.appendChild(btn);ph.appendChild(inp);ph.style.cursor='pointer';
+    wrap.appendChild(btn);wrap.appendChild(inp);
+    ph.appendChild(wrap);ph.style.cursor='pointer';
   }
   return ph;
 }
