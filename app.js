@@ -154,7 +154,7 @@ function triggerUndo(){
 const CLOUD = {
   apiUrl: window.location.origin + '/api/project',
   apiKey: 'NASSA_SECRET_2026', // Ripristinato temporaneamente — rimosso quando login UI è pronto
-  user: 'nassa_studio', // shared across all logged-in users — one project for the whole studio
+  user: localStorage.getItem('nassa_user') || 'shared',
   _saveTimer: null,
   _status: 'idle',
   _booting: false,
