@@ -1982,6 +1982,33 @@ function renderFeedGrid(){
 
         // ── CONTEXT MENU: small ⋯ button, floating popup (non-intrusive) ──
         const menuActions = [];
+        // Cambia media — all types except carousel (which has its own slide editor) and pending/editorial
+        if(item.type!=='carousel' && item.type!=='pending' && item.type!=='editorial'){
+          const changeInp=document.createElement('input');changeInp.type='file';
+          changeInp.accept=item.type==='video'?'video/*':'image/*,video/*';
+          changeInp.style.display='none';
+          changeInp.onchange=async e=>{
+            const file=e.target.files[0];if(!file)return;
+            const destPath=_dbxPath(feedClientIdx,file.type.startsWith('video')?'Video':'Immagini',file.name);
+            showToast('⟳ Caricamento…');
+            const url=await DROPBOX.upload(file,destPath);
+            if(url){
+              const arr=currentFeedItems();
+              arr[idx].url=url;arr[idx].externalUrl=url;arr[idx].isExternalLink=true;
+              arr[idx].linkSource='dropbox';arr[idx].needsReload=false;arr[idx].name=file.name;
+              arr[idx].type=file.type.startsWith('video')?'video':'image';
+              setFeedItems(arr);refreshFeed();autoSave();showToast('✓ Media aggiornato');
+            } else showToast('Errore upload','warn');
+          };
+          cell.appendChild(changeInp);
+          menuActions.push({cls:'ob-edit',svg:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',label:'Cambia media',fn:()=>changeInp.click()});
+          if(item.isExternalLink||item.externalUrl){
+            menuActions.push({cls:'ob-edit',svg:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',label:'Cambia link',fn:()=>{
+              const newUrl=prompt('Incolla nuovo URL:',item.externalUrl||'');
+              if(newUrl?.trim()){const arr=currentFeedItems();arr[idx].url=newUrl.trim();arr[idx].externalUrl=newUrl.trim();setFeedItems(arr);refreshFeed();autoSave();showToast('✓ Link aggiornato');}
+            }});
+          }
+        }
         if(item.type==='carousel') menuActions.push({cls:'ob-slide',svg:'<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>',label:'Modifica slide',fn:()=>openCarouselModal(idx)});
         if(item.type==='video') menuActions.push({cls:'ob-cover',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',label:item.coverUrl?'Cover · cambia':'+ Cover reel',fn:()=>openVideoCoverModal(idx)});
         menuActions.push({cls:'ob-stories',svg:'<rect x="7" y="2" width="10" height="20" rx="2"/>',label:(item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories',fn:()=>openLinkStoriesModal(idx)});
