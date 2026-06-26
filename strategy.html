@@ -702,15 +702,15 @@ function SectionTitle({
     }
   }, /*#__PURE__*/React.createElement("h2", {
     style: {
-      margin: "0 0 3px",
-      fontSize: 17,
-      fontWeight: 500,
+      margin: "0 0 4px",
+      fontSize: 19,
+      fontWeight: 600,
       color: "var(--text-primary)"
     }
   }, title), sub && /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
-      fontSize: 12,
+      fontSize: 13,
       color: "var(--text-muted)"
     }
   }, sub));
@@ -734,15 +734,15 @@ function ActionBar({
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
     style: {
-      margin: "0 0 3px",
-      fontSize: 17,
-      fontWeight: 500,
+      margin: "0 0 4px",
+      fontSize: 19,
+      fontWeight: 600,
       color: "var(--text-primary)"
     }
   }, title), sub && /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
-      fontSize: 12,
+      fontSize: 13,
       color: "var(--text-muted)"
     }
   }, sub)), /*#__PURE__*/React.createElement("div", {
@@ -838,7 +838,7 @@ function SidebarLayout({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 210,
+      width: 230,
       flexShrink: 0,
       background: "var(--surface-1)",
       borderRight: "0.5px solid var(--border)",
@@ -865,10 +865,10 @@ function NavBtn({
     style: {
       width: "100%",
       textAlign: "left",
-      padding: "8px 14px",
+      padding: "10px 14px",
       border: "none",
       cursor: "pointer",
-      fontSize: 12,
+      fontSize: 14,
       background: active ? "var(--bg-accent)" : "transparent",
       color: active ? "var(--text-accent)" : "var(--text-secondary)",
       borderLeft: `2px solid ${active ? color : "transparent"}`,
@@ -890,9 +890,9 @@ function Field({
   const base = {
     width: "100%",
     padding: "8px 11px",
-    fontSize: 13,
+    fontSize: 15,
     color: "var(--text-primary)",
-    background: "var(--surface-1)",
+    background: "var(--surface-2)",
     border: "0.5px solid var(--border-strong)",
     borderRadius: 8,
     fontFamily: "var(--font-sans)",
@@ -906,17 +906,17 @@ function Field({
   }, /*#__PURE__*/React.createElement("label", {
     style: {
       display: "block",
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: 500,
       color: "var(--text-primary)",
-      marginBottom: 3
+      marginBottom: 4
     }
   }, label), hint && /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 5px",
-      fontSize: 11,
+      fontSize: 13,
       color: "var(--text-muted)",
-      lineHeight: 1.5
+      lineHeight: 1.6
     }
   }, hint), type === "textarea" ? /*#__PURE__*/React.createElement("textarea", {
     rows: rows,
@@ -2787,6 +2787,16 @@ function OutputView({
 }
 
 // ─── SCHEDA CLIENTE ───────────────────────────────────────────────────────────
+// ── SVG icons per MOD_LIST (NassaPED outline style) ──
+const MOD_ICONS = {
+  overview: /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('rect',{x:3,y:3,width:7,height:7}),React.createElement('rect',{x:14,y:3,width:7,height:7}),React.createElement('rect',{x:14,y:14,width:7,height:7}),React.createElement('rect',{x:3,y:14,width:7,height:7})),
+  pdm:      /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('line',{x1:18,y1:20,x2:18,y2:10}),React.createElement('line',{x1:12,y1:20,x2:12,y2:4}),React.createElement('line',{x1:6,y1:20,x2:6,y2:14})),
+  pdc:      /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'})),
+  brand:    /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('circle',{cx:12,cy:12,r:10}),React.createElement('circle',{cx:8,cy:9,r:1.5,fill:'currentColor'}),React.createElement('circle',{cx:15,cy:8,r:1.5,fill:'currentColor'}),React.createElement('circle',{cx:16,cy:14,r:1.5,fill:'currentColor'}),React.createElement('circle',{cx:10,cy:15,r:1.5,fill:'currentColor'})),
+  strategy: /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('polygon',{points:'12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'})),
+  output:   /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M21 8v13H3V8'}),React.createElement('path',{d:'M1 3h22v5H1z'}),React.createElement('path',{d:'M10 12h4'})),
+};
+
 const MOD_LIST = [{
   id: "overview",
   lbl: "Panoramica",
@@ -2893,7 +2903,7 @@ function ClienteScheda({
   };
   const topSidebar = /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 210,
+      width: 230,
       flexShrink: 0,
       background: "var(--surface-1)",
       borderRight: "0.5px solid var(--border)",
@@ -2927,8 +2937,8 @@ function ClienteScheda({
   }, c.name.charAt(0))), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 12,
-      fontWeight: 500,
+      fontSize: 14,
+      fontWeight: 600,
       color: "var(--text-primary)",
       lineHeight: 1.3
     }
@@ -2953,40 +2963,34 @@ function ClienteScheda({
     }, m.phase && /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "6px 12px 2px",
-        fontSize: 9,
+        fontSize: 11,
         color: "var(--text-muted)",
         textTransform: "uppercase",
-        letterSpacing: "0.06em"
+        letterSpacing: "0.06em",
+        fontWeight: 600
       }
     }, m.phase), /*#__PURE__*/React.createElement("button", {
       onClick: () => setMod(m.id),
       style: {
         width: "100%",
         textAlign: "left",
-        padding: "8px 14px",
+        padding: "10px 14px",
         border: "none",
         cursor: "pointer",
-        fontSize: 12,
+        fontSize: 14,
         background: isActive ? "var(--bg-accent)" : "transparent",
         color: isActive ? "var(--text-accent)" : "var(--text-secondary)",
         borderLeft: `2px solid ${isActive ? G : "transparent"}`,
         display: "flex",
         alignItems: "center",
-        gap: 8
+        gap: 10
       }
     }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 14
-      }
-    }, m.icon), /*#__PURE__*/React.createElement("span", {
-      style: {
-        flex: 1
-      }
+      style: {display:"flex",alignItems:"center",flexShrink:0,opacity:isActive?1:0.65}
+    }, MOD_ICONS[m.id] || m.icon), /*#__PURE__*/React.createElement("span", {
+      style: {flex: 1, fontWeight: isActive ? 600 : 400}
     }, m.lbl), st && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: STATUS_COLOR[st]
-      }
+      style: {fontSize: 12, color: STATUS_COLOR[st], fontWeight: 600}
     }, STATUS_ICON[st])));
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3096,14 +3100,14 @@ function Dashboard({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
     style: {
       margin: "0 0 2px",
-      fontSize: 18,
-      fontWeight: 500,
+      fontSize: 20,
+      fontWeight: 600,
       color: "var(--text-primary)"
     }
   }, "Clienti"), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
-      fontSize: 12,
+      fontSize: 13,
       color: "var(--text-muted)"
     }
   }, clients.length, " totali · ogni cliente ha PDM + PDC + Brand Portal + Strategy")), /*#__PURE__*/React.createElement("div", {
