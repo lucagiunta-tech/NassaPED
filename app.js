@@ -436,8 +436,8 @@ const DROPBOX = {
   _tokenTs: 0,
 
   async getToken() {
-    // Cache token for 1 hour
-    if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3600000) return DROPBOX._token;
+    // Cache token for 50 min (Dropbox tokens last 4h, refresh before they expire)
+    if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3000000) return DROPBOX._token;
     const res = await fetch('/api/dropbox-token', { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
     if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
     const d = await res.json();
@@ -446,7 +446,7 @@ const DROPBOX = {
     return DROPBOX._token;
   },
 
-  async upload(file, destPath) {
+  async upload(file, destPath, _retried=false) {
     DROPBOX.uploading++;
     const bar = document.getElementById('dbx-upload-bar');
     const txt = document.getElementById('dbx-upload-text');
@@ -479,6 +479,11 @@ const DROPBOX = {
 
       if(!uploadRes.ok) {
         const errText = await uploadRes.text().catch(()=>'');
+        // On 401 expired token, clear cache and retry once with a fresh token
+        if(uploadRes.status === 401 && !_retried){
+          DROPBOX._token = null; DROPBOX._tokenTs = 0;
+          return DROPBOX.upload(file, destPath, true);
+        }
         throw new Error('Upload HTTP ' + uploadRes.status + ': ' + errText.slice(0,200));
       }
       const uploadData = await uploadRes.json();
@@ -7268,7 +7273,9 @@ function openChangeMediaModal(idx){
 
   async function applyMedia(url, name, isVideo){
     const arr = currentFeedItems();
-    const i = uid ? arr.findIndex(it=>it._uid===uid) : idx;
+    // Try _uid first (stable), fall back to original idx (for older items without _uid)
+    let i = uid ? arr.findIndex(it=>it._uid===uid) : -1;
+    if(i<0) i = idx < arr.length ? idx : -1;
     if(i<0){ showToast('Post non trovato','warn'); return; }
     arr[i].url=url; arr[i].externalUrl=url; arr[i].isExternalLink=true;
     arr[i].linkSource='dropbox'; arr[i].needsReload=false;
