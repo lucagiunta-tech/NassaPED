@@ -2785,7 +2785,13 @@ function _setupFeedDrag(grid){
   document.addEventListener('pointercancel', _pdCleanup);
 }
 
-function addEmptyFeedListeners(cell){cell.addEventListener('dragover',e=>{if(feedDragSrc!==null)return;if(e.dataTransfer.types.includes('Files')){e.preventDefault();cell.classList.add('file-hover');}});cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(feedDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueFeedFiles(e.dataTransfer.files);});}
+function addEmptyFeedListeners(cell){
+  cell.style.cursor='pointer';
+  cell.addEventListener('click',()=>addPendingSlot());
+  cell.addEventListener('dragover',e=>{if(feedDragSrc!==null)return;if(e.dataTransfer.types.includes('Files')){e.preventDefault();cell.classList.add('file-hover');}});
+  cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));
+  cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(feedDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueFeedFiles(e.dataTransfer.files);});
+}
 function setFeedItemType(idx,type){const items=currentFeedItems();items[idx].type=type;if(type==='carousel'&&!items[idx].slides?.length)items[idx].slides=[{url:items[idx].url,name:items[idx].name}];setFeedItems(items);refreshFeed();if(type==='carousel')openCarouselModal(idx);}
 function removeFeedItem(i){
   const items=currentFeedItems();
