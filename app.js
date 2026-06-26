@@ -1984,30 +1984,7 @@ function renderFeedGrid(){
         const menuActions = [];
         // Cambia media — all types except carousel (which has its own slide editor) and pending/editorial
         if(item.type!=='carousel' && item.type!=='pending' && item.type!=='editorial'){
-          const changeInp=document.createElement('input');changeInp.type='file';
-          changeInp.accept=item.type==='video'?'video/*':'image/*,video/*';
-          changeInp.style.display='none';
-          changeInp.onchange=async e=>{
-            const file=e.target.files[0];if(!file)return;
-            const destPath=_dbxPath(feedClientIdx,file.type.startsWith('video')?'Video':'Immagini',file.name);
-            showToast('⟳ Caricamento…');
-            const url=await DROPBOX.upload(file,destPath);
-            if(url){
-              const arr=currentFeedItems();
-              arr[idx].url=url;arr[idx].externalUrl=url;arr[idx].isExternalLink=true;
-              arr[idx].linkSource='dropbox';arr[idx].needsReload=false;arr[idx].name=file.name;
-              arr[idx].type=file.type.startsWith('video')?'video':'image';
-              setFeedItems(arr);refreshFeed();autoSave();showToast('✓ Media aggiornato');
-            } else showToast('Errore upload','warn');
-          };
-          cell.appendChild(changeInp);
-          menuActions.push({cls:'ob-edit',svg:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',label:'Cambia media',fn:()=>changeInp.click()});
-          if(item.isExternalLink||item.externalUrl){
-            menuActions.push({cls:'ob-edit',svg:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',label:'Cambia link',fn:()=>{
-              const newUrl=prompt('Incolla nuovo URL:',item.externalUrl||'');
-              if(newUrl?.trim()){const arr=currentFeedItems();arr[idx].url=newUrl.trim();arr[idx].externalUrl=newUrl.trim();setFeedItems(arr);refreshFeed();autoSave();showToast('✓ Link aggiornato');}
-            }});
-          }
+          menuActions.push({cls:'ob-edit',svg:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',label:'Cambia media',fn:()=>openChangeMediaModal(idx)});
         }
         if(item.type==='carousel') menuActions.push({cls:'ob-slide',svg:'<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>',label:'Modifica slide',fn:()=>openCarouselModal(idx)});
         if(item.type==='video') menuActions.push({cls:'ob-cover',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',label:item.coverUrl?'Cover · cambia':'+ Cover reel',fn:()=>openVideoCoverModal(idx)});
@@ -2121,15 +2098,7 @@ function renderFeedGrid(){
   _setupFeedDrag(grid);
 }
 
-function renderNotesEditor(){ docsInit(); }
-function rebuildNotesSelects(){ docsInit(); }
-function renderNotesMonthPills(){}
-function updateNotesToc(){}
-function updateNotesWc(){}
-function saveNotesText(){}
-function toggleNotesPreview(){ docsTogglePreview(); }
-function notesInsert(){}
-function onNotesClientChange(){ docsInit(); }
+
 
 /* ══════════════════════════════════════════════════════════════
    NASSAPED DOCS — Sistema documenti stile Dropbox Paper
@@ -6844,7 +6813,7 @@ function notesHandleDrop(e) {
 
 /* DATE FORMAT */
 function fmtDate(iso){if(!iso)return'';const[y,m,d]=iso.split('-');if(!y||!m||!d)return iso;const giorni=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];const mesi=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];const dt=new Date(parseInt(y),parseInt(m)-1,parseInt(d));return giorni[dt.getDay()]+' '+parseInt(d)+' '+mesi[parseInt(m)-1];}
-function formatItalianDate(year,month,day){const weekdays=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];const months=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];const dow=new Date(year,month,day).getDay();return weekdays[dow]+' '+day+' '+months[month];}
+function formatItalianDateYMD(year,month,day){const weekdays=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];const months=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];const dow=new Date(year,month,day).getDay();return weekdays[dow]+' '+day+' '+months[month];}
 function parseItalianDate(str){if(!str)return null;const iso=str.match(/(\d{4})-(\d{2})-(\d{2})/);if(iso)return new Date(parseInt(iso[1]),parseInt(iso[2])-1,parseInt(iso[3]));return null;}
 
 function italianToISO(str){
@@ -6954,7 +6923,7 @@ function renderDatePickerContent(idx,popup){
   for(let i=0;i<offset;i++){const emp=document.createElement('button');emp.className='dp-day empty';emp.disabled=true;grid.appendChild(emp);}
   for(let d=1;d<=daysInMonth;d++){
     const btn=document.createElement('button');btn.className='dp-day';btn.textContent=d;
-    const italianStr=formatItalianDate(dpYear,dpMonth,d);
+    const italianStr=formatItalianDateYMD(dpYear,dpMonth,d);
     if(today.getDate()===d&&today.getMonth()===dpMonth&&today.getFullYear()===dpYear)btn.classList.add('today');
     if(selectedDate===italianStr)btn.classList.add('selected');
     btn.onclick=e=>{
@@ -7291,6 +7260,81 @@ function showBootOverlay(show){
 
 /* ════════ CARD EDITORIALE ════════ */
 let edTheme='light', edFmt='feed';
+
+function openChangeMediaModal(idx){
+  // Remove any existing change-media modal
+  document.getElementById('change-media-modal')?.remove();
+
+  const bg = document.createElement('div');
+  bg.id = 'change-media-modal';
+  bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;';
+  bg.onclick = e => { if(e.target===bg) bg.remove(); };
+
+  bg.innerHTML = `
+    <div style="background:var(--surface);border-radius:14px;border:var(--bw) solid var(--border);box-shadow:var(--shadow-xl);width:min(400px,95vw);display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-lt);flex-shrink:0;">
+        <span style="font-size:var(--fs-base);font-weight:600;color:var(--text);">Cambia media</span>
+        <button onclick="document.getElementById('change-media-modal').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;line-height:1;padding:2px 6px;">✕</button>
+      </div>
+      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+        <!-- Upload zone -->
+        <div id="cm-upload-zone" style="border:1.5px dashed var(--border);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;position:relative;">
+          <input type="file" id="cm-file-input" accept="image/*,video/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;"/>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 8px;display:block;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          <div style="font-size:var(--fs-sm);color:var(--text-2);font-weight:500;">Trascina o <strong>clicca per sfogliare</strong></div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px;">JPG · PNG · MP4 · MOV</div>
+        </div>
+        <!-- Divider -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:1px;background:var(--border-lt);"></div>
+          <span style="font-size:var(--fs-xs);color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">oppure</span>
+          <div style="flex:1;height:1px;background:var(--border-lt);"></div>
+        </div>
+        <!-- Link paste -->
+        <div style="display:flex;gap:8px;">
+          <input id="cm-link-input" type="text" placeholder="Incolla link Dropbox o Frame.io…" style="flex:1;font-size:var(--fs-sm);padding:9px 12px;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--text);font-family:var(--font);outline:none;"/>
+          <button id="cm-link-btn" style="padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;font-size:var(--fs-sm);font-weight:600;font-family:var(--font);white-space:nowrap;">Usa link</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(bg);
+
+  // File upload handler
+  const fileInp = bg.querySelector('#cm-file-input');
+  const zone = bg.querySelector('#cm-upload-zone');
+  zone.addEventListener('dragover', e=>{e.preventDefault();zone.style.borderColor='var(--green)';zone.style.background='var(--green-lt)';});
+  zone.addEventListener('dragleave', ()=>{zone.style.borderColor='';zone.style.background='';});
+  zone.addEventListener('drop', e=>{e.preventDefault();zone.style.borderColor='';zone.style.background='';if(e.dataTransfer.files[0])fileInp.files=e.dataTransfer.files;fileInp.dispatchEvent(new Event('change'));});
+
+  fileInp.onchange = async e => {
+    const file = e.target.files[0]; if(!file) return;
+    bg.remove();
+    const destPath = _dbxPath(feedClientIdx, file.type.startsWith('video')?'Video':'Immagini', file.name);
+    showToast('⟳ Caricamento…');
+    const url = await DROPBOX.upload(file, destPath);
+    if(url){
+      const arr = currentFeedItems();
+      arr[idx].url=url; arr[idx].externalUrl=url; arr[idx].isExternalLink=true;
+      arr[idx].linkSource='dropbox'; arr[idx].needsReload=false; arr[idx].name=file.name;
+      arr[idx].type = file.type.startsWith('video')?'video':'image';
+      setFeedItems(arr); refreshFeed(); autoSave(); showToast('✓ Media aggiornato');
+    } else showToast('Errore upload','warn');
+  };
+
+  // Link handler
+  bg.querySelector('#cm-link-btn').onclick = () => {
+    const url = bg.querySelector('#cm-link-input').value.trim();
+    if(!url){ bg.querySelector('#cm-link-input').focus(); return; }
+    bg.remove();
+    const arr = currentFeedItems();
+    const type = detectType(url);
+    arr[idx].url=url; arr[idx].externalUrl=url; arr[idx].isExternalLink=true;
+    arr[idx].linkSource='other'; arr[idx].needsReload=false; arr[idx].type=type;
+    setFeedItems(arr); refreshFeed(); autoSave(); showToast('✓ Link aggiornato');
+  };
+  bg.querySelector('#cm-link-input').addEventListener('keydown', e=>{ if(e.key==='Enter') bg.querySelector('#cm-link-btn').click(); });
+}
 
 function addPendingSlot(){
   if(feedAccountIdx<0){showToast('Seleziona cliente e account','warn');return;}
