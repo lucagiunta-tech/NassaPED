@@ -3450,18 +3450,19 @@ tbody tr:hover .tr-actions{opacity:1;}
 /* ══ MODAL CARD EDITORIALE — Layout 2 colonne ══ */
 
 .modal-bg .ed-modal-box {
-  width: min(780px, 96vw) !important;
+  width: min(820px, 96vw) !important;
   max-height: 90dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 16px;
 }
 
 /* Body 2 colonne */
 .ed-modal-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 240px 1fr;
   gap: 0;
   overflow: hidden;
   min-height: 0;
@@ -3472,18 +3473,18 @@ tbody tr:hover .tr-actions{opacity:1;}
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 14px 14px 0;
-  gap: 10px;
+  padding: 18px 16px 16px;
+  gap: 12px;
   background: var(--bg);
   overflow-y: auto;
 }
 
 /* Controlli tema / formato */
-.ed-controls { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-.ed-ctrl-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.ed-controls { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.ed-ctrl-row { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .ed-theme-btn, .ed-fmt-btn {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border:var(--bw) solid var(--border);
   border-radius: var(--r-pill);
   background: var(--surface);
@@ -3505,14 +3506,14 @@ tbody tr:hover .tr-actions{opacity:1;}
 .ed-preview-wrap {
   flex: 1;
   aspect-ratio: 4/5;
-  max-height: 320px;
+  max-height: 300px;
   background: #f5f0e8;
-  border-radius: var(--r);
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.10);
+  margin-bottom: 4px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.13);
 }
 .ed-preview-inner {
   position: absolute;
@@ -3554,8 +3555,8 @@ tbody tr:hover .tr-actions{opacity:1;}
   position: absolute;
   bottom: 10px;
   right: 10px;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--green);
   color: #000;
@@ -3569,11 +3570,11 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* Colonna destra: campi */
 .ed-fields-col {
-  padding: 14px 18px;
+  padding: 20px 24px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
 }
 
 /* Mobile: stack verticale */
@@ -3591,7 +3592,7 @@ tbody tr:hover .tr-actions{opacity:1;}
   .ed-preview-wrap { max-height: 140px; flex: 0 0 80px; margin-bottom: 0; }
   .ed-controls { flex: 1; }
   .ed-ctrl-row { flex-wrap: wrap; }
-  .ed-fields-col { padding: 12px; }
+  .ed-fields-col { padding: 14px 16px; }
 }
 
 /* ══ PREVIEW — Cerchio story cliccabile ══ */
