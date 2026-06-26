@@ -4309,6 +4309,9 @@ function renderPreview(){
          if(item.type==='carousel'){const b=document.createElement('span');b.className='client-badge carousel';
          b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>'+(item.slides?.length||0)+' slide';
          cell.appendChild(b);}
+         else if(item.type==='image'){const b=document.createElement('span');b.className='client-badge image';
+         b.innerHTML='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Foto';
+         cell.appendChild(b);}
        }
       if(item.showDate&&item.date){const dp=document.createElement('div');dp.className='client-date-bar';dp.textContent=item.date;cell.appendChild(dp);}
       post.appendChild(cell);

@@ -1201,6 +1201,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .client-badge{position:absolute;top:5px;right:5px;font-size:var(--fs-xs);font-weight:600;padding:2px 6px;border-radius:var(--r-xs);;display:inline-flex;align-items:center;gap:4px;}
 .client-badge.video{background:rgba(0,0,0,.6);color:#fff;}
 .client-badge.carousel{background:var(--overlay-light);color:var(--text);font-weight:700;}
+.client-badge.image{background:#dbeafe;color:#1e40af;}
 .client-copy{padding:8px 10px;font-size:var(--fs-sm);color:var(--text);line-height:var(--lh-relaxed);word-break:break-word;border-top:1px solid var(--border-lt);}
 .client-copy > div:last-child{max-height:3.2em;overflow:hidden;white-space:pre-wrap;cursor:pointer;position:relative;}
 .client-copy > div:last-child::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1.4em;background:linear-gradient(transparent,var(--surface,#fff));pointer-events:none;}
