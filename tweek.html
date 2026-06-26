@@ -1743,10 +1743,15 @@ body{
 <div id="stream-panel-overlay" onclick="streamClosePanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:8999;"></div>
 
 <!-- ══ BOTTOM SECTIONS ══ -->
-<div class="bottom-sections">
+<div class="bottom-sections" id="bottom-sections">
   <div class="bs"><div class="bs-title">Prima o poi <button class="bs-add" onclick="openModal(null,'backlog')">+</button></div><div id="backlog-list"></div></div>
   <div class="bs"><div class="bs-title">Da fare <button class="bs-add" onclick="openModal(null,'todo')">+</button></div><div id="todo-list"></div></div>
   <div class="bs"><div class="bs-title">Note <button class="bs-add" onclick="openModal(null,'cream')">+</button></div><div id="cream-list"></div></div>
+</div>
+
+<!-- ══ ANNO VIEW ══ -->
+<div id="anno-view" style="display:none;flex:1;overflow-y:auto;padding:24px;">
+  <div id="anno-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:900px;margin:0 auto;"></div>
 </div>
 
 <!-- ══ TOAST ══ -->
@@ -1761,11 +1766,6 @@ body{
 
 <div id="print-frame"></div>
 <div class="ghost" id="ghost"></div>
-
-<!-- ══ ANNO VIEW ══ -->
-<div id="anno-view" style="display:none;flex:1;overflow-y:auto;padding:24px;">
-  <div id="anno-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:900px;margin:0 auto;"></div>
-</div>
 
 <!-- ══ MODAL ══ -->
 <div class="modal-overlay" id="modal-overlay">
@@ -1884,6 +1884,7 @@ function setView(v){
   document.getElementById('month-view').style.display=v==='month'?'block':'none';
   document.getElementById('task-view').style.display=v==='tasks'?'flex':'none';
   document.getElementById('anno-view').style.display=v==='anno'?'flex':'none';
+  document.getElementById('bottom-sections').style.display=v==='anno'||v==='tasks'||v==='stream'?'none':'flex';
   const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar',anno:'Clicca un mese per andare alla settimana'};
   document.getElementById('hint-text').textContent=hints[v]||'';
   document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':'';
