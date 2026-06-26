@@ -1501,10 +1501,10 @@ body{
   <button class="btn btn-ghost" onclick="goToday()" style="font-size:var(--fs-xs);padding:4px 10px;">Oggi</button>
 
   <div class="view-toggle">
+    <button class="vt-btn active" id="vt-stream" onclick="setView('stream')">NPlan</button>
+    <button class="vt-btn" id="vt-tasks" onclick="setView('tasks')">Task</button>
     <button class="vt-btn" id="vt-week" onclick="setView('week')">Settimana</button>
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
-    <button class="vt-btn" id="vt-tasks" onclick="setView('tasks')">Task</button>
-    <button class="vt-btn active" id="vt-stream" onclick="setView('stream')">Stream</button>
     <button class="vt-btn" id="vt-anno" onclick="setView('anno')">Anno</button>
   </div>
 
@@ -1536,7 +1536,6 @@ body{
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.54"/></svg>
   </button>
 
-  <div class="cl-legend" id="cl-legend"></div>
 </div>
 
 <!-- ══ CLIENTS PANEL ══ -->
@@ -1870,7 +1869,7 @@ function exportPDF(){
 
 function showToast(msg,wu=false){document.getElementById('toast-msg').textContent=msg;document.getElementById('toast-undo-btn').style.display=wu?'inline':'none';const t=document.getElementById('toast');t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.classList.remove('show');undoStack=null;},3500);}
 function execUndo(){if(!undoStack)return;clearTimeout(toastTimer);document.getElementById('toast').classList.remove('show');const u=undoStack;undoStack=null;if(u.type==='move'){const arr=tasks[u.toDate]||[];const idx=arr.findIndex(t=>t.id===u.task.id);if(idx>=0)arr.splice(idx,1);if(!tasks[u.fromDate])tasks[u.fromDate]=[];tasks[u.fromDate].splice(u.fromIdx,0,{...u.task,time:u.fromTime});scheduleSave();rebuild();showToast('Spostamento annullato');}else if(u.type==='delete'){if(u.section==='cal'){if(!tasks[u.date])tasks[u.date]=[];tasks[u.date].splice(u.idx,0,u.task);}else{if(!bottom[u.section])bottom[u.section]=[];bottom[u.section].splice(u.idx,0,u.task);}scheduleSave();rebuild();showToast('Ripristinato');}}
-function renderLegend(){document.getElementById('cl-legend').innerHTML=clients.map(cl=>`<span class="cl-dot"><span class="cl-dot-circle" style="background:${cl.color}"></span>${esc(cl.label)}</span>`).join('');}
+function renderLegend(){const el=document.getElementById('cl-legend');if(el)el.innerHTML=clients.map(cl=>`<span class="cl-dot"><span class="cl-dot-circle" style="background:${cl.color}"></span>${esc(cl.label)}</span>`).join('');}
 function renderClientsPanel(){const list=document.getElementById('cp-list');list.innerHTML='';clients.forEach((cl,idx)=>{const tc=Object.values(tasks).flat().filter(t=>t.client===cl.id).length;const row=document.createElement('div');row.className='cp-row';row.innerHTML=`<div class="cp-color" style="background:${cl.color}"><input type="color" value="${cl.color}"/></div><input class="cp-name-input" type="text" value="${esc(cl.label)}" style="border-color:${cl.color}22"/><span class="cp-count">${tc} task</span><button class="cp-del" ${clients.length<=1?'disabled':''}>✕</button>`;row.querySelector('input[type=color]').addEventListener('input',e=>{clients[idx].color=e.target.value;row.querySelector('.cp-color').style.background=e.target.value;scheduleSave();renderLegend();rebuild();});row.querySelector('.cp-name-input').addEventListener('input',e=>{clients[idx].label=e.target.value;scheduleSave();renderLegend();});row.querySelector('.cp-name-input').addEventListener('blur',()=>rebuild());row.querySelector('.cp-del').addEventListener('click',()=>{if(clients.length<=1)return;const fb=clients.find(c=>c.id!==cl.id);Object.values(tasks).flat().forEach(t=>{if(t.client===cl.id)t.client=fb.id;});Object.values(bottom).flat().forEach(t=>{if(t.client===cl.id)t.client=fb.id;});clients.splice(idx,1);scheduleSave();renderClientsPanel();renderLegend();rebuild();showToast(`"${cl.label}" rimosso`);});list.appendChild(row);});const aw=document.getElementById('cp-add-color-wrap'),ac=document.getElementById('cp-new-color');aw.style.background=ac.value;ac.addEventListener('input',()=>{aw.style.background=ac.value;});}
 function addClient(){const ne=document.getElementById('cp-new-name');const name=ne.value.trim();if(!name){ne.focus();return;}clients.push({id:'cl_'+uid(),label:name,color:document.getElementById('cp-new-color').value});ne.value='';scheduleSave();renderClientsPanel();renderLegend();renderModalClientGrid();showToast(`"${name}" aggiunto`);}
 function toggleClientsPanel(){const p=document.getElementById('clients-panel');const b=document.getElementById('clients-toggle-btn');const o=p.classList.toggle('open');b.classList.toggle('active',o);if(o)renderClientsPanel();}
@@ -1885,9 +1884,9 @@ function setView(v){
   document.getElementById('task-view').style.display=v==='tasks'?'flex':'none';
   document.getElementById('anno-view').style.display=v==='anno'?'flex':'none';
   document.getElementById('bottom-sections').style.display=v==='anno'||v==='tasks'||v==='stream'?'none':'flex';
-  const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar',anno:'Clicca un mese per andare alla settimana'};
+  const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar',anno:'Clicca un mese per andare alla settimana',stream:'Clienti e job — il centro della pianificazione'};
   document.getElementById('hint-text').textContent=hints[v]||'';
-  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':'';
+  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':v==='stream'?'NPlan':'';
   if(v==='week'){weekOffset=0;renderWeek();}
   else if(v==='month') renderMonth();
   else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
