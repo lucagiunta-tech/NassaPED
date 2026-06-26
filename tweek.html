@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NassaPED · Tweek Calendar</title>
+<title>Nassa Studio · NassaTime</title>
 <style>
 /* ══ NASSAPED DESIGN SYSTEM ══════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -314,6 +314,24 @@ body{
 .feed-chip-type{font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;}
 .feed-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
 #feed-toggle-btn.active{background:var(--green-lt);border-color:var(--green-dk);color:var(--green-text);}
+
+/* ══ ANNO VIEW ══ */
+.anno-month{background:var(--surface);border:.5px solid var(--border);border-radius:var(--r);padding:12px;cursor:pointer;transition:box-shadow var(--t-base);}
+.anno-month:hover{box-shadow:var(--shadow-md);}
+.anno-month-title{font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:8px;}
+.anno-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.anno-day{width:100%;aspect-ratio:1;border-radius:2px;background:var(--bg);position:relative;font-size:0;}
+.anno-day.has-task{background:var(--green-lt);}
+.anno-day.has-feed{background:#dbeafe;}
+.anno-day.has-both{background:linear-gradient(135deg,var(--green-lt) 50%,#dbeafe 50%);}
+.anno-day.today-dot{outline:2px solid var(--green);outline-offset:1px;}
+.anno-day-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--text-3);opacity:0;}
+.anno-day:hover .anno-day-num{opacity:1;}
+.anno-wd-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;}
+.anno-wd{font-size:7px;text-align:center;color:var(--text-3);font-weight:600;}
+.anno-legend{display:flex;gap:12px;align-items:center;max-width:900px;margin:0 auto 16px;font-size:11px;color:var(--text-2);}
+.anno-legend-dot{width:10px;height:10px;border-radius:2px;}
+.anno-year-nav{display:flex;align-items:center;gap:12px;max-width:900px;margin:0 auto 20px;}
 .ie-actions{display:flex;gap:3px;justify-content:flex-end;margin-top:2px;}
 .ie-save{font-size:var(--fs-xs);padding:2px 8px;border-radius:var(--rs);border:none;background:var(--green);color:var(--green-text);cursor:pointer;font-weight:700;font-family:var(--font);}
 .ie-cancel{font-size:var(--fs-xs);padding:2px 8px;border-radius:var(--rs);border:var(--bw) solid var(--border);background:none;cursor:pointer;color:var(--text-3);font-family:var(--font);}
@@ -1472,7 +1490,7 @@ body{
     <div class="brand-mark">N</div>
     <span class="brand-name">Nassa Studio</span>
   </a>
-  <span class="brand-sub">Tweek</span>
+  <span class="brand-sub">NassaTime</span>
 
   <div class="nav-sep"></div>
 
@@ -1487,6 +1505,7 @@ body{
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
     <button class="vt-btn" id="vt-tasks" onclick="setView('tasks')">Task</button>
     <button class="vt-btn" id="vt-stream" onclick="setView('stream')">Stream</button>
+    <button class="vt-btn" id="vt-anno" onclick="setView('anno')">Anno</button>
   </div>
 
   <div class="topbar-spacer"></div>
@@ -1743,6 +1762,11 @@ body{
 <div id="print-frame"></div>
 <div class="ghost" id="ghost"></div>
 
+<!-- ══ ANNO VIEW ══ -->
+<div id="anno-view" style="display:none;flex:1;overflow-y:auto;padding:24px;">
+  <div id="anno-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:900px;margin:0 auto;"></div>
+</div>
+
 <!-- ══ MODAL ══ -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
@@ -1855,22 +1879,69 @@ function setView(v){
   document.getElementById('vt-week').classList.toggle('active',v==='week');
   document.getElementById('vt-month').classList.toggle('active',v==='month');
   document.getElementById('vt-tasks').classList.toggle('active',v==='tasks');
+  document.getElementById('vt-anno').classList.toggle('active',v==='anno');
   document.getElementById('week-view').style.display=v==='week'?'flex':'none';
   document.getElementById('month-view').style.display=v==='month'?'block':'none';
   document.getElementById('task-view').style.display=v==='tasks'?'flex':'none';
-  const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar'};
+  document.getElementById('anno-view').style.display=v==='anno'?'flex':'none';
+  const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar',anno:'Clicca un mese per andare alla settimana'};
   document.getElementById('hint-text').textContent=hints[v]||'';
-  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':'';
+  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':'';
   if(v==='week'){weekOffset=0;renderWeek();}
   else if(v==='month') renderMonth();
   else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
+  else if(v==='anno') renderAnno();
   document.getElementById('vt-stream').classList.toggle('active',v==='stream');
   document.getElementById('stream-view').style.display=v==='stream'?'flex':'none';
   if(v==='stream'){streamInit();}
 }
-function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else{monthOffset+=d;renderMonth();}}
-function goToday(){weekOffset=0;monthOffset=0;if(view==='week')renderWeek();else renderMonth();}
-function rebuild(){if(view==='week')renderWeek();else renderMonth();}
+function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else if(view==='anno'){_annoYear+=d;renderAnno();}else{monthOffset+=d;renderMonth();}}
+function goToday(){weekOffset=0;monthOffset=0;_annoYear=new Date().getFullYear();if(view==='week')renderWeek();else if(view==='anno')renderAnno();else renderMonth();}
+function rebuild(){if(view==='week')renderWeek();else if(view==='anno')renderAnno();else renderMonth();}
+
+var _annoYear = new Date().getFullYear();
+function renderAnno(){
+  const grid=document.getElementById('anno-grid');
+  grid.innerHTML='';
+  let nav=document.getElementById('anno-year-nav');
+  if(!nav){
+    nav=document.createElement('div');nav.id='anno-year-nav';nav.className='anno-year-nav';
+    nav.innerHTML=`<button class="btn" onclick="_annoYear--;renderAnno()">‹</button><span id="anno-year-label" style="font-size:18px;font-weight:700;color:var(--text);"></span><button class="btn" onclick="_annoYear++;renderAnno()">›</button>`;
+    const leg=document.createElement('div');leg.className='anno-legend';
+    leg.innerHTML=`<div class="anno-legend-dot" style="background:var(--green-lt);border:.5px solid var(--green-dk);"></div><span>Task</span><div class="anno-legend-dot" style="background:#dbeafe;border:.5px solid #93c5fd;margin-left:8px;"></div><span>Post feed</span>`;
+    const av=document.getElementById('anno-view');av.prepend(leg);av.prepend(nav);
+  }
+  document.getElementById('anno-year-label').textContent=_annoYear;
+  const taskDates=new Set(Object.keys(tasks).filter(k=>tasks[k]?.length));
+  const feedDates=new Set(_feedData.map(f=>f.date));
+  const todayStr=iso(TODAY);
+  const MONTHS_IT=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const WD=['L','M','M','G','V','S','D'];
+  for(let m=0;m<12;m++){
+    const card=document.createElement('div');card.className='anno-month';
+    const title=document.createElement('div');title.className='anno-month-title';title.textContent=MONTHS_IT[m];card.appendChild(title);
+    const wdRow=document.createElement('div');wdRow.className='anno-wd-row';
+    WD.forEach(d=>{const s=document.createElement('div');s.className='anno-wd';s.textContent=d;wdRow.appendChild(s);});
+    card.appendChild(wdRow);
+    const daysWrap=document.createElement('div');daysWrap.className='anno-days';
+    const firstDay=new Date(_annoYear,m,1);
+    let off=firstDay.getDay()===0?6:firstDay.getDay()-1;
+    for(let i=0;i<off;i++){const e=document.createElement('div');e.style.cssText='aspect-ratio:1;';daysWrap.appendChild(e);}
+    const dim=new Date(_annoYear,m+1,0).getDate();
+    for(let d=1;d<=dim;d++){
+      const ds=`${_annoYear}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const hasTk=taskDates.has(ds),hasFd=feedDates.has(ds);
+      const el=document.createElement('div');
+      el.className='anno-day'+(hasTk&&hasFd?' has-both':hasTk?' has-task':hasFd?' has-feed':'')+(ds===todayStr?' today-dot':'');
+      const num=document.createElement('span');num.className='anno-day-num';num.textContent=d;el.appendChild(num);
+      el.addEventListener('click',()=>{const mon=getMonday(new Date(_annoYear,m,d));weekOffset=Math.round((mon-getMonday(TODAY))/604800000);setView('week');});
+      daysWrap.appendChild(el);
+    }
+    card.appendChild(daysWrap);
+    card.addEventListener('click',e=>{if(e.target.closest('.anno-day'))return;const mon=getMonday(new Date(_annoYear,m,1));weekOffset=Math.round((mon-getMonday(TODAY))/604800000);setView('week');});
+    grid.appendChild(card);
+  }
+}
 function getWeekStart(){const m=getMonday(TODAY);m.setDate(m.getDate()+weekOffset*7);return m;}
 function renderWeek(){closeActiveEditor();const ws=getWeekStart();const we=new Date(ws);we.setDate(ws.getDate()+6);const m1=ws.getMonth(),m2=we.getMonth();document.getElementById('period-label').textContent=m1===m2?`${ws.getDate()}–${we.getDate()} ${MONTHS[m1]} ${ws.getFullYear()}`:`${ws.getDate()} ${MONTHS[m1]} – ${we.getDate()} ${MONTHS[m2]} ${ws.getFullYear()}`;const head=document.getElementById('cal-head');const body=document.getElementById('cal-body');const tc=document.getElementById('time-col');head.innerHTML='<div class="ch-empty"></div>';tc.innerHTML='';Array.from(body.querySelectorAll('.day-col')).forEach(c=>c.remove());HOURS.forEach(h=>{const s=document.createElement('div');s.className='time-slot';s.innerHTML=`<span>${h}</span>`;tc.appendChild(s);});const ts=iso(TODAY);for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=iso(d);const hd=document.createElement('div');hd.className='ch-day'+(ds===ts?' today':'');hd.innerHTML=`<span class="ch-wd">${DAYS[d.getDay()]}</span><span class="ch-num">${d.getDate()}</span>`;head.appendChild(hd);const col=document.createElement('div');col.className='day-col';col.dataset.date=ds;HOURS.forEach(h=>{const cell=document.createElement('div');cell.className='hour-cell';cell.dataset.date=ds;cell.dataset.hour=h;cell.innerHTML=`<div class="add-hint"><span>+ task</span></div>`;cell.addEventListener('click',e=>{if(!e.target.closest('.task')){closeActiveEditor();openModal({date:ds,hour:h},null);}});setupDropZone(cell,ds,h);col.appendChild(cell);});(tasks[ds]||[]).filter(taskMatchesFilter).forEach(task=>{const hIdx=HOURS.findIndex(h=>h===task.time);const cells=col.querySelectorAll('.hour-cell');const target=hIdx>=0?cells[hIdx]:cells[0];if(target)target.appendChild(buildTask(task,ds));});renderFeedChipsForDay(col,ds);body.appendChild(col);}renderBottom();}
 function renderMonth(){const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+monthOffset,1);const y=base.getFullYear(),m=base.getMonth();document.getElementById('period-label').textContent=`${MONTHS_FULL[m]} ${y}`;document.getElementById('month-head').innerHTML=DAYS_SHORT.map(d=>`<div class="mh-day">${d}</div>`).join('');const fd=new Date(y,m,1).getDay();const off=fd===0?6:fd-1;const dim=new Date(y,m+1,0).getDate();const pd=new Date(y,m,0).getDate();const ts=iso(TODAY);const grid=document.getElementById('month-grid');grid.innerHTML='';const tot=Math.ceil((off+dim)/7)*7;for(let i=0;i<tot;i++){let cd,io=false;if(i<off){cd=new Date(y,m-1,pd-off+i+1);io=true;}else if(i>=off+dim){cd=new Date(y,m+1,i-off-dim+1);io=true;}else{cd=new Date(y,m,i-off+1);}const ds=iso(cd);const it=ds===ts;const dt=tasks[ds]||[];const cell=document.createElement('div');cell.className='m-cell'+(io?' other-month':'')+(it?' today-cell':'');const uc=[...new Set(dt.map(t=>t.client))].slice(0,5);const dots=dt.length?`<div class="m-dots">${uc.map(cid=>{const cl=getClient(cid);return`<span class="m-dot" style="background:${cl.color}"></span>`;}).join('')}</div>`:'';const pills=dt.slice(0,2).map(t=>{const cl=getClient(t.client);const{bg,txt,border}=clientStyles(cl);return`<div class="m-task-pill${t.done?' done':''}" style="background:${bg};border-left-color:${border};color:${txt}">${esc(t.text)}</div>`;}).join('');const more=dt.length>2?`<div class="m-more">+${dt.length-2}</div>`:'';cell.innerHTML=`<div class="m-cell-num">${cd.getDate()}</div>${dots}${pills}${more}`;cell.addEventListener('click',()=>openDayDetail(ds));cell.addEventListener('dblclick',()=>{const mon=getMonday(new Date(ds));weekOffset=Math.round((mon-getMonday(TODAY))/604800000);setView('week');});grid.appendChild(cell);}if(openDetailDate)openDayDetail(openDetailDate);renderBottom();}
