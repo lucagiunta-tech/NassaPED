@@ -3448,7 +3448,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* ══ MODAL CARD EDITORIALE — Layout 2 colonne ══ */
 
-.ed-modal-box {
+.modal-bg .ed-modal-box {
   width: min(780px, 96vw) !important;
   max-height: 90dvh;
   display: flex;
@@ -3577,7 +3577,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 
 /* Mobile: stack verticale */
 @media (max-width: 744px) {
-  .ed-modal-box { width: 96vw !important; max-height: 92dvh !important; }
+  .modal-bg .ed-modal-box { width: 96vw !important; max-height: 92dvh !important; }
   .ed-modal-body { grid-template-columns: 1fr; overflow-y: auto; }
   .ed-preview-col {
     border-right: none;
