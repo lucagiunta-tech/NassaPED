@@ -308,6 +308,12 @@ body{
 .ie-av.sel{border-color:#111;transform:scale(1.2);box-shadow:0 0 0 2px #fff inset;}
 .ie-av-none{background:var(--border);color:var(--text-3);font-size:10px;}
 .task-assignee{position:absolute;bottom:4px;right:4px;width:16px;height:16px;border-radius:50%;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.7);pointer-events:none;}
+.feed-chip-wrap{padding:2px 4px 0;display:flex;flex-direction:column;gap:2px;}
+.feed-chip{display:flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:none;width:100%;text-align:left;line-height:1.3;}
+.feed-chip:hover{filter:brightness(.94);}
+.feed-chip-type{font-size:8px;font-weight:800;padding:1px 4px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;}
+.feed-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+#feed-toggle-btn.active{background:var(--green-lt);border-color:var(--green-dk);color:var(--green-text);}
 .ie-actions{display:flex;gap:3px;justify-content:flex-end;margin-top:2px;}
 .ie-save{font-size:var(--fs-xs);padding:2px 8px;border-radius:var(--rs);border:none;background:var(--green);color:var(--green-text);cursor:pointer;font-weight:700;font-family:var(--font);}
 .ie-cancel{font-size:var(--fs-xs);padding:2px 8px;border-radius:var(--rs);border:var(--bw) solid var(--border);background:none;cursor:pointer;color:var(--text-3);font-family:var(--font);}
@@ -1495,6 +1501,11 @@ body{
 
   <button class="btn btn-export" onclick="exportPDF()">↓ Export PDF</button>
 
+  <button class="btn" id="feed-toggle-btn" onclick="toggleFeedLayer()" title="Mostra/nascondi post NassaPED" style="font-size:var(--fs-xs);padding:5px 10px;gap:5px;display:flex;align-items:center;border-color:var(--border);">
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Feed
+  </button>
+
   <button class="btn btn-icon" id="clients-toggle-btn" onclick="toggleClientsPanel()" title="Clienti">
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
   </button>
@@ -1861,7 +1872,7 @@ function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else{month
 function goToday(){weekOffset=0;monthOffset=0;if(view==='week')renderWeek();else renderMonth();}
 function rebuild(){if(view==='week')renderWeek();else renderMonth();}
 function getWeekStart(){const m=getMonday(TODAY);m.setDate(m.getDate()+weekOffset*7);return m;}
-function renderWeek(){closeActiveEditor();const ws=getWeekStart();const we=new Date(ws);we.setDate(ws.getDate()+6);const m1=ws.getMonth(),m2=we.getMonth();document.getElementById('period-label').textContent=m1===m2?`${ws.getDate()}–${we.getDate()} ${MONTHS[m1]} ${ws.getFullYear()}`:`${ws.getDate()} ${MONTHS[m1]} – ${we.getDate()} ${MONTHS[m2]} ${ws.getFullYear()}`;const head=document.getElementById('cal-head');const body=document.getElementById('cal-body');const tc=document.getElementById('time-col');head.innerHTML='<div class="ch-empty"></div>';tc.innerHTML='';Array.from(body.querySelectorAll('.day-col')).forEach(c=>c.remove());HOURS.forEach(h=>{const s=document.createElement('div');s.className='time-slot';s.innerHTML=`<span>${h}</span>`;tc.appendChild(s);});const ts=iso(TODAY);for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=iso(d);const hd=document.createElement('div');hd.className='ch-day'+(ds===ts?' today':'');hd.innerHTML=`<span class="ch-wd">${DAYS[d.getDay()]}</span><span class="ch-num">${d.getDate()}</span>`;head.appendChild(hd);const col=document.createElement('div');col.className='day-col';col.dataset.date=ds;HOURS.forEach(h=>{const cell=document.createElement('div');cell.className='hour-cell';cell.dataset.date=ds;cell.dataset.hour=h;cell.innerHTML=`<div class="add-hint"><span>+ task</span></div>`;cell.addEventListener('click',e=>{if(!e.target.closest('.task')){closeActiveEditor();openModal({date:ds,hour:h},null);}});setupDropZone(cell,ds,h);col.appendChild(cell);});(tasks[ds]||[]).filter(taskMatchesFilter).forEach(task=>{const hIdx=HOURS.findIndex(h=>h===task.time);const cells=col.querySelectorAll('.hour-cell');const target=hIdx>=0?cells[hIdx]:cells[0];if(target)target.appendChild(buildTask(task,ds));});body.appendChild(col);}renderBottom();}
+function renderWeek(){closeActiveEditor();const ws=getWeekStart();const we=new Date(ws);we.setDate(ws.getDate()+6);const m1=ws.getMonth(),m2=we.getMonth();document.getElementById('period-label').textContent=m1===m2?`${ws.getDate()}–${we.getDate()} ${MONTHS[m1]} ${ws.getFullYear()}`:`${ws.getDate()} ${MONTHS[m1]} – ${we.getDate()} ${MONTHS[m2]} ${ws.getFullYear()}`;const head=document.getElementById('cal-head');const body=document.getElementById('cal-body');const tc=document.getElementById('time-col');head.innerHTML='<div class="ch-empty"></div>';tc.innerHTML='';Array.from(body.querySelectorAll('.day-col')).forEach(c=>c.remove());HOURS.forEach(h=>{const s=document.createElement('div');s.className='time-slot';s.innerHTML=`<span>${h}</span>`;tc.appendChild(s);});const ts=iso(TODAY);for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=iso(d);const hd=document.createElement('div');hd.className='ch-day'+(ds===ts?' today':'');hd.innerHTML=`<span class="ch-wd">${DAYS[d.getDay()]}</span><span class="ch-num">${d.getDate()}</span>`;head.appendChild(hd);const col=document.createElement('div');col.className='day-col';col.dataset.date=ds;HOURS.forEach(h=>{const cell=document.createElement('div');cell.className='hour-cell';cell.dataset.date=ds;cell.dataset.hour=h;cell.innerHTML=`<div class="add-hint"><span>+ task</span></div>`;cell.addEventListener('click',e=>{if(!e.target.closest('.task')){closeActiveEditor();openModal({date:ds,hour:h},null);}});setupDropZone(cell,ds,h);col.appendChild(cell);});(tasks[ds]||[]).filter(taskMatchesFilter).forEach(task=>{const hIdx=HOURS.findIndex(h=>h===task.time);const cells=col.querySelectorAll('.hour-cell');const target=hIdx>=0?cells[hIdx]:cells[0];if(target)target.appendChild(buildTask(task,ds));});renderFeedChipsForDay(col,ds);body.appendChild(col);}renderBottom();}
 function renderMonth(){const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+monthOffset,1);const y=base.getFullYear(),m=base.getMonth();document.getElementById('period-label').textContent=`${MONTHS_FULL[m]} ${y}`;document.getElementById('month-head').innerHTML=DAYS_SHORT.map(d=>`<div class="mh-day">${d}</div>`).join('');const fd=new Date(y,m,1).getDay();const off=fd===0?6:fd-1;const dim=new Date(y,m+1,0).getDate();const pd=new Date(y,m,0).getDate();const ts=iso(TODAY);const grid=document.getElementById('month-grid');grid.innerHTML='';const tot=Math.ceil((off+dim)/7)*7;for(let i=0;i<tot;i++){let cd,io=false;if(i<off){cd=new Date(y,m-1,pd-off+i+1);io=true;}else if(i>=off+dim){cd=new Date(y,m+1,i-off-dim+1);io=true;}else{cd=new Date(y,m,i-off+1);}const ds=iso(cd);const it=ds===ts;const dt=tasks[ds]||[];const cell=document.createElement('div');cell.className='m-cell'+(io?' other-month':'')+(it?' today-cell':'');const uc=[...new Set(dt.map(t=>t.client))].slice(0,5);const dots=dt.length?`<div class="m-dots">${uc.map(cid=>{const cl=getClient(cid);return`<span class="m-dot" style="background:${cl.color}"></span>`;}).join('')}</div>`:'';const pills=dt.slice(0,2).map(t=>{const cl=getClient(t.client);const{bg,txt,border}=clientStyles(cl);return`<div class="m-task-pill${t.done?' done':''}" style="background:${bg};border-left-color:${border};color:${txt}">${esc(t.text)}</div>`;}).join('');const more=dt.length>2?`<div class="m-more">+${dt.length-2}</div>`:'';cell.innerHTML=`<div class="m-cell-num">${cd.getDate()}</div>${dots}${pills}${more}`;cell.addEventListener('click',()=>openDayDetail(ds));cell.addEventListener('dblclick',()=>{const mon=getMonday(new Date(ds));weekOffset=Math.round((mon-getMonday(TODAY))/604800000);setView('week');});grid.appendChild(cell);}if(openDetailDate)openDayDetail(openDetailDate);renderBottom();}
 function openDayDetail(ds){openDetailDate=ds;const d=new Date(ds+'T00:00:00');const detail=document.getElementById('day-detail');detail.classList.add('open');const dt=tasks[ds]||[];const label=`${DAYS_FULL[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;detail.innerHTML=`<div class="dd-header"><span class="dd-title">${label}</span><div class="dd-actions"><button class="dd-week-btn" onclick="jumpToWeek('${ds}')">Apri settimana</button><button class="dd-close" onclick="closeDayDetail()">×</button></div></div><div>${dt.length===0?'<p class="dd-empty">Nessun task</p>':''}${dt.map(t=>{const cl=getClient(t.client);const{bg,txt,border}=clientStyles(cl);return`<div class="dd-task${t.done?' done':''}" style="background:${bg};border-left-color:${border};color:${txt}"><button class="dd-check${t.done?' checked':''}" onclick="toggleTask(null,'${ds}','${t.id}');openDayDetail('${ds}')"></button><span class="dd-task-text">${esc(t.text)}</span>${t.time?`<span class="dd-task-time">${t.time}</span>`:''}</div>`;}).join('')}</div><button class="dd-add" onclick="openModal({date:'${ds}'},null)">+ Aggiungi task</button>`;}
 function closeDayDetail(){openDetailDate=null;document.getElementById('day-detail').classList.remove('open');}
@@ -1921,7 +1932,83 @@ document.getElementById('modal-text').addEventListener('keydown',e=>{if(e.key===
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor();closeDayDetail();}});
 document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
-renderLegend();renderWeek();renderBottom();initTeamFilter();
+
+/* ══ FEED NASSAPED — Phase 2 ══════════════════════════════ */
+let _feedLoaded=false,_feedData=[],_showFeed=false;
+const _MESI={gennaio:1,febbraio:2,marzo:3,aprile:4,maggio:5,giugno:6,luglio:7,agosto:8,settembre:9,ottobre:10,novembre:11,dicembre:12};
+function _isoFromItalian(str){
+  if(!str)return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  const low=str.toLowerCase();
+  const m1=low.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)\s+(\d{4})$/);
+  if(m1){const mo=_MESI[m1[2]];if(mo)return `${m1[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(m1[1])).padStart(2,'0')}`;}
+  const m2=low.match(/^(?:\w+\s+)?(\d{1,2})\s+(\w+)$/);
+  if(m2){const mo=_MESI[m2[2]];if(mo){const y=new Date().getFullYear();return `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(m2[1])).padStart(2,'0')}`;}}
+  return null;
+}
+function _feedTypeStyle(type){
+  if(type==='video')return{bg:'#fee2e2',tc:'#991b1b',label:'Reel'};
+  if(type==='carousel')return{bg:'#fef3c7',tc:'#92400e',label:'Caros.'};
+  return{bg:'#dbeafe',tc:'#1e40af',label:'Foto'};
+}
+async function loadFeedData(){
+  if(_feedLoaded)return;
+  try{
+    const res=await fetch(`${STREAM_API}?user=${STREAM_USER}`,{headers:{'x-nassa-key':STREAM_KEY},credentials:'include'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const raw=data?.data||data;
+    const cls=raw?.clients||[];
+    const feedsObj=raw?.feeds||{};
+    _feedData=[];
+    cls.forEach(cl=>{
+      (cl.accounts||[]).forEach(acc=>{
+        Object.keys(feedsObj).forEach(key=>{
+          if(!key.startsWith(acc.id+'|||'))return;
+          (feedsObj[key]||[]).forEach(item=>{
+            if(!item.date||item.type==='pending')return;
+            const ds=_isoFromItalian(item.date);
+            if(!ds)return;
+            _feedData.push({date:ds,client:cl.name,clientColor:cl.color||'#888',type:item.type||'image',copy:item.copy||''});
+          });
+        });
+      });
+    });
+    _feedLoaded=true;
+  }catch(e){_feedLoaded=true;console.warn('[Feed]',e.message);}
+}
+function _buildFeedChip(f){
+  const{bg,tc,label}=_feedTypeStyle(f.type);
+  const clBg=lighten(f.clientColor,.82);
+  const clTc=darken(f.clientColor,.55);
+  const chip=document.createElement('div');
+  chip.className='feed-chip';
+  chip.style.cssText=`background:${clBg};color:${clTc};`;
+  chip.title=f.client+(f.copy?' — '+f.copy.slice(0,80):'');
+  chip.innerHTML=`<span class="feed-chip-type" style="background:${bg};color:${tc};">${label}</span><span class="feed-chip-text">${f.copy?f.copy.slice(0,28):f.client}</span>`;
+  return chip;
+}
+function renderFeedChipsForDay(col,ds){
+  if(!_showFeed)return;
+  const items=_feedData.filter(f=>f.date===ds);
+  if(!items.length)return;
+  const wrap=document.createElement('div');wrap.className='feed-chip-wrap';
+  items.forEach(f=>wrap.appendChild(_buildFeedChip(f)));
+  col.insertBefore(wrap,col.firstChild);
+}
+function toggleFeedLayer(){
+  _showFeed=!_showFeed;
+  document.getElementById('feed-toggle-btn').classList.toggle('active',_showFeed);
+  rebuild();
+}
+async function initFeedLayer(){
+  await loadFeedData();
+  document.getElementById('feed-toggle-btn').classList.toggle('active',_showFeed);
+  if(_feedData.length)rebuild();
+}
+/* ══ END FEED NASSAPED ═══════════════════════════════════ */
+
+renderLegend();renderWeek();renderBottom();initTeamFilter();initFeedLayer();
 tvLoad();
 streamLoad();
 
@@ -2759,7 +2846,7 @@ jvSetupCalendarDrop();
 
 const STREAM_API  = '/api/project';
 const STREAM_KEY  = 'NASSA_SECRET_2026';
-const STREAM_USER = 'shared';
+const STREAM_USER = 'nassa_studio';
 
 let stream_v1 = {};       // { [jobId]: Job }
 let _streamClients = [];  // clienti da NassaPED
