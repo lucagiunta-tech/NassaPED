@@ -689,8 +689,10 @@ function cvLbRender() {
   if(!item) return;
   const url = item.type==='carousel'&&item.slides?.length?(item.slides[0].url||''):(item.url||item.externalUrl||'');
   if(item.type==='video' && url) {
+    // For Dropbox URLs, use raw=1 for streaming (dl=1 forces download, breaks video playback)
+    const streamUrl = url.replace('?dl=1','?raw=1').replace('&dl=1','&raw=1');
     const v = document.createElement('video');
-    v.src=url; v.controls=true; v.playsInline=true; v.style.cssText='max-width:100%;max-height:80dvh;display:block;';
+    v.src=streamUrl; v.controls=true; v.playsInline=true; v.style.cssText='max-width:100%;max-height:80dvh;display:block;';
     inner.insertBefore(v, inner.querySelector('.cv-lb-close'));
     v.play().catch(()=>{});
   } else if(url) {

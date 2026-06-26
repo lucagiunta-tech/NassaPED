@@ -26,8 +26,8 @@ function toDirectUrl(url) {
   let u = url
     .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
     .replace('?dl=0', '').replace('?dl=1', '').replace('?raw=1', '');
-  if (u.includes('dl.dropboxusercontent.com') && !u.includes('dl='))
-    u += (u.includes('?') ? '&dl=1' : '?dl=1');
+  if (u.includes('dl.dropboxusercontent.com') && !u.includes('raw='))
+    u += (u.includes('?') ? '&raw=1' : '?raw=1');
   return u;
 }
 
