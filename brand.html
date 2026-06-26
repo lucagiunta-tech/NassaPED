@@ -5,42 +5,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Nassa Studio · NassaBrand</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --green:#1A8C3F;--magenta:#C2185B;
-  --bg:#f5f5f7;--surface-0:#f5f5f7;--surface-1:#f0f0f2;--surface-2:#ffffff;
-  --border:#e5e7eb;--border-strong:#d1d5db;--border-accent:#3b82f6;
-  --text-primary:#1c1c1e;--text-secondary:#6b7280;--text-muted:#9ca3af;--text-accent:#1d4ed8;
-  --bg-accent:#eff6ff;--bg-warning:#fffbeb;--bg-danger:#fef2f2;--bg-success:#f0fdf4;
-  --border-warning:#fbbf24;--border-danger:#f87171;
-  --font:'Inter',-apple-system,sans-serif;
-  --r:8px;--rs:4px;
+  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#111;
+  --magenta:#C2185B;--magenta-lt:#FCE4EC;
+  --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#6b7280;
+  --bg:#f5f5f7;--surface:#fff;--border:#e5e7eb;--border-lt:#f0f0f2;
+  --font:'Inter',sans-serif;
+  --topbar:56px;--sidebar:56px;--sidebar-expanded:220px;
+  --bw:.5px;
+  --r:8px;--rs:4px;--r-xs:3px;--r-pill:99px;
+  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:18px;--fs-lg:28px;
+  --ls-tight:-.02em;--ls-normal:0em;--ls-wide:.06em;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;
+  --t-fast:.1s ease;--t-base:.15s ease;--t-slow:.25s ease;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 24px rgba(0,0,0,.1);
 }
 [data-theme="dark"]{
-  --bg:#0f0f10;--surface-0:#0f0f10;--surface-1:#1a1a1e;--surface-2:#222228;
-  --border:#2d2d35;--border-strong:#3d3d45;
-  --text-primary:#f0f0f2;--text-secondary:#9ca3af;--text-muted:#6b7280;
-  --bg-accent:#1e3a5f;--bg-warning:#2d2500;--bg-success:#0d2b0c;
+  --bg:#0f0f11;--surface:#1a1a1e;--border:#2a2a30;--border-lt:#222228;
+  --text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
+  --green-lt:#0d2b0c;--green-mid:#1a4d18;--green-text:#0a1a00;
 }
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text-primary);}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;}
 button{font-family:var(--font);cursor:pointer;}
 textarea,input{font-family:var(--font);}
-#root{min-height:100vh;}
 
-/* Topbar */
-.topbar{height:52px;background:var(--surface-2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:100;}
-.brand-mark{width:28px;height:28px;border-radius:6px;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
-.brand-name{font-size:13px;font-weight:700;color:var(--text-primary);}
-.brand-sep{font-size:11px;color:var(--text-muted);border-left:0.5px solid var(--border);padding-left:10px;margin-left:2px;}
-.topbar-spacer{flex:1;}
-.btn-back{padding:4px 10px;border-radius:5px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-secondary);font-size:11px;}
-.btn-back:hover{background:var(--surface-1);}
-.theme-btn{width:28px;height:28px;border-radius:6px;border:0.5px solid var(--border);background:transparent;font-size:14px;display:flex;align-items:center;justify-content:center;}
+/* ── App layout ── */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.body{display:flex;flex:1;overflow:hidden;}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.main-scroll{flex:1;overflow-y:auto;padding:24px;}
 
-/* Loading */
-.loading{display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--text-muted);font-size:13px;gap:8px;}
+/* ── Topbar ── */
+.topbar{height:var(--topbar);flex-shrink:0;background:var(--surface);border-bottom:var(--bw) solid var(--border);display:flex;align-items:stretch;z-index:200;}
+.topbar-brand{width:var(--sidebar);flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:var(--bw) solid var(--border);cursor:pointer;transition:width .22s;overflow:hidden;gap:10px;padding:0;}
+.topbar-brand.expanded{width:var(--sidebar-expanded);justify-content:flex-start;padding:0 16px;}
+.topbar-brand .brand-name{opacity:0;white-space:nowrap;transition:opacity var(--t-base);font-size:var(--fs-base);font-weight:700;}
+.topbar-brand.expanded .brand-name{opacity:1;}
+.brand-mark{width:30px;height:30px;background:var(--green);border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--green-text);font-size:var(--fs-base);font-weight:700;flex-shrink:0;}
+.brand-name{font-size:var(--fs-base);font-weight:700;color:var(--text);letter-spacing:var(--ls-tight);}
+.topbar-nav{display:flex;align-items:stretch;flex:1;padding:0 8px;gap:2px;}
+.nav-tab{display:flex;align-items:center;padding:0 20px;font-size:var(--fs-base);font-weight:400;color:var(--text-2);cursor:pointer;border-bottom:2.5px solid transparent;transition:all var(--t-fast);white-space:nowrap;letter-spacing:var(--ls-tight);border:none;background:none;}
+.nav-tab:hover{color:var(--text);background:var(--bg);}
+.nav-tab.active{color:var(--text);font-weight:700;border-bottom:2.5px solid var(--green);}
+.topbar-right{display:flex;align-items:center;gap:8px;padding:0 16px;border-left:var(--bw) solid var(--border);}
+.topbar-btn{width:32px;height:32px;border-radius:var(--r);border:var(--bw) solid var(--border);background:transparent;color:var(--text-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all var(--t-fast);}
+.topbar-btn:hover{background:var(--bg);color:var(--text);}
+
+/* Client selector in topbar */
+.topbar-client{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:var(--bw) solid var(--border);cursor:pointer;min-width:180px;max-width:240px;transition:background var(--t-fast);}
+.topbar-client:hover{background:var(--bg);}
+.client-avatar{width:28px;height:28px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.client-name{font-size:var(--fs-sm);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.client-sub{font-size:var(--fs-xs);color:var(--text-3);}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surface);border-right:var(--bw) solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .22s;z-index:100;}
+.sidebar.sb-expanded{width:var(--sidebar-expanded);}
+.sb-main-nav{display:flex;flex-direction:column;height:100%;width:100%;}
+.sb-nav-section{display:flex;flex-direction:column;padding:var(--sp-2) 0;}
+.sb-nav-section:not(:last-child){border-bottom:var(--bw) solid var(--border-lt);}
+.sb-group-lbl{font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);padding:8px 12px 3px;font-weight:600;display:none;white-space:nowrap;overflow:hidden;}
+.sidebar.sb-expanded .sb-group-lbl{display:block;}
+.sb-nav-item{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);transition:all var(--t-fast);margin:1px auto;flex-shrink:0;gap:0;border:none;background:none;}
+.sidebar.sb-expanded .sb-nav-item{width:auto;height:auto;padding:10px 14px;margin:1px 6px;justify-content:flex-start;gap:12px;}
+.sb-nav-item:hover{background:var(--green-lt);color:var(--text);}
+.sb-nav-item.active{background:var(--green);color:var(--green-text);}
+.sidebar.sb-expanded .sb-nav-item.active{background:var(--green-lt);color:var(--text);}
+.sidebar.sb-expanded .sb-nav-item.active .sb-nav-label{font-weight:700;color:var(--green-text);}
+.sb-nav-item svg{width:20px;height:20px;flex-shrink:0;}
+.sb-nav-label{font-size:var(--fs-base);font-weight:400;white-space:nowrap;overflow:hidden;display:none;}
+.sidebar.sb-expanded .sb-nav-label{display:block;}
+.sb-nav-sep{height:.5px;background:var(--border-lt);margin:5px auto;width:28px;}
+.sidebar.sb-expanded .sb-nav-sep{width:calc(100% - 24px);margin:5px 12px;}
+.sb-spacer{flex:1;}
+.sb-toggle-btn{display:flex;align-items:center;justify-content:center;width:38px;height:28px;margin:2px auto 4px;border-radius:var(--r);background:none;border:none;cursor:pointer;color:var(--text-3);transition:all var(--t-fast);}
+.sidebar.sb-expanded .sb-toggle-btn{width:calc(100% - 12px);margin:2px 6px 4px;justify-content:flex-end;padding-right:8px;}
+.sb-toggle-btn:hover{background:var(--bg);color:var(--text);}
+
+/* ── Content area ── */
+.content-header{padding:20px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.content-title{font-size:var(--fs-lg);font-weight:800;color:var(--text);letter-spacing:var(--ls-tight);line-height:1.1;}
+.content-sub{font-size:var(--fs-sm);color:var(--text-3);margin-top:4px;}
+
+/* ── Client list ── */
+.client-list{display:flex;flex-direction:column;gap:10px;}
+.client-row{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);padding:14px 20px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color var(--t-fast),box-shadow var(--t-fast);}
+.client-row:hover{border-color:var(--green);box-shadow:var(--shadow-sm);}
+.client-row-avatar{width:44px;height:44px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;}
+.client-row-name{font-size:var(--fs-base);font-weight:600;color:var(--text);}
+.client-row-slug{font-size:var(--fs-xs);color:var(--text-3);margin-top:2px;font-family:monospace;}
+.client-row-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0;}
+
+/* ── Buttons ── */
+.btn{padding:6px 14px;border-radius:var(--r);font-size:var(--fs-sm);font-weight:500;cursor:pointer;border:none;transition:all var(--t-fast);display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--green);color:var(--green-text);}
+.btn-primary:hover{background:var(--green-dk);color:#fff;}
+.btn-outline{background:transparent;color:var(--magenta);border:var(--bw) solid var(--magenta);}
+.btn-outline:hover{background:var(--magenta-lt);}
+.btn-ghost{background:transparent;color:var(--text-2);border:var(--bw) solid var(--border);}
+.btn-ghost:hover{background:var(--bg);color:var(--text);}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:2px;border-bottom:var(--bw) solid var(--border);margin-bottom:20px;}
+.tab-btn{padding:8px 16px;border:none;cursor:pointer;font-size:var(--fs-sm);background:transparent;color:var(--text-2);font-weight:400;border-bottom:2.5px solid transparent;margin-bottom:-1px;transition:all var(--t-fast);}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--text);font-weight:600;border-bottom-color:var(--green);}
+.tab-badge{margin-left:5px;font-size:10px;background:var(--magenta-lt);color:var(--magenta);padding:1px 6px;border-radius:var(--r-pill);}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);padding:20px;}
+.section-title{font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:var(--ls-wide);}
+
+/* ── Stats strip ── */
+.stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--bg);border-radius:var(--r);padding:14px 16px;}
+.stat-val{font-size:var(--fs-lg);font-weight:800;color:var(--text);letter-spacing:var(--ls-tight);line-height:1;}
+.stat-lbl{font-size:var(--fs-xs);color:var(--text-3);margin-top:4px;text-transform:uppercase;letter-spacing:var(--ls-wide);}
+
+/* ── Brand Assets ── */
+.palette-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:24px;}
+.swatch{border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);cursor:pointer;transition:transform var(--t-fast);}
+.swatch:hover{transform:translateY(-2px);}
+.swatch-color{height:56px;display:flex;align-items:center;justify-content:center;}
+.swatch-info{padding:6px 9px;background:var(--surface);}
+.swatch-name{font-size:11px;font-weight:500;color:var(--text);}
+.swatch-hex{font-size:10px;color:var(--text-3);font-family:monospace;}
+.swatch-role{font-size:9px;color:var(--text-3);}
+
+/* ── Logo cards ── */
+.logo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:24px;}
+.logo-card{border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);}
+.logo-preview{height:70px;display:flex;align-items:center;justify-content:center;}
+.logo-info{padding:9px 12px;background:var(--surface);}
+.logo-name{font-size:11px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.logo-meta{font-size:10px;color:var(--text-3);margin-bottom:6px;}
+.logo-add{height:130px;border:1.5px dashed var(--border);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--text-3);cursor:pointer;font-size:var(--fs-xs);transition:border-color var(--t-fast);}
+.logo-add:hover{border-color:var(--green);color:var(--green-dk);}
+
+/* ── Approvals ── */
+.filter-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-btn{padding:4px 12px;border-radius:var(--r);border:var(--bw) solid var(--border);background:transparent;color:var(--text-2);font-size:var(--fs-xs);cursor:pointer;font-weight:500;transition:all var(--t-fast);}
+.filter-btn.active{background:var(--green-lt);border-color:var(--green-dk);color:var(--green-text);font-weight:700;}
+.approval-card{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
+.approval-stripe{width:5px;flex-shrink:0;}
+.approval-body{flex:1;padding:14px 18px;}
+.approval-status{font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:4px;}
+.approval-title{font-size:var(--fs-base);font-weight:600;color:var(--text);margin:5px 0 4px;}
+.approval-note{font-size:var(--fs-sm);color:var(--text-2);margin-bottom:10px;}
+.approval-preview{width:44px;height:44px;border-radius:var(--r);flex-shrink:0;}
+.pill{font-size:var(--fs-xs);font-weight:500;padding:2px 7px;border-radius:var(--rs);display:inline-flex;align-items:center;}
+
+/* ── Moodboard ── */
+.moodboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start;}
+.mood-col{display:flex;flex-direction:column;gap:12px;}
+.mood-item{border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);cursor:pointer;transition:border-color var(--t-fast);}
+.mood-item:hover{border-color:var(--green);}
+.mood-item.selected{border-width:2px;}
+.mood-visual{display:flex;align-items:center;justify-content:center;padding:16px;}
+.mood-info{padding:9px 12px;background:var(--surface);}
+.mood-title{font-size:11px;font-weight:500;color:var(--text);}
+.mood-note{font-size:10px;color:var(--text-3);line-height:1.4;margin-top:2px;}
+.mood-tag{font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;}
+
+/* ── Portal client view header ── */
+.portal-header{background:var(--surface);border-bottom:var(--bw) solid var(--border);padding:0 24px;}
+.portal-header-inner{max-width:860px;margin:0 auto;padding:20px 0;}
+.portal-logo{width:44px;height:44px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:48px 24px;color:var(--text-3);}
+.empty-icon{font-size:var(--fs-lg);margin-bottom:12px;}
+.empty-title{font-size:var(--fs-md);font-weight:600;color:var(--text-2);margin-bottom:6px;}
+.empty-sub{font-size:var(--fs-sm);}
+
+/* ── Pill badge ── */
+.badge{font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:var(--r-pill);}
+.badge-pending{background:var(--magenta-lt);color:var(--magenta);}
+.badge-approved{background:var(--green-lt);color:var(--green-dk);}
+.badge-revision{background:#FFF3E0;color:#E65100;}
+
+/* ── Back button ── */
+.back-btn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--r);border:var(--bw) solid var(--border);background:transparent;color:var(--text-2);font-size:var(--fs-sm);cursor:pointer;transition:all var(--t-fast);}
+.back-btn:hover{background:var(--bg);color:var(--text);}
+
+/* ── Loading ── */
+.loading{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text-3);font-size:var(--fs-sm);}
+
+/* ── Link box ── */
+.link-box{padding:5px 12px;border-radius:var(--r);background:var(--bg);border:var(--bw) solid var(--border);font-size:var(--fs-xs);color:var(--text-3);font-family:monospace;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--r-pill);}
 </style>
 </head>
 <body>
@@ -49,142 +211,134 @@ textarea,input{font-family:var(--font);}
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script>
-const {useState, useEffect, useCallback} = React;
+const {useState,useEffect,useCallback,useRef} = React;
+const h = React.createElement;
 const API_KEY = 'NASSA_SECRET_2026';
-const G = '#1A8C3F';
-const M = '#C2185B';
 
 // ── Utils ──
 function contrast(hex){
-  if(!hex||hex.length<7)return'#fff';
+  if(!hex||hex.length<4) return '#fff';
   const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  return (0.299*r+0.587*g+0.114*b)/255>0.55?'#1A1A1A':'#FFFFFF';
+  return (0.299*r+0.587*g+0.114*b)/255>0.55?'#111':'#fff';
 }
-
-function isPortalView(){
-  return window.location.pathname.startsWith('/portal/');
+function isPortal(){ return location.pathname.startsWith('/portal/'); }
+function portalSlug(){ return location.pathname.replace('/portal/','').split('/')[0]; }
+function toggleTheme(){
+  const t=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=t;
+  localStorage.setItem('nb_theme',t);
 }
-function getPortalSlug(){
-  return window.location.pathname.replace('/portal/','').split('/')[0];
-}
+(()=>{const t=localStorage.getItem('nb_theme')||'light';document.documentElement.dataset.theme=t;})();
 
 // ── API ──
-async function apiFetch(path, opts={}){
-  const headers = {'Content-Type':'application/json','x-nassa-key':API_KEY,...(opts.headers||{})};
-  const r = await fetch(path, {...opts, headers, credentials:'include'});
+async function api(path,opts={}){
+  const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json','x-nassa-key':API_KEY,...(opts.headers||{})},credentials:'include'});
   if(!r.ok) throw new Error('API '+r.status);
   return r.json();
 }
 
-async function loadClients(){ return apiFetch('/api/brand'); }
-async function loadPublicClient(slug){ return apiFetch('/api/brand?public=1&slug='+slug); }
-async function saveField(clientId, field, data){
-  return apiFetch('/api/brand', {method:'POST', body:JSON.stringify({clientId,field,data})});
-}
-
 // ── STATUS ──
-const STATUS = {
-  pending:  {lbl:'In attesa',  color:M,       bg:'#FCE4EC', icon:'⏳'},
-  approved: {lbl:'Approvato',  color:G,       bg:'#E8F5E9', icon:'✓'},
-  revision: {lbl:'Revisione',  color:'#E65100',bg:'#FFF3E0',icon:'↩'},
+const STATUS={
+  pending: {lbl:'In attesa', color:'#C2185B', bg:'#FCE4EC', icon:'⏳'},
+  approved:{lbl:'Approvato', color:'#1A8C3F', bg:'#E8F5E9', icon:'✓'},
+  revision:{lbl:'Revisione', color:'#E65100', bg:'#FFF3E0', icon:'↩'},
 };
+const TAG_COLORS={Mood:'#534AB7',Palette:'#C25B2A',Foto:'#0F6E56',Copy:'#C2185B',Tipo:'#185FA5',Strategy:'#6B1A2A',ToV:'#854F0B'};
 
-// ── Shared UI ──
-function Pill({children, color=G, bg}){
-  return React.createElement('span',{style:{fontSize:10,fontWeight:500,padding:'2px 7px',borderRadius:4,background:bg||color+'18',color,whiteSpace:'nowrap',display:'inline-block'}},children);
-}
-function Card({children, style={}, onClick}){
-  return React.createElement('div',{onClick,style:{background:'var(--surface-2)',border:'0.5px solid var(--border)',borderRadius:12,padding:'1.25rem',...style,cursor:onClick?'pointer':undefined}},children);
-}
-function SectionHead({title,sub,action}){
-  return React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.25rem',flexWrap:'wrap',gap:8}},
-    React.createElement('div',null,
-      React.createElement('h2',{style:{margin:'0 0 3px',fontSize:17,fontWeight:500,color:'var(--text-primary)'}},title),
-      sub&&React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},sub)
-    ),
-    action
+// ── SVG Icons ──
+function Icon({d,size=20,stroke='currentColor',sw=2}){
+  return h('svg',{viewBox:'0 0 24 24',width:size,height:size,fill:'none',stroke,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'},
+    h('path',{d})
   );
 }
-function Btn({children, onClick, style={}, variant='primary'}){
-  const base = {padding:'5px 13px',borderRadius:6,fontSize:11,fontWeight:500,cursor:'pointer',border:'none'};
-  const variants = {
-    primary:{background:G,color:'#fff'},
-    secondary:{background:'transparent',color:M,border:`1px solid ${M}`},
-    ghost:{background:'var(--surface-1)',color:'var(--text-secondary)',border:'0.5px solid var(--border-strong)'},
-  };
-  return React.createElement('button',{onClick,style:{...base,...(variants[variant]||variants.primary),...style}},children);
-}
+const ICONS = {
+  grid:    h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:3,y:3,width:7,height:7}),h('rect',{x:14,y:3,width:7,height:7}),h('rect',{x:14,y:14,width:7,height:7}),h('rect',{x:3,y:14,width:7,height:7})),
+  palette: h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('circle',{cx:12,cy:12,r:10}),h('circle',{cx:8,cy:9,r:1.5,fill:'currentColor'}),h('circle',{cx:15,cy:8,r:1.5,fill:'currentColor'}),h('circle',{cx:16,cy:14,r:1.5,fill:'currentColor'}),h('circle',{cx:10,cy:15,r:1.5,fill:'currentColor'})),
+  check:   h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'20 6 9 17 4 12'})),
+  board:   h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:3,y:3,width:18,height:18,rx:2}),h('line',{x1:9,y1:3,x2:9,y2:21}),h('line',{x1:15,y1:3,x2:15,y2:21})),
+  chevL:   h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'15 18 9 12 15 6'})),
+  chevR:   h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'9 18 15 12 9 6'})),
+  moon:    h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'})),
+  copy:    h('svg',{viewBox:'0 0 24 24',width:14,height:14,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:9,y:9,width:13,height:13,rx:2}),h('path',{d:'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'})),
+  ext:     h('svg',{viewBox:'0 0 24 24',width:14,height:14,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'}),h('polyline',{points:'15 3 21 3 21 9'}),h('line',{x1:10,y1:14,x2:21,y2:3})),
+};
 
-// ── Color Swatch ──
+// ── Swatch ──
 function Swatch({c}){
   const [cp,setCp]=useState(false);
-  return React.createElement('div',{
-    onClick:()=>{try{navigator.clipboard?.writeText(c.hex);}catch(e){}setCp(true);setTimeout(()=>setCp(false),1400);},
-    style:{borderRadius:10,overflow:'hidden',border:'1px solid var(--border)',cursor:'pointer'}
-  },
-    React.createElement('div',{style:{background:c.hex,height:52,display:'flex',alignItems:'center',justifyContent:'center'}},
-      cp&&React.createElement('span',{style:{fontSize:10,fontWeight:600,color:contrast(c.hex)}},'Copiato!')
+  return h('div',{className:'swatch',onClick:()=>{try{navigator.clipboard?.writeText(c.hex);}catch(e){}setCp(true);setTimeout(()=>setCp(false),1400)}},
+    h('div',{className:'swatch-color',style:{background:c.hex}},
+      cp&&h('span',{style:{fontSize:10,fontWeight:600,color:contrast(c.hex)}},'Copiato!')
     ),
-    React.createElement('div',{style:{padding:'6px 9px',background:'var(--surface-2)'}},
-      React.createElement('p',{style:{margin:'0 0 1px',fontSize:11,fontWeight:500,color:'var(--text-primary)'}},c.name),
-      React.createElement('p',{style:{margin:'0 0 1px',fontSize:10,color:'var(--text-muted)',fontFamily:'monospace'}},c.hex),
-      React.createElement('p',{style:{margin:0,fontSize:9,color:'var(--text-muted)'}},c.role)
+    h('div',{className:'swatch-info'},
+      h('div',{className:'swatch-name'},c.name),
+      h('div',{className:'swatch-hex'},c.hex),
+      h('div',{className:'swatch-role'},c.role)
     )
   );
 }
 
 // ── Brand Assets ──
-function BrandAssets({client,isAdmin,onSave}){
-  const b = client.brand||{colors:[],fonts:[],logos:[],templates:[]};
-  const pc = b.colors[0]?.hex||G;
-  return React.createElement('div',null,
-    React.createElement(SectionHead,{title:'Brand Assets',sub:'Loghi, palette, font e template — sempre aggiornati',
-      action:isAdmin&&React.createElement(Btn,{onClick:()=>alert('Upload — collegare a Dropbox API')},'↑ Carica asset')
-    }),
+function BrandAssets({client,isAdmin}){
+  const b=client.brand||{colors:[],fonts:[],logos:[],templates:[]};
+  const pc=b.colors[0]?.hex||client.color||'#1A8C3F';
+  return h('div',null,
     // Palette
-    b.colors.length>0&&React.createElement('div',null,
-      React.createElement('p',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',margin:'0 0 8px'}},'Palette colori'),
-      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))',gap:10,marginBottom:'1.5rem'}},
-        b.colors.map((c,i)=>React.createElement(Swatch,{key:i,c}))
-      )
+    b.colors.length>0&&h('div',{style:{marginBottom:24}},
+      h('div',{className:'section-title'},'Palette colori'),
+      h('div',{className:'palette-grid'},b.colors.map((c,i)=>h(Swatch,{key:i,c})))
     ),
     // Font
-    b.fonts.length>0&&React.createElement('div',null,
-      React.createElement('p',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',margin:'0 0 8px'}},'Font'),
-      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10,marginBottom:'1.5rem'}},
-        b.fonts.map((f,i)=>React.createElement(Card,{key:i,style:{padding:'1rem'}},
-          React.createElement('p',{style:{margin:'0 0 3px',fontFamily:f.name+',serif',fontSize:22,fontWeight:f.weight,color:'var(--text-primary)'}},'Aa Bb'),
-          React.createElement('p',{style:{margin:'0 0 1px',fontSize:11,fontWeight:500,color:'var(--text-primary)'}},f.name),
-          React.createElement('p',{style:{margin:0,fontSize:10,color:'var(--text-muted)'}},f.role+' · w'+f.weight)
+    b.fonts.length>0&&h('div',{style:{marginBottom:24}},
+      h('div',{className:'section-title'},'Font'),
+      h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}},
+        b.fonts.map((f,i)=>h('div',{key:i,className:'card',style:{padding:16}},
+          h('div',{style:{fontFamily:f.name+',serif',fontSize:24,fontWeight:f.weight,color:'var(--text)',marginBottom:4}},'Aa Bb'),
+          h('div',{style:{fontSize:12,fontWeight:500,color:'var(--text)'}}},f.name),
+          h('div',{style:{fontSize:11,color:'var(--text-3)'}}},f.role+' · w'+f.weight)
         ))
       )
     ),
     // Loghi
-    b.logos.length>0&&React.createElement('div',null,
-      React.createElement('p',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',margin:'0 0 8px'}},'Loghi'),
-      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:10,marginBottom:'1.5rem'}},
-        b.logos.map(l=>React.createElement(Card,{key:l.id,style:{padding:0,overflow:'hidden',background:l.variant==='bianco'?'#1A1A1A':'var(--surface-2)'}},
-          React.createElement('div',{style:{height:70,display:'flex',alignItems:'center',justifyContent:'center'}},
-            React.createElement('div',{style:{width:40,height:40,borderRadius:7,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
-              React.createElement('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},client.name?.charAt(0)||'N')
+    h('div',{style:{marginBottom:24}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+        h('div',{className:'section-title',style:{margin:0}},'Loghi'),
+        isAdmin&&h('button',{className:'btn btn-ghost',onClick:()=>alert('Upload — collegare a Dropbox')},'↑ Carica logo')
+      ),
+      h('div',{className:'logo-grid'},
+        b.logos.map(l=>h('div',{key:l.id,className:'logo-card'},
+          h('div',{className:'logo-preview',style:{background:l.variant==='bianco'?'#111':'var(--bg)'}},
+            h('div',{style:{width:40,height:40,borderRadius:8,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
+              h('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},client.name?.charAt(0)||'N')
             )
           ),
-          React.createElement('div',{style:{padding:'9px 11px'}},
-            React.createElement('p',{style:{margin:'0 0 1px',fontSize:11,fontWeight:500,color:l.variant==='bianco'?'#ccc':'var(--text-primary)'}},l.name),
-            React.createElement('p',{style:{margin:'0 0 5px',fontSize:10,color:l.variant==='bianco'?'#666':'var(--text-muted)'}},l.format+' · '+l.note),
-            React.createElement('button',{style:{width:'100%',padding:'4px 0',fontSize:10,border:'0.5px solid var(--border-strong)',borderRadius:4,background:'transparent',color:'var(--text-secondary)',cursor:'pointer'}},'↓ Scarica')
+          h('div',{className:'logo-info'},
+            h('div',{className:'logo-name'},l.name),
+            h('div',{className:'logo-meta'},l.format+(l.note?' · '+l.note:'')),
+            h('button',{className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0'}},'↓ Scarica')
           )
         )),
-        isAdmin&&React.createElement('div',{onClick:()=>alert('Aggiungi logo'),style:{height:155,borderRadius:12,border:'1.5px dashed var(--border-strong)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5,color:'var(--text-muted)',cursor:'pointer',fontSize:11}},
-          '+',React.createElement('span',null,'Aggiungi logo')
-        )
+        isAdmin&&h('div',{className:'logo-add',onClick:()=>alert('Aggiungi logo')},'+',h('span',null,'Aggiungi logo'))
       )
     ),
-    // Empty state
-    b.colors.length===0&&b.logos.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'3rem',color:'var(--text-muted)',fontSize:13}},
-      React.createElement('div',{style:{fontSize:32,marginBottom:8}},'🎨'),
-      React.createElement('p',null,'Nessun asset ancora caricato'),
-      isAdmin&&React.createElement('p',{style:{fontSize:11,marginTop:4}},'Usa il bottone "Carica asset" per aggiungere loghi, palette e template')
+    // Template
+    b.templates.length>0&&h('div',null,
+      h('div',{className:'section-title'},'Template'),
+      h('div',{style:{display:'flex',flexDirection:'column',gap:8}},
+        b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',background:'var(--bg)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
+          h('div',{style:{width:36,height:36,borderRadius:6,background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}},'📐'),
+          h('div',{style:{flex:1}},
+            h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)'}}},t.name),
+            h('div',{style:{fontSize:11,color:'var(--text-3)'}}},t.format+(t.note?' · '+t.note:''))
+          ),
+          h('button',{className:'btn btn-primary',style:{fontSize:11}},'↓ Scarica')
+        ))
+      )
+    ),
+    b.colors.length===0&&b.logos.length===0&&b.templates.length===0&&h('div',{className:'empty'},
+      h('div',{className:'empty-icon'},'🎨'),
+      h('div',{className:'empty-title'},'Nessun asset caricato'),
+      h('div',{className:'empty-sub'},isAdmin?'Usa il bottone "Carica logo" per iniziare':'Gli asset verranno caricati da Nassa Studio')
     )
   );
 }
@@ -192,113 +346,102 @@ function BrandAssets({client,isAdmin,onSave}){
 // ── Approvals ──
 function Approvals({client,isAdmin,onUpdateStatus}){
   const [filter,setFilter]=useState('all');
-  const approvals = client.approvals||[];
-  const list = filter==='all' ? approvals : approvals.filter(a=>a.stato===filter);
+  const approvals=client.approvals||[];
+  const list=filter==='all'?approvals:approvals.filter(a=>a.stato===filter);
+  const counts={pending:approvals.filter(a=>a.stato==='pending').length,approved:approvals.filter(a=>a.stato==='approved').length,revision:approvals.filter(a=>a.stato==='revision').length};
 
-  return React.createElement('div',null,
-    React.createElement(SectionHead,{title:'Contenuti da approvare',
-      sub:`${approvals.filter(a=>a.stato==='pending').length} in attesa di feedback`
-    }),
-    React.createElement('div',{style:{display:'flex',gap:6,marginBottom:'1.25rem',flexWrap:'wrap'}},
-      [['all','Tutti',approvals.length],['pending','In attesa',approvals.filter(a=>a.stato==='pending').length],['approved','Approvati',approvals.filter(a=>a.stato==='approved').length],['revision','Revisioni',approvals.filter(a=>a.stato==='revision').length]].map(([id,lbl,n])=>
-        React.createElement('button',{key:id,onClick:()=>setFilter(id),style:{padding:'4px 12px',borderRadius:6,border:`0.5px solid ${filter===id?'var(--border-accent)':'var(--border-strong)'}`,background:filter===id?'var(--bg-accent)':'transparent',color:filter===id?'var(--text-accent)':'var(--text-secondary)',fontSize:11,cursor:'pointer',fontWeight:filter===id?500:400}},
-          lbl,' ',n>0&&React.createElement('span',{style:{fontSize:10}},'('+n+')')
-        )
+  return h('div',null,
+    h('div',{className:'filter-row'},
+      [['all','Tutti',approvals.length],['pending','In attesa',counts.pending],['approved','Approvati',counts.approved],['revision','Revisioni',counts.revision]].map(([id,lbl,n])=>
+        h('button',{key:id,className:'filter-btn'+(filter===id?' active':''),onClick:()=>setFilter(id)},lbl,' ',n>0&&h('span',null,'('+n+')'))
       )
     ),
-    list.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'2rem',color:'var(--text-muted)',fontSize:13}},
-      React.createElement('div',{style:{fontSize:28,marginBottom:8}},'✓'),
-      'Nessun contenuto in questa categoria'
+    list.length===0&&h('div',{className:'empty'},
+      h('div',{className:'empty-icon'},'✓'),
+      h('div',{className:'empty-title'},'Nessun contenuto'),
+      h('div',{className:'empty-sub'},'Nessun contenuto in questa categoria')
     ),
-    React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
-      list.map(a=>{
-        const st=STATUS[a.stato]||STATUS.pending;
-        return React.createElement(Card,{key:a.id,style:{padding:0,overflow:'hidden'}},
-          React.createElement('div',{style:{display:'flex',gap:0}},
-            React.createElement('div',{style:{width:5,background:st.color,flexShrink:0}}),
-            React.createElement('div',{style:{flex:1,padding:'1rem 1.25rem'}},
-              React.createElement('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,marginBottom:8}},
-                React.createElement('div',null,
-                  React.createElement('div',{style:{display:'flex',alignItems:'center',gap:7,marginBottom:4}},
-                    React.createElement(Pill,{color:st.color,bg:st.bg},st.icon+' '+st.lbl),
-                    React.createElement(Pill,{color:'var(--text-muted)',bg:'var(--surface-1)'},a.tipo),
-                    a.formato&&React.createElement(Pill,{color:'var(--text-muted)',bg:'var(--surface-1)'},a.formato)
-                  ),
-                  React.createElement('p',{style:{margin:0,fontSize:14,fontWeight:500,color:'var(--text-primary)'}},a.titolo)
+    h('div',null,list.map(a=>{
+      const st=STATUS[a.stato]||STATUS.pending;
+      return h('div',{key:a.id,className:'approval-card'},
+        h('div',{style:{display:'flex'}},
+          h('div',{className:'approval-stripe',style:{background:st.color}}),
+          h('div',{className:'approval-body'},
+            h('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,marginBottom:6}},
+              h('div',null,
+                h('div',{style:{display:'flex',gap:6,flexWrap:'wrap',marginBottom:5}},
+                  h('span',{className:'approval-status',style:{background:st.bg,color:st.color}},st.icon,' ',st.lbl),
+                  h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 8px',borderRadius:4}},a.tipo),
+                  a.formato&&h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 8px',borderRadius:4}},a.formato)
                 ),
-                a.preview&&React.createElement('div',{style:{width:44,height:44,borderRadius:8,background:a.preview,flexShrink:0}})
+                h('div',{className:'approval-title'},a.titolo)
               ),
-              a.note&&React.createElement('p',{style:{margin:'0 0 10px',fontSize:12,color:'var(--text-secondary)'}},a.note),
-              React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}},
-                React.createElement('span',{style:{fontSize:10,color:'var(--text-muted)'}},'📅 '+a.data),
-                a.stato==='pending'&&!isAdmin&&React.createElement(React.Fragment,null,
-                  React.createElement('button',{onClick:()=>onUpdateStatus(a.id,'approved'),style:{marginLeft:'auto',padding:'5px 14px',borderRadius:5,border:'none',background:G,color:'#fff',fontSize:11,cursor:'pointer',fontWeight:500}},'✓ Approvo'),
-                  React.createElement('button',{onClick:()=>onUpdateStatus(a.id,'revision'),style:{padding:'5px 14px',borderRadius:5,border:`1px solid ${M}`,background:'transparent',color:M,fontSize:11,cursor:'pointer',fontWeight:500}},'↩ Revisione')
-                ),
-                isAdmin&&a.stato==='revision'&&React.createElement('span',{style:{marginLeft:'auto',fontSize:11,color:'#E65100',fontWeight:500}},'⚠ Richiesta revisione'),
-                a.stato==='approved'&&React.createElement('span',{style:{marginLeft:'auto',fontSize:11,color:G,fontWeight:500}},'✓ Pronto per pubblicazione')
-              )
+              a.preview&&h('div',{className:'approval-preview',style:{background:a.preview}})
+            ),
+            a.note&&h('div',{className:'approval-note'},a.note),
+            h('div',{style:{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
+              h('span',{style:{fontSize:11,color:'var(--text-3)'}},'📅 ',a.data),
+              a.stato==='pending'&&!isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',gap:6}},
+                h('button',{className:'btn btn-primary',onClick:()=>onUpdateStatus(a.id,'approved')},'✓ Approvo'),
+                h('button',{className:'btn btn-outline',onClick:()=>onUpdateStatus(a.id,'revision')},'↩ Revisione')
+              ),
+              isAdmin&&a.stato==='revision'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#E65100',fontWeight:500}},'⚠ Revisione richiesta'),
+              a.stato==='approved'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#1A8C3F',fontWeight:500}},'✓ Pronto per pubblicazione')
             )
           )
-        );
-      })
-    )
+        )
+      );
+    }))
   );
 }
 
 // ── Moodboard ──
 function Moodboard({client,isAdmin}){
-  const [selected,setSelected]=useState(null);
-  const TAG_COLORS={Mood:'#534AB7',Palette:'#C25B2A',Foto:'#0F6E56',Copy:'#C2185B',Tipo:'#185FA5',Strategy:'#6B1A2A',ToV:'#854F0B'};
-  const items = client.moodboard||[];
+  const [sel,setSel]=useState(null);
+  const items=client.moodboard||[];
   const cols=[0,1,2].map(ci=>items.filter((_,i)=>i%3===ci));
 
-  if(items.length===0) return React.createElement('div',null,
-    React.createElement(SectionHead,{title:'Moodboard',sub:'Direzione visiva e creativa del progetto',
-      action:isAdmin&&React.createElement(Btn,{onClick:()=>alert('Aggiungi elemento'),variant:'secondary'},'+ Aggiungi elemento')
-    }),
-    React.createElement('div',{style:{textAlign:'center',padding:'3rem',color:'var(--text-muted)',fontSize:13}},
-      React.createElement('div',{style:{fontSize:32,marginBottom:8}},'🎭'),
-      'Moodboard vuota — aggiungi il primo elemento'
-    )
+  if(!items.length) return h('div',null,
+    isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
+      h('button',{className:'btn btn-outline',onClick:()=>alert('Aggiungi elemento')},'+ Aggiungi elemento')
+    ),
+    h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎭'),h('div',{className:'empty-title'},'Moodboard vuota'),h('div',{className:'empty-sub'},'Aggiungi il primo elemento'))
   );
 
-  return React.createElement('div',null,
-    React.createElement(SectionHead,{title:'Moodboard',sub:`${items.length} elementi · direzione visiva del progetto`,
-      action:isAdmin&&React.createElement(Btn,{onClick:()=>alert('Aggiungi elemento'),variant:'secondary'},'+ Aggiungi elemento')
-    }),
-    !isAdmin&&React.createElement('div',{style:{padding:'9px 13px',borderRadius:8,background:'var(--bg-warning)',border:'0.5px solid var(--border-warning)',fontSize:11,color:'var(--text-secondary)',marginBottom:'1.25rem'}},
-      '💡 Questa è la direzione creativa del tuo progetto. Puoi commentare ogni elemento.'
+  return h('div',null,
+    !isAdmin&&h('div',{style:{padding:'10px 14px',borderRadius:'var(--r)',background:'#fffbeb',border:'0.5px solid #fde68a',fontSize:12,color:'#92400e',marginBottom:16}},
+      '💡 Questa è la direzione creativa del tuo progetto. Clicca su un elemento per lasciare un commento.'
     ),
-    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,alignItems:'start'}},
-      cols.map((col,ci)=>React.createElement('div',{key:ci,style:{display:'flex',flexDirection:'column',gap:12}},
+    isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
+      h('button',{className:'btn btn-outline',onClick:()=>alert('Aggiungi elemento')},'+ Aggiungi elemento')
+    ),
+    h('div',{className:'moodboard-grid'},
+      cols.map((col,ci)=>h('div',{key:ci,className:'mood-col'},
         col.map(item=>{
-          const tagColor=TAG_COLORS[item.tag]||'var(--text-muted)';
-          const isSel=selected===item.id;
-          return React.createElement('div',{key:item.id,onClick:()=>setSelected(isSel?null:item.id),
-            style:{borderRadius:10,overflow:'hidden',border:`${isSel?'2px':'0.5px'} solid ${isSel?tagColor:'var(--border)'}`,cursor:'pointer'}
+          const tc=TAG_COLORS[item.tag]||'var(--text-3)';
+          const isSel=sel===item.id;
+          return h('div',{key:item.id,className:'mood-item'+(isSel?' selected':''),
+            style:{borderColor:isSel?tc:'var(--border)'},
+            onClick:()=>setSel(isSel?null:item.id)
           },
-            React.createElement('div',{style:{background:item.color,aspectRatio:'1 / '+(item.height||1),display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}},
-              item.tipo==='text'&&React.createElement('p',{style:{margin:0,fontSize:12,color:contrast(item.color),lineHeight:1.5,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
-              item.tipo==='color'&&React.createElement('div',{style:{textAlign:'center',fontSize:13,fontWeight:500,color:contrast(item.color)}},item.titolo),
-              item.tipo==='image'&&React.createElement('div',{style:{textAlign:'center',opacity:0.7}},
-                React.createElement('div',{style:{fontSize:24,marginBottom:4}},'🖼'),
-                React.createElement('div',{style:{fontSize:10,color:contrast(item.color)}},'Immagine')
-              )
+            h('div',{className:'mood-visual',style:{background:item.color,aspectRatio:'1/'+(item.height||1)}},
+              item.tipo==='text'&&h('p',{style:{margin:0,fontSize:12,color:contrast(item.color),lineHeight:1.5,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
+              item.tipo==='color'&&h('div',{style:{fontSize:13,fontWeight:600,color:contrast(item.color),textAlign:'center'}},item.titolo),
+              item.tipo==='image'&&h('div',{style:{textAlign:'center',opacity:.65}},h('div',{style:{fontSize:24,marginBottom:4}},'🖼'),h('div',{style:{fontSize:10,color:contrast(item.color)}},'Immagine'))
             ),
-            React.createElement('div',{style:{padding:'9px 11px',background:'var(--surface-2)'}},
-              React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}},
-                React.createElement('p',{style:{margin:0,fontSize:11,fontWeight:500,color:'var(--text-primary)'}},item.titolo),
-                React.createElement('span',{style:{fontSize:9,fontWeight:500,padding:'1px 6px',borderRadius:3,background:tagColor+'18',color:tagColor}},item.tag)
+            h('div',{className:'mood-info'},
+              h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}},
+                h('div',{className:'mood-title'},item.titolo),
+                h('span',{className:'mood-tag',style:{background:tc+'18',color:tc}},item.tag)
               ),
-              item.tipo!=='text'&&React.createElement('p',{style:{margin:0,fontSize:10,color:'var(--text-muted)',lineHeight:1.4}},item.note),
-              isSel&&!isAdmin&&React.createElement('div',{style:{marginTop:8}},
-                React.createElement('textarea',{rows:2,placeholder:'Lascia un commento...',style:{width:'100%',padding:'6px 8px',fontSize:11,borderRadius:6,border:'0.5px solid var(--border-strong)',background:'var(--surface-1)',color:'var(--text-primary)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}),
-                React.createElement(Btn,{style:{marginTop:4,fontSize:10,padding:'4px 12px'}},'Invia commento')
+              item.tipo!=='text'&&h('div',{className:'mood-note'},item.note),
+              isSel&&!isAdmin&&h('div',{style:{marginTop:8}},
+                h('textarea',{rows:2,placeholder:'Lascia un commento...',style:{width:'100%',padding:'6px 8px',fontSize:11,borderRadius:6,border:'0.5px solid var(--border)',background:'var(--bg)',color:'var(--text)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}),
+                h('button',{className:'btn btn-primary',style:{marginTop:4,fontSize:11,padding:'4px 12px'}},'Invia commento')
               ),
-              isSel&&isAdmin&&React.createElement('div',{style:{marginTop:8,display:'flex',gap:6}},
-                React.createElement('button',{style:{fontSize:10,padding:'3px 9px',borderRadius:4,border:'0.5px solid var(--border-strong)',background:'transparent',color:'var(--text-secondary)',cursor:'pointer'}},'✏ Modifica'),
-                React.createElement('button',{style:{fontSize:10,padding:'3px 9px',borderRadius:4,border:`0.5px solid ${M}`,background:'transparent',color:M,cursor:'pointer'}},'✕ Rimuovi')
+              isSel&&isAdmin&&h('div',{style:{marginTop:8,display:'flex',gap:6}},
+                h('button',{className:'btn btn-ghost',style:{fontSize:11}},'✏ Modifica'),
+                h('button',{className:'btn btn-outline',style:{fontSize:11}},'✕ Rimuovi')
               )
             )
           );
@@ -311,131 +454,104 @@ function Moodboard({client,isAdmin}){
 // ── Admin Portal View ──
 function AdminPortaleView({client,onUpdateStatus}){
   const [tab,setTab]=useState('assets');
-  const pc=client.brand?.colors[0]?.hex||G;
+  const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
   const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Approvazioni',n:pending},{id:'moodboard',lbl:'Moodboard'}];
 
-  return React.createElement('div',null,
-    React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'1.25rem',flexWrap:'wrap',gap:10}},
-      React.createElement('div',null,
-        React.createElement('h2',{style:{margin:'0 0 3px',fontSize:17,fontWeight:500,color:'var(--text-primary)'}},'Portale cliente'),
-        React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},'Vista admin · '+client.name)
-      ),
-      React.createElement('div',{style:{display:'flex',gap:8,alignItems:'center'}},
-        React.createElement('div',{style:{padding:'5px 12px',borderRadius:6,background:'var(--surface-1)',border:'0.5px solid var(--border)',fontSize:11,color:'var(--text-muted)',fontFamily:'monospace'}},
-          'nassastudio.it/portal/'+client.slug
-        ),
-        React.createElement(Btn,{onClick:()=>{try{navigator.clipboard.writeText('https://nassa-ped-yp63.vercel.app/portal/'+client.slug);}catch(e){}}},'Copia link')
-      )
-    ),
+  const copyLink=()=>{
+    try{navigator.clipboard.writeText('https://nassa-ped-yp63.vercel.app/portal/'+client.slug);}catch(e){}
+  };
+
+  return h('div',null,
     // Stats
-    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:'1.25rem'}},
+    h('div',{className:'stats-strip'},
       [
-        ['Asset caricati',((client.brand?.logos?.length||0)+(client.brand?.templates?.length||0)+(client.brand?.colors?.length||0))+''],
-        ['In approvazione',pending+''],
-        ['Elementi moodboard',(client.moodboard?.length||0)+''],
-      ].map(([l,v])=>React.createElement('div',{key:l,style:{background:'var(--surface-1)',borderRadius:8,padding:'0.75rem'}},
-        React.createElement('p',{style:{margin:'0 0 2px',fontSize:20,fontWeight:500,color:'var(--text-primary)'}},v),
-        React.createElement('p',{style:{margin:0,fontSize:10,color:'var(--text-muted)'}},l)
-      ))
+        ['Asset',((client.brand?.logos?.length||0)+(client.brand?.templates?.length||0)+(client.brand?.colors?.length||0))],
+        ['In approvazione',pending],
+        ['Moodboard',client.moodboard?.length||0],
+      ].map(([l,v])=>h('div',{key:l,className:'stat-card'},h('div',{className:'stat-val'},v+''),h('div',{className:'stat-lbl'},l)))
+    ),
+    // Link row
+    h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:20}},
+      h('div',{className:'link-box'},'nassa-ped-yp63.vercel.app/portal/'+client.slug),
+      h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:copyLink},ICONS.copy,' Copia'),
+      h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:()=>window.open('/portal/'+client.slug,'_blank')},ICONS.ext,' Apri')
     ),
     // Tabs
-    React.createElement('div',{style:{display:'flex',gap:2,borderBottom:'0.5px solid var(--border)',marginBottom:'1.25rem'}},
-      TABS.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),style:{padding:'6px 14px',border:'none',cursor:'pointer',fontSize:12,background:'transparent',
-        color:tab===t.id?'var(--text-primary)':'var(--text-secondary)',fontWeight:tab===t.id?500:400,
-        borderBottom:tab===t.id?`2px solid ${G}`:'2px solid transparent',marginBottom:'-0.5px'}},
+    h('div',{className:'tab-bar'},
+      TABS.map(t=>h('button',{key:t.id,className:'tab-btn'+(tab===t.id?' active':''),onClick:()=>setTab(t.id)},
         t.lbl,
-        t.n>0&&React.createElement('span',{style:{marginLeft:5,fontSize:10,background:M+'20',color:M,padding:'0 5px',borderRadius:8}},t.n)
+        t.n>0&&h('span',{className:'tab-badge'},t.n)
       ))
     ),
-    tab==='assets'&&React.createElement(BrandAssets,{client,isAdmin:true}),
-    tab==='approvals'&&React.createElement(Approvals,{client,isAdmin:true,onUpdateStatus}),
-    tab==='moodboard'&&React.createElement(Moodboard,{client,isAdmin:true})
+    tab==='assets'&&h(BrandAssets,{client,isAdmin:true}),
+    tab==='approvals'&&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
+    tab==='moodboard'&&h(Moodboard,{client,isAdmin:true})
   );
 }
 
-// ── Client Portal View (pubblica) ──
+// ── Client Portal (public) ──
 function PortaleCliente({client,onUpdateStatus}){
   const [tab,setTab]=useState('assets');
-  const pc=client.brand?.colors[0]?.hex||G;
+  const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
-  const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Contenuti',n:pending},{id:'moodboard',lbl:'Moodboard',n:client.moodboard?.length}];
+  const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Contenuti',n:pending},{id:'moodboard',lbl:'Moodboard'}];
 
-  return React.createElement('div',{style:{minHeight:'100vh',background:'var(--surface-0)'}},
-    React.createElement('div',{style:{background:'var(--surface-2)',borderBottom:'0.5px solid var(--border)',padding:'0 1.5rem'}},
-      React.createElement('div',{style:{maxWidth:860,margin:'0 auto',padding:'1.25rem 0'}},
-        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:'1rem'}},
-          React.createElement('div',{style:{width:42,height:42,borderRadius:10,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
-            React.createElement('span',{style:{color:contrast(pc),fontSize:18,fontWeight:700}},client.name?.charAt(0)||'N')
-          ),
-          React.createElement('div',null,
-            React.createElement('h1',{style:{margin:'0 0 2px',fontSize:17,fontWeight:500,color:'var(--text-primary)'}},client.name),
-            React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},
-              client.claim?' "'+client.claim+'" · ':'',' Gestito da Nassa Studio'
-            )
-          ),
-          client.manager&&React.createElement('div',{style:{marginLeft:'auto',textAlign:'right'}},
-            React.createElement('div',{style:{fontSize:10,color:'var(--text-muted)',marginBottom:2}},'Il tuo manager'),
-            React.createElement('div',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)'}},client.manager)
-          )
+  return h('div',{style:{minHeight:'100vh',background:'var(--bg)'}},
+    h('div',{className:'topbar'},
+      h('a',{href:'/',style:{display:'flex',alignItems:'center',justifyContent:'center',width:'var(--sidebar)',borderRight:'var(--bw) solid var(--border)',textDecoration:'none',flexShrink:0}},
+        h('div',{className:'brand-mark'},'N')
+      ),
+      h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'0 20px',borderRight:'var(--bw) solid var(--border)',flex:1}},
+        h('div',{className:'portal-logo',style:{background:pc,width:32,height:32,minWidth:32}},
+          h('span',{style:{color:contrast(pc),fontSize:13,fontWeight:800}},client.name?.charAt(0)||'N')
         ),
-        React.createElement('div',{style:{display:'flex',gap:2}},
-          TABS.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),style:{padding:'6px 14px',borderRadius:'6px 6px 0 0',border:'none',cursor:'pointer',fontSize:12,
-            background:tab===t.id?'var(--surface-0)':'transparent',
-            color:tab===t.id?'var(--text-primary)':'var(--text-secondary)',
-            fontWeight:tab===t.id?500:400,
-            borderBottom:tab===t.id?'none':'0.5px solid var(--border)'}},
-            t.lbl,
-            t.n>0&&React.createElement('span',{style:{marginLeft:5,fontSize:10,background:M+'20',color:M,padding:'0 5px',borderRadius:8}},t.n)
-          ))
+        h('div',null,
+          h('div',{style:{fontSize:13,fontWeight:700,color:'var(--text)',letterSpacing:'var(--ls-tight)'}},client.name),
+          h('div',{style:{fontSize:11,color:'var(--text-3)'}},client.claim?'"'+client.claim+'"':'Portale cliente')
+        ),
+        client.manager&&h('div',{style:{marginLeft:'auto',textAlign:'right'}},
+          h('div',{style:{fontSize:10,color:'var(--text-3)'}},'Manager'),
+          h('div',{style:{fontSize:12,fontWeight:600,color:'var(--text)'}},client.manager)
         )
+      ),
+      h('div',{className:'topbar-right'},
+        h('button',{className:'topbar-btn',onClick:toggleTheme},'🌙')
       )
     ),
-    React.createElement('div',{style:{maxWidth:860,margin:'0 auto',padding:'1.5rem'}},
-      tab==='assets'&&React.createElement(BrandAssets,{client,isAdmin:false}),
-      tab==='approvals'&&React.createElement(Approvals,{client,isAdmin:false,onUpdateStatus}),
-      tab==='moodboard'&&React.createElement(Moodboard,{client,isAdmin:false})
+    h('div',{style:{borderBottom:'var(--bw) solid var(--border)',background:'var(--surface)',padding:'0 20px',display:'flex',gap:2}},
+      TABS.map(t=>h('button',{key:t.id,className:'tab-btn'+(tab===t.id?' active':''),onClick:()=>setTab(t.id)},
+        t.lbl,t.n>0&&h('span',{className:'tab-badge'},t.n)
+      ))
+    ),
+    h('div',{style:{maxWidth:860,margin:'0 auto',padding:24}},
+      tab==='assets'&&h(BrandAssets,{client,isAdmin:false}),
+      tab==='approvals'&&h(Approvals,{client,isAdmin:false,onUpdateStatus}),
+      tab==='moodboard'&&h(Moodboard,{client,isAdmin:false})
     )
   );
 }
 
-// ── Admin List ──
-function AdminList({clients,onSelect,onSimulate}){
-  return React.createElement('div',{style:{padding:'1.5rem',maxWidth:800,margin:'0 auto'}},
-    React.createElement('div',{style:{marginBottom:'1.25rem'}},
-      React.createElement('h1',{style:{margin:'0 0 3px',fontSize:18,fontWeight:500,color:'var(--text-primary)'}},'Portali clienti'),
-      React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},'Gestisci brand assets, approvazioni e moodboard per ogni cliente')
-    ),
-    clients.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'3rem',color:'var(--text-muted)',fontSize:13}},
-      React.createElement('div',{style:{fontSize:32,marginBottom:8}},'👥'),
-      'Nessun cliente trovato — aggiungili prima in NassaPED'
-    ),
-    React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
-      clients.map(c=>{
-        const pc=c.brand?.colors[0]?.hex||c.color||G;
-        const pending=(c.approvals||[]).filter(a=>a.stato==='pending').length;
-        return React.createElement('div',{key:c.id,
-          style:{background:'var(--surface-2)',border:'0.5px solid var(--border)',borderRadius:12,padding:'1rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,cursor:'pointer'},
-          onClick:()=>onSelect(c)
-        },
-          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12}},
-            React.createElement('div',{style:{width:40,height:40,borderRadius:8,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
-              React.createElement('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},c.name?.charAt(0)||'N')
-            ),
-            React.createElement('div',null,
-              React.createElement('p',{style:{margin:'0 0 4px',fontSize:14,fontWeight:500,color:'var(--text-primary)'}},c.name),
-              React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center'}},
-                React.createElement('span',{style:{fontSize:10,color:'var(--text-muted)'}},'nassastudio.it/portal/'+c.slug),
-                pending>0&&React.createElement(Pill,{color:M},pending+' in attesa')
-              )
-            )
-          ),
-          React.createElement('div',{style:{display:'flex',gap:8}},
-            React.createElement(Btn,{onClick:e=>{e.stopPropagation();onSimulate(c);},variant:'secondary'},'Simula cliente'),
-            React.createElement(Btn,{onClick:e=>{e.stopPropagation();onSelect(c);}},'Gestisci portale')
-          )
-        );
-      })
+// ── Sidebar component ──
+function Sidebar({expanded,onToggle,currentTab,onTab}){
+  const NAV=[
+    {id:'list',  label:'Clienti',     icon:ICONS.grid,    group:null},
+    {id:'assets',label:'Brand Assets',icon:ICONS.palette, group:'CLIENTE'},
+    {id:'approvals',label:'Approvazioni',icon:ICONS.check,group:null},
+    {id:'moodboard',label:'Moodboard',  icon:ICONS.board, group:null},
+  ];
+  return h('div',{className:'sidebar'+(expanded?' sb-expanded':'')},
+    h('div',{className:'sb-main-nav'},
+      h('div',{className:'sb-nav-section'},
+        NAV.slice(0,1).map(n=>h('div',{key:n.id,className:'sb-nav-item'+(currentTab===n.id?' active':''),onClick:()=>onTab(n.id)},n.icon,h('span',{className:'sb-nav-label'},n.label)))
+      ),
+      h('div',{className:'sb-nav-sep'}),
+      h('div',{className:'sb-nav-section'},
+        h('div',{className:'sb-group-lbl'},'CLIENTE'),
+        NAV.slice(1).map(n=>h('div',{key:n.id,className:'sb-nav-item'+(currentTab===n.id?' active':''),onClick:()=>onTab(n.id)},n.icon,h('span',{className:'sb-nav-label'},n.label)))
+      ),
+      h('div',{className:'sb-spacer'}),
+      h('button',{className:'sb-toggle-btn',onClick:onToggle},expanded?ICONS.chevL:ICONS.chevR)
     )
   );
 }
@@ -446,79 +562,124 @@ function NassaBrand(){
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState(null);
   const [selected,setSelected]=useState(null);
-  const [view,setView]=useState('list'); // list | admin | client
+  const [view,setView]=useState('list');
+  const [tab,setTab]=useState('assets');
+  const [sidebarExp,setSidebarExp]=useState(false);
 
-  const isPublic = isPortalView();
-  const publicSlug = getPortalSlug();
+  const pub=isPortal();
+  const slug=portalSlug();
 
   useEffect(()=>{
-    if(isPublic){
-      loadPublicClient(publicSlug)
-        .then(d=>{setSelected(d.client);setView('client');setLoading(false);})
-        .catch(e=>{setError('Cliente non trovato');setLoading(false);});
+    if(pub){
+      api('/api/brand?public=1&slug='+slug)
+        .then(d=>{setSelected(d.client);setLoading(false);})
+        .catch(()=>{setError('Cliente non trovato');setLoading(false);});
     } else {
-      loadClients()
+      api('/api/brand')
         .then(d=>{setClients(d.clients||[]);setLoading(false);})
-        .catch(e=>{setError('Errore caricamento clienti');setLoading(false);});
+        .catch(()=>{setError('Errore caricamento');setLoading(false);});
     }
   },[]);
 
-  const updateStatus = useCallback(async (clientId,approvalId,newStatus)=>{
+  const updateStatus=useCallback(async(clientId,aId,st)=>{
     setClients(prev=>prev.map(c=>{
-      if(c.id!==clientId) return c;
-      const approvals = c.approvals.map(a=>a.id===approvalId?{...a,stato:newStatus}:a);
-      saveField(clientId,'approvals',approvals).catch(console.error);
+      if(c.id!==clientId)return c;
+      const approvals=c.approvals.map(a=>a.id===aId?{...a,stato:st}:a);
+      api('/api/brand',{method:'POST',body:JSON.stringify({clientId,field:'approvals',data:approvals})}).catch(console.error);
       return {...c,approvals};
     }));
-    if(selected?.id===clientId){
-      setSelected(prev=>({...prev,approvals:prev.approvals.map(a=>a.id===approvalId?{...a,stato:newStatus}:a)}));
-    }
+    if(selected?.id===clientId)setSelected(p=>({...p,approvals:p.approvals.map(a=>a.id===aId?{...a,stato:st}:a)}));
   },[selected]);
 
-  if(loading) return React.createElement('div',{className:'loading'},'Caricamento...');
-  if(error) return React.createElement('div',{className:'loading'},error);
+  const selectClient=(c,v='assets')=>{setSelected(c);setView('portal');setTab(v);setSidebarExp(true);};
 
-  // Public client view — no topbar
-  if(isPublic && selected){
-    return React.createElement(PortaleCliente,{client:selected,
-      onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)
-    });
-  }
+  if(loading)return h('div',{className:'app'},h('div',{className:'loading'},'Caricamento NassaBrand…'));
+  if(error)return h('div',{className:'app'},h('div',{className:'loading'},error));
+  if(pub&&selected)return h(PortaleCliente,{client:selected,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)});
 
-  return React.createElement('div',null,
+  const pending=c=>((c.approvals||[]).filter(a=>a.stato==='pending').length);
+
+  return h('div',{className:'app'},
     // Topbar
-    React.createElement('div',{className:'topbar'},
-      React.createElement('a',{href:'/',style:{display:'flex',alignItems:'center',gap:8,textDecoration:'none',color:'inherit'}},
-        React.createElement('div',{className:'brand-mark'},'N'),
-        React.createElement('span',{className:'brand-name'},'Nassa Studio')
+    h('div',{className:'topbar'},
+      h('div',{className:'topbar-brand'+(sidebarExp?' expanded':''),onClick:()=>setSidebarExp(p=>!p)},
+        h('div',{className:'brand-mark'},'N'),
+        h('span',{className:'brand-name'},'Nassa Studio')
       ),
-      React.createElement('span',{className:'brand-sep'},'NassaBrand'),
-      view!=='list'&&React.createElement('button',{className:'btn-back',onClick:()=>{setView('list');setSelected(null);},'style':{marginLeft:8}},'← Tutti i clienti'),
-      view==='admin'&&selected&&React.createElement('button',{onClick:()=>setView('client'),style:{marginLeft:8,padding:'4px 11px',borderRadius:5,border:`1px solid ${M}`,background:'transparent',color:M,fontSize:11,cursor:'pointer',fontWeight:500}},'👤 Simula cliente →'),
-      React.createElement('div',{className:'topbar-spacer'}),
-      React.createElement('button',{className:'theme-btn',onClick:toggleTheme},'🌙')
+      // Client in topbar when selected
+      selected&&view==='portal'?
+        h('div',{className:'topbar-client'},
+          h('div',{className:'client-avatar',style:{background:selected.brand?.colors[0]?.hex||selected.color||'#1A8C3F'}},
+            h('span',{style:{color:contrast(selected.brand?.colors[0]?.hex||selected.color||'#1A8C3F'),fontSize:12,fontWeight:800}},selected.name?.charAt(0)||'N')
+          ),
+          h('div',null,
+            h('div',{className:'client-name'},selected.name),
+            h('div',{className:'client-sub'},pending(selected)>0?pending(selected)+' in attesa':'Portale attivo')
+          )
+        )
+      :h('div',{className:'topbar-nav'},
+        h('div',{className:'nav-tab active'},'NassaBrand')
+      ),
+      h('div',{className:'topbar-right'},
+        selected&&view==='portal'&&h('button',{className:'btn btn-outline',style:{fontSize:11},onClick:()=>window.open('/portal/'+selected.slug,'_blank')},'👤 Vista cliente'),
+        selected&&view==='portal'&&h('button',{className:'back-btn',onClick:()=>{setView('list');setSelected(null);setSidebarExp(false);}},ICONS.chevL,' Tutti i clienti'),
+        h('button',{className:'topbar-btn',onClick:toggleTheme},'🌙')
+      )
     ),
-    view==='list'&&React.createElement(AdminList,{clients,
-      onSelect:c=>{setSelected(c);setView('admin');},
-      onSimulate:c=>{setSelected(c);setView('client');}
-    }),
-    view==='admin'&&selected&&React.createElement('div',{style:{padding:'1.5rem',maxWidth:900,margin:'0 auto'}},
-      React.createElement(AdminPortaleView,{client:selected,
-        onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)
-      })
-    ),
-    view==='client'&&selected&&React.createElement(PortaleCliente,{client:selected,
-      onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)
-    })
+    // Body
+    h('div',{className:'body'},
+      // Sidebar — only when client selected
+      view==='portal'&&h(Sidebar,{expanded:sidebarExp,onToggle:()=>setSidebarExp(p=>!p),currentTab:tab,onTab:v=>{if(v==='list'){setView('list');setSelected(null);setSidebarExp(false);}else setTab(v);}}),
+      // Main
+      h('div',{className:'main'},
+        view==='list'&&h('div',{className:'main-scroll'},
+          h('div',{style:{maxWidth:800,margin:'0 auto'}},
+            h('div',{className:'content-header',style:{padding:'0 0 20px'}},
+              h('div',null,
+                h('div',{className:'content-title'},'Portali clienti'),
+                h('div',{className:'content-sub'},clients.length+' clienti attivi')
+              )
+            ),
+            h('div',{className:'client-list'},
+              clients.length===0&&h('div',{className:'empty'},h('div',{className:'empty-icon'},'👥'),h('div',{className:'empty-title'},'Nessun cliente'),h('div',{className:'empty-sub'},'Aggiungili prima in NassaPED')),
+              clients.map(c=>{
+                const pc=c.brand?.colors[0]?.hex||c.color||'#1A8C3F';
+                const p=pending(c);
+                return h('div',{key:c.id,className:'client-row',onClick:()=>selectClient(c)},
+                  h('div',{className:'client-row-avatar',style:{background:pc}},
+                    h('span',{style:{color:contrast(pc),fontSize:18,fontWeight:800}},c.name?.charAt(0)||'N')
+                  ),
+                  h('div',{style:{flex:1}},
+                    h('div',{className:'client-row-name'},c.name),
+                    h('div',{className:'client-row-slug'},'nassastudio.it/portal/'+c.slug),
+                    p>0&&h('span',{className:'badge badge-pending',style:{marginTop:4,display:'inline-block'}},p+' in attesa')
+                  ),
+                  h('div',{className:'client-row-actions'},
+                    h('button',{className:'btn btn-outline',onClick:e=>{e.stopPropagation();window.open('/portal/'+c.slug,'_blank')}},'👤 Simula'),
+                    h('button',{className:'btn btn-primary',onClick:e=>{e.stopPropagation();selectClient(c);}},'Gestisci portale')
+                  )
+                );
+              })
+            )
+          )
+        ),
+        view==='portal'&&selected&&h('div',{className:'main-scroll'},
+          h('div',{style:{maxWidth:900,margin:'0 auto'}},
+            h('div',{className:'content-header',style:{padding:'0 0 20px'}},
+              h('div',null,
+                h('div',{className:'content-title'},selected.name),
+                h('div',{className:'content-sub'},tab==='assets'?'Brand Assets':tab==='approvals'?'Approvazioni':tab==='moodboard'?'Moodboard':'')
+              )
+            ),
+            h(AdminPortaleView,{client:selected,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)})
+          )
+        )
+      )
+    )
   );
 }
 
-function toggleTheme(){
-  const h=document.documentElement;
-  h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(NassaBrand));
+ReactDOM.createRoot(document.getElementById('root')).render(h(NassaBrand));
 </script>
 </body>
 </html>
