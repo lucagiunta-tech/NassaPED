@@ -439,7 +439,14 @@ const DROPBOX = {
     // Cache token for 50 min (Dropbox tokens last 4h, refresh before they expire)
     if(!force && DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3000000) return DROPBOX._token;
     const url = force ? '/api/dropbox-token?force=1' : '/api/dropbox-token';
-    const res = await fetch(url, { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
+    let res;
+    try {
+      res = await fetch(url, { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
+    } catch(netErr) {
+      // Network error (Failed to fetch) — wait 1s and retry once
+      await new Promise(r=>setTimeout(r,1000));
+      res = await fetch(url, { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
+    }
     if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
     const d = await res.json();
     DROPBOX._token = d.token;
