@@ -1217,6 +1217,7 @@ tbody tr:hover .tr-actions{opacity:1;}
 .modal-bg.open{display:flex;}
 #confirm-modal{z-index:900;}
 .modal{background:var(--surface);border-radius:var(--r);border:var(--bw) solid var(--border);box-shadow:var(--shadow-xl);padding:16px;width:min(440px,96vw);max-width:100%;max-height:88vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+.modal-box{background:var(--surface);border-radius:var(--r);border:var(--bw) solid var(--border);box-shadow:var(--shadow-xl);display:flex;flex-direction:column;overflow:hidden;max-height:88vh;}
 .modal.wide{width:min(520px,96vw);}
 .modal-top{display:flex;align-items:center;justify-content:space-between;}
 .modal-top h3{font-size:var(--fs-base);font-weight:600;}
