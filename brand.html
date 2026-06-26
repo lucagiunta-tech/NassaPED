@@ -294,8 +294,8 @@ function BrandAssets({client,isAdmin}){
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}},
         b.fonts.map((f,i)=>h('div',{key:i,className:'card',style:{padding:16}},
           h('div',{style:{fontFamily:f.name+',serif',fontSize:24,fontWeight:f.weight,color:'var(--text)',marginBottom:4}},'Aa Bb'),
-          h('div',{style:{fontSize:12,fontWeight:500,color:'var(--text)'}}},f.name),
-          h('div',{style:{fontSize:11,color:'var(--text-3)'}}},f.role+' · w'+f.weight)
+          h('div',{style:{fontSize:12,fontWeight:500,color:'var(--text)'}},f.name),
+          h('div',{style:{fontSize:11,color:'var(--text-3)'}},f.role+' · w'+f.weight)
         ))
       )
     ),
@@ -328,8 +328,8 @@ function BrandAssets({client,isAdmin}){
         b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',background:'var(--bg)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
           h('div',{style:{width:36,height:36,borderRadius:6,background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}},'📐'),
           h('div',{style:{flex:1}},
-            h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)'}}},t.name),
-            h('div',{style:{fontSize:11,color:'var(--text-3)'}}},t.format+(t.note?' · '+t.note:''))
+            h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)'}},t.name),
+            h('div',{style:{fontSize:11,color:'var(--text-3)'}},t.format+(t.note?' · '+t.note:''))
           ),
           h('button',{className:'btn btn-primary',style:{fontSize:11}},'↓ Scarica')
         ))
