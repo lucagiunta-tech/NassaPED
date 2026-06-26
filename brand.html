@@ -75,8 +75,8 @@ textarea,input{font-family:var(--font);}
 .sidebar.sb-expanded .sb-nav-item{width:auto;height:auto;padding:10px 14px;margin:1px 6px;justify-content:flex-start;gap:12px;}
 .sb-nav-item:hover{background:var(--green-lt);color:var(--text);}
 .sb-nav-item.active{background:var(--green);color:var(--green-text);}
-.sidebar.sb-expanded .sb-nav-item.active{background:var(--green-lt);color:var(--text);}
-.sidebar.sb-expanded .sb-nav-item.active .sb-nav-label{font-weight:700;color:var(--green-text);}
+.sidebar.sb-expanded .sb-nav-item.active{background:var(--green);color:var(--green-text);}
+.sidebar.sb-expanded .sb-nav-item.active .sb-nav-label{font-weight:700;}
 .sb-nav-item svg{width:20px;height:20px;flex-shrink:0;}
 .sb-nav-label{font-size:var(--fs-base);font-weight:400;white-space:nowrap;overflow:hidden;display:none;}
 .sidebar.sb-expanded .sb-nav-label{display:block;}
@@ -451,12 +451,10 @@ function Moodboard({client,isAdmin}){
   );
 }
 
-// ── Admin Portal View ──
-function AdminPortaleView({client,onUpdateStatus}){
-  const [tab,setTab]=useState('assets');
+// ── Admin Portal View ── (tab controlled externally by sidebar)
+function AdminPortaleView({client,onUpdateStatus,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
-  const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Approvazioni',n:pending},{id:'moodboard',lbl:'Moodboard'}];
 
   const copyLink=()=>{
     try{navigator.clipboard.writeText('https://nassa-ped-yp63.vercel.app/portal/'+client.slug);}catch(e){}
@@ -472,17 +470,10 @@ function AdminPortaleView({client,onUpdateStatus}){
       ].map(([l,v])=>h('div',{key:l,className:'stat-card'},h('div',{className:'stat-val'},v+''),h('div',{className:'stat-lbl'},l)))
     ),
     // Link row
-    h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:20}},
+    h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:24}},
       h('div',{className:'link-box'},'nassa-ped-yp63.vercel.app/portal/'+client.slug),
       h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:copyLink},ICONS.copy,' Copia'),
       h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:()=>window.open('/portal/'+client.slug,'_blank')},ICONS.ext,' Apri')
-    ),
-    // Tabs
-    h('div',{className:'tab-bar'},
-      TABS.map(t=>h('button',{key:t.id,className:'tab-btn'+(tab===t.id?' active':''),onClick:()=>setTab(t.id)},
-        t.lbl,
-        t.n>0&&h('span',{className:'tab-badge'},t.n)
-      ))
     ),
     tab==='assets'&&h(BrandAssets,{client,isAdmin:true}),
     tab==='approvals'&&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
@@ -534,24 +525,32 @@ function PortaleCliente({client,onUpdateStatus}){
 
 // ── Sidebar component ──
 function Sidebar({expanded,onToggle,currentTab,onTab}){
-  const NAV=[
-    {id:'list',  label:'Clienti',     icon:ICONS.grid,    group:null},
-    {id:'assets',label:'Brand Assets',icon:ICONS.palette, group:'CLIENTE'},
-    {id:'approvals',label:'Approvazioni',icon:ICONS.check,group:null},
-    {id:'moodboard',label:'Moodboard',  icon:ICONS.board, group:null},
+  const NAV_TOP=[{id:'list',label:'Tutti i clienti',icon:ICONS.grid}];
+  const NAV_CLIENT=[
+    {id:'assets',    label:'Brand Assets', icon:ICONS.palette},
+    {id:'approvals', label:'Approvazioni', icon:ICONS.check},
+    {id:'moodboard', label:'Moodboard',    icon:ICONS.board},
   ];
+  const navItem=(n)=>h('div',{key:n.id,
+    className:'sb-nav-item'+(currentTab===n.id?' active':''),
+    onClick:()=>onTab(n.id),
+    title:n.label
+  },n.icon,h('span',{className:'sb-nav-label'},n.label));
+
   return h('div',{className:'sidebar'+(expanded?' sb-expanded':'')},
     h('div',{className:'sb-main-nav'},
       h('div',{className:'sb-nav-section'},
-        NAV.slice(0,1).map(n=>h('div',{key:n.id,className:'sb-nav-item'+(currentTab===n.id?' active':''),onClick:()=>onTab(n.id)},n.icon,h('span',{className:'sb-nav-label'},n.label)))
+        NAV_TOP.map(navItem)
       ),
       h('div',{className:'sb-nav-sep'}),
       h('div',{className:'sb-nav-section'},
-        h('div',{className:'sb-group-lbl'},'CLIENTE'),
-        NAV.slice(1).map(n=>h('div',{key:n.id,className:'sb-nav-item'+(currentTab===n.id?' active':''),onClick:()=>onTab(n.id)},n.icon,h('span',{className:'sb-nav-label'},n.label)))
+        h('div',{className:'sb-group-lbl'},'PORTALE CLIENTE'),
+        NAV_CLIENT.map(navItem)
       ),
       h('div',{className:'sb-spacer'}),
-      h('button',{className:'sb-toggle-btn',onClick:onToggle},expanded?ICONS.chevL:ICONS.chevR)
+      h('button',{className:'sb-toggle-btn',onClick:onToggle,title:expanded?'Chiudi menu':'Espandi menu'},
+        expanded?ICONS.chevL:ICONS.chevR
+      )
     )
   );
 }
@@ -667,11 +666,11 @@ function NassaBrand(){
           h('div',{style:{maxWidth:900,margin:'0 auto'}},
             h('div',{className:'content-header',style:{padding:'0 0 20px'}},
               h('div',null,
-                h('div',{className:'content-title'},selected.name),
-                h('div',{className:'content-sub'},tab==='assets'?'Brand Assets':tab==='approvals'?'Approvazioni':tab==='moodboard'?'Moodboard':'')
+                h('div',{className:'content-title'},tab==='assets'?'Brand Assets':tab==='approvals'?'Approvazioni':'Moodboard'),
+                h('div',{className:'content-sub'},selected.name+(tab==='approvals'&&pending(selected)>0?' · '+pending(selected)+' in attesa':''))
               )
             ),
-            h(AdminPortaleView,{client:selected,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)})
+            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)})
           )
         )
       )
