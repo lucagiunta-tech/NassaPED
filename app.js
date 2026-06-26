@@ -508,8 +508,9 @@ const DROPBOX = {
     } catch(e) {
       DROPBOX.uploading = Math.max(0, DROPBOX.uploading - 1);
       if(DROPBOX.uploading === 0) { const b=document.getElementById('dbx-upload-bar'); if(b)b.classList.remove('visible'); }
-      // [PROD] if(e.name === 'AbortError') { console.log('[DROPBOX] Upload aborted'); return null; }
-      console.error('%c[DROPBOX] Upload failed: '+e.message, 'color:#ef4444;font-weight:700');
+      if(e.name === 'AbortError') return null;
+      console.error('[DROPBOX] Upload failed:', e.message);
+      showToast('Errore upload: ' + e.message.slice(0, 120), 'warn');
       return null;
     }
   }
@@ -7264,10 +7265,22 @@ function showBootOverlay(show){
 let edTheme='light', edFmt='feed';
 
 function openChangeMediaModal(idx){
+  // Capture the stable _uid at open time — idx can change after re-renders
+  const uid = currentFeedItems()[idx]?._uid;
+
+  async function applyMedia(url, name, isVideo){
+    const arr = currentFeedItems();
+    const i = uid ? arr.findIndex(it=>it._uid===uid) : idx;
+    if(i<0){ showToast('Post non trovato','warn'); return; }
+    arr[i].url=url; arr[i].externalUrl=url; arr[i].isExternalLink=true;
+    arr[i].linkSource='dropbox'; arr[i].needsReload=false;
+    if(name) arr[i].name=name;
+    if(isVideo!==undefined) arr[i].type=isVideo?'video':'image';
+    setFeedItems(arr); refreshFeed(); autoSave(); showToast('✓ Media aggiornato');
+  }
+
   // Remove any existing change-media modal
   document.getElementById('change-media-modal')?.remove();
-
-  const bg = document.createElement('div');
   bg.id = 'change-media-modal';
   bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;';
   bg.onclick = e => { if(e.target===bg) bg.remove(); };
@@ -7315,13 +7328,7 @@ function openChangeMediaModal(idx){
     const destPath = _dbxPath(feedClientIdx, file.type.startsWith('video')?'Video':'Immagini', file.name);
     showToast('⟳ Caricamento…');
     const url = await DROPBOX.upload(file, destPath);
-    if(url){
-      const arr = currentFeedItems();
-      arr[idx].url=url; arr[idx].externalUrl=url; arr[idx].isExternalLink=true;
-      arr[idx].linkSource='dropbox'; arr[idx].needsReload=false; arr[idx].name=file.name;
-      arr[idx].type = file.type.startsWith('video')?'video':'image';
-      setFeedItems(arr); refreshFeed(); autoSave(); showToast('✓ Media aggiornato');
-    } else showToast('Errore upload','warn');
+    if(url) await applyMedia(url, file.name, file.type.startsWith('video'));
   };
 
   // Link handler
@@ -7329,11 +7336,7 @@ function openChangeMediaModal(idx){
     const url = bg.querySelector('#cm-link-input').value.trim();
     if(!url){ bg.querySelector('#cm-link-input').focus(); return; }
     bg.remove();
-    const arr = currentFeedItems();
-    const type = detectType(url);
-    arr[idx].url=url; arr[idx].externalUrl=url; arr[idx].isExternalLink=true;
-    arr[idx].linkSource='other'; arr[idx].needsReload=false; arr[idx].type=type;
-    setFeedItems(arr); refreshFeed(); autoSave(); showToast('✓ Link aggiornato');
+    applyMedia(url, null, detectType(url)==='video');
   };
   bg.querySelector('#cm-link-input').addEventListener('keydown', e=>{ if(e.key==='Enter') bg.querySelector('#cm-link-btn').click(); });
 }
