@@ -2483,6 +2483,8 @@ tbody tr:hover .tr-actions{opacity:1;}
   pointer-events:none;z-index:8;
   display:inline-flex;align-items:center;gap:4px;
 }
+/* Hide in feed grid — cell-badge handles the carousel label there */
+.feed-cell .cc-badge-preview, .cell-wrap .cc-badge-preview { display:none; }
 
 /* ══ PREVIEW — Stats bar tipologia + approvazione ══ */
 .preview-stats-bar{

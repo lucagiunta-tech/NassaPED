@@ -1526,6 +1526,12 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
   counter.textContent = `1 / ${total}`;
   if(total > 1) wrap.appendChild(counter);
 
+  // Badge "Carosello" — shown in preview; hidden in feed grid (cell-badge handles it there)
+  const badge = document.createElement('div');
+  badge.className = 'cc-badge cc-badge-preview';
+  badge.innerHTML = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/></svg>Caros. ' + total;
+  wrap.appendChild(badge);
+
   // Aggiorna controlli
   function updateControls(){
     btnPrev.style.display = state.cur > 0 ? 'flex' : 'none';
