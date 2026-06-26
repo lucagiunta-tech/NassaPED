@@ -1300,7 +1300,7 @@ function copyClientLink(i){
   const url=window.location.origin+'/client/'+slug+'-'+token+'/preview';
   navigator.clipboard?.writeText(url).then(()=>showToast('✓ Link cliente copiato')).catch(()=>prompt('Copia questo link:',url));
 }
-function addAccount(){const ci=parseInt(document.getElementById('na-client').value);if(isNaN(ci)||ci<0){showToast('Seleziona un cliente','warn');return;}const name=document.getElementById('na-name').value.trim();if(!name){document.getElementById('na-name').focus();return;}const platform=document.getElementById('na-platform').value;if((clients[ci].accounts||[]).some(a=>a.platform===platform)){showToast('Esiste già un account '+platform+' per questo cliente','warn');return;}const id='a_'+Date.now();clients[ci].accounts.push({id,name,platform});document.getElementById('na-name').value='';renderStudio();rebuildAllSelects();showToast('✓ Account aggiunto');autoSave();}
+function addAccount(){const ci=parseInt(document.getElementById('na-client').value);if(isNaN(ci)||ci<0){showToast('Seleziona un cliente','warn');return;}const name=document.getElementById('na-name').value.trim();if(!name){document.getElementById('na-name').focus();return;}const platform=document.getElementById('na-platform').value;const id='a_'+Date.now();clients[ci].accounts.push({id,name,platform});document.getElementById('na-name').value='';renderStudio();rebuildAllSelects();showToast('✓ Account aggiunto');autoSave();}
 function removeClient(i){
   showConfirm({
     title:'Elimina cliente',
@@ -7049,11 +7049,6 @@ function ecAddAccount(){
   const name=document.getElementById('ec-new-acc-name').value.trim();
   const platform=document.getElementById('ec-new-acc-platform').value;
   if(!name){document.getElementById('ec-new-acc-name').focus();return;}
-  // Block duplicate platform
-  if(ecTmpAccounts.some(a=>a.platform===platform)){
-    showToast('Esiste già un account '+platform+' per questo cliente','warn');
-    return;
-  }
   ecTmpAccounts.push({id:'a_'+Date.now(),name,platform});
   document.getElementById('ec-new-acc-name').value='';
   renderEcAccounts();
