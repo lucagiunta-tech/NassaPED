@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nassa Studio · NassaBrand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1A8C3F;--magenta:#C2185B;
+  --bg:#f5f5f7;--surface-0:#f5f5f7;--surface-1:#f0f0f2;--surface-2:#ffffff;
+  --border:#e5e7eb;--border-strong:#d1d5db;--border-accent:#3b82f6;
+  --text-primary:#1c1c1e;--text-secondary:#6b7280;--text-muted:#9ca3af;--text-accent:#1d4ed8;
+  --bg-accent:#eff6ff;--bg-warning:#fffbeb;--bg-danger:#fef2f2;--bg-success:#f0fdf4;
+  --border-warning:#fbbf24;--border-danger:#f87171;
+  --font:'Inter',-apple-system,sans-serif;
+  --r:8px;--rs:4px;
+}
+[data-theme="dark"]{
+  --bg:#0f0f10;--surface-0:#0f0f10;--surface-1:#1a1a1e;--surface-2:#222228;
+  --border:#2d2d35;--border-strong:#3d3d45;
+  --text-primary:#f0f0f2;--text-secondary:#9ca3af;--text-muted:#6b7280;
+  --bg-accent:#1e3a5f;--bg-warning:#2d2500;--bg-success:#0d2b0c;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text-primary);}
+button{font-family:var(--font);cursor:pointer;}
+textarea,input{font-family:var(--font);}
+#root{min-height:100vh;}
+
+/* Topbar */
+.topbar{height:52px;background:var(--surface-2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:100;}
+.brand-mark{width:28px;height:28px;border-radius:6px;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+.brand-name{font-size:13px;font-weight:700;color:var(--text-primary);}
+.brand-sep{font-size:11px;color:var(--text-muted);border-left:0.5px solid var(--border);padding-left:10px;margin-left:2px;}
+.topbar-spacer{flex:1;}
+.btn-back{padding:4px 10px;border-radius:5px;border:0.5px solid var(--border-strong);background:transparent;color:var(--text-secondary);font-size:11px;}
+.btn-back:hover{background:var(--surface-1);}
+.theme-btn{width:28px;height:28px;border-radius:6px;border:0.5px solid var(--border);background:transparent;font-size:14px;display:flex;align-items:center;justify-content:center;}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--text-muted);font-size:13px;gap:8px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+const {useState, useEffect, useCallback} = React;
+const API_KEY = 'NASSA_SECRET_2026';
+const G = '#1A8C3F';
+const M = '#C2185B';
+
+// ── Utils ──
+function contrast(hex){
+  if(!hex||hex.length<7)return'#fff';
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return (0.299*r+0.587*g+0.114*b)/255>0.55?'#1A1A1A':'#FFFFFF';
+}
+
+function isPortalView(){
+  return window.location.pathname.startsWith('/portal/');
+}
+function getPortalSlug(){
+  return window.location.pathname.replace('/portal/','').split('/')[0];
+}
+
+// ── API ──
+async function apiFetch(path, opts={}){
+  const headers = {'Content-Type':'application/json','x-nassa-key':API_KEY,...(opts.headers||{})};
+  const r = await fetch(path, {...opts, headers, credentials:'include'});
+  if(!r.ok) throw new Error('API '+r.status);
+  return r.json();
+}
+
+async function loadClients(){ return apiFetch('/api/brand'); }
+async function loadPublicClient(slug){ return apiFetch('/api/brand?public=1&slug='+slug); }
+async function saveField(clientId, field, data){
+  return apiFetch('/api/brand', {method:'POST', body:JSON.stringify({clientId,field,data})});
+}
+
+// ── STATUS ──
+const STATUS = {
+  pending:  {lbl:'In attesa',  color:M,       bg:'#FCE4EC', icon:'⏳'},
+  approved: {lbl:'Approvato',  color:G,       bg:'#E8F5E9', icon:'✓'},
+  revision: {lbl:'Revisione',  color:'#E65100',bg:'#FFF3E0',icon:'↩'},
+};
+
+// ── Shared UI ──
+function Pill({children, color=G, bg}){
+  return React.createElement('span',{style:{fontSize:10,fontWeight:500,padding:'2px 7px',borderRadius:4,background:bg||color+'18',color,whiteSpace:'nowrap',display:'inline-block'}},children);
+}
+function Card({children, style={}, onClick}){
+  return React.createElement('div',{onClick,style:{background:'var(--surface-2)',border:'0.5px solid var(--border)',borderRadius:12,padding:'1.25rem',...style,cursor:onClick?'pointer':undefined}},children);
+}
+function SectionHead({title,sub,action}){
+  return React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.25rem',flexWrap:'wrap',gap:8}},
+    React.createElement('div',null,
+      React.createElement('h2',{style:{margin:'0 0 3px',fontSize:17,fontWeight:500,color:'var(--text-primary)'}},title),
+      sub&&React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},sub)
+    ),
+    action
+  );
+}
+function Btn({children, onClick, style={}, variant='primary'}){
+  const base = {padding:'5px 13px',borderRadius:6,fontSize:11,fontWeight:500,cursor:'pointer',border:'none'};
+  const variants = {
+    primary:{background:G,color:'#fff'},
+    secondary:{background:'transparent',color:M,border:`1px solid ${M}`},
+    ghost:{background:'var(--surface-1)',color:'var(--text-secondary)',border:'0.5px solid var(--border-strong)'},
+  };
+  return React.createElement('button',{onClick,style:{...base,...(variants[variant]||variants.primary),...style}},children);
+}
+
+// ── Color Swatch ──
+function Swatch({c}){
+  const [cp,setCp]=useState(false);
+  return React.createElement('div',{
+    onClick:()=>{try{navigator.clipboard?.writeText(c.hex);}catch(e){}setCp(true);setTimeout(()=>setCp(false),1400);},
+    style:{borderRadius:10,overflow:'hidden',border:'1px solid var(--border)',cursor:'pointer'}
+  },
+    React.createElement('div',{style:{background:c.hex,height:52,display:'flex',alignItems:'center',justifyContent:'center'}},
+      cp&&React.createElement('span',{style:{fontSize:10,fontWeight:600,color:contrast(c.hex)}},'Copiato!')
+    ),
+    React.createElement('div',{style:{padding:'6px 9px',background:'var(--surface-2)'}},
+      React.createElement('p',{style:{margin:'0 0 1px',fontSize:11,fontWeight:500,color:'var(--text-primary)'}},c.name),
+      React.createElement('p',{style:{margin:'0 0 1px',fontSize:10,color:'var(--text-muted)',fontFamily:'monospace'}},c.hex),
+      React.createElement('p',{style:{margin:0,fontSize:9,color:'var(--text-muted)'}},c.role)
+    )
+  );
+}
+
+// ── Brand Assets ──
+function BrandAssets({client,isAdmin,onSave}){
+  const b = client.brand||{colors:[],fonts:[],logos:[],templates:[]};
+  const pc = b.colors[0]?.hex||G;
+  return React.createElement('div',null,
+    React.createElement(SectionHead,{title:'Brand Assets',sub:'Loghi, palette, font e template — sempre aggiornati',
+      action:isAdmin&&React.createElement(Btn,{onClick:()=>alert('Upload — collegare a Dropbox API')},'↑ Carica asset')
+    }),
+    // Palette
+    b.colors.length>0&&React.createElement('div',null,
+      React.createElement('p',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',margin:'0 0 8px'}},'Palette colori'),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))',gap:10,marginBottom:'1.5rem'}},
+        b.colors.map((c,i)=>React.createElement(Swatch,{key:i,c}))
+      )
+    ),
+    // Font
+    b.fonts.length>0&&React.createElement('div',null,
+      React.createElement('p',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',margin:'0 0 8px'}},'Font'),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10,marginBottom:'1.5rem'}},
+        b.fonts.map((f,i)=>React.createElement(Card,{key:i,style:{padding:'1rem'}},
+          React.createElement('p',{style:{margin:'0 0 3px',fontFamily:f.name+',serif',fontSize:22,fontWeight:f.weight,color:'var(--text-primary)'}},'Aa Bb'),
+          React.createElement('p',{style:{margin:'0 0 1px',fontSize:11,fontWeight:500,color:'var(--text-primary)'}},f.name),
+          React.createElement('p',{style:{margin:0,fontSize:10,color:'var(--text-muted)'}},f.role+' · w'+f.weight)
+        ))
+      )
+    ),
+    // Loghi
+    b.logos.length>0&&React.createElement('div',null,
+      React.createElement('p',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)',margin:'0 0 8px'}},'Loghi'),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:10,marginBottom:'1.5rem'}},
+        b.logos.map(l=>React.createElement(Card,{key:l.id,style:{padding:0,overflow:'hidden',background:l.variant==='bianco'?'#1A1A1A':'var(--surface-2)'}},
+          React.createElement('div',{style:{height:70,display:'flex',alignItems:'center',justifyContent:'center'}},
+            React.createElement('div',{style:{width:40,height:40,borderRadius:7,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
+              React.createElement('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},client.name?.charAt(0)||'N')
+            )
+          ),
+          React.createElement('div',{style:{padding:'9px 11px'}},
+            React.createElement('p',{style:{margin:'0 0 1px',fontSize:11,fontWeight:500,color:l.variant==='bianco'?'#ccc':'var(--text-primary)'}},l.name),
+            React.createElement('p',{style:{margin:'0 0 5px',fontSize:10,color:l.variant==='bianco'?'#666':'var(--text-muted)'}},l.format+' · '+l.note),
+            React.createElement('button',{style:{width:'100%',padding:'4px 0',fontSize:10,border:'0.5px solid var(--border-strong)',borderRadius:4,background:'transparent',color:'var(--text-secondary)',cursor:'pointer'}},'↓ Scarica')
+          )
+        )),
+        isAdmin&&React.createElement('div',{onClick:()=>alert('Aggiungi logo'),style:{height:155,borderRadius:12,border:'1.5px dashed var(--border-strong)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5,color:'var(--text-muted)',cursor:'pointer',fontSize:11}},
+          '+',React.createElement('span',null,'Aggiungi logo')
+        )
+      )
+    ),
+    // Empty state
+    b.colors.length===0&&b.logos.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'3rem',color:'var(--text-muted)',fontSize:13}},
+      React.createElement('div',{style:{fontSize:32,marginBottom:8}},'🎨'),
+      React.createElement('p',null,'Nessun asset ancora caricato'),
+      isAdmin&&React.createElement('p',{style:{fontSize:11,marginTop:4}},'Usa il bottone "Carica asset" per aggiungere loghi, palette e template')
+    )
+  );
+}
+
+// ── Approvals ──
+function Approvals({client,isAdmin,onUpdateStatus}){
+  const [filter,setFilter]=useState('all');
+  const approvals = client.approvals||[];
+  const list = filter==='all' ? approvals : approvals.filter(a=>a.stato===filter);
+
+  return React.createElement('div',null,
+    React.createElement(SectionHead,{title:'Contenuti da approvare',
+      sub:`${approvals.filter(a=>a.stato==='pending').length} in attesa di feedback`
+    }),
+    React.createElement('div',{style:{display:'flex',gap:6,marginBottom:'1.25rem',flexWrap:'wrap'}},
+      [['all','Tutti',approvals.length],['pending','In attesa',approvals.filter(a=>a.stato==='pending').length],['approved','Approvati',approvals.filter(a=>a.stato==='approved').length],['revision','Revisioni',approvals.filter(a=>a.stato==='revision').length]].map(([id,lbl,n])=>
+        React.createElement('button',{key:id,onClick:()=>setFilter(id),style:{padding:'4px 12px',borderRadius:6,border:`0.5px solid ${filter===id?'var(--border-accent)':'var(--border-strong)'}`,background:filter===id?'var(--bg-accent)':'transparent',color:filter===id?'var(--text-accent)':'var(--text-secondary)',fontSize:11,cursor:'pointer',fontWeight:filter===id?500:400}},
+          lbl,' ',n>0&&React.createElement('span',{style:{fontSize:10}},'('+n+')')
+        )
+      )
+    ),
+    list.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'2rem',color:'var(--text-muted)',fontSize:13}},
+      React.createElement('div',{style:{fontSize:28,marginBottom:8}},'✓'),
+      'Nessun contenuto in questa categoria'
+    ),
+    React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+      list.map(a=>{
+        const st=STATUS[a.stato]||STATUS.pending;
+        return React.createElement(Card,{key:a.id,style:{padding:0,overflow:'hidden'}},
+          React.createElement('div',{style:{display:'flex',gap:0}},
+            React.createElement('div',{style:{width:5,background:st.color,flexShrink:0}}),
+            React.createElement('div',{style:{flex:1,padding:'1rem 1.25rem'}},
+              React.createElement('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,marginBottom:8}},
+                React.createElement('div',null,
+                  React.createElement('div',{style:{display:'flex',alignItems:'center',gap:7,marginBottom:4}},
+                    React.createElement(Pill,{color:st.color,bg:st.bg},st.icon+' '+st.lbl),
+                    React.createElement(Pill,{color:'var(--text-muted)',bg:'var(--surface-1)'},a.tipo),
+                    a.formato&&React.createElement(Pill,{color:'var(--text-muted)',bg:'var(--surface-1)'},a.formato)
+                  ),
+                  React.createElement('p',{style:{margin:0,fontSize:14,fontWeight:500,color:'var(--text-primary)'}},a.titolo)
+                ),
+                a.preview&&React.createElement('div',{style:{width:44,height:44,borderRadius:8,background:a.preview,flexShrink:0}})
+              ),
+              a.note&&React.createElement('p',{style:{margin:'0 0 10px',fontSize:12,color:'var(--text-secondary)'}},a.note),
+              React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}},
+                React.createElement('span',{style:{fontSize:10,color:'var(--text-muted)'}},'📅 '+a.data),
+                a.stato==='pending'&&!isAdmin&&React.createElement(React.Fragment,null,
+                  React.createElement('button',{onClick:()=>onUpdateStatus(a.id,'approved'),style:{marginLeft:'auto',padding:'5px 14px',borderRadius:5,border:'none',background:G,color:'#fff',fontSize:11,cursor:'pointer',fontWeight:500}},'✓ Approvo'),
+                  React.createElement('button',{onClick:()=>onUpdateStatus(a.id,'revision'),style:{padding:'5px 14px',borderRadius:5,border:`1px solid ${M}`,background:'transparent',color:M,fontSize:11,cursor:'pointer',fontWeight:500}},'↩ Revisione')
+                ),
+                isAdmin&&a.stato==='revision'&&React.createElement('span',{style:{marginLeft:'auto',fontSize:11,color:'#E65100',fontWeight:500}},'⚠ Richiesta revisione'),
+                a.stato==='approved'&&React.createElement('span',{style:{marginLeft:'auto',fontSize:11,color:G,fontWeight:500}},'✓ Pronto per pubblicazione')
+              )
+            )
+          )
+        );
+      })
+    )
+  );
+}
+
+// ── Moodboard ──
+function Moodboard({client,isAdmin}){
+  const [selected,setSelected]=useState(null);
+  const TAG_COLORS={Mood:'#534AB7',Palette:'#C25B2A',Foto:'#0F6E56',Copy:'#C2185B',Tipo:'#185FA5',Strategy:'#6B1A2A',ToV:'#854F0B'};
+  const items = client.moodboard||[];
+  const cols=[0,1,2].map(ci=>items.filter((_,i)=>i%3===ci));
+
+  if(items.length===0) return React.createElement('div',null,
+    React.createElement(SectionHead,{title:'Moodboard',sub:'Direzione visiva e creativa del progetto',
+      action:isAdmin&&React.createElement(Btn,{onClick:()=>alert('Aggiungi elemento'),variant:'secondary'},'+ Aggiungi elemento')
+    }),
+    React.createElement('div',{style:{textAlign:'center',padding:'3rem',color:'var(--text-muted)',fontSize:13}},
+      React.createElement('div',{style:{fontSize:32,marginBottom:8}},'🎭'),
+      'Moodboard vuota — aggiungi il primo elemento'
+    )
+  );
+
+  return React.createElement('div',null,
+    React.createElement(SectionHead,{title:'Moodboard',sub:`${items.length} elementi · direzione visiva del progetto`,
+      action:isAdmin&&React.createElement(Btn,{onClick:()=>alert('Aggiungi elemento'),variant:'secondary'},'+ Aggiungi elemento')
+    }),
+    !isAdmin&&React.createElement('div',{style:{padding:'9px 13px',borderRadius:8,background:'var(--bg-warning)',border:'0.5px solid var(--border-warning)',fontSize:11,color:'var(--text-secondary)',marginBottom:'1.25rem'}},
+      '💡 Questa è la direzione creativa del tuo progetto. Puoi commentare ogni elemento.'
+    ),
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,alignItems:'start'}},
+      cols.map((col,ci)=>React.createElement('div',{key:ci,style:{display:'flex',flexDirection:'column',gap:12}},
+        col.map(item=>{
+          const tagColor=TAG_COLORS[item.tag]||'var(--text-muted)';
+          const isSel=selected===item.id;
+          return React.createElement('div',{key:item.id,onClick:()=>setSelected(isSel?null:item.id),
+            style:{borderRadius:10,overflow:'hidden',border:`${isSel?'2px':'0.5px'} solid ${isSel?tagColor:'var(--border)'}`,cursor:'pointer'}
+          },
+            React.createElement('div',{style:{background:item.color,aspectRatio:'1 / '+(item.height||1),display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}},
+              item.tipo==='text'&&React.createElement('p',{style:{margin:0,fontSize:12,color:contrast(item.color),lineHeight:1.5,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
+              item.tipo==='color'&&React.createElement('div',{style:{textAlign:'center',fontSize:13,fontWeight:500,color:contrast(item.color)}},item.titolo),
+              item.tipo==='image'&&React.createElement('div',{style:{textAlign:'center',opacity:0.7}},
+                React.createElement('div',{style:{fontSize:24,marginBottom:4}},'🖼'),
+                React.createElement('div',{style:{fontSize:10,color:contrast(item.color)}},'Immagine')
+              )
+            ),
+            React.createElement('div',{style:{padding:'9px 11px',background:'var(--surface-2)'}},
+              React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}},
+                React.createElement('p',{style:{margin:0,fontSize:11,fontWeight:500,color:'var(--text-primary)'}},item.titolo),
+                React.createElement('span',{style:{fontSize:9,fontWeight:500,padding:'1px 6px',borderRadius:3,background:tagColor+'18',color:tagColor}},item.tag)
+              ),
+              item.tipo!=='text'&&React.createElement('p',{style:{margin:0,fontSize:10,color:'var(--text-muted)',lineHeight:1.4}},item.note),
+              isSel&&!isAdmin&&React.createElement('div',{style:{marginTop:8}},
+                React.createElement('textarea',{rows:2,placeholder:'Lascia un commento...',style:{width:'100%',padding:'6px 8px',fontSize:11,borderRadius:6,border:'0.5px solid var(--border-strong)',background:'var(--surface-1)',color:'var(--text-primary)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}),
+                React.createElement(Btn,{style:{marginTop:4,fontSize:10,padding:'4px 12px'}},'Invia commento')
+              ),
+              isSel&&isAdmin&&React.createElement('div',{style:{marginTop:8,display:'flex',gap:6}},
+                React.createElement('button',{style:{fontSize:10,padding:'3px 9px',borderRadius:4,border:'0.5px solid var(--border-strong)',background:'transparent',color:'var(--text-secondary)',cursor:'pointer'}},'✏ Modifica'),
+                React.createElement('button',{style:{fontSize:10,padding:'3px 9px',borderRadius:4,border:`0.5px solid ${M}`,background:'transparent',color:M,cursor:'pointer'}},'✕ Rimuovi')
+              )
+            )
+          );
+        })
+      ))
+    )
+  );
+}
+
+// ── Admin Portal View ──
+function AdminPortaleView({client,onUpdateStatus}){
+  const [tab,setTab]=useState('assets');
+  const pc=client.brand?.colors[0]?.hex||G;
+  const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
+  const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Approvazioni',n:pending},{id:'moodboard',lbl:'Moodboard'}];
+
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'1.25rem',flexWrap:'wrap',gap:10}},
+      React.createElement('div',null,
+        React.createElement('h2',{style:{margin:'0 0 3px',fontSize:17,fontWeight:500,color:'var(--text-primary)'}},'Portale cliente'),
+        React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},'Vista admin · '+client.name)
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8,alignItems:'center'}},
+        React.createElement('div',{style:{padding:'5px 12px',borderRadius:6,background:'var(--surface-1)',border:'0.5px solid var(--border)',fontSize:11,color:'var(--text-muted)',fontFamily:'monospace'}},
+          'nassastudio.it/portal/'+client.slug
+        ),
+        React.createElement(Btn,{onClick:()=>{try{navigator.clipboard.writeText('https://nassa-ped-yp63.vercel.app/portal/'+client.slug);}catch(e){}}},'Copia link')
+      )
+    ),
+    // Stats
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:'1.25rem'}},
+      [
+        ['Asset caricati',((client.brand?.logos?.length||0)+(client.brand?.templates?.length||0)+(client.brand?.colors?.length||0))+''],
+        ['In approvazione',pending+''],
+        ['Elementi moodboard',(client.moodboard?.length||0)+''],
+      ].map(([l,v])=>React.createElement('div',{key:l,style:{background:'var(--surface-1)',borderRadius:8,padding:'0.75rem'}},
+        React.createElement('p',{style:{margin:'0 0 2px',fontSize:20,fontWeight:500,color:'var(--text-primary)'}},v),
+        React.createElement('p',{style:{margin:0,fontSize:10,color:'var(--text-muted)'}},l)
+      ))
+    ),
+    // Tabs
+    React.createElement('div',{style:{display:'flex',gap:2,borderBottom:'0.5px solid var(--border)',marginBottom:'1.25rem'}},
+      TABS.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),style:{padding:'6px 14px',border:'none',cursor:'pointer',fontSize:12,background:'transparent',
+        color:tab===t.id?'var(--text-primary)':'var(--text-secondary)',fontWeight:tab===t.id?500:400,
+        borderBottom:tab===t.id?`2px solid ${G}`:'2px solid transparent',marginBottom:'-0.5px'}},
+        t.lbl,
+        t.n>0&&React.createElement('span',{style:{marginLeft:5,fontSize:10,background:M+'20',color:M,padding:'0 5px',borderRadius:8}},t.n)
+      ))
+    ),
+    tab==='assets'&&React.createElement(BrandAssets,{client,isAdmin:true}),
+    tab==='approvals'&&React.createElement(Approvals,{client,isAdmin:true,onUpdateStatus}),
+    tab==='moodboard'&&React.createElement(Moodboard,{client,isAdmin:true})
+  );
+}
+
+// ── Client Portal View (pubblica) ──
+function PortaleCliente({client,onUpdateStatus}){
+  const [tab,setTab]=useState('assets');
+  const pc=client.brand?.colors[0]?.hex||G;
+  const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
+  const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Contenuti',n:pending},{id:'moodboard',lbl:'Moodboard',n:client.moodboard?.length}];
+
+  return React.createElement('div',{style:{minHeight:'100vh',background:'var(--surface-0)'}},
+    React.createElement('div',{style:{background:'var(--surface-2)',borderBottom:'0.5px solid var(--border)',padding:'0 1.5rem'}},
+      React.createElement('div',{style:{maxWidth:860,margin:'0 auto',padding:'1.25rem 0'}},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:'1rem'}},
+          React.createElement('div',{style:{width:42,height:42,borderRadius:10,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
+            React.createElement('span',{style:{color:contrast(pc),fontSize:18,fontWeight:700}},client.name?.charAt(0)||'N')
+          ),
+          React.createElement('div',null,
+            React.createElement('h1',{style:{margin:'0 0 2px',fontSize:17,fontWeight:500,color:'var(--text-primary)'}},client.name),
+            React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},
+              client.claim?' "'+client.claim+'" · ':'',' Gestito da Nassa Studio'
+            )
+          ),
+          client.manager&&React.createElement('div',{style:{marginLeft:'auto',textAlign:'right'}},
+            React.createElement('div',{style:{fontSize:10,color:'var(--text-muted)',marginBottom:2}},'Il tuo manager'),
+            React.createElement('div',{style:{fontSize:12,fontWeight:500,color:'var(--text-primary)'}},client.manager)
+          )
+        ),
+        React.createElement('div',{style:{display:'flex',gap:2}},
+          TABS.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),style:{padding:'6px 14px',borderRadius:'6px 6px 0 0',border:'none',cursor:'pointer',fontSize:12,
+            background:tab===t.id?'var(--surface-0)':'transparent',
+            color:tab===t.id?'var(--text-primary)':'var(--text-secondary)',
+            fontWeight:tab===t.id?500:400,
+            borderBottom:tab===t.id?'none':'0.5px solid var(--border)'}},
+            t.lbl,
+            t.n>0&&React.createElement('span',{style:{marginLeft:5,fontSize:10,background:M+'20',color:M,padding:'0 5px',borderRadius:8}},t.n)
+          ))
+        )
+      )
+    ),
+    React.createElement('div',{style:{maxWidth:860,margin:'0 auto',padding:'1.5rem'}},
+      tab==='assets'&&React.createElement(BrandAssets,{client,isAdmin:false}),
+      tab==='approvals'&&React.createElement(Approvals,{client,isAdmin:false,onUpdateStatus}),
+      tab==='moodboard'&&React.createElement(Moodboard,{client,isAdmin:false})
+    )
+  );
+}
+
+// ── Admin List ──
+function AdminList({clients,onSelect,onSimulate}){
+  return React.createElement('div',{style:{padding:'1.5rem',maxWidth:800,margin:'0 auto'}},
+    React.createElement('div',{style:{marginBottom:'1.25rem'}},
+      React.createElement('h1',{style:{margin:'0 0 3px',fontSize:18,fontWeight:500,color:'var(--text-primary)'}},'Portali clienti'),
+      React.createElement('p',{style:{margin:0,fontSize:12,color:'var(--text-muted)'}},'Gestisci brand assets, approvazioni e moodboard per ogni cliente')
+    ),
+    clients.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'3rem',color:'var(--text-muted)',fontSize:13}},
+      React.createElement('div',{style:{fontSize:32,marginBottom:8}},'👥'),
+      'Nessun cliente trovato — aggiungili prima in NassaPED'
+    ),
+    React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+      clients.map(c=>{
+        const pc=c.brand?.colors[0]?.hex||c.color||G;
+        const pending=(c.approvals||[]).filter(a=>a.stato==='pending').length;
+        return React.createElement('div',{key:c.id,
+          style:{background:'var(--surface-2)',border:'0.5px solid var(--border)',borderRadius:12,padding:'1rem 1.25rem',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,cursor:'pointer'},
+          onClick:()=>onSelect(c)
+        },
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12}},
+            React.createElement('div',{style:{width:40,height:40,borderRadius:8,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
+              React.createElement('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},c.name?.charAt(0)||'N')
+            ),
+            React.createElement('div',null,
+              React.createElement('p',{style:{margin:'0 0 4px',fontSize:14,fontWeight:500,color:'var(--text-primary)'}},c.name),
+              React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center'}},
+                React.createElement('span',{style:{fontSize:10,color:'var(--text-muted)'}},'nassastudio.it/portal/'+c.slug),
+                pending>0&&React.createElement(Pill,{color:M},pending+' in attesa')
+              )
+            )
+          ),
+          React.createElement('div',{style:{display:'flex',gap:8}},
+            React.createElement(Btn,{onClick:e=>{e.stopPropagation();onSimulate(c);},variant:'secondary'},'Simula cliente'),
+            React.createElement(Btn,{onClick:e=>{e.stopPropagation();onSelect(c);}},'Gestisci portale')
+          )
+        );
+      })
+    )
+  );
+}
+
+// ── Root App ──
+function NassaBrand(){
+  const [clients,setClients]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState(null);
+  const [selected,setSelected]=useState(null);
+  const [view,setView]=useState('list'); // list | admin | client
+
+  const isPublic = isPortalView();
+  const publicSlug = getPortalSlug();
+
+  useEffect(()=>{
+    if(isPublic){
+      loadPublicClient(publicSlug)
+        .then(d=>{setSelected(d.client);setView('client');setLoading(false);})
+        .catch(e=>{setError('Cliente non trovato');setLoading(false);});
+    } else {
+      loadClients()
+        .then(d=>{setClients(d.clients||[]);setLoading(false);})
+        .catch(e=>{setError('Errore caricamento clienti');setLoading(false);});
+    }
+  },[]);
+
+  const updateStatus = useCallback(async (clientId,approvalId,newStatus)=>{
+    setClients(prev=>prev.map(c=>{
+      if(c.id!==clientId) return c;
+      const approvals = c.approvals.map(a=>a.id===approvalId?{...a,stato:newStatus}:a);
+      saveField(clientId,'approvals',approvals).catch(console.error);
+      return {...c,approvals};
+    }));
+    if(selected?.id===clientId){
+      setSelected(prev=>({...prev,approvals:prev.approvals.map(a=>a.id===approvalId?{...a,stato:newStatus}:a)}));
+    }
+  },[selected]);
+
+  if(loading) return React.createElement('div',{className:'loading'},'Caricamento...');
+  if(error) return React.createElement('div',{className:'loading'},error);
+
+  // Public client view — no topbar
+  if(isPublic && selected){
+    return React.createElement(PortaleCliente,{client:selected,
+      onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)
+    });
+  }
+
+  return React.createElement('div',null,
+    // Topbar
+    React.createElement('div',{className:'topbar'},
+      React.createElement('a',{href:'/',style:{display:'flex',alignItems:'center',gap:8,textDecoration:'none',color:'inherit'}},
+        React.createElement('div',{className:'brand-mark'},'N'),
+        React.createElement('span',{className:'brand-name'},'Nassa Studio')
+      ),
+      React.createElement('span',{className:'brand-sep'},'NassaBrand'),
+      view!=='list'&&React.createElement('button',{className:'btn-back',onClick:()=>{setView('list');setSelected(null);},'style':{marginLeft:8}},'← Tutti i clienti'),
+      view==='admin'&&selected&&React.createElement('button',{onClick:()=>setView('client'),style:{marginLeft:8,padding:'4px 11px',borderRadius:5,border:`1px solid ${M}`,background:'transparent',color:M,fontSize:11,cursor:'pointer',fontWeight:500}},'👤 Simula cliente →'),
+      React.createElement('div',{className:'topbar-spacer'}),
+      React.createElement('button',{className:'theme-btn',onClick:toggleTheme},'🌙')
+    ),
+    view==='list'&&React.createElement(AdminList,{clients,
+      onSelect:c=>{setSelected(c);setView('admin');},
+      onSimulate:c=>{setSelected(c);setView('client');}
+    }),
+    view==='admin'&&selected&&React.createElement('div',{style:{padding:'1.5rem',maxWidth:900,margin:'0 auto'}},
+      React.createElement(AdminPortaleView,{client:selected,
+        onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)
+      })
+    ),
+    view==='client'&&selected&&React.createElement(PortaleCliente,{client:selected,
+      onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)
+    })
+  );
+}
+
+function toggleTheme(){
+  const h=document.documentElement;
+  h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(NassaBrand));
+</script>
+</body>
+</html>

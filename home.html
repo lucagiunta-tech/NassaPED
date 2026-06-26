@@ -78,9 +78,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 /* ── App cards ── */
 .apps-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
   gap:20px;
-  max-width:680px;width:100%;
+  max-width:960px;width:100%;
   margin:0 auto;padding:0 24px 80px;
 }
 
@@ -172,7 +172,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div class="hero">
   <span class="hero-tag">Suite di strumenti</span>
   <h1 class="hero-title">Scegli lo <span>strumento</span></h1>
-  <p class="hero-sub">Due app per gestire tutto il social media management di Nassa Studio.</p>
+  <p class="hero-sub">Tre strumenti integrati per gestire contenuti, clienti e brand di Nassa Studio.</p>
 </div>
 
 <div class="apps-grid">
@@ -211,7 +211,24 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 </div>
 
-<div class="footer">Nassa Studio · NassaPED + NassaTime © 2026</div>
+  <a class="app-card" href="/brand">
+    <div class="app-icon" style="background:#1A8C3F;font-size:14px;">NB</div>
+    <div class="app-body">
+      <div class="app-name">NassaBrand</div>
+      <div class="app-desc">Portale clienti — brand assets, approvazioni contenuti e moodboard per ogni cliente.</div>
+      <div class="app-tags">
+        <span class="app-tag">Brand</span>
+        <span class="app-tag">Approvazioni</span>
+        <span class="app-tag">Moodboard</span>
+        <span class="app-tag">Portale</span>
+      </div>
+    </div>
+    <div class="app-arrow">→</div>
+  </a>
+
+</div>
+
+<div class="footer">Nassa Studio · NassaPED + NassaTime + NassaBrand © 2026</div>
 
 <script>
 function toggleTheme(){
