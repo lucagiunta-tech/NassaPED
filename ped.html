@@ -903,6 +903,62 @@
 
 </div><!-- /app -->
 
+<!-- ══ MODAL CARD EDITORIALE ══ -->
+<div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
+  <div class="modal-box ed-modal-box">
+    <div class="modal-top">
+      <h3>Card editoriale</h3>
+      <button class="btn ghost sm icon" onclick="closeModal('editorial-modal')" aria-label="Chiudi">✕</button>
+    </div>
+    <!-- Layout 2 colonne: anteprima | campi -->
+    <div class="ed-modal-body">
+      <!-- COL SINISTRA: anteprima live -->
+      <div class="ed-preview-col">
+        <!-- Selezione tema e formato -->
+        <div class="ed-controls">
+          <div class="ed-ctrl-row">
+            <button class="ed-theme-btn" data-theme="light" onclick="setEdTheme('light')">☀ Chiaro</button>
+            <button class="ed-theme-btn" data-theme="dark" onclick="setEdTheme('dark')">🌙 Scuro</button>
+            <button class="ed-theme-btn" data-theme="brand" onclick="setEdTheme('brand')">🎨 Brand</button>
+          </div>
+          <div class="ed-ctrl-row">
+            <button class="ed-fmt-btn active" data-fmt="feed" onclick="setEdFmt('feed')">Feed 4:5</button>
+            <button class="ed-fmt-btn" data-fmt="story" onclick="setEdFmt('story')">Story 9:16</button>
+          </div>
+        </div>
+        <!-- Canvas anteprima -->
+        <div id="ed-preview-wrap" class="ed-preview-wrap">
+          <div id="ed-preview-inner" class="ed-preview-inner">
+            <div id="ed-prev-eyebrow" class="ed-prev-eyebrow"></div>
+            <div id="ed-prev-title" class="ed-prev-title">Titolo</div>
+            <div class="ed-prev-sep"></div>
+            <div id="ed-prev-copy" class="ed-prev-copy"></div>
+          </div>
+          <div id="ed-prev-badge" class="ed-prev-badge">N</div>
+        </div>
+      </div>
+      <!-- COL DESTRA: campi -->
+      <div class="ed-fields-col">
+        <div class="field"><label>Occhiello</label>
+          <input type="text" id="ed-eyebrow" placeholder="es. Insight · Cliente" oninput="renderEdPreview()"/></div>
+        <div class="field"><label>Titolo *</label>
+          <input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
+        <div class="field"><label>Parola colorata</label>
+          <input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
+        <div class="field"><label>Copy / sottotitolo</label>
+          <textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
+        <div class="field"><label>Firma</label>
+          <input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('editorial-modal')">Annulla</button>
+      <button class="btn primary" onclick="saveEditorialCard()">+ Aggiungi al feed</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- UGC SLOT MODAL -->
 <div id="ped-slot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseDrawer()">
   <div style="background:var(--surface);border-radius:14px;width:360px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;">
@@ -1106,60 +1162,6 @@
 </div>
 
 
-<!-- ══ MODAL CARD EDITORIALE ══ -->
-<div class="modal-bg" role="dialog" aria-modal="true" id="editorial-modal" onclick="if(event.target===this)closeModal('editorial-modal')">
-  <div class="modal-box ed-modal-box">
-    <div class="modal-top">
-      <h3>Card editoriale</h3>
-      <button class="btn ghost sm icon" onclick="closeModal('editorial-modal')" aria-label="Chiudi">✕</button>
-    </div>
-    <!-- Layout 2 colonne: anteprima | campi -->
-    <div class="ed-modal-body">
-      <!-- COL SINISTRA: anteprima live -->
-      <div class="ed-preview-col">
-        <!-- Selezione tema e formato -->
-        <div class="ed-controls">
-          <div class="ed-ctrl-row">
-            <button class="ed-theme-btn" data-theme="light" onclick="setEdTheme('light')">☀ Chiaro</button>
-            <button class="ed-theme-btn" data-theme="dark" onclick="setEdTheme('dark')">🌙 Scuro</button>
-            <button class="ed-theme-btn" data-theme="brand" onclick="setEdTheme('brand')">🎨 Brand</button>
-          </div>
-          <div class="ed-ctrl-row">
-            <button class="ed-fmt-btn active" data-fmt="feed" onclick="setEdFmt('feed')">Feed 4:5</button>
-            <button class="ed-fmt-btn" data-fmt="story" onclick="setEdFmt('story')">Story 9:16</button>
-          </div>
-        </div>
-        <!-- Canvas anteprima -->
-        <div id="ed-preview-wrap" class="ed-preview-wrap">
-          <div id="ed-preview-inner" class="ed-preview-inner">
-            <div id="ed-prev-eyebrow" class="ed-prev-eyebrow"></div>
-            <div id="ed-prev-title" class="ed-prev-title">Titolo</div>
-            <div class="ed-prev-sep"></div>
-            <div id="ed-prev-copy" class="ed-prev-copy"></div>
-          </div>
-          <div id="ed-prev-badge" class="ed-prev-badge">N</div>
-        </div>
-      </div>
-      <!-- COL DESTRA: campi -->
-      <div class="ed-fields-col">
-        <div class="field"><label>Occhiello</label>
-          <input type="text" id="ed-eyebrow" placeholder="es. Insight · Cliente" oninput="renderEdPreview()"/></div>
-        <div class="field"><label>Titolo *</label>
-          <input type="text" id="ed-title" placeholder="Titolo principale" oninput="renderEdPreview()"/></div>
-        <div class="field"><label>Parola colorata</label>
-          <input type="text" id="ed-accent" placeholder="Una parola del titolo" oninput="renderEdPreview()"/></div>
-        <div class="field"><label>Copy / sottotitolo</label>
-          <textarea id="ed-copy" rows="3" placeholder="Testo breve sotto il titolo…" oninput="renderEdPreview()"></textarea></div>
-        <div class="field"><label>Firma</label>
-          <input type="text" id="ed-author" placeholder="es. Nassa Studio" oninput="renderEdPreview()"/></div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="closeModal('editorial-modal')">Annulla</button>
-      <button class="btn primary" onclick="saveEditorialCard()">+ Aggiungi al feed</button>
-    </div>
-  </div>
-</div>
 
 
 
