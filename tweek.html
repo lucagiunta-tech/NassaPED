@@ -1501,10 +1501,10 @@ body{
   <button class="btn btn-ghost" onclick="goToday()" style="font-size:var(--fs-xs);padding:4px 10px;">Oggi</button>
 
   <div class="view-toggle">
-    <button class="vt-btn active" id="vt-week" onclick="setView('week')">Settimana</button>
+    <button class="vt-btn" id="vt-week" onclick="setView('week')">Settimana</button>
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
     <button class="vt-btn" id="vt-tasks" onclick="setView('tasks')">Task</button>
-    <button class="vt-btn" id="vt-stream" onclick="setView('stream')">Stream</button>
+    <button class="vt-btn active" id="vt-stream" onclick="setView('stream')">Stream</button>
     <button class="vt-btn" id="vt-anno" onclick="setView('anno')">Anno</button>
   </div>
 
@@ -1558,7 +1558,7 @@ body{
 </div>
 
 <!-- ══ WEEK VIEW ══ -->
-<div id="week-view" style="display:flex;">
+<div id="week-view" style="display:none;">
   <div class="cal-wrap"><div class="cal">
     <div class="cal-head" id="cal-head"><div class="ch-empty"></div></div>
     <div class="cal-body" id="cal-body"><div class="time-col" id="time-col"></div></div>
@@ -1632,7 +1632,7 @@ body{
 <!-- task panel rimosso — editing inline nelle card -->
 
 <!-- ══ STREAM VIEW ══ -->
-<div id="stream-view" style="display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column;">
+<div id="stream-view" style="display:flex;flex:1;min-height:0;overflow:hidden;flex-direction:column;">
 
   <!-- Stream topbar: 2 viste + azioni -->
   <div class="stream-nav">
@@ -1803,7 +1803,7 @@ const TEAM=[
 ];
 let selAssignee=''; // selected assignee in modal
 
-let view='week',weekOffset=0,monthOffset=0,selCl='';
+let view='stream',weekOffset=0,monthOffset=0,selCl='';
 let _mDate=null,_mHour=null,_mSec=null;
 let toastTimer=null,saveTimer=null,undoStack=null,dragState=null,activeEditor=null,openDetailDate=null;
 
@@ -2005,7 +2005,7 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor();closeDayDetail();}});
 document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 
-renderLegend();renderWeek();renderBottom();initTeamFilter();
+renderLegend();renderBottom();initTeamFilter();setView('stream');
 tvLoad();
 streamLoad();
 
