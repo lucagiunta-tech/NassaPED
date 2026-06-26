@@ -435,10 +435,11 @@ const DROPBOX = {
   _token: null,
   _tokenTs: 0,
 
-  async getToken() {
+  async getToken(force=false) {
     // Cache token for 50 min (Dropbox tokens last 4h, refresh before they expire)
-    if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3000000) return DROPBOX._token;
-    const res = await fetch('/api/dropbox-token', { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
+    if(!force && DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3000000) return DROPBOX._token;
+    const url = force ? '/api/dropbox-token?force=1' : '/api/dropbox-token';
+    const res = await fetch(url, { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
     if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
     const d = await res.json();
     DROPBOX._token = d.token;
@@ -479,9 +480,10 @@ const DROPBOX = {
 
       if(!uploadRes.ok) {
         const errText = await uploadRes.text().catch(()=>'');
-        // On 401 expired token, clear cache and retry once with a fresh token
+        // On 401 expired token: clear both browser and server cache, retry once with fresh token
         if(uploadRes.status === 401 && !_retried){
           DROPBOX._token = null; DROPBOX._tokenTs = 0;
+          await DROPBOX.getToken(true); // force server to refresh too
           return DROPBOX.upload(file, destPath, true);
         }
         throw new Error('Upload HTTP ' + uploadRes.status + ': ' + errText.slice(0,200));
