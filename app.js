@@ -2792,7 +2792,7 @@ function addEmptyFeedListeners(cell){
   cell.addEventListener('dragleave',()=>cell.classList.remove('file-hover'));
   cell.addEventListener('drop',e=>{cell.classList.remove('file-hover');if(feedDragSrc!==null)return;e.preventDefault();if(e.dataTransfer.files.length)queueFeedFiles(e.dataTransfer.files);});
 }
-function setFeedItemType(idx,type){const items=currentFeedItems();items[idx].type=type;if(type==='carousel'&&!items[idx].slides?.length)items[idx].slides=[{url:items[idx].url,name:items[idx].name}];setFeedItems(items);refreshFeed();if(type==='carousel')openCarouselModal(idx);}
+function setFeedItemType(idx,type){const items=currentFeedItems();items[idx].type=type;if(type==='carousel'&&!items[idx].slides?.length){const existingUrl=items[idx].url||items[idx].externalUrl;if(existingUrl)items[idx].slides=[{url:existingUrl,name:items[idx].name,copy:''}];else items[idx].slides=[];}setFeedItems(items);refreshFeed();if(type==='carousel')openCarouselModal(idx);}
 function removeFeedItem(i){
   const items=currentFeedItems();
   // Snapshot per undo — salva l'item e la posizione
@@ -3065,24 +3065,21 @@ async function saveCarousel(){
     // [PROD] console.log('[Carousel] Slide '+i+': url='+s.url?.slice(0,60)+' externalUrl='+s.externalUrl?.slice(0,60));
     if(s.url&&s.url.startsWith('blob:')){
       try{
-        // [PROD] console.log('[Carousel] Uploading slide '+i+' (blob)…');
         const resp=await fetch(s.url);
         if(!resp.ok) throw new Error('blob fetch failed: '+resp.status);
         const blob=await resp.blob();
-        // [PROD] console.log('[Carousel] blob size: '+blob.size+' type: '+blob.type);
-        const ext = blob.type.includes('png')?'.png':blob.type.includes('gif')?'.gif':'.jpg';
+        const isVideo=blob.type.startsWith('video/');
+        const ext=blob.type.includes('png')?'.png':blob.type.includes('gif')?'.gif':isVideo?'.mp4':'.jpg';
         const file=new File([blob],s.name||('slide_'+i+ext),{type:blob.type});
-        const destPath=_dbxPath(feedClientIdx, 'Immagini/Caroselli', file.name);
+        const destPath=_dbxPath(feedClientIdx, isVideo?'Video':'Immagini/Caroselli', file.name);
         const url=await DROPBOX.upload(file,destPath);
-        // [PROD] console.log('[Carousel] slide '+i+' upload result:', url?'✅ '+url.slice(0,60):'❌ null');
         if(url){carouselTmp[i].url=url;carouselTmp[i].externalUrl=url;}
         else { showToast('⚠ Slide '+(i+1)+' non caricata','warn'); }
       }catch(e){
-        console.error('[Carousel] slide '+i+' upload exception:', e.message);
         showToast('⚠ Errore slide '+(i+1)+': '+e.message,'warn');
       }
     } else {
-      // [PROD] console.log('[Carousel] Slide '+i+' already has external URL, skipping upload');
+      // Already has external URL or link — skip upload
     }
   }
 
@@ -3105,7 +3102,7 @@ async function saveCarousel(){
 }
 function addCarouselFiles(files){
   Array.from(files).forEach(f=>{
-    if(f.type.startsWith('image')) carouselTmp.push({url:URL.createObjectURL(f),name:f.name,copy:''});
+    carouselTmp.push({url:URL.createObjectURL(f),name:f.name,copy:'',_file:f});
   });
   renderCThumbs();
 }
@@ -3140,7 +3137,20 @@ function renderCThumbs(){
     del.onclick=()=>removeCSlide(i);
     left.appendChild(img); left.appendChild(num); left.appendChild(del);
 
-    // Copy textarea
+    // Reorder buttons ↑↓
+    const reorder=document.createElement('div');
+    reorder.style.cssText='display:flex;flex-direction:column;gap:2px;justify-content:center;flex-shrink:0;';
+    const btnUp=document.createElement('button');
+    btnUp.textContent='↑';btnUp.title='Sposta su';
+    btnUp.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:12px;padding:2px 6px;color:var(--text-2);'+(i===0?'opacity:.3;pointer-events:none;':'');
+    btnUp.onclick=()=>{if(i>0){const t=carouselTmp[i];carouselTmp[i]=carouselTmp[i-1];carouselTmp[i-1]=t;renderCThumbs();}};
+    const btnDn=document.createElement('button');
+    btnDn.textContent='↓';btnDn.title='Sposta giù';
+    btnDn.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:12px;padding:2px 6px;color:var(--text-2);'+(i===carouselTmp.length-1?'opacity:.3;pointer-events:none;':'');
+    btnDn.onclick=()=>{if(i<carouselTmp.length-1){const t=carouselTmp[i];carouselTmp[i]=carouselTmp[i+1];carouselTmp[i+1]=t;renderCThumbs();}};
+    reorder.appendChild(btnUp);reorder.appendChild(btnDn);
+
+    // Copy textarea + link input
     const right=document.createElement('div');
     right.style.cssText='flex:1;display:flex;flex-direction:column;gap:4px;';
     const lbl=document.createElement('label');
@@ -3149,12 +3159,24 @@ function renderCThumbs(){
     const ta=document.createElement('textarea');
     ta.placeholder='Caption per questa slide…';
     ta.value=s.copy||'';
-    ta.rows=3;
+    ta.rows=2;
     ta.style.cssText='width:100%;resize:vertical;font-size:12px;font-family:var(--font);padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);line-height:1.4;';
     ta.oninput=e=>{ carouselTmp[i].copy=e.target.value; };
-    right.appendChild(lbl); right.appendChild(ta);
+    // Link input row
+    const linkRow=document.createElement('div');
+    linkRow.style.cssText='display:flex;gap:4px;';
+    const linkInp=document.createElement('input');
+    linkInp.type='text';linkInp.placeholder='Incolla link Dropbox (video/immagine)…';
+    linkInp.value=s.externalUrl&&!s.url?.startsWith('blob:')?s.externalUrl:'';
+    linkInp.style.cssText='flex:1;font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:var(--font);';
+    const linkBtn=document.createElement('button');
+    linkBtn.textContent='✓';linkBtn.title='Usa link';
+    linkBtn.style.cssText='padding:4px 8px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;';
+    linkBtn.onclick=()=>{const u=linkInp.value.trim();if(!u)return;carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].isExternalLink=true;renderCThumbs();};
+    linkRow.appendChild(linkInp);linkRow.appendChild(linkBtn);
+    right.appendChild(lbl); right.appendChild(ta); right.appendChild(linkRow);
 
-    row.appendChild(left); row.appendChild(right);
+    row.appendChild(left); row.appendChild(reorder); row.appendChild(right);
     c.appendChild(row);
   });
 }
