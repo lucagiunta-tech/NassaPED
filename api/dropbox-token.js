@@ -116,12 +116,6 @@ export default async function handler(req, res) {
   if (!authed) return res.status(401).json({ error: 'Non autorizzato' });
 
   try {
-    // ?force=1 clears server-side cache — used after a 401 to force fresh OAuth2 token
-    if (req.query?.force === '1' || req.url?.includes('force=1')) {
-      _cached = null;
-      _cachedExp = 0;
-      console.log('[dropbox-token] Force refresh requested — cache cleared');
-    }
     const { token, source } = await resolveToken();
     res.setHeader('Cache-Control', 'private, max-age=300'); // 5 min browser cache
     return res.status(200).json({ token, source });

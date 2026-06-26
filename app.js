@@ -435,18 +435,10 @@ const DROPBOX = {
   _token: null,
   _tokenTs: 0,
 
-  async getToken(force=false) {
-    // Cache token for 50 min (Dropbox tokens last 4h, refresh before they expire)
-    if(!force && DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3000000) return DROPBOX._token;
-    const url = force ? '/api/dropbox-token?force=1' : '/api/dropbox-token';
-    let res;
-    try {
-      res = await fetch(url, { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
-    } catch(netErr) {
-      // Network error (Failed to fetch) — wait 1s and retry once
-      await new Promise(r=>setTimeout(r,1000));
-      res = await fetch(url, { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
-    }
+  async getToken() {
+    // Cache token for 1 hour
+    if(DROPBOX._token && Date.now() - DROPBOX._tokenTs < 3600000) return DROPBOX._token;
+    const res = await fetch('/api/dropbox-token', { headers: { 'x-nassa-key': CLOUD.apiKey }, credentials: 'include' });
     if(!res.ok) throw new Error('Token fetch failed: ' + res.status);
     const d = await res.json();
     DROPBOX._token = d.token;
@@ -454,7 +446,7 @@ const DROPBOX = {
     return DROPBOX._token;
   },
 
-  async upload(file, destPath, _retried=false) {
+  async upload(file, destPath) {
     DROPBOX.uploading++;
     const bar = document.getElementById('dbx-upload-bar');
     const txt = document.getElementById('dbx-upload-text');
@@ -487,12 +479,6 @@ const DROPBOX = {
 
       if(!uploadRes.ok) {
         const errText = await uploadRes.text().catch(()=>'');
-        // On 401 expired token: clear both browser and server cache, retry once with fresh token
-        if(uploadRes.status === 401 && !_retried){
-          DROPBOX._token = null; DROPBOX._tokenTs = 0;
-          await DROPBOX.getToken(true); // force server to refresh too
-          return DROPBOX.upload(file, destPath, true);
-        }
         throw new Error('Upload HTTP ' + uploadRes.status + ': ' + errText.slice(0,200));
       }
       const uploadData = await uploadRes.json();
