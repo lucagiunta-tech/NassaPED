@@ -6,158 +6,133 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Nassa Studio</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-text:#111;
-  --bg:#f5f5f7;--surface:#fff;
-  --border:#e5e7eb;--text:#1c1c1e;--text-2:#6b6b6b;--text-3:#9ca3af;
-  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-  --r:12px;--rs:6px;--r-pill:99px;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
-  --shadow-lg:0 10px 24px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.04);
+  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#111;
+  --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#9ca3af;
+  --bg:#ffffff;--surface:#ffffff;--surface-lt:#f5f5f7;
+  --border:#e5e7eb;--border-lt:#f0f0f2;
+  --font:'Inter',sans-serif;
+  --r:8px;--rs:4px;--r-pill:99px;
+  --bw:.5px;
+  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:18px;--fs-lg:28px;
+  --ls-tight:-.02em;--ls-wide:.06em;
   --t:.18s ease;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --topbar:56px;
 }
 [data-theme="dark"]{
-  --bg:#0f0f10;--surface:#1a1a1e;
-  --border:#222228;--text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
-  --green-lt:#0d2b0c;--green-text:#0a1a00;
+  --bg:#0f0f11;--surface:#1a1a1e;--surface-lt:#222228;
+  --border:#2a2a30;--border-lt:#222228;
+  --text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
+  --green-lt:#0d2b0c;--green-mid:#1a4d18;--green-text:#0a1a00;
 }
 
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
+a{text-decoration:none;color:inherit;}
 
 /* ── Topbar ── */
 .topbar{
-  height:56px;background:var(--surface);
-  border-bottom:.5px solid var(--border);
+  height:var(--topbar);background:var(--surface);
+  border-bottom:var(--bw) solid var(--border);
   display:flex;align-items:center;gap:12px;
   padding:0 24px;position:sticky;top:0;z-index:10;
 }
 .brand-mark{
-  width:32px;height:32px;border-radius:6px;
+  width:30px;height:30px;border-radius:var(--r);
   background:var(--green);display:flex;align-items:center;
-  justify-content:center;font-size:14px;font-weight:800;color:#111;
+  justify-content:center;font-size:var(--fs-base);font-weight:800;color:var(--green-text);
+  flex-shrink:0;
 }
-.brand-name{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.02em;}
+.brand-name{font-size:var(--fs-base);font-weight:700;color:var(--text);letter-spacing:var(--ls-tight);}
 .topbar-spacer{flex:1;}
 .theme-btn{
-  width:32px;height:32px;border-radius:6px;
-  border:.5px solid var(--border);background:transparent;
-  cursor:pointer;font-size:16px;
-  display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:var(--r);
+  border:var(--bw) solid var(--border);background:transparent;
+  cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;color:var(--text-2);
+  transition:all var(--t);
 }
-.theme-btn:hover{background:var(--bg);}
+.theme-btn:hover{background:var(--surface-lt);color:var(--text);}
 
 /* ── Hero ── */
 .hero{
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;
-  padding:80px 24px 40px;
-  text-align:center;
+  padding:72px 24px 48px;text-align:center;
+  background:var(--bg);
 }
 .hero-tag{
-  font-size:11px;font-weight:700;letter-spacing:.1em;
+  font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--ls-wide);
   text-transform:uppercase;color:var(--green-dk);
   background:var(--green-lt);border-radius:var(--r-pill);
-  padding:4px 12px;margin-bottom:20px;
-  display:inline-block;
+  border:var(--bw) solid var(--green-mid);
+  padding:4px 14px;margin-bottom:20px;display:inline-block;
 }
 [data-theme="dark"] .hero-tag{color:var(--green);}
 .hero-title{
-  font-size:clamp(32px,5vw,52px);
-  font-weight:800;letter-spacing:-.03em;
-  color:var(--text);line-height:1.1;
-  margin-bottom:14px;
+  font-size:clamp(32px,5vw,52px);font-weight:800;
+  letter-spacing:-.03em;color:var(--text);line-height:1.1;margin-bottom:14px;
 }
 .hero-title span{color:var(--green-dk);}
 [data-theme="dark"] .hero-title span{color:var(--green);}
 .hero-sub{
-  font-size:16px;color:var(--text-2);
-  max-width:420px;line-height:1.6;
-  margin-bottom:56px;
+  font-size:var(--fs-md);color:var(--text-2);
+  max-width:480px;line-height:1.6;margin-bottom:52px;
 }
 
-/* ── App cards ── */
+/* ── App grid ── */
 .apps-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:20px;
-  max-width:960px;width:100%;
+  gap:16px;max-width:1040px;width:100%;
   margin:0 auto;padding:0 24px 80px;
 }
-
 .app-card{
   background:var(--surface);
-  border:.5px solid var(--border);
-  border-radius:var(--r);
-  padding:28px 28px 24px;
-  cursor:pointer;
-  text-decoration:none;color:inherit;
+  border:var(--bw) solid var(--border);
+  border-radius:var(--r);padding:24px 24px 52px;
+  cursor:pointer;text-decoration:none;color:inherit;
   display:flex;flex-direction:column;gap:14px;
-  transition:transform var(--t),box-shadow var(--t),border-color var(--t);
+  transition:border-color var(--t),box-shadow var(--t);
   position:relative;overflow:hidden;
 }
-.app-card:hover{
-  transform:translateY(-3px);
-  box-shadow:var(--shadow-lg);
-  border-color:var(--green);
-}
-.app-card::before{
-  content:'';position:absolute;
-  inset:0;border-radius:var(--r);
-  background:linear-gradient(135deg,var(--green-lt) 0%,transparent 60%);
-  opacity:0;transition:opacity var(--t);
-}
-.app-card:hover::before{opacity:1;}
+.app-card:hover{border-color:var(--green);box-shadow:var(--shadow-md);}
 
 .app-icon{
-  width:48px;height:48px;border-radius:10px;
+  width:44px;height:44px;border-radius:var(--r);
   background:var(--green);
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;font-weight:800;color:var(--green-text);
-  letter-spacing:-.03em;position:relative;z-index:1;
-  flex-shrink:0;
+  font-size:var(--fs-sm);font-weight:800;color:var(--green-text);
+  letter-spacing:-.02em;flex-shrink:0;
 }
-.app-icon.tweek{background:#1a1a1e;color:var(--green);}
-[data-theme="dark"] .app-icon.tweek{background:#222228;}
-
-.app-body{position:relative;z-index:1;}
-.app-name{
-  font-size:18px;font-weight:800;
-  color:var(--text);letter-spacing:-.02em;
-  margin-bottom:4px;
-}
-.app-desc{
-  font-size:13px;color:var(--text-2);
-  line-height:1.5;margin-bottom:12px;
-}
-.app-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.app-body{}
+.app-name{font-size:var(--fs-md);font-weight:700;color:var(--text);letter-spacing:var(--ls-tight);margin-bottom:6px;}
+.app-desc{font-size:var(--fs-sm);color:var(--text-2);line-height:1.6;margin-bottom:14px;}
+.app-tags{display:flex;gap:5px;flex-wrap:wrap;}
 .app-tag{
-  font-size:11px;font-weight:600;
+  font-size:var(--fs-xs);font-weight:500;
   padding:2px 8px;border-radius:var(--r-pill);
-  background:var(--bg);border:.5px solid var(--border);
-  color:var(--text-3);letter-spacing:.02em;
+  background:var(--surface-lt);border:var(--bw) solid var(--border);
+  color:var(--text-3);
 }
-
 .app-arrow{
-  position:absolute;bottom:24px;right:24px;
+  position:absolute;bottom:20px;right:20px;
   width:28px;height:28px;border-radius:50%;
-  background:var(--green-lt);
+  background:var(--green-lt);border:var(--bw) solid var(--green-mid);
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;color:var(--green-dk);
-  transition:all var(--t);z-index:1;
+  font-size:13px;color:var(--green-dk);transition:all var(--t);
 }
-[data-theme="dark"] .app-arrow{color:var(--green);}
-.app-card:hover .app-arrow{
-  background:var(--green);
-  color:var(--green-text);
-  transform:translateX(2px);
-}
+.app-card:hover .app-arrow{background:var(--green);color:var(--green-text);border-color:var(--green);}
 
 /* ── Footer ── */
 .footer{
   text-align:center;padding:20px;
-  font-size:11px;color:var(--text-3);
-  border-top:.5px solid var(--border);
+  font-size:var(--fs-xs);color:var(--text-3);
+  border-top:var(--bw) solid var(--border);
+  background:var(--surface);
 }
 </style>
 </head>
@@ -195,7 +170,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </a>
 
   <a class="app-card" href="/tweek">
-    <div class="app-icon tweek">NT</div>
+    <div class="app-icon" style="background:var(--surface-lt);color:var(--text);border:var(--bw) solid var(--border);">NT</div>
     <div class="app-body">
       <div class="app-name">NassaTime</div>
       <div class="app-desc">Pianifica il lavoro del team — task, feed NassaPED, vista settimana, mese e anno per cliente.</div>
@@ -211,7 +186,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </a>
 
   <a class="app-card" href="/brand">
-    <div class="app-icon" style="background:#1A8C3F;font-size:14px;">NB</div>
+    <div class="app-icon" style="background:#1A8C3F;font-size:13px;color:#fff;">NB</div>
     <div class="app-body">
       <div class="app-name">NassaBrand</div>
       <div class="app-desc">Portale clienti — brand assets, approvazioni contenuti e moodboard per ogni cliente.</div>
@@ -226,7 +201,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </a>
 
   <a class="app-card" href="/strategy">
-    <div class="app-icon" style="background:#185FA5;font-size:14px;">NS</div>
+    <div class="app-icon" style="background:#185FA5;font-size:13px;color:#fff;">NS</div>
     <div class="app-body">
       <div class="app-name">NassaStrategy</div>
       <div class="app-desc">Gestionale strategico — PDM, PDC, Brand Portal, Strategy Builder e Output seguendo la Staffetta Nassa.</div>

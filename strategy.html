@@ -7,41 +7,40 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  /* Nassa brand */
   --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#111;
   --magenta:#C2185B;--magenta-lt:#FCE4EC;
   --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#6b7280;
-  --bg:#f5f5f7;--surface:#fff;--border:#e5e7eb;--border-lt:#f0f0f2;
+  --bg:#ffffff;--surface:#ffffff;--surface-lt:#f5f5f7;
+  --border:#e5e7eb;--border-lt:#f0f0f2;
   --font:'Inter',sans-serif;
-  --r:8px;--rs:4px;--r-xs:3px;--r-pill:99px;
-  --bw:.5px;
+  --bw:.5px;--r:8px;--rs:4px;--r-pill:99px;
   --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:18px;--fs-lg:28px;
   --ls-tight:-.02em;--ls-wide:.06em;
-  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-6:24px;
   --t-fast:.1s ease;--t-base:.15s ease;
   --shadow-sm:0 1px 3px rgba(0,0,0,.06);
-  --topbar:56px;--sidebar:220px;
-  /* CDS tokens — mapped to Nassa green (not blue) for active states */
-  --surface-0:#f5f5f7;
-  --surface-1:#f0f0f2;
+  --topbar:56px;--sidebar:230px;
+  --font-sans:'Inter',sans-serif;
+  /* CDS tokens mappati su Nassa — accent = verde */
+  --surface-0:#ffffff;
+  --surface-1:#f5f5f7;
   --surface-2:#ffffff;
   --border-strong:#d1d5db;
   --text-primary:#1c1c1e;
   --text-secondary:#6b7280;
   --text-muted:#9ca3af;
-  /* accent = Nassa green, not blue */
   --text-accent:#00aa00;
   --bg-accent:#e6ffe4;
   --border-accent:#b3ffb0;
   --bg-warning:#fef9ee;--border-warning:#fde68a;
   --bg-danger:#fff5f5;--border-danger:#fca5a5;
   --bg-success:#f0fdf4;--border-success:#bbf7d0;
-  --font-sans:'Inter',sans-serif;
 }
 [data-theme="dark"]{
-  --bg:#0f0f11;--surface:#1a1a1e;--border:#2a2a30;--border-lt:#222228;
+  --bg:#0f0f11;--surface:#1a1a1e;--surface-lt:#222228;
+  --border:#2a2a30;--border-lt:#222228;
   --text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
   --green-lt:#0d2b0c;--green-mid:#1a4d18;--green-text:#0a1a00;
   --surface-0:#0f0f11;--surface-1:#1a1a1e;--surface-2:#222228;
@@ -53,123 +52,36 @@
   --bg-success:#0a1f0a;--border-success:#14532d;
 }
 
-html,body{height:100%;font-family:var(--font);background:var(--surface-0);color:var(--text-primary);overflow:hidden;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text-primary);overflow:hidden;-webkit-font-smoothing:antialiased;}
 button{font-family:var(--font);cursor:pointer;}
 textarea,input,select{font-family:var(--font);}
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
-
-/* ── Topbar — 56px, allineato a NassaPED ── */
-.ns-topbar{
-  height:var(--topbar);flex-shrink:0;
-  background:var(--surface-2);
-  border-bottom:var(--bw) solid var(--border);
-  display:flex;align-items:stretch;
-  z-index:200;
-}
-.ns-topbar-brand{
-  width:56px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  border-right:var(--bw) solid var(--border);
-}
-.ns-brand-mark{
-  width:30px;height:30px;border-radius:var(--r);
-  background:#185FA5;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;color:#fff;letter-spacing:-.01em;
-}
-.ns-topbar-title{
-  display:flex;align-items:center;gap:8px;
-  padding:0 16px;border-right:var(--bw) solid var(--border);
-}
+/* ── Topbar NassaStrategy ── */
+.ns-topbar{height:var(--topbar);flex-shrink:0;background:var(--surface);border-bottom:var(--bw) solid var(--border);display:flex;align-items:stretch;z-index:200;}
+.ns-topbar-brand{width:56px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:var(--bw) solid var(--border);}
+.ns-brand-mark{width:30px;height:30px;border-radius:var(--r);background:#185FA5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.ns-topbar-title{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:var(--bw) solid var(--border);}
 .ns-topbar-title span.name{font-size:var(--fs-base);font-weight:700;color:var(--text-primary);letter-spacing:var(--ls-tight);}
 .ns-topbar-title span.sub{font-size:var(--fs-xs);color:var(--text-muted);padding-left:8px;border-left:var(--bw) solid var(--border);}
 .ns-topbar-nav{display:flex;align-items:stretch;flex:1;padding:0 8px;gap:2px;}
-.ns-nav-tab{
-  display:flex;align-items:center;padding:0 16px;
-  font-size:var(--fs-sm);font-weight:400;color:var(--text-2);
-  cursor:pointer;border-bottom:2.5px solid transparent;
-  border:none;background:none;
-  transition:all var(--t-fast);white-space:nowrap;letter-spacing:var(--ls-tight);
-}
-.ns-nav-tab:hover{color:var(--text-primary);background:var(--bg);}
+.ns-nav-tab{display:flex;align-items:center;gap:6px;padding:0 16px;font-size:var(--fs-sm);font-weight:400;color:var(--text-secondary);cursor:pointer;border-bottom:2.5px solid transparent;border:none;background:none;transition:all var(--t-fast);white-space:nowrap;}
+.ns-nav-tab:hover{color:var(--text-primary);background:var(--surface-lt);}
 .ns-nav-tab.active{color:var(--text-primary);font-weight:700;border-bottom:2.5px solid var(--green);}
-.ns-nav-tab .tab-chip{
-  margin-left:5px;font-size:10px;padding:1px 5px;
-  border-radius:var(--r-pill);background:var(--green-lt);color:var(--green-dk);
-  font-weight:600;
-}
-.ns-topbar-client{
-  display:flex;align-items:center;gap:8px;
-  padding:0 14px;border-right:var(--bw) solid var(--border);
-  max-width:200px;
-}
+.ns-nav-tab .tab-chip{margin-left:4px;font-size:10px;padding:1px 6px;border-radius:var(--r-pill);background:var(--green-lt);color:var(--green-dk);font-weight:600;border:var(--bw) solid var(--green-mid);}
+.ns-topbar-client{display:flex;align-items:center;gap:8px;padding:0 14px;border-right:var(--bw) solid var(--border);max-width:200px;}
 .ns-client-dot{width:7px;height:7px;border-radius:50%;}
 .ns-client-name{font-size:var(--fs-sm);font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ns-close-btn{
-  font-size:var(--fs-xs);padding:2px 8px;border-radius:var(--rs);
-  border:var(--bw) solid var(--border-strong);
-  background:transparent;color:var(--text-muted);
-  transition:all var(--t-fast);
-}
-.ns-close-btn:hover{background:var(--bg);color:var(--text-primary);}
-.ns-topbar-right{
-  display:flex;align-items:center;gap:8px;
-  padding:0 14px;border-left:var(--bw) solid var(--border);
-}
-.ns-icon-btn{
-  width:30px;height:30px;border-radius:var(--r);
-  border:var(--bw) solid var(--border);background:transparent;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;color:var(--text-2);transition:all var(--t-fast);
-}
-.ns-icon-btn:hover{background:var(--bg);color:var(--text-primary);}
+.ns-close-btn{font-size:var(--fs-xs);padding:3px 9px;border-radius:var(--r-pill);border:var(--bw) solid var(--border);background:transparent;color:var(--text-muted);display:flex;align-items:center;gap:4px;transition:all var(--t-fast);}
+.ns-close-btn:hover{background:var(--surface-lt);color:var(--text-primary);}
+.ns-topbar-right{display:flex;align-items:center;gap:8px;padding:0 14px;border-left:var(--bw) solid var(--border);}
+.ns-icon-btn{width:30px;height:30px;border-radius:var(--r);border:var(--bw) solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);transition:all var(--t-fast);}
+.ns-icon-btn:hover{background:var(--surface-lt);color:var(--text-primary);}
+.hub-link{display:flex;align-items:center;gap:4px;font-size:var(--fs-xs);color:var(--text-muted);text-decoration:none;padding:3px 10px;border-radius:var(--r-pill);border:var(--bw) solid var(--border);transition:all var(--t-fast);white-space:nowrap;}
+.hub-link:hover{background:var(--surface-lt);color:var(--text-primary);}
 
-/* ── Hub link ── */
-.hub-link{
-  display:flex;align-items:center;gap:4px;
-  font-size:var(--fs-xs);color:var(--text-muted);
-  text-decoration:none;padding:3px 9px;
-  border-radius:var(--r-pill);border:var(--bw) solid var(--border);
-  transition:all var(--t-fast);white-space:nowrap;
-}
-.hub-link:hover{background:var(--bg);color:var(--text-primary);}
-
-/* ── Sidebar cliente (sinistra in ClienteScheda) — allineata NassaPED ── */
-/* I NavBtn del gestionale usano border-left:2px solid col — sovrascriviamo */
-button[style*="border-left"]{outline:none;}
-
-/* ── Sidebar inner nav (SidebarLayout — 210px) ── */
-/* Override NavBtn active: verde invece di bg-accent blu */
-/* Fatto tramite variabili CSS già rimappate sopra */
-
-/* ── Card / surface ── */
-/* I Card del gestionale usano --surface-2 (bianco) — ok */
-/* I Field usano --surface-1 → leggermente grigio, lo rendiamo bianco */
-
-/* ── Pills ── */
-.ns-pill{
-  font-size:var(--fs-xs);font-weight:500;
-  padding:2px 8px;border-radius:var(--rs);
-  display:inline-flex;align-items:center;
-}
-
-/* ── Progress bar track ── */
-/* ProgressBar usa --surface-0 come track — ok */
-
-/* ── Section titles — allineati a NassaPED ── */
-/* SectionTitle usa h2 fontSize:17 fontWeight:500 — ok */
-
-/* ── Alert info box ── */
-/* usa --surface-1 border --border — ok */
-
-/* ── Responsive ── */
-@media(max-width:900px){
-  .ns-topbar-title span.sub{display:none;}
-}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--r-pill);}
 </style>
 </head>
 <body>
