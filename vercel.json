@@ -8,6 +8,14 @@
   },
   "rewrites": [
     {
+      "source": "/strategy",
+      "destination": "/strategy.html"
+    },
+    {
+      "source": "/strategy/",
+      "destination": "/strategy.html"
+    },
+    {
       "source": "/brand",
       "destination": "/brand.html"
     },

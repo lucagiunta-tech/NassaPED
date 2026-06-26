@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nassa Studio · NassaStrategy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-text:#111;
+  --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#6b7280;
+  --bg:#f5f5f7;--surface:#fff;--border:#e5e7eb;
+  --font:'Inter',sans-serif;
+  --r:8px;--rs:4px;--r-pill:99px;
+  --bw:.5px;
+  /* CDS-compatible tokens used by the gestionale */
+  --surface-0:#f5f5f7;
+  --surface-1:#f0f0f2;
+  --surface-2:#ffffff;
+  --border-strong:#d1d5db;
+  --text-primary:#1c1c1e;
+  --text-secondary:#6b7280;
+  --text-muted:#9ca3af;
+  --text-accent:#185FA5;
+  --bg-accent:#e8f0fb;
+  --bg-warning:#fef9ee;
+  --bg-danger:#fff5f5;
+  --bg-success:#f0fdf4;
+  --border-warning:#fde68a;
+  --border-danger:#fca5a5;
+  --border-success:#bbf7d0;
+  --font-sans:'Inter',sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0f0f11;--surface:#1a1a1e;--border:#2a2a30;
+  --text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
+  --green-lt:#0d2b0c;--green-text:#0a1a00;
+  --surface-0:#0f0f11;
+  --surface-1:#1a1a1e;
+  --surface-2:#222228;
+  --border-strong:#374151;
+  --text-primary:#f0f0f2;
+  --text-secondary:#9ca3af;
+  --text-muted:#6b7280;
+  --text-accent:#60a5fa;
+  --bg-accent:#0c1929;
+  --bg-warning:#1a1400;
+  --bg-danger:#1a0a0a;
+  --bg-success:#0a1f0a;
+  --border-warning:#3a2800;
+  --border-danger:#5a1a1a;
+  --border-success:#14532d;
+}
+html,body{height:100%;font-family:var(--font);background:var(--surface-0);color:var(--text-primary);overflow:hidden;}
+button{font-family:var(--font);}
+textarea,input,select{font-family:var(--font);}
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+/* back-to-hub link in topbar */
+.hub-link{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--text-muted);
+  text-decoration:none;padding:3px 8px;
+  border-radius:5px;border:.5px solid var(--border);
+  transition:background .1s;margin-left:auto;
+}
+.hub-link:hover{background:var(--surface-1);color:var(--text-secondary);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React + Babel (no bundler) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// ── Dark mode sync ──
+function toggleTheme(){
+  const t=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=t;
+  localStorage.setItem('ns_theme',t);
+}
+(()=>{const t=localStorage.getItem('ns_theme')||'light';document.documentElement.dataset.theme=t;})();
+
+
+// ─── COSTANTI ─────────────────────────────────────────────────────────────────
+const G = "#1A8C3F";
+const M = "#C2185B";
+const B = "#185FA5";
+const T = "#0F6E56";
+
+function contrast(hex) {
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return (0.299*r+0.587*g+0.114*b)/255 > 0.55 ? "#1A1A1A" : "#FFFFFF";
+}
+
+// ─── STRUTTURA PDM ────────────────────────────────────────────────────────────
+const PDM_GROUPS = ["Fondamenta","Target","Strategia","Esecuzione","Monitoraggio"];
+const PDM_GROUP_COLORS = {
+  Fondamenta: B, Target: T, Strategia: "#854F0B", Esecuzione: "#534AB7", Monitoraggio: "#6B1A2A"
+};
+const PDM_SEZIONI = [
+  {id:"executive_summary",   lbl:"Executive summary",          grp:"Fondamenta", hint:"Sintesi strategica: contesto, obiettivi principali, linee guida.", ph:"Il brand X opera nel mercato Y con l'obiettivo di Z..."},
+  {id:"analisi_interna",     lbl:"Analisi interna",            grp:"Fondamenta", hint:"Punti di forza, debolezze, risorse, capacità produttiva.", ph:"Punti di forza: qualità del prodotto, rete locale...\nDebolezze: scarsa visibilità digitale..."},
+  {id:"analisi_esterna",     lbl:"Analisi esterna + PEST",     grp:"Fondamenta", hint:"Opportunità e minacce. Fattori politici, economici, sociali, tecnologici.", ph:"Opportunità: mercato in crescita del 12%...\nFattori PEST: trend sostenibilità..."},
+  {id:"swot",                lbl:"SWOT & matrice",             grp:"Fondamenta", hint:"Forze, debolezze, opportunità, minacce. Strategie SO/ST/WO/WT.", ph:"S: qualità artigianale certificata\nW: budget marketing limitato\nO: turismo locale in crescita\nT: ingresso competitor GDO"},
+  {id:"segmentazione",       lbl:"Segmentazione",              grp:"Target",     hint:"Criteri di segmentazione (geo, demo, psico, comportamentale). Quale segmento si serve.", ph:"Segmento primario: famiglie 30-50 anni, reddito medio-alto, sensibili alla qualità..."},
+  {id:"personas",            lbl:"Buyer personas",             grp:"Target",     hint:"2-3 personas con nome, background, obiettivi, frustrazioni, canali preferiti.", ph:"Persona 1 — Marco, 42 anni, manager, cerca autenticità nel cibo...\nPersona 2 — Sofia, 35 anni..."},
+  {id:"posizionamento",      lbl:"Posizionamento + USP",       grp:"Target",     hint:"Come il brand si differenzia. Unique Selling Proposition verificabile.", ph:"Posizionamento: fascia premium locale vs competitor industriale\nUSP: unico laboratorio km 0 certificato in città"},
+  {id:"obiettivi_smart",     lbl:"Obiettivi SMART",            grp:"Strategia",  hint:"Obiettivi Specifici, Misurabili, Raggiungibili, Rilevanti, Temporali.", ph:"OS1: aumentare il fatturato mensile del 20% entro dicembre 2026\nOS2: acquisire 50 nuovi clienti nei prossimi 6 mesi..."},
+  {id:"marketing_mix_7p",    lbl:"Marketing mix 7P",           grp:"Strategia",  hint:"Prodotto, Prezzo, Posto, Promozione, Persone, Processo, Prove fisiche.", ph:"Prodotto: linea premium estiva\nPrezzo: fascia 8-15€\nPosto: negozio + delivery locale\nPromozione: social + eventi..."},
+  {id:"canali_media_mix",    lbl:"Canali & media mix",         grp:"Strategia",  hint:"Canali attivi, budget allocato per canale, priorità.", ph:"Instagram: 40% budget · Local SEO: 20% · Events: 25% · Print locale: 15%"},
+  {id:"value_proposition",   lbl:"Value proposition",         grp:"Strategia",  hint:"Benefici funzionali + emotivi. Canvas value proposition.", ph:"Per [target] che vuole [obiettivo], [brand] offre [beneficio] grazie a [differenziatore]."},
+  {id:"funnel_strategy",     lbl:"Funnel strategy",           grp:"Strategia",  hint:"ToFu/MoFu/BoFu. Tattiche per ogni fase e KPI per ciascuna.", ph:"ToFu: contenuti organici + ADV awareness\nMoFu: email nurturing + social proof\nBoFu: offerta + retargeting"},
+  {id:"pricing_strategy",    lbl:"Pricing strategy",          grp:"Strategia",  hint:"Strategia di pricing. Confronto con competitor. Elasticità.", ph:"Prezzo premium del 15% rispetto alla media locale. Giustificato da..."},
+  {id:"cac_ltv",             lbl:"CAC & LTV / unit economics", grp:"Strategia",  hint:"Costo acquisizione cliente, valore nel tempo, margine per cliente.", ph:"CAC stimato: €35\nLTV medio cliente: €420 (12 mesi)\nPayback period: ~1 mese"},
+  {id:"piano_azione",        lbl:"Piano d'azione",            grp:"Esecuzione", hint:"Attività per trimestre con responsabile, scadenza, budget.", ph:"Q1: lancio social + setup newsletter\nQ2: shooting + ADV estate\nQ3: evento locale\nQ4: review strategica"},
+  {id:"budget",              lbl:"Budget marketing",          grp:"Esecuzione", hint:"Allocazione budget totale per categoria e mese.", ph:"Budget totale 2026: €6.000\nADV Meta: €2.400 | Content: €1.200 | Events: €1.800 | Tools: €600"},
+  {id:"monitoraggio_kpi",    lbl:"KPI & monitoraggio",        grp:"Monitoraggio",hint:"Dashboard KPI, frequenza di monitoraggio, soglie di alert.", ph:"KPI primari: fatturato, nuovi clienti, ROAS\nKPI secondari: reach, engagement, traffico web\nReview: mensile"},
+  {id:"review_qbr",          lbl:"Review & QBR",              grp:"Monitoraggio",hint:"Cadenza revisione strategica, format del QBR, output attesi.", ph:"QBR ogni 3 mesi con Luca + Alberto + cliente\nOutput: aggiornamento obiettivi SMART + piano Q+1"},
+];
+
+// ─── STRUTTURA PDC ────────────────────────────────────────────────────────────
+const PDC_GROUPS = ["Obiettivi","Identità","Messaggi","Canali","Campagne","Visual"];
+const PDC_GROUP_COLORS = {
+  Obiettivi: "#534AB7", Identità: T, Messaggi: B, Canali: "#854F0B", Campagne: M, Visual: "#6B1A2A"
+};
+const PDC_SEZIONI = [
+  {id:"obiettivi_comunicativi",lbl:"Obiettivi comunicativi",  grp:"Obiettivi", hint:"Traduzione degli obiettivi SMART di marketing in impatto psicologico: Cognitivo (conoscenza), Affettivo (preferenza), Comportamentale (azione).", ph:"OM1 → OC1: aumentare awareness del 30% (Cognitivo — far sapere che esistiamo)\nOM2 → OC2: incremento trial (Comportamentale — far provare il prodotto)"},
+  {id:"stakeholder_map",       lbl:"Stakeholder map",         grp:"Obiettivi", hint:"Chi sono i pubblici: primari, secondari, interni. Per ognuno: bisogno, messaggio chiave, canale.", ph:"Primari: clienti finali 30-55\nSecondari: media locali, influencer food\nInterni: team, fornitori\nIstituzionali: comune, associazioni"},
+  {id:"creative_territory",    lbl:"Creative territory",      grp:"Identità",  hint:"Lo spazio mentale del brand in una frase. Il tetto narrativo sotto cui vivono tutti i messaggi.", ph:"'Dimostra con documenti quello che altri dichiarano con aggettivi' — ogni comunicazione parte da una prova reale, mai da un'affermazione."},
+  {id:"tov_regole",            lbl:"Tone of voice — 10 regole",grp:"Identità", hint:"10 regole operative con esempio ✅ e ❌ per canale. Come si scrive, come non si scrive.", ph:"Regola 1: Usa la seconda persona singolare. ✅ 'Scegli quello che vuoi' ❌ 'Il cliente può scegliere'\nRegola 2: Frasi brevi (max 15 parole). ..."},
+  {id:"brand_taboos",          lbl:"Brand taboos & parole vietate",grp:"Identità",hint:"Parole, espressioni, toni e approcci esplicitamente esclusi dal brand.", ph:"VIETATO: qualità · eccellenza · tradizione · professionalità · unico · leader\nVIETATO: foto stock · tono istituzionale · aziendalese\nVIETATO: promettere senza provare"},
+  {id:"message_house",         lbl:"Message house",           grp:"Messaggi",  hint:"Brand tetto (promessa principale) + 4 pilastri narrativi + fondamenta (reason why) per ogni buyer persona.", ph:"TETTO: [promessa principale del brand]\nPILASTRO 1: [tema narrativo A]\nPILASTRO 2: [tema narrativo B]\nFONDAMENTA: [reason why verificabile]"},
+  {id:"buyer_insights",        lbl:"Buyer insights",          grp:"Messaggi",  hint:"La tensione psicologica irrisolta per ogni persona. Non i dati demografici — la verità che li muove.", ph:"Persona Marco: 'Vuole sentirsi un esperto quando sceglie, non un consumatore passivo. Ha paura di sbagliare acquisto.'\nPersona Sofia: ..."},
+  {id:"content_repurposing",   lbl:"Content repurposing matrix",grp:"Messaggi", hint:"Matrice di riciclo: da un contenuto pillar quanti formati derivati. Ottimizza produzione.", ph:"Video lungo (8 min) → Reel (3 clip 30s) → 3 post carosello → 1 articolo → 5 stories"},
+  {id:"architettura_canali",   lbl:"Architettura canali",     grp:"Canali",    hint:"OWNED (sito, newsletter, social) / EARNED (PR, recensioni) / PAID (ADV) / SHARED (partner). Per ognuno: obiettivo, frequenza, KPI.", ph:"OWNED: Instagram @brand (3x/sett · engagement) · Newsletter (1x/mese · CTR)\nEARNED: Stampa locale · Food blogger\nPAID: Meta Ads (ToFu)"},
+  {id:"calendario_comunicazione",lbl:"Calendario comunicazione",grp:"Canali",  hint:"Piano mensile/trimestrale: stagionalità, ricorrenze, momenti chiave del brand.", ph:"Gen-Feb: post-festività, ritorno alla normalità\nMar-Apr: primavera, freschezza\nGiu-Ago: estate, prodotto stagionale\nSet-Dic: back-to-school, festività"},
+  {id:"campaign_moments",      lbl:"Campaign moments",        grp:"Campagne",  hint:"3 campagne specifiche con: big idea, obiettivo, canali, timeline, budget, KPI.", ph:"CAMPAGNA 1: 'L'estate in un gusto'\nBig idea: ogni gusto racconta un luogo della Sicilia\nCanali: Instagram + Meta Ads + in-store\nTimeline: Giu-Ago · Budget: €1.200 · KPI: 500 nuovi follower"},
+  {id:"crisis_communication",  lbl:"Protocollo crisi",        grp:"Campagne",  hint:"Procedura in caso di review negativa, crisi social, problema reputazionale.", ph:"Step 1: risposta entro 2h (template pre-approvato)\nStep 2: escalation a Luca/Alberto\nStep 3: risposta pubblica dopo 24h con soluzione concreta"},
+  {id:"visual_identity_base",  lbl:"Visual identity base",    grp:"Visual",    hint:"Coordinate visive per la comunicazione: palette uso, tipografia, stile fotografico, reference.", ph:"PALETTE: Terracotta #C25B2A (primario) · Crema #F5EDD8 (sfondo) · Verde #7A9E5A (accento)\nFOTO: Raw & Real · luce naturale · persone reali · no stock"},
+  {id:"format_library",        lbl:"Library format",          grp:"Visual",    hint:"Formati ricorrenti per ogni canale: nomi, dimensioni, regole di layout.", ph:"INSTAGRAM POST: 1080x1080 · logo in basso dx · font Playfair titolo + Inter corpo\nREEL COVER: 1080x1920 · claim centrato · sfondo tinta unita"},
+  {id:"do_dont",               lbl:"Do & Don't visivo",       grp:"Visual",    hint:"Esempi positivi e negativi di uso visivo del brand. Stampabile per il team.", ph:"✅ DO: foto in ambiente reale con luce solare · testo breve su sfondo chiaro\n❌ DON'T: filtri saturi · font Arial · frame bianco bordo · logo troppo piccolo"},
+];
+
+// ─── DATI MOCK ────────────────────────────────────────────────────────────────
+function emptyPDM() {
+  return Object.fromEntries(PDM_SEZIONI.map(s => [s.id, ""]));
+}
+function emptyPDC() {
+  return Object.fromEntries(PDC_SEZIONI.map(s => [s.id, ""]));
+}
+
+const INIT_CLIENTS = [
+  {
+    id:"artigianale", name:"L'Artigianale Gelateria",
+    pkg:"Professional", phase:"Fase 3 — Produzione", manager:"Alberto", since:"Mar 2025", color:"#C25B2A",
+    brand:{
+      claim:"Artigianale fino all'ultimo gusto.", archetype:"Il Creatore", tov:"Caldo, autentico, territoriale",
+      colors:[{name:"Terracotta",hex:"#C25B2A",role:"Primario"},{name:"Crema",hex:"#F5EDD8",role:"Sfondo"},{name:"Verde Pistacchio",hex:"#7A9E5A",role:"Accento"},{name:"Bruno Scuro",hex:"#2C1A0E",role:"Testi"}],
+      fonts:[{name:"Playfair Display",role:"Display/Titoli",weight:"700"},{name:"Inter",role:"Body/UI",weight:"400"}],
+      logos:[{name:"Logo principale",format:"SVG",variant:"colore"},{name:"Logo orizzontale",format:"SVG",variant:"colore"},{name:"Simbolo isolato",format:"PNG",variant:"bianco"}],
+      images:[{name:"Foto gelato artigianale",tag:"Raw & Real"},{name:"Backstage laboratorio",tag:"Raw & Real"},{name:"Texture cialda",tag:"Texture"}],
+      pillars:[{name:"Brand Identity",pct:20},{name:"Prodotto",pct:40},{name:"Raw & Real",pct:20},{name:"Educazione",pct:10},{name:"Community",pct:10}],
+    },
+    pdm: emptyPDM(),
+    pdc: emptyPDC(),
+    strategy:{
+      mod4a:{done:false,target_primario:"",problema_reale:"",differenziatore:"",frase_guida:"",mood_emotivo:"",esclusioni:"",note_sessione:""},
+      mod5:{done:false,insight:"",problema:"",reason_why:"",promessa:"",key_message:"",archetipo:"",tov_parole_si:"",tov_parole_no:"",claim:"",payoff:""},
+    },
+  },
+  {
+    id:"ramaddini", name:"Ramaddini Vini",
+    pkg:"Essential", phase:"Fase 2 — Strategia", manager:"Luca", since:"Gen 2026", color:"#6B1A2A",
+    brand:{
+      claim:"Vino che racconta la terra.", archetype:"L'Esploratore", tov:"Colto, diretto, appassionato",
+      colors:[{name:"Bordeaux",hex:"#6B1A2A",role:"Primario"},{name:"Sabbia",hex:"#E8DCC8",role:"Sfondo"},{name:"Oro antico",hex:"#B8942A",role:"Accento"},{name:"Quasi Nero",hex:"#1A1008",role:"Testi"}],
+      fonts:[{name:"Cormorant Garamond",role:"Display/Titoli",weight:"600"},{name:"Inter",role:"Body/UI",weight:"400"}],
+      logos:[{name:"Logo principale",format:"SVG",variant:"colore"},{name:"Monogramma",format:"SVG",variant:"colore"}],
+      images:[{name:"Vigneto al tramonto",tag:"Raw & Real"},{name:"Dettaglio bottiglia",tag:"Prodotto"}],
+      pillars:[{name:"Brand Identity",pct:25},{name:"Prodotto",pct:35},{name:"Raw & Real",pct:20},{name:"Educazione",pct:15},{name:"Community",pct:5}],
+    },
+    pdm: {
+      ...emptyPDM(),
+      executive_summary: "Ramaddini Vini è un produttore vitivinicolo siciliano con vigne centenarie nella zona iblea. Obiettivo 2026: posizionarsi come brand premium naturale e aumentare le vendite dirette del 30%.",
+      analisi_interna: "FORZE: vigne centenarie, metodi naturali certificati, storia familiare autentica\nDEBOLEZZE: distribuzione limitata, scarsa presenza digitale, budget marketing ridotto",
+      swot: "S: autenticità verificabile, territorio unico\nW: piccolo volume produttivo\nO: trend vino naturale in crescita\nT: proliferazione finto-artigianale nel mercato",
+    },
+    pdc: emptyPDC(),
+    strategy:{
+      mod4a:{done:true,target_primario:"Enofili 35-55, cultura medio-alta, viaggiatori del gusto",problema_reale:"Non si distingue dalla produzione industriale siciliana — l'autenticità non è visibile",differenziatore:"Viti centenarie, metodi naturali, zero additivi — tutto verificabile e documentato",frase_guida:"Il vino è memoria del territorio",mood_emotivo:"Malinconico, profondo, radicato, autentico",esclusioni:"No lusso ostentato, no tecnicismo enologico, no turismo di massa",note_sessione:"Sessione 90min con Luca + Alberto. Cliente presente. Direzione confermata."},
+      mod5:{done:false,insight:"Chi beve vino naturale cerca una storia vera, non solo un gusto — vuole sapere dove nasce il vino e chi lo ha fatto",problema:"Il mercato siciliano è saturo di brand che promettono autenticità senza averla — chi la ha davvero non sa raccontarla",reason_why:"Vigne centenarie documentate, metodi naturali certificati, nessun additivo: tutto provabile e verificabile sul campo",promessa:"Un vino che ti porta esattamente dove è nato",key_message:"",archetipo:"L'Esploratore",tov_parole_si:"",tov_parole_no:"",claim:"Vino che racconta la terra.",payoff:""},
+    },
+  },
+];
+
+// ─── SHARED UI ────────────────────────────────────────────────────────────────
+function Pill({children, color=G, bg}) {
+  return <span style={{fontSize:11,fontWeight:500,padding:"2px 8px",borderRadius:4,background:bg||color+"18",color,whiteSpace:"nowrap",display:"inline-block"}}>{children}</span>;
+}
+function Card({children, style={}}) {
+  return <div style={{background:"var(--surface-2)",border:"0.5px solid var(--border)",borderRadius:12,padding:"1.25rem",...style}}>{children}</div>;
+}
+function ProgressBar({pct, color=G, height=4}) {
+  return <div style={{height,background:"var(--surface-0)",borderRadius:2,overflow:"hidden"}}>
+    <div style={{height:"100%",width:`${Math.min(100,Math.round(pct))}%`,background:color,borderRadius:2,transition:"width 0.4s"}}/>
+  </div>;
+}
+function SectionTitle({title, sub}) {
+  return <div style={{marginBottom:"1.25rem"}}>
+    <h2 style={{margin:"0 0 3px",fontSize:17,fontWeight:500,color:"var(--text-primary)"}}>{title}</h2>
+    {sub && <p style={{margin:0,fontSize:12,color:"var(--text-muted)"}}>{sub}</p>}
+  </div>;
+}
+function ActionBar({title, sub, onSave, onNext, nextLabel, savedMsg}) {
+  return <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.25rem",flexWrap:"wrap",gap:10}}>
+    <div>
+      <h2 style={{margin:"0 0 3px",fontSize:17,fontWeight:500,color:"var(--text-primary)"}}>{title}</h2>
+      {sub && <p style={{margin:0,fontSize:12,color:"var(--text-muted)"}}>{sub}</p>}
+    </div>
+    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+      {savedMsg && <span style={{fontSize:11,color:G,fontWeight:500}}>{savedMsg}</span>}
+      {onSave && <button onClick={onSave} style={{padding:"5px 13px",borderRadius:6,border:"none",background:G,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>Salva</button>}
+      {onNext && <button onClick={onNext} style={{padding:"5px 13px",borderRadius:6,border:`1px solid ${M}`,background:"transparent",color:M,fontSize:11,cursor:"pointer",fontWeight:500}}>{nextLabel||"Avanti →"}</button>}
+    </div>
+  </div>;
+}
+function Alert({type="warning", children}) {
+  const cfg = {
+    warning:{bg:"var(--bg-warning)",border:"var(--border-warning)",icon:"⚠️"},
+    danger: {bg:"var(--bg-danger)", border:"var(--border-danger)", icon:"🔒"},
+    success:{bg:"var(--bg-success)",border:"var(--border-success)",icon:"✅"},
+    info:   {bg:"var(--surface-1)", border:"var(--border)",        icon:"ℹ️"},
+  }[type]||{};
+  return <div style={{padding:"9px 13px",borderRadius:8,background:cfg.bg,border:`0.5px solid ${cfg.border}`,display:"flex",gap:8,alignItems:"flex-start",marginBottom:"1.25rem",fontSize:11,color:"var(--text-secondary)"}}>
+    <span>{cfg.icon}</span><span>{children}</span>
+  </div>;
+}
+
+// ─── LAYOUT SIDEBAR ───────────────────────────────────────────────────────────
+function SidebarLayout({sidebar, children}) {
+  return <div style={{display:"flex",height:"calc(100vh - 48px)",overflow:"hidden"}}>
+    <div style={{width:210,flexShrink:0,background:"var(--surface-1)",borderRight:"0.5px solid var(--border)",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+      {sidebar}
+    </div>
+    <div style={{flex:1,overflowY:"auto",padding:"1.5rem"}}>
+      {children}
+    </div>
+  </div>;
+}
+
+function NavBtn({active, onClick, children, color=G}) {
+  return <button onClick={onClick} style={{
+    width:"100%",textAlign:"left",padding:"8px 14px",border:"none",cursor:"pointer",
+    fontSize:12,background:active?"var(--bg-accent)":"transparent",
+    color:active?"var(--text-accent)":"var(--text-secondary)",
+    borderLeft:`2px solid ${active?color:"transparent"}`,transition:"all 0.1s",
+  }}>{children}</button>;
+}
+
+// ─── CAMPO TESTO GENERICO ─────────────────────────────────────────────────────
+function Field({label, hint, value, onChange, rows=3, type="textarea", placeholder=""}) {
+  const base = {width:"100%",padding:"8px 11px",fontSize:13,color:"var(--text-primary)",background:"var(--surface-1)",border:"0.5px solid var(--border-strong)",borderRadius:8,fontFamily:"var(--font-sans)",outline:"none",boxSizing:"border-box"};
+  return <div style={{marginBottom:"1.25rem"}}>
+    <label style={{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:3}}>{label}</label>
+    {hint && <p style={{margin:"0 0 5px",fontSize:11,color:"var(--text-muted)",lineHeight:1.5}}>{hint}</p>}
+    {type==="textarea"
+      ? <textarea rows={rows} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{...base,resize:"vertical"}}/>
+      : <input type="text" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={base}/>
+    }
+  </div>;
+}
+
+// ─── OVERVIEW CLIENTE ─────────────────────────────────────────────────────────
+function OverviewView({client, onNavigate}) {
+  const pdmFilled = PDM_SEZIONI.filter(s=>client.pdm[s.id]?.trim()).length;
+  const pdcFilled = PDC_SEZIONI.filter(s=>client.pdc[s.id]?.trim()).length;
+  const stratScore = (client.strategy.mod4a.done?1:0)+(client.strategy.mod5.done?1:0);
+  const brandScore = client.brand.colors.length > 0 ? 4 : 0;
+
+  const modules = [
+    {id:"pdm",  lbl:"Piano di Marketing",     n:pdmFilled, tot:PDM_SEZIONI.length, color:B},
+    {id:"pdc",  lbl:"Piano di Comunicazione", n:pdcFilled, tot:PDC_SEZIONI.length, color:T},
+    {id:"brand",lbl:"Brand Portal",           n:brandScore,tot:6,                  color:"#534AB7"},
+    {id:"strategy",lbl:"Strategy Builder",    n:stratScore,tot:2,                  color:M},
+  ];
+
+  return <div>
+    <SectionTitle title={client.name} sub={`Manager: ${client.manager} · ${client.phase} · dal ${client.since}`}/>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:"1.25rem"}}>
+      {modules.map(m => (
+        <div key={m.id} onClick={()=>onNavigate(m.id)} style={{background:"var(--surface-1)",borderRadius:10,padding:"0.9rem",cursor:"pointer",transition:"border 0.15s",border:"0.5px solid var(--border)"}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=m.color}
+          onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}>
+          <p style={{margin:"0 0 3px",fontSize:19,fontWeight:500,color:"var(--text-primary)"}}>{m.n}/{m.tot}</p>
+          <p style={{margin:"0 0 8px",fontSize:11,color:"var(--text-muted)"}}>{m.lbl}</p>
+          <ProgressBar pct={(m.n/m.tot)*100} color={m.color}/>
+          <p style={{margin:"5px 0 0",fontSize:10,color:"var(--text-muted)"}}>{Math.round((m.n/m.tot)*100)}% · clicca per aprire</p>
+        </div>
+      ))}
+    </div>
+
+    <Card style={{borderLeft:`3px solid ${client.color}`,marginBottom:"1.25rem"}}>
+      <p style={{margin:"0 0 10px",fontSize:18,fontStyle:"italic",fontWeight:500,color:"var(--text-primary)"}}>"{client.brand.claim}"</p>
+      <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+        {[["Archetipo",client.brand.archetype],["ToV",client.brand.tov],["Fase",client.phase]].map(([k,v])=>(
+          <div key={k}>
+            <p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>{k}</p>
+            <p style={{margin:0,fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{v}</p>
+          </div>
+        ))}
+        <div>
+          <p style={{margin:"0 0 4px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Palette</p>
+          <div style={{display:"flex",gap:4}}>
+            {client.brand.colors.map((c,i)=>(
+              <div key={i} title={c.name} style={{width:18,height:18,borderRadius:4,background:c.hex,border:"0.5px solid rgba(0,0,0,0.1)"}}/>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
+
+    <div style={{padding:"10px 14px",borderRadius:8,background:"var(--surface-1)",border:"0.5px solid var(--border)",fontSize:11,color:"var(--text-muted)"}}>
+      <span style={{fontWeight:500,color:"var(--text-secondary)"}}>Flusso Staffetta:</span> PDM → PDC → Brand Portal → Strategy Builder → Output
+    </div>
+  </div>;
+}
+
+// ─── PDM VIEW ────────────────────────────────────────────────────────────────
+function PDMView({client, onChange, onNext}) {
+  const [activeSec, setActiveSec] = useState(PDM_SEZIONI[0].id);
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const filled = PDM_SEZIONI.filter(s=>client.pdm[s.id]?.trim()).length;
+  const pct = Math.round((filled/PDM_SEZIONI.length)*100);
+  const currentSec = PDM_SEZIONI.find(s=>s.id===activeSec);
+
+  const save = () => { setSavedMsg("Salvato ✓"); setTimeout(()=>setSavedMsg(""),2000); };
+
+  const sidebar = <>
+    <div style={{padding:"1rem",borderBottom:"0.5px solid var(--border)"}}>
+      <div style={{width:30,height:30,borderRadius:6,background:B,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
+        <span style={{color:"#fff",fontSize:13}}>📊</span>
+      </div>
+      <p style={{margin:"0 0 2px",fontSize:11,fontWeight:500,color:"var(--text-primary)"}}>Piano di Marketing</p>
+      <p style={{margin:"0 0 6px",fontSize:10,color:"var(--text-muted)"}}>{client.name}</p>
+      <ProgressBar pct={pct} color={B}/>
+      <p style={{margin:"4px 0 0",fontSize:10,color:"var(--text-muted)"}}>{filled}/{PDM_SEZIONI.length} sezioni</p>
+    </div>
+    <div style={{flex:1,padding:"4px 0"}}>
+      {PDM_GROUPS.map(grp => {
+        const secs = PDM_SEZIONI.filter(s=>s.grp===grp);
+        const gDone = secs.filter(s=>client.pdm[s.id]?.trim()).length;
+        return <div key={grp}>
+          <div style={{padding:"6px 12px 2px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",justifyContent:"space-between"}}>
+            <span>{grp}</span><span>{gDone}/{secs.length}</span>
+          </div>
+          {secs.map(s=>{
+            const done = client.pdm[s.id]?.trim();
+            return <NavBtn key={s.id} active={activeSec===s.id} onClick={()=>setActiveSec(s.id)} color={PDM_GROUP_COLORS[grp]}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:done?PDM_GROUP_COLORS[grp]:"var(--border-strong)",display:"inline-block",marginRight:8,flexShrink:0}}/>
+              {s.lbl}
+            </NavBtn>;
+          })}
+        </div>;
+      })}
+    </div>
+    <div style={{padding:"0.75rem",borderTop:"0.5px solid var(--border)"}}>
+      <button onClick={onNext} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:`1px solid ${M}`,background:"transparent",color:M,fontSize:11,cursor:"pointer",fontWeight:500}}>
+        Vai a PDC →
+      </button>
+    </div>
+  </>;
+
+  return <SidebarLayout sidebar={sidebar}>
+    <ActionBar
+      title={currentSec?.lbl}
+      sub={`Gruppo: ${currentSec?.grp} · Piano di Marketing`}
+      onSave={save}
+      savedMsg={savedMsg}
+    />
+    <Alert type="info">I dati di questa sezione alimentano automaticamente il Piano di Comunicazione. Compila con precisione — vengono riusati come contesto.</Alert>
+    {currentSec && <Field
+      label={currentSec.lbl}
+      hint={currentSec.hint}
+      placeholder={currentSec.ph}
+      value={client.pdm[currentSec.id]||""}
+      onChange={v=>onChange("pdm",currentSec.id,v)}
+      rows={6}
+    />}
+    <div style={{display:"flex",gap:8,marginTop:8}}>
+      {PDM_SEZIONI.findIndex(s=>s.id===activeSec)>0 && (
+        <button onClick={()=>setActiveSec(PDM_SEZIONI[PDM_SEZIONI.findIndex(s=>s.id===activeSec)-1].id)}
+          style={{padding:"5px 12px",borderRadius:5,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}}>
+          ← Precedente
+        </button>
+      )}
+      {PDM_SEZIONI.findIndex(s=>s.id===activeSec)<PDM_SEZIONI.length-1 && (
+        <button onClick={()=>setActiveSec(PDM_SEZIONI[PDM_SEZIONI.findIndex(s=>s.id===activeSec)+1].id)}
+          style={{padding:"5px 12px",borderRadius:5,border:"none",background:G,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>
+          Salva & vai avanti →
+        </button>
+      )}
+    </div>
+  </SidebarLayout>;
+}
+
+// ─── PDC VIEW ────────────────────────────────────────────────────────────────
+function PDCView({client, onChange, onNext, onPrev}) {
+  const [activeSec, setActiveSec] = useState(PDC_SEZIONI[0].id);
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const pdmFilled = PDM_SEZIONI.filter(s=>client.pdm[s.id]?.trim()).length;
+  const pdmHasBase = pdmFilled >= 4;
+  const filled = PDC_SEZIONI.filter(s=>client.pdc[s.id]?.trim()).length;
+  const pct = Math.round((filled/PDC_SEZIONI.length)*100);
+  const currentSec = PDC_SEZIONI.find(s=>s.id===activeSec);
+  const save = () => { setSavedMsg("Salvato ✓"); setTimeout(()=>setSavedMsg(""),2000); };
+
+  // Context from PDM for inheritance banner
+  const pdmContext = {
+    personas: client.pdm.personas,
+    obiettivi: client.pdm.obiettivi_smart,
+    posizionamento: client.pdm.posizionamento,
+  };
+
+  const sidebar = <>
+    <div style={{padding:"1rem",borderBottom:"0.5px solid var(--border)"}}>
+      <div style={{width:30,height:30,borderRadius:6,background:T,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
+        <span style={{color:"#fff",fontSize:13}}>📣</span>
+      </div>
+      <p style={{margin:"0 0 2px",fontSize:11,fontWeight:500,color:"var(--text-primary)"}}>Piano di Comunicazione</p>
+      <p style={{margin:"0 0 6px",fontSize:10,color:"var(--text-muted)"}}>{client.name}</p>
+      <ProgressBar pct={pct} color={T}/>
+      <p style={{margin:"4px 0 0",fontSize:10,color:"var(--text-muted)"}}>{filled}/{PDC_SEZIONI.length} sezioni</p>
+    </div>
+    <div style={{flex:1,padding:"4px 0"}}>
+      {PDC_GROUPS.map(grp=>{
+        const secs = PDC_SEZIONI.filter(s=>s.grp===grp);
+        const gDone = secs.filter(s=>client.pdc[s.id]?.trim()).length;
+        return <div key={grp}>
+          <div style={{padding:"6px 12px 2px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",justifyContent:"space-between"}}>
+            <span>{grp}</span><span>{gDone}/{secs.length}</span>
+          </div>
+          {secs.map(s=>{
+            const done = client.pdc[s.id]?.trim();
+            return <NavBtn key={s.id} active={activeSec===s.id} onClick={()=>setActiveSec(s.id)} color={PDC_GROUP_COLORS[grp]||T}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:done?(PDC_GROUP_COLORS[grp]||T):"var(--border-strong)",display:"inline-block",marginRight:8,flexShrink:0}}/>
+              {s.lbl}
+            </NavBtn>;
+          })}
+        </div>;
+      })}
+    </div>
+    <div style={{padding:"0.75rem",borderTop:"0.5px solid var(--border)",display:"flex",flexDirection:"column",gap:6}}>
+      <button onClick={onPrev} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}}>
+        ← Torna a PDM
+      </button>
+      <button onClick={onNext} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:`1px solid ${M}`,background:"transparent",color:M,fontSize:11,cursor:"pointer",fontWeight:500}}>
+        Vai a Brand Portal →
+      </button>
+    </div>
+  </>;
+
+  return <SidebarLayout sidebar={sidebar}>
+    {!pdmHasBase
+      ? <Alert type="danger">Completa almeno 4 sezioni del Piano di Marketing (Fondamenta + Target) prima di procedere qui. Il PDC eredita personas e obiettivi SMART come contesto.</Alert>
+      : <Alert type="success">Eredita dal PDM: {pdmContext.personas ? "personas ✓" : "personas ○"} · {pdmContext.obiettivi ? "obiettivi SMART ✓" : "obiettivi SMART ○"} · {pdmContext.posizionamento ? "posizionamento ✓" : "posizionamento ○"} — disponibili come contesto nelle sezioni Obiettivi e Messaggi.</Alert>
+    }
+
+    <ActionBar
+      title={currentSec?.lbl}
+      sub={`Gruppo: ${currentSec?.grp} · Piano di Comunicazione · documento figlio del PDM`}
+      onSave={save}
+      savedMsg={savedMsg}
+    />
+
+    {/* Context box per sezioni che ereditano dal PDM */}
+    {(activeSec==="obiettivi_comunicativi" && pdmContext.obiettivi) && (
+      <Card style={{marginBottom:"1.25rem",borderLeft:`3px solid ${B}`,padding:"0.9rem"}}>
+        <p style={{margin:"0 0 4px",fontSize:10,color:B,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500}}>Obiettivi SMART dal PDM</p>
+        <p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{pdmContext.obiettivi.slice(0,200)}{pdmContext.obiettivi.length>200?"...":""}</p>
+      </Card>
+    )}
+    {(activeSec==="message_house"||activeSec==="buyer_insights") && pdmContext.personas && (
+      <Card style={{marginBottom:"1.25rem",borderLeft:`3px solid ${T}`,padding:"0.9rem"}}>
+        <p style={{margin:"0 0 4px",fontSize:10,color:T,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500}}>Buyer personas dal PDM</p>
+        <p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{pdmContext.personas.slice(0,200)}{pdmContext.personas.length>200?"...":""}</p>
+      </Card>
+    )}
+
+    {currentSec && <Field
+      label={currentSec.lbl}
+      hint={currentSec.hint}
+      placeholder={currentSec.ph}
+      value={client.pdc[currentSec.id]||""}
+      onChange={v=>onChange("pdc",currentSec.id,v)}
+      rows={6}
+    />}
+
+    <div style={{display:"flex",gap:8,marginTop:8}}>
+      {PDC_SEZIONI.findIndex(s=>s.id===activeSec)>0 && (
+        <button onClick={()=>setActiveSec(PDC_SEZIONI[PDC_SEZIONI.findIndex(s=>s.id===activeSec)-1].id)}
+          style={{padding:"5px 12px",borderRadius:5,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}}>
+          ← Precedente
+        </button>
+      )}
+      {PDC_SEZIONI.findIndex(s=>s.id===activeSec)<PDC_SEZIONI.length-1 && (
+        <button onClick={()=>setActiveSec(PDC_SEZIONI[PDC_SEZIONI.findIndex(s=>s.id===activeSec)+1].id)}
+          style={{padding:"5px 12px",borderRadius:5,border:"none",background:G,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>
+          Salva & vai avanti →
+        </button>
+      )}
+    </div>
+  </SidebarLayout>;
+}
+
+// ─── BRAND PORTAL VIEW ───────────────────────────────────────────────────────
+function BrandPortalView({client, onNext, onPrev}) {
+  const [sec, setSec] = useState("overview");
+  const b = client.brand;
+  const pc = b.colors[0]?.hex || G;
+  const pdcHasTov = client.pdc.tov_regole?.trim();
+  const pdcHasClaim = client.pdc.creative_territory?.trim();
+
+  const SECS = [
+    {id:"overview",icon:"◈",lbl:"Overview"},
+    {id:"colors",  icon:"🎨",lbl:"Colori"},
+    {id:"fonts",   icon:"🔤",lbl:"Font"},
+    {id:"logos",   icon:"📐",lbl:"Loghi"},
+    {id:"images",  icon:"🖼",lbl:"Immagini"},
+    {id:"pillars", icon:"📊",lbl:"Pilastri"},
+  ];
+
+  const sidebar = <>
+    <div style={{padding:"1rem",borderBottom:"0.5px solid var(--border)"}}>
+      <div style={{width:30,height:30,borderRadius:6,background:pc,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
+        <span style={{color:contrast(pc),fontWeight:700,fontSize:13}}>{client.name.charAt(0)}</span>
+      </div>
+      <p style={{margin:"0 0 3px",fontSize:11,fontWeight:500,color:"var(--text-primary)",lineHeight:1.3}}>{client.name}</p>
+      <Pill color={G}>{client.pkg}</Pill>
+    </div>
+    <nav style={{padding:"6px 0",flex:1}}>
+      {SECS.map(s=>(
+        <NavBtn key={s.id} active={sec===s.id} onClick={()=>setSec(s.id)}>
+          <span style={{marginRight:8}}>{s.icon}</span>{s.lbl}
+        </NavBtn>
+      ))}
+    </nav>
+    <div style={{padding:"0.75rem",borderTop:"0.5px solid var(--border)",display:"flex",flexDirection:"column",gap:6}}>
+      <button onClick={onPrev} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}}>
+        ← Torna a PDC
+      </button>
+      <button onClick={onNext} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:`1px solid ${M}`,background:"transparent",color:M,fontSize:11,cursor:"pointer",fontWeight:500}}>
+        Vai a Strategy →
+      </button>
+    </div>
+  </>;
+
+  return <SidebarLayout sidebar={sidebar}>
+    {(pdcHasTov||pdcHasClaim) && (
+      <Alert type="success">Eredita dal PDC: {pdcHasTov?"ToV ✓":"ToV ○"} · {pdcHasClaim?"Creative Territory ✓":"CT ○"} — già integrati nella sezione Font e Pilastri.</Alert>
+    )}
+
+    {sec==="overview" && (
+      <div>
+        <SectionTitle title={client.name} sub={`Manager: ${client.manager} · dal ${client.since}`}/>
+        <Card style={{marginBottom:12,borderLeft:`3px solid ${pc}`}}>
+          <p style={{margin:"0 0 10px",fontSize:18,fontStyle:"italic",fontWeight:500,color:"var(--text-primary)"}}>"{b.claim}"</p>
+          <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+            {[["Archetipo",b.archetype],["ToV",b.tov],["Fase",client.phase]].map(([k,v])=>(
+              <div key={k}>
+                <p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>{k}</p>
+                <p style={{margin:0,fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{v}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+          {[["Colori",b.colors.length,"colors"],["Font",b.fonts.length,"fonts"],["Loghi",b.logos.length,"logos"],["Immagini",b.images.length,"images"]].map(([l,v,id])=>(
+            <div key={l} onClick={()=>setSec(id)} style={{background:"var(--surface-1)",borderRadius:8,padding:"0.75rem",cursor:"pointer",transition:"border 0.1s",border:"0.5px solid transparent"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=pc}
+              onMouseLeave={e=>e.currentTarget.style.borderColor="transparent"}>
+              <p style={{margin:"0 0 4px",fontSize:19,fontWeight:500,color:"var(--text-primary)"}}>{v}</p>
+              <p style={{margin:0,fontSize:11,color:"var(--text-muted)"}}>{l}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {sec==="colors" && (
+      <div>
+        <SectionTitle title="Palette colori" sub="Clicca per copiare il codice HEX"/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:12}}>
+          {b.colors.map((c,i)=>{
+            const [copied,setCopied] = [false,()=>{}];
+            return <div key={i} onClick={()=>{try{navigator.clipboard?.writeText(c.hex);}catch(e){}}}
+              style={{borderRadius:10,overflow:"hidden",border:"1px solid var(--border)",cursor:"pointer",transition:"transform 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+              <div style={{background:c.hex,height:56}}/>
+              <div style={{padding:"7px 10px",background:"var(--surface-2)"}}>
+                <p style={{margin:0,fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{c.name}</p>
+                <p style={{margin:0,fontSize:11,color:"var(--text-muted)",fontFamily:"monospace"}}>{c.hex}</p>
+                <p style={{margin:0,fontSize:10,color:"var(--text-muted)"}}>{c.role}</p>
+              </div>
+            </div>;
+          })}
+        </div>
+      </div>
+    )}
+
+    {sec==="fonts" && (
+      <div>
+        <SectionTitle title="Sistema tipografico"/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:12,marginBottom:14}}>
+          {b.fonts.map((f,i)=>(
+            <Card key={i}>
+              <p style={{margin:"0 0 4px",fontFamily:f.name+",serif",fontSize:26,fontWeight:f.weight,color:"var(--text-primary)"}}>{f.name.slice(0,2)}ab</p>
+              <p style={{margin:"0 0 2px",fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{f.name}</p>
+              <p style={{margin:0,fontSize:11,color:"var(--text-muted)"}}>{f.role} · w{f.weight}</p>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <p style={{margin:"0 0 4px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Specimen</p>
+          <p style={{margin:"0 0 6px",fontFamily:b.fonts[0]?.name+",serif",fontSize:24,fontWeight:700,color:"var(--text-primary)"}}>{b.claim}</p>
+          <p style={{margin:0,fontFamily:b.fonts[1]?.name+",sans-serif",fontSize:13,color:"var(--text-secondary)",lineHeight:1.6}}>Archetipo: {b.archetype} · ToV: {b.tov}</p>
+        </Card>
+        {pdcHasTov && (
+          <Card style={{marginTop:12,borderLeft:`3px solid ${T}`}}>
+            <p style={{margin:"0 0 4px",fontSize:10,color:T,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500}}>ToV dal Piano di Comunicazione</p>
+            <p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{client.pdc.tov_regole.slice(0,300)}</p>
+          </Card>
+        )}
+      </div>
+    )}
+
+    {sec==="logos" && (
+      <div>
+        <SectionTitle title="Loghi e marchi" sub="File vettoriali e varianti"/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:12}}>
+          {b.logos.map((l,i)=>(
+            <Card key={i} style={{padding:0,overflow:"hidden",background:l.variant==="bianco"?"#1A1A1A":"var(--surface-2)"}}>
+              <div style={{height:76,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{width:42,height:42,borderRadius:8,background:pc,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{color:contrast(pc),fontSize:17,fontWeight:700}}>{client.name.charAt(0)}</span>
+                </div>
+              </div>
+              <div style={{padding:"9px 11px"}}>
+                <p style={{margin:"0 0 2px",fontSize:11,fontWeight:500,color:l.variant==="bianco"?"#ccc":"var(--text-primary)"}}>{l.name}</p>
+                <p style={{margin:"0 0 7px",fontSize:10,color:l.variant==="bianco"?"#666":"var(--text-muted)"}}>{l.format} · {l.variant}</p>
+                <button style={{width:"100%",padding:"4px 0",fontSize:11,border:"0.5px solid var(--border-strong)",borderRadius:4,background:"transparent",color:"var(--text-secondary)",cursor:"pointer"}}>↓ Scarica</button>
+              </div>
+            </Card>
+          ))}
+        </div>
+        <Alert type="warning" style={{marginTop:12}}>File reali in Dropbox → DOCUMENT HUB · {client.name} → 01_BRAND/</Alert>
+      </div>
+    )}
+
+    {sec==="images" && (
+      <div>
+        <SectionTitle title="Banca immagini" sub="Foto e materiali visual approvati"/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:12}}>
+          {b.images.map((img,i)=>(
+            <Card key={i} style={{padding:0,overflow:"hidden"}}>
+              <div style={{height:84,background:pc+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,opacity:0.4}}>🖼</div>
+              <div style={{padding:"9px 11px"}}>
+                <p style={{margin:"0 0 5px",fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{img.name}</p>
+                <Pill color={G}>{img.tag}</Pill>
+              </div>
+            </Card>
+          ))}
+          <div style={{height:166,borderRadius:12,border:"1.5px dashed var(--border-strong)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:5,color:"var(--text-muted)",cursor:"pointer",fontSize:11}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=G}
+            onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border-strong)"}>
+            📤<span>Aggiungi asset</span>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {sec==="pillars" && (
+      <div>
+        <SectionTitle title="Pilastri di comunicazione" sub="Distribuzione % narrativa mensile — Mod.6"/>
+        <Card style={{maxWidth:420}}>
+          {b.pillars.map((p,i)=>(
+            <div key={i} style={{marginBottom:11}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:12,color:"var(--text-secondary)"}}>{p.name}</span>
+                <span style={{fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{p.pct}%</span>
+              </div>
+              <ProgressBar pct={p.pct} color={pc}/>
+            </div>
+          ))}
+        </Card>
+      </div>
+    )}
+  </SidebarLayout>;
+}
+
+// ─── STRATEGY BUILDER VIEW ───────────────────────────────────────────────────
+const Q4A = [
+  {key:"target_primario",  label:"Chi è il target primario?",    hint:"Età, livello culturale, comportamenti, pain point", ph:"Es. Imprenditori locali 40-60 anni, settore food...",t:"ta"},
+  {key:"problema_reale",   label:"Qual è il problema reale?",    hint:"Non il problema dichiarato — quello che emerge dall'analisi", ph:"Es. Non mancano clienti — non sanno raccontare perché sceglierli",t:"ta"},
+  {key:"differenziatore",  label:"Cos'è unico e provabile?",     hint:"Un fatto verificabile da chi non li conosce", ph:"Es. Unico laboratorio km 0 certificato in città",t:"ta"},
+  {key:"frase_guida",      label:"Frase guida del concept",      hint:"Non è lo slogan — è la bussola interna del progetto", ph:"Es. L'imperfezione autentica batte la perfezione finta",t:"in"},
+  {key:"mood_emotivo",     label:"Mood emotivo",                  hint:"3-5 aggettivi che descrivono come deve far sentire il brand", ph:"Es. Caldo, diretto, rassicurante, artigianale",t:"in"},
+  {key:"esclusioni",       label:"Cosa escludiamo?",             hint:"Direzioni creative e toni che NON vogliamo", ph:"Es. No lusso patinato, no foto stock",t:"ta"},
+  {key:"note_sessione",    label:"Note sessione",                 hint:"Insight emersi, citazioni del cliente, intuizioni", ph:"Note libere...",t:"ta"},
+];
+const Q5 = [
+  {key:"insight",          label:"Insight",                      hint:"Una verità sul consumatore che il brand può far propria", ph:"Es. Chi compra pane artigianale cerca normalità in una giornata caotica",t:"ta"},
+  {key:"problema",         label:"Problema del mercato",         hint:"Il vuoto che questo brand può riempire", ph:"Es. Il mercato è pieno di brand che promettono autenticità senza averla",t:"ta"},
+  {key:"reason_why",       label:"Reason Why",                   hint:"Perché questo brand può fare quella promessa? Provabile.", ph:"Es. Ricette dal 1978, ingredienti freschi ogni mattina",t:"ta"},
+  {key:"promessa",         label:"Promessa del brand",           hint:"Cosa garantisce il brand ogni volta che interagisce", ph:"Es. Ogni volta che entri, trovi qualcosa fatto oggi",t:"ta"},
+  {key:"key_message",      label:"Key Message",                  hint:"Il messaggio unico. Una frase. Due = un problema", ph:"Es. Il pane buono non ha bisogno di packaging",t:"in"},
+  {key:"archetipo",        label:"Archetipo brand",              hint:"Quale archetipo di Jung rappresenta questo brand?",t:"sel",
+    opts:["Il Creatore","Il Ribelle","Il Mago","L'Eroe","L'Amante","Il Giullare","L'Orfano / Everyman","Il Custode","Il Sovrano","Il Saggio","L'Innocente","L'Esploratore"]},
+  {key:"tov_parole_si",    label:"Tono di voce — Parole SÌ",    hint:"10-15 parole del vocabolario del brand", ph:"Es. autentico, territorio, mani, cura, radici...",t:"ta"},
+  {key:"tov_parole_no",    label:"Tono di voce — Parole NO",    hint:"Parole vietate — quelle che tutti usano", ph:"Es. qualità, eccellenza, tradizione, professionalità...",t:"ta"},
+  {key:"claim",            label:"Claim",                        hint:"Corta, memorabile, vera", ph:"Es. Fatto oggi. Finito oggi.",t:"in"},
+  {key:"payoff",           label:"Payoff",                       hint:"La tagline che accompagna il logo", ph:"Es. Artigianale fino all'ultimo gusto",t:"in"},
+];
+
+function StrategyView({client, onChange, onPrev, onNext}) {
+  const [step, setStep] = useState("mod4a");
+  const [savedMsg, setSavedMsg] = useState("");
+
+  const s = client.strategy;
+  const c4 = Q4A.filter(q=>s.mod4a[q.key]?.trim()).length;
+  const c5 = Q5.filter(q=>s.mod5[q.key]?.trim()).length;
+  const pc = client.brand.colors[0]?.hex||G;
+
+  const save = (mod) => {
+    onChange("strategy",mod,s[mod]);
+    setSavedMsg("Salvato ✓");
+    setTimeout(()=>setSavedMsg(""),2000);
+  };
+  const complete = (mod, next) => {
+    const updated = {...s[mod],done:true};
+    onChange("strategy",mod,updated);
+    setSavedMsg("Completato ✓");
+    setStep(next);
+    setTimeout(()=>setSavedMsg(""),2000);
+  };
+  const updateField = (mod,key,val) => onChange("strategy_field",mod,{key,val});
+
+  const STEPS = [
+    {id:"mod4a",lbl:"Mod.4a",sub:"Brainstorming Concept",done:s.mod4a.done,n:c4,tot:Q4A.length},
+    {id:"mod5", lbl:"Mod.5", sub:"Copy Strategy",         done:s.mod5.done, n:c5,tot:Q5.length},
+    {id:"output",lbl:"Output",sub:"Riepilogo finale",     done:s.mod4a.done&&s.mod5.done,n:null,tot:null},
+  ];
+
+  const sidebar = <>
+    <div style={{padding:"1rem",borderBottom:"0.5px solid var(--border)"}}>
+      <div style={{width:30,height:30,borderRadius:6,background:M,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
+        <span style={{color:"#fff",fontSize:14}}>🧠</span>
+      </div>
+      <p style={{margin:"0 0 2px",fontSize:11,fontWeight:500,color:"var(--text-primary)"}}>Strategy Builder</p>
+      <p style={{margin:0,fontSize:10,color:"var(--text-muted)"}}>{client.name}</p>
+    </div>
+    <nav style={{padding:"6px 0",flex:1}}>
+      {STEPS.map(st=>(
+        <button key={st.id} onClick={()=>setStep(st.id)} style={{
+          width:"100%",textAlign:"left",padding:"9px 14px",border:"none",cursor:"pointer",
+          background:step===st.id?"var(--bg-accent)":"transparent",
+          borderLeft:`2px solid ${step===st.id?G:"transparent"}`,
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:st.done?G:"var(--border-strong)",flexShrink:0,display:"inline-block"}}/>
+            <span style={{fontSize:12,fontWeight:500,color:step===st.id?"var(--text-accent)":"var(--text-primary)"}}>{st.lbl}</span>
+          </div>
+          <p style={{margin:"0 0 0 12px",fontSize:10,color:"var(--text-muted)"}}>{st.sub}</p>
+          {st.n!==null && <p style={{margin:"1px 0 0 12px",fontSize:10,color:"var(--text-muted)"}}>{st.n}/{st.tot} campi</p>}
+        </button>
+      ))}
+    </nav>
+    <div style={{padding:"0.75rem",borderTop:"0.5px solid var(--border)",display:"flex",flexDirection:"column",gap:6}}>
+      <button onClick={onPrev} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}}>
+        ← Torna a Brand Portal
+      </button>
+      <button onClick={onNext} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:`1px solid ${M}`,background:"transparent",color:M,fontSize:11,cursor:"pointer",fontWeight:500}}>
+        Vai a Output →
+      </button>
+    </div>
+  </>;
+
+  const renderField = (q, mod) => {
+    const val = s[mod][q.key]||"";
+    const upd = v => updateField(mod,q.key,v);
+    const base = {width:"100%",padding:"8px 11px",fontSize:13,color:"var(--text-primary)",background:"var(--surface-1)",border:"0.5px solid var(--border-strong)",borderRadius:8,fontFamily:"var(--font-sans)",outline:"none",boxSizing:"border-box"};
+    return <div key={q.key} style={{marginBottom:"1.25rem"}}>
+      <label style={{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:3}}>{q.label}</label>
+      {q.hint && <p style={{margin:"0 0 5px",fontSize:11,color:"var(--text-muted)",lineHeight:1.5}}>{q.hint}</p>}
+      {q.t==="sel"
+        ? <select value={val} onChange={e=>upd(e.target.value)} style={base}>
+            <option value="">Seleziona archetipo...</option>
+            {q.opts.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+        : q.t==="ta"
+        ? <textarea rows={3} value={val} onChange={e=>upd(e.target.value)} placeholder={q.ph} style={{...base,resize:"vertical"}}/>
+        : <input type="text" value={val} onChange={e=>upd(e.target.value)} placeholder={q.ph} style={base}/>
+      }
+    </div>;
+  };
+
+  return <SidebarLayout sidebar={sidebar}>
+    {step==="mod4a" && <>
+      <ActionBar title="Mod.4a — Brainstorming Concept"
+        sub="Sessione 90 min · Luca + Alberto + Paolone"
+        onSave={()=>save("mod4a")} savedMsg={savedMsg}
+        onNext={()=>complete("mod4a","mod5")} nextLabel="Completa → Mod.5"/>
+      <Alert type="warning">Regola §01 Codice — Divieto di briefing orale. Tutto trascritto qui. Max 90 min. Se non c'è accordo, decide Alberto.</Alert>
+      {client.pdm.posizionamento && (
+        <Card style={{marginBottom:"1.25rem",borderLeft:`3px solid ${B}`}}>
+          <p style={{margin:"0 0 4px",fontSize:10,color:B,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500}}>Posizionamento + USP dal PDM</p>
+          <p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{client.pdm.posizionamento.slice(0,200)}</p>
+        </Card>
+      )}
+      {Q4A.map(q=>renderField(q,"mod4a"))}
+    </>}
+
+    {step==="mod5" && <>
+      <ActionBar title="Mod.5 — Copy Strategy"
+        sub="Insight · Promessa · ToV · Archetipo · Responsabile: Luca"
+        onSave={()=>save("mod5")} savedMsg={savedMsg}
+        onNext={()=>complete("mod5","output")} nextLabel="Completa → Output"/>
+      {!s.mod4a.done && <Alert type="danger">Completa prima il Mod.4a — la Copy Strategy dipende dal Concept approvato.</Alert>}
+      {s.mod4a.frase_guida && (
+        <Card style={{marginBottom:"1.25rem",borderLeft:`3px solid ${pc}`}}>
+          <p style={{margin:"0 0 4px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Frase guida dal Mod.4a</p>
+          <p style={{margin:"0 0 4px",fontSize:13,fontStyle:"italic",fontWeight:500,color:"var(--text-primary)"}}>"{s.mod4a.frase_guida}"</p>
+          {s.mod4a.differenziatore && <p style={{margin:0,fontSize:11,color:"var(--text-secondary)"}}>Differenziatore: {s.mod4a.differenziatore}</p>}
+        </Card>
+      )}
+      {client.pdc.creative_territory && (
+        <Card style={{marginBottom:"1.25rem",borderLeft:`3px solid ${T}`}}>
+          <p style={{margin:"0 0 4px",fontSize:10,color:T,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:500}}>Creative Territory dal PDC</p>
+          <p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{client.pdc.creative_territory.slice(0,200)}</p>
+        </Card>
+      )}
+      {Q5.map(q=>renderField(q,"mod5"))}
+    </>}
+
+    {step==="output" && <>
+      <SectionTitle title="Output strategia" sub="Riepilogo Copy Strategy — pronto per Dropbox Paper"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:"1.25rem"}}>
+        {[{lbl:"Mod.4a Brainstorming",done:s.mod4a.done,n:c4,tot:Q4A.length,id:"mod4a"},{lbl:"Mod.5 Copy Strategy",done:s.mod5.done,n:c5,tot:Q5.length,id:"mod5"}].map(m=>(
+          <Card key={m.lbl} style={{cursor:"pointer"}} onClick={()=>setStep(m.id)}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <span style={{fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>{m.lbl}</span>
+              <Pill color={m.done?G:"var(--text-muted)"}>{m.done?"✓ Completato":"In corso"}</Pill>
+            </div>
+            <ProgressBar pct={(m.n/m.tot)*100} color={m.done?G:M}/>
+            <p style={{margin:"5px 0 0",fontSize:10,color:"var(--text-muted)"}}>{m.n}/{m.tot} · clicca per modificare</p>
+          </Card>
+        ))}
+      </div>
+      {(s.mod5.claim||s.mod5.promessa)
+        ? <Card style={{borderLeft:`3px solid ${M}`,marginBottom:"1.25rem"}}>
+            <p style={{margin:"0 0 12px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Copy Strategy · {client.name}</p>
+            {s.mod5.claim&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>CLAIM</p><p style={{margin:0,fontSize:20,fontWeight:500,color:"var(--text-primary)"}}>{s.mod5.claim}</p></div>}
+            {s.mod5.payoff&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>PAYOFF</p><p style={{margin:0,fontSize:14,fontStyle:"italic",color:"var(--text-secondary)"}}>{s.mod5.payoff}</p></div>}
+            {s.mod5.promessa&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>PROMESSA</p><p style={{margin:0,fontSize:13,color:"var(--text-secondary)"}}>{s.mod5.promessa}</p></div>}
+            {s.mod5.archetipo&&<div style={{marginBottom:10}}><p style={{margin:"0 0 4px",fontSize:10,color:"var(--text-muted)"}}>ARCHETIPO</p><Pill color={pc}>{s.mod5.archetipo}</Pill></div>}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginTop:12,paddingTop:12,borderTop:"0.5px solid var(--border)"}}>
+              {s.mod5.tov_parole_si&&<div><p style={{margin:"0 0 4px",fontSize:10,color:G,fontWeight:500}}>✓ PAROLE SÌ</p><p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{s.mod5.tov_parole_si}</p></div>}
+              {s.mod5.tov_parole_no&&<div><p style={{margin:"0 0 4px",fontSize:10,color:M,fontWeight:500}}>✗ PAROLE NO</p><p style={{margin:0,fontSize:12,color:"var(--text-secondary)",lineHeight:1.6}}>{s.mod5.tov_parole_no}</p></div>}
+            </div>
+          </Card>
+        : <div style={{padding:"2rem",textAlign:"center",borderRadius:12,border:"1.5px dashed var(--border-strong)",color:"var(--text-muted)",marginBottom:"1.25rem"}}>
+            <p style={{margin:"0 0 10px",fontSize:13}}>Completa Mod.4a e Mod.5 per vedere l'output</p>
+            <button onClick={()=>setStep("mod4a")} style={{padding:"5px 14px",borderRadius:5,border:`1px solid ${G}`,background:"transparent",color:G,fontSize:11,cursor:"pointer"}}>Inizia dal Mod.4a</button>
+          </div>
+      }
+      <Alert type="info">Archivia su: Dropbox → DOCUMENT HUB · {client.name} → 04_STRATEGY/</Alert>
+    </>}
+  </SidebarLayout>;
+}
+
+// ─── OUTPUT VIEW ─────────────────────────────────────────────────────────────
+function OutputView({client, onNavigate}) {
+  const pdmFilled = PDM_SEZIONI.filter(s=>client.pdm[s.id]?.trim()).length;
+  const pdcFilled = PDC_SEZIONI.filter(s=>client.pdc[s.id]?.trim()).length;
+  const s = client.strategy;
+  const M2 = "#C2185B";
+
+  const modules = [
+    {id:"pdm",   lbl:"Piano di Marketing",     n:pdmFilled,              tot:PDM_SEZIONI.length, color:B},
+    {id:"pdc",   lbl:"Piano di Comunicazione", n:pdcFilled,              tot:PDC_SEZIONI.length, color:T},
+    {id:"brand", lbl:"Brand Portal",           n:client.brand.colors.length>0?4:0, tot:6,        color:"#534AB7"},
+    {id:"strategy",lbl:"Strategy Builder",     n:(s.mod4a.done?1:0)+(s.mod5.done?1:0), tot:2,  color:M2},
+  ];
+
+  return <div>
+    <SectionTitle title="Output & Archivio" sub="Riepilogo completo — pronto per Dropbox Paper"/>
+
+    <Card style={{marginBottom:"1.25rem"}}>
+      <p style={{margin:"0 0 12px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Stato moduli</p>
+      {modules.map(m=>(
+        <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+          <span style={{fontSize:12,color:"var(--text-secondary)",flex:1}}>{m.lbl}</span>
+          <div style={{width:140}}><ProgressBar pct={(m.n/m.tot)*100} color={m.n===m.tot?G:m.n>0?"#BA7517":"var(--border-strong)"}/></div>
+          <span style={{fontSize:11,color:m.n===m.tot?G:m.n>0?"#BA7517":"var(--text-muted)",minWidth:50,textAlign:"right"}}>{m.n}/{m.tot}{m.n===m.tot?" ✓":""}</span>
+          <button onClick={()=>onNavigate(m.id)} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",cursor:"pointer"}}>
+            {m.n===m.tot?"Rivedi":"Completa"}
+          </button>
+        </div>
+      ))}
+    </Card>
+
+    {(s.mod5.claim||s.mod5.promessa) && (
+      <Card style={{borderLeft:`3px solid ${M2}`,marginBottom:"1.25rem"}}>
+        <p style={{margin:"0 0 12px",fontSize:10,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>Copy Strategy estratta — {client.name}</p>
+        {s.mod5.claim&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>CLAIM</p><p style={{margin:0,fontSize:20,fontWeight:500,color:"var(--text-primary)"}}>{s.mod5.claim}</p></div>}
+        {s.mod5.payoff&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>PAYOFF</p><p style={{margin:0,fontSize:14,fontStyle:"italic",color:"var(--text-secondary)"}}>{s.mod5.payoff}</p></div>}
+        {s.mod5.promessa&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>PROMESSA</p><p style={{margin:0,fontSize:13,color:"var(--text-secondary)"}}>{s.mod5.promessa}</p></div>}
+        {s.mod4a.frase_guida&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>FRASE GUIDA</p><p style={{margin:0,fontSize:13,fontStyle:"italic",color:"var(--text-secondary)"}}>"{s.mod4a.frase_guida}"</p></div>}
+        {client.pdc.creative_territory&&<div style={{marginBottom:10}}><p style={{margin:"0 0 2px",fontSize:10,color:"var(--text-muted)"}}>CREATIVE TERRITORY (dal PDC)</p><p style={{margin:0,fontSize:13,color:"var(--text-secondary)"}}>{client.pdc.creative_territory.slice(0,200)}</p></div>}
+      </Card>
+    )}
+
+    <Alert type="info">📦 Archivia su: Dropbox → DOCUMENT HUB · {client.name} → 04_STRATEGY/ e 05_PED/</Alert>
+  </div>;
+}
+
+// ─── SCHEDA CLIENTE ───────────────────────────────────────────────────────────
+const MOD_LIST = [
+  {id:"overview", lbl:"Panoramica",           icon:"◈", phase:null},
+  {id:"pdm",      lbl:"Piano di Marketing",   icon:"📊", phase:"Fase 1 — Analisi"},
+  {id:"pdc",      lbl:"Piano di Comunicazione",icon:"📣",phase:null},
+  {id:"brand",    lbl:"Brand Portal",         icon:"🎨", phase:"Fase 2 — Strategia"},
+  {id:"strategy", lbl:"Strategy Builder",     icon:"🧠", phase:null},
+  {id:"output",   lbl:"Output & Archivio",    icon:"📦", phase:"Output"},
+];
+
+function ClienteScheda({client, clients, setClients, onBack}) {
+  const [mod, setMod] = useState("overview");
+
+  const c = clients.find(x=>x.id===client.id);
+  const pdmFilled = PDM_SEZIONI.filter(s=>c.pdm[s.id]?.trim()).length;
+  const pdcFilled = PDC_SEZIONI.filter(s=>c.pdc[s.id]?.trim()).length;
+
+  const updateClient = (type, key, value) => {
+    setClients(prev => prev.map(cl => {
+      if(cl.id !== c.id) return cl;
+      if(type==="pdm") return {...cl, pdm:{...cl.pdm,[key]:value}};
+      if(type==="pdc") return {...cl, pdc:{...cl.pdc,[key]:value}};
+      if(type==="strategy") return {...cl, strategy:{...cl.strategy,[key]:value}};
+      if(type==="strategy_field") {
+        const {key:fkey, val} = value;
+        return {...cl, strategy:{...cl.strategy,[key]:{...cl.strategy[key],[fkey]:val}}};
+      }
+      return cl;
+    }));
+  };
+
+  const modStatus = (id) => {
+    if(id==="pdm") return pdmFilled===0?"empty":pdmFilled===PDM_SEZIONI.length?"done":"partial";
+    if(id==="pdc") return pdcFilled===0?"empty":pdcFilled===PDC_SEZIONI.length?"done":"partial";
+    if(id==="brand") return c.brand.colors.length>0?"partial":"empty";
+    if(id==="strategy") {
+      const tot = (c.strategy.mod4a.done?1:0)+(c.strategy.mod5.done?1:0);
+      return tot===0?"empty":tot===2?"done":"partial";
+    }
+    return "empty";
+  };
+  const STATUS_ICON = {done:"✓",partial:"◑",empty:"○"};
+  const STATUS_COLOR = {done:G,partial:"#BA7517",empty:"var(--text-muted)"};
+
+  const topSidebar = (
+    <div style={{
+      width:210,flexShrink:0,background:"var(--surface-1)",
+      borderRight:"0.5px solid var(--border)",display:"flex",flexDirection:"column",
+      height:"calc(100vh - 48px)",overflowY:"auto"
+    }}>
+      <div style={{padding:"1rem",borderBottom:"0.5px solid var(--border)"}}>
+        <div style={{width:34,height:34,borderRadius:8,background:c.color,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6}}>
+          <span style={{color:contrast(c.color),fontSize:15,fontWeight:700}}>{c.name.charAt(0)}</span>
+        </div>
+        <p style={{margin:"0 0 4px",fontSize:12,fontWeight:500,color:"var(--text-primary)",lineHeight:1.3}}>{c.name}</p>
+        <Pill color={G}>{c.pkg}</Pill>
+        <p style={{margin:"5px 0 0",fontSize:10,color:"var(--text-muted)"}}>{c.phase}</p>
+      </div>
+      <nav style={{flex:1,padding:"4px 0"}}>
+        {MOD_LIST.map(m=>{
+          const st = m.id==="overview"||m.id==="output" ? null : modStatus(m.id);
+          const isActive = mod===m.id;
+          return <div key={m.id}>
+            {m.phase && (
+              <div style={{padding:"6px 12px 2px",fontSize:9,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.06em"}}>{m.phase}</div>
+            )}
+            <button onClick={()=>setMod(m.id)} style={{
+              width:"100%",textAlign:"left",padding:"8px 14px",border:"none",cursor:"pointer",
+              fontSize:12,background:isActive?"var(--bg-accent)":"transparent",
+              color:isActive?"var(--text-accent)":"var(--text-secondary)",
+              borderLeft:`2px solid ${isActive?G:"transparent"}`,
+              display:"flex",alignItems:"center",gap:8,
+            }}>
+              <span style={{fontSize:14}}>{m.icon}</span>
+              <span style={{flex:1}}>{m.lbl}</span>
+              {st && <span style={{fontSize:11,color:STATUS_COLOR[st]}}>{STATUS_ICON[st]}</span>}
+            </button>
+          </div>;
+        })}
+      </nav>
+      <div style={{padding:"0.75rem",borderTop:"0.5px solid var(--border)"}}>
+        <button onClick={onBack} style={{width:"100%",padding:"5px 10px",borderRadius:5,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-secondary)",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+          ← Lista clienti
+        </button>
+      </div>
+    </div>
+  );
+
+  const mainContent = () => {
+    if(mod==="overview") return <OverviewView client={c} onNavigate={setMod}/>;
+    if(mod==="pdm")      return <PDMView client={c} onChange={updateClient} onNext={()=>setMod("pdc")}/>;
+    if(mod==="pdc")      return <PDCView client={c} onChange={updateClient} onNext={()=>setMod("brand")} onPrev={()=>setMod("pdm")}/>;
+    if(mod==="brand")    return <BrandPortalView client={c} onNext={()=>setMod("strategy")} onPrev={()=>setMod("pdc")}/>;
+    if(mod==="strategy") return <StrategyView client={c} onChange={updateClient} onNext={()=>setMod("output")} onPrev={()=>setMod("brand")}/>;
+    if(mod==="output")   return <div style={{padding:"1.5rem",overflowY:"auto",flex:1}}><OutputView client={c} onNavigate={setMod}/></div>;
+  };
+
+  if(mod==="pdm"||mod==="pdc"||mod==="brand"||mod==="strategy") {
+    return <div style={{display:"flex",height:"calc(100vh - 48px)",overflow:"hidden"}}>
+      {topSidebar}
+      {mainContent()}
+    </div>;
+  }
+
+  return <div style={{display:"flex",height:"calc(100vh - 48px)",overflow:"hidden"}}>
+    {topSidebar}
+    <div style={{flex:1,overflowY:"auto",padding:"1.5rem"}}>
+      {mainContent()}
+    </div>
+  </div>;
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function Dashboard({clients, onOpen}) {
+  const [search, setSearch] = useState("");
+  const list = clients.filter(c=>c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return <div style={{padding:"1.5rem",maxWidth:860,margin:"0 auto"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.5rem",flexWrap:"wrap",gap:10}}>
+      <div>
+        <h1 style={{margin:"0 0 2px",fontSize:18,fontWeight:500,color:"var(--text-primary)"}}>Clienti</h1>
+        <p style={{margin:0,fontSize:12,color:"var(--text-muted)"}}>{clients.length} totali · ogni cliente ha PDM + PDC + Brand Portal + Strategy</p>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <input placeholder="Cerca..." value={search} onChange={e=>setSearch(e.target.value)}
+          style={{fontSize:12,padding:"6px 12px",borderRadius:6,width:180}}/>
+        <button style={{padding:"6px 14px",borderRadius:6,border:"none",background:G,color:"#fff",fontSize:12,cursor:"pointer",fontWeight:500}}>
+          + Nuovo cliente
+        </button>
+      </div>
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:"1.5rem"}}>
+      {[
+        ["Clienti totali",clients.length],
+        ["PDM avviati",clients.filter(c=>PDM_SEZIONI.some(s=>c.pdm[s.id]?.trim())).length],
+        ["Strategy OK",clients.filter(c=>c.strategy.mod4a.done&&c.strategy.mod5.done).length],
+        ["Output pronti",clients.filter(c=>c.strategy.mod5.claim?.trim()).length],
+      ].map(([l,v])=>(
+        <div key={l} style={{background:"var(--surface-1)",borderRadius:8,padding:"0.75rem"}}>
+          <p style={{margin:"0 0 3px",fontSize:20,fontWeight:500,color:"var(--text-primary)"}}>{v}</p>
+          <p style={{margin:0,fontSize:11,color:"var(--text-muted)"}}>{l}</p>
+        </div>
+      ))}
+    </div>
+
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {list.map(c=>{
+        const pdmF = PDM_SEZIONI.filter(s=>c.pdm[s.id]?.trim()).length;
+        const pdcF = PDC_SEZIONI.filter(s=>c.pdc[s.id]?.trim()).length;
+        const stratOk = c.strategy.mod4a.done&&c.strategy.mod5.done;
+
+        return <div key={c.id}
+          style={{background:"var(--surface-2)",border:"0.5px solid var(--border)",borderRadius:12,padding:"1rem 1.25rem",
+            display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,
+            cursor:"pointer",transition:"border-color 0.15s"}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=G}
+          onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}
+          onClick={()=>onOpen(c)}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:40,height:40,borderRadius:8,background:c.color,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{color:contrast(c.color),fontSize:16,fontWeight:700}}>{c.name.charAt(0)}</span>
+            </div>
+            <div>
+              <p style={{margin:"0 0 5px",fontSize:14,fontWeight:500,color:"var(--text-primary)"}}>{c.name}</p>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:5}}>
+                <Pill color={G}>{c.pkg}</Pill>
+                <Pill color={"var(--text-muted)"} bg="var(--surface-1)">{c.phase}</Pill>
+                <span style={{fontSize:10,color:"var(--text-muted)"}}>Manager: {c.manager}</span>
+              </div>
+              <div style={{display:"flex",gap:12}}>
+                {[
+                  ["PDM",pdmF,PDM_SEZIONI.length,B],
+                  ["PDC",pdcF,PDC_SEZIONI.length,T],
+                  ["Strat.",stratOk?2:c.strategy.mod4a.done?1:0,2,M],
+                ].map(([l,n,tot,col])=>(
+                  <div key={l} style={{display:"flex",alignItems:"center",gap:5}}>
+                    <span style={{fontSize:10,color:"var(--text-muted)"}}>{l}</span>
+                    <div style={{width:40,height:3,background:"var(--surface-0)",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${Math.round((n/tot)*100)}%`,background:n===tot?G:n>0?col:"var(--border-strong)",borderRadius:2}}/>
+                    </div>
+                    <span style={{fontSize:10,color:n===tot?G:n>0?"#BA7517":"var(--text-muted)"}}>{n}/{tot}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div style={{fontSize:11,color:G,fontWeight:500}}>Apri scheda →</div>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+function NassaGestionale({ hubLink }) {
+  const [view, setView] = useState("dashboard");
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clients, setClients] = useState(INIT_CLIENTS);
+
+  const openClient = (c) => { setSelectedClient(c); setView("cliente"); };
+  const goBack = () => { setSelectedClient(null); setView("dashboard"); };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",background:"var(--surface-0)"}}>
+      {/* TOPBAR */}
+      <div style={{display:"flex",alignItems:"center",height:48,background:"var(--surface-2)",borderBottom:"0.5px solid var(--border)",padding:"0 1.25rem",flexShrink:0,gap:4}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginRight:"1rem",flexShrink:0}}>
+          <div style={{width:26,height:26,borderRadius:6,background:"#185FA5",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <span style={{color:"#fff",fontSize:12,fontWeight:700}}>NS</span>
+          </div>
+          <span style={{fontSize:13,fontWeight:500,color:"var(--text-primary)"}}>NassaStrategy</span>
+          <span style={{fontSize:10,color:"var(--text-muted)",borderLeft:"0.5px solid var(--border)",paddingLeft:8}}>Staffetta Nassa v3</span>
+        </div>
+
+        {[{id:"dashboard",lbl:"👥 Clienti"},{id:"cliente",lbl:"📁 Scheda"}].map(t=>(
+          <button key={t.id} onClick={()=>{ if(t.id==="cliente"&&!selectedClient) return; setView(t.id); }}
+            style={{padding:"5px 12px",borderRadius:6,border:"none",cursor:t.id==="cliente"&&!selectedClient?"not-allowed":"pointer",
+              fontSize:12,background:view===t.id?"var(--bg-accent)":"transparent",
+              color:view===t.id?"var(--text-accent)":"var(--text-secondary)",
+              opacity:t.id==="cliente"&&!selectedClient?0.4:1,fontWeight:view===t.id?500:400}}>
+            {t.lbl}
+            {t.id==="cliente"&&selectedClient&&(
+              <span style={{marginLeft:5,fontSize:10,padding:"1px 5px",borderRadius:8,background:G+"20",color:G}}>
+                {selectedClient.name.split(" ")[0]}
+              </span>
+            )}
+          </button>
+        ))}
+
+        {selectedClient && (
+          <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,marginLeft:8}}>
+            <div style={{width:6,height:6,borderRadius:"50%",background:selectedClient.color}}/>
+            <span style={{fontWeight:500,color:"var(--text-primary)"}}>{selectedClient.name}</span>
+            <button onClick={goBack} style={{fontSize:11,padding:"2px 8px",borderRadius:4,border:"0.5px solid var(--border-strong)",background:"transparent",color:"var(--text-muted)",cursor:"pointer"}}>
+              ✕ chiudi
+            </button>
+          </div>
+        )}
+
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={toggleTheme} style={{width:28,height:28,borderRadius:6,border:"0.5px solid var(--border)",background:"transparent",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:"var(--text-secondary)"}}>🌙</button>
+          {hubLink}
+        </div>
+      </div>
+
+      {/* CONTENT */}
+      <div style={{flex:1,overflow:"hidden"}}>
+        {view==="dashboard" && <div style={{height:"100%",overflowY:"auto"}}><Dashboard clients={clients} onOpen={openClient}/></div>}
+        {view==="cliente" && selectedClient && (
+          <ClienteScheda client={selectedClient} clients={clients} setClients={setClients} onBack={goBack}/>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// ── Mount with hub link injected into topbar ──
+function NassaStrategyHub(){
+  return <NassaGestionale hubLink={
+    <a href="/" className="hub-link">← Hub</a>
+  }/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<NassaStrategyHub/>);
+</script>
+</body>
+</html>
