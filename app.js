@@ -7321,7 +7321,7 @@ function getEdColors(){
 
 function renderEdPreview(){
   const wrap=document.getElementById('ed-preview-wrap');
-  const card=document.getElementById('ed-card-preview');
+  const card=document.getElementById('ed-preview-inner');
   if(!card)return;
   const cols=getEdColors();
   const eyebrow=document.getElementById('ed-eyebrow')?.value||'Insight';
