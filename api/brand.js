@@ -44,13 +44,23 @@ export default async function handler(req, res) {
       (brandRows || []).forEach(r => { brandMap[r.client_id] = r.data || {}; });
 
       // Merge
+      // Generate consistent color from name if not set
+      const nameColor = (name) => {
+        let h = 0;
+        for(let i=0;i<(name||'').length;i++) h = name.charCodeAt(i) + ((h<<5)-h);
+        const colors = ['#1D9E75','#D4537E','#378ADD','#7F77DD','#C25B2A','#1A8C3F','#854F0B','#185FA5'];
+        return colors[Math.abs(h) % colors.length];
+      };
+      const toSlug = (name) => (name||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
       const clients = rawClients.map(c => {
         const bd = brandMap[c.id] || {};
+        const color = bd.brand?.colors?.[0]?.hex || c.color || nameColor(c.name);
         return {
           id: c.id,
-          slug: c.id,
+          slug: toSlug(c.name) || c.id,
           name: c.name,
-          color: c.color || '#1A8C3F',
+          color,
           claim: bd.claim || '',
           archetype: bd.archetype || '',
           manager: bd.manager || '',

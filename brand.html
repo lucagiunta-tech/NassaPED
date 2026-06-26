@@ -69,7 +69,7 @@ textarea,input{font-family:var(--font);}
 .sb-main-nav{display:flex;flex-direction:column;height:100%;width:100%;}
 .sb-nav-section{display:flex;flex-direction:column;padding:var(--sp-2) 0;}
 .sb-nav-section:not(:last-child){border-bottom:var(--bw) solid var(--border-lt);}
-.sb-group-lbl{font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);padding:8px 12px 3px;font-weight:600;display:none;white-space:nowrap;overflow:hidden;}
+.sb-group-lbl{font-size:var(--fs-xs);letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);padding:10px 14px 4px;font-weight:600;display:none;white-space:nowrap;overflow:hidden;}
 .sidebar.sb-expanded .sb-group-lbl{display:block;}
 .sb-nav-item{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);transition:all var(--t-fast);margin:1px auto;flex-shrink:0;gap:0;border:none;background:none;}
 .sidebar.sb-expanded .sb-nav-item{width:auto;height:auto;padding:10px 14px;margin:1px 6px;justify-content:flex-start;gap:12px;}
@@ -601,14 +601,14 @@ function NassaBrand(){
   return h('div',{className:'app'},
     // Topbar
     h('div',{className:'topbar'},
-      h('div',{className:'topbar-brand'+(sidebarExp?' expanded':''),onClick:()=>setSidebarExp(p=>!p)},
+      h('div',{className:'topbar-brand'+(view==='portal'&&sidebarExp?' expanded':''),onClick:()=>{if(view==='portal')setSidebarExp(p=>!p);}},
         h('div',{className:'brand-mark'},'N'),
         h('span',{className:'brand-name'},'Nassa Studio')
       ),
       // Client in topbar when selected
       selected&&view==='portal'?
         h('div',{className:'topbar-client'},
-          h('div',{className:'client-avatar',style:{background:selected.brand?.colors[0]?.hex||selected.color||'#1A8C3F'}},
+          h('div',{className:'client-avatar',style:{background:selected.color||selected.brand?.colors[0]?.hex||'#1A8C3F'}},
             h('span',{style:{color:contrast(selected.brand?.colors[0]?.hex||selected.color||'#1A8C3F'),fontSize:12,fontWeight:800}},selected.name?.charAt(0)||'N')
           ),
           h('div',null,
@@ -617,7 +617,7 @@ function NassaBrand(){
           )
         )
       :h('div',{className:'topbar-nav'},
-        h('div',{className:'nav-tab active'},'NassaBrand')
+        h('div',{className:'nav-tab active'},'Portali clienti')
       ),
       h('div',{className:'topbar-right'},
         selected&&view==='portal'&&h('button',{className:'btn btn-outline',style:{fontSize:11},onClick:()=>window.open('/portal/'+selected.slug,'_blank')},'👤 Vista cliente'),
