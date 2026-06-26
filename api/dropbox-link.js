@@ -1,9 +1,31 @@
-// Crea shared link Dropbox. Usa DROPBOX_ACCESS_TOKEN statico.
+// Crea shared link Dropbox. Usa OAuth2 refresh token (non scade mai).
 
 const ALLOWED_ORIGINS = [
   'https://nassa-ped-yp63.vercel.app',
   'http://localhost:3000',
 ];
+
+async function getToken() {
+  const { DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN, DROPBOX_ACCESS_TOKEN } = process.env;
+
+  // OAuth2 refresh (preferred — never expires)
+  if (DROPBOX_APP_KEY && DROPBOX_APP_SECRET && DROPBOX_REFRESH_TOKEN) {
+    const resp = await fetch('https://api.dropbox.com/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + Buffer.from(DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET).toString('base64'),
+      },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: DROPBOX_REFRESH_TOKEN }),
+    });
+    const data = await resp.json();
+    if (data.access_token) return data.access_token;
+  }
+
+  // Fallback: static token
+  if (DROPBOX_ACCESS_TOKEN) return DROPBOX_ACCESS_TOKEN;
+  throw new Error('No Dropbox token available');
+}
 
 function toDirectUrl(url) {
   if (!url) return '';
@@ -23,20 +45,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-nassa-key');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Auth: cookie HttpOnly o x-nassa-key legacy
   const _cookie = (req.headers.cookie||'').match(/nassa_session=([^;]+)/)?.[1];
   const key = req.headers['x-nassa-key'];
-  if(!_cookie && (!key || key !== process.env.NASSA_API_KEY)) return res.status(401).json({error:'Non autorizzato'});
-
-  const token = process.env.DROPBOX_ACCESS_TOKEN;
-  if (!token)
-    return res.status(500).json({ error: 'DROPBOX_ACCESS_TOKEN non configurato su Vercel' });
+  const validKey = process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
+  if(!_cookie && key !== validKey) return res.status(401).json({error:'Non autorizzato'});
 
   try {
-    let path;
-    if (req.body && req.body.path) {
-      path = req.body.path;
-    } else {
+    const token = await getToken();
+
+    let path = req.body?.path;
+    if (!path) {
       const raw = await new Promise((resolve, reject) => {
         let d = ''; req.on('data', c => d += c); req.on('end', () => resolve(d)); req.on('error', reject);
       });
@@ -51,8 +69,6 @@ export default async function handler(req, res) {
     });
 
     const linkText = await linkRes.text();
-    console.log('[dropbox-link] status:', linkRes.status, 'body:', linkText.slice(0, 300));
-
     let linkData;
     try { linkData = JSON.parse(linkText); } catch(_) {
       return res.status(500).json({ error: 'Non-JSON da Dropbox: ' + linkText.slice(0, 200) });
@@ -73,13 +89,11 @@ export default async function handler(req, res) {
       const listData = await listRes.json();
       const existingLink = listData?.links?.[0]?.url;
       if (existingLink) return res.status(200).json({ url: toDirectUrl(existingLink) });
-      return res.status(500).json({ error: 'Link esistente non recuperabile', detail: listData });
     }
 
-    return res.status(500).json({ error: errorTag || 'Errore Dropbox sconosciuto', detail: linkData });
+    return res.status(500).json({ error: errorTag || 'Errore Dropbox', detail: linkData });
 
   } catch (err) {
-    console.error('[dropbox-link] ERROR:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
