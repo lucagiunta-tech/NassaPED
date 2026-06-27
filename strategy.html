@@ -1635,6 +1635,220 @@ function PDCView({
 }
 
 // ─── BRAND PORTAL VIEW ───────────────────────────────────────────────────────
+// ─── REPORT MENSILE VIEW ──────────────────────────────────────────────────────
+const KPI_ROWS = [
+  {key:"reach",        lbl:"Reach totale",          unit:"persone",  hint:"Somma reach organica + pagata"},
+  {key:"impressioni",  lbl:"Impressioni",            unit:"",         hint:"Visualizzazioni totali dei contenuti"},
+  {key:"engagement",   lbl:"Engagement rate",        unit:"%",        hint:"(Like+Commenti+Condivisioni)/Reach"},
+  {key:"follower_new", lbl:"Nuovi follower",         unit:"",         hint:"Follower acquisiti nel mese"},
+  {key:"link_click",   lbl:"Click su link/bio",      unit:"",         hint:"Click verso sito, WhatsApp, ecc."},
+  {key:"cpc",          lbl:"CPC (costo per click)",  unit:"€",        hint:"Solo se ci sono campagne ADV"},
+  {key:"roas",         lbl:"ROAS",                   unit:"x",        hint:"Return on Ad Spend — solo se ADV"},
+  {key:"lead",         lbl:"Lead generati",          unit:"",         hint:"Contatti, richieste, prenotazioni"},
+];
+
+function ReportMensileView({ client, onChange }) {
+  const h = React.createElement;
+  const [savedMsg, setSavedMsg] = React.useState("");
+  const [mese, setMese] = React.useState(() => {
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  });
+  const r = client.report || {};
+  const meseData = r[mese] || {};
+
+  const upd = (key, val) => onChange("report_field", mese, { ...(r[mese]||{}), [key]: val });
+  const save = () => { setSavedMsg("Salvato ✓"); setTimeout(()=>setSavedMsg(""),2000); };
+
+  // Mesi disponibili
+  const mesi = [];
+  const now = new Date();
+  for(let i=0; i<12; i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    mesi.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const meseLabel = m => { const [y,mo]=m.split('-'); return new Date(y,mo-1).toLocaleDateString('it-IT',{month:'long',year:'numeric'}); };
+
+  return h("div", {style:{maxWidth:760}},
+    h(ActionBar, {title:"Report mensile KPI", sub:"Monitoraggio performance — mensile", savedMsg, onSave:save}),
+    // Selettore mese
+    h("div", {style:{display:"flex",alignItems:"center",gap:12,marginBottom:20,background:"var(--surface-lt)",
+      borderRadius:8,padding:"10px 14px",border:"0.5px solid var(--border)"}},
+      h("span",{style:{fontSize:13,fontWeight:600,color:"var(--text)"}},"Mese di riferimento:"),
+      h("select",{value:mese,onChange:e=>setMese(e.target.value),
+        style:{fontSize:13,padding:"5px 10px",borderRadius:6,border:"0.5px solid var(--border)",
+               background:"var(--surface)",color:"var(--text)",fontWeight:500}},
+        mesi.map(m=>h("option",{key:m,value:m},meseLabel(m)))
+      ),
+      h("span",{style:{marginLeft:"auto",fontSize:11,color:"var(--text-muted)"}},
+        Object.values(meseData).filter(v=>v?.toString().trim()).length+"/"+KPI_ROWS.length+" KPI compilati")
+    ),
+    // KPI table
+    h("div",{style:{background:"var(--surface)",border:"0.5px solid var(--border)",borderRadius:8,overflow:"hidden",marginBottom:16}},
+      h("table",{style:{width:"100%",borderCollapse:"collapse"}},
+        h("thead",null,
+          h("tr",{style:{background:"var(--surface-lt)"}},
+            ...[["KPI","40%"],["Valore","20%"],["Target","20%"],["Δ vs mese prec.","20%"]].map(([l,w])=>
+              h("th",{key:l,style:{padding:"8px 12px",textAlign:l==="KPI"?"left":"right",
+                fontSize:11,fontWeight:600,color:"var(--text-muted)",textTransform:"uppercase",
+                letterSpacing:".05em",width:w,borderBottom:"1.5px solid var(--border)"}},l)
+            )
+          )
+        ),
+        h("tbody",null,
+          KPI_ROWS.map((kpi,i)=>{
+            const v = meseData[kpi.key] || "";
+            const t = meseData[kpi.key+"_target"] || "";
+            const d = meseData[kpi.key+"_delta"] || "";
+            const numV = parseFloat(v), numT = parseFloat(t);
+            const ok = numV && numT ? numV >= numT : null;
+            return h("tr",{key:kpi.key,style:{borderBottom:i<KPI_ROWS.length-1?"0.5px solid var(--border-lt)":"none"}},
+              h("td",{style:{padding:"10px 12px"}},
+                h("div",{style:{fontSize:14,fontWeight:500,color:"var(--text)"}},"kpi.lbl" === kpi.lbl ? kpi.lbl : kpi.lbl),
+                h("div",{style:{fontSize:11,color:"var(--text-muted)",marginTop:1}},kpi.hint)
+              ),
+              h("td",{style:{padding:"6px 8px"}},
+                h("div",{style:{display:"flex",alignItems:"center",gap:4}},
+                  h("input",{type:"number",value:v,onChange:e=>upd(kpi.key,e.target.value),
+                    placeholder:"0",
+                    style:{width:"100%",padding:"6px 8px",fontSize:13,textAlign:"right",
+                           border:"0.5px solid var(--border)",borderRadius:6,
+                           background:"var(--surface)",color:"var(--text)"},
+                  }),
+                  kpi.unit&&h("span",{style:{fontSize:11,color:"var(--text-muted)",whiteSpace:"nowrap"}},kpi.unit)
+                )
+              ),
+              h("td",{style:{padding:"6px 8px"}},
+                h("input",{type:"number",value:t,onChange:e=>upd(kpi.key+"_target",e.target.value),
+                  placeholder:"Target",
+                  style:{width:"100%",padding:"6px 8px",fontSize:13,textAlign:"right",
+                         border:"0.5px solid var(--border)",borderRadius:6,
+                         background:"var(--surface)",color:"var(--text-muted)"}})
+              ),
+              h("td",{style:{padding:"6px 12px",textAlign:"right"}},
+                ok !== null
+                  ? h("span",{style:{fontSize:13,fontWeight:700,
+                      color:ok?"var(--green-dk,#00cc00)":"#ef4444"}},
+                      ok?"✓ Obiettivo":"✗ Sotto target")
+                  : h("input",{type:"text",value:d,onChange:e=>upd(kpi.key+"_delta",e.target.value),
+                      placeholder:"Es. +12%",
+                      style:{width:"100%",padding:"6px 8px",fontSize:12,textAlign:"right",
+                             border:"0.5px solid var(--border)",borderRadius:6,
+                             background:"var(--surface)",color:"var(--text-muted)"}})
+              )
+            );
+          })
+        )
+      )
+    ),
+    // Note mese
+    h(Field,{label:"Note e commenti del mese",hint:"Cosa ha funzionato, cosa no, decisioni per il prossimo mese.",
+      placeholder:"Es. Il carosello 'Territorio' ha performato 3x la media. Ridurre i Reel monologo.",
+      value:meseData.note||"",onChange:v=>upd("note",v),rows:3})
+  );
+}
+
+// ─── QBR VIEW ─────────────────────────────────────────────────────────────────
+function QBRView({ client, onChange }) {
+  const h = React.createElement;
+  const [savedMsg, setSavedMsg] = React.useState("");
+  const [trim, setTrim] = React.useState(() => {
+    const d = new Date(); const q = Math.ceil((d.getMonth()+1)/3);
+    return `${d.getFullYear()}-Q${q}`;
+  });
+  const q = client.qbr || {};
+  const trimData = q[trim] || {};
+  const upd = (key,val) => onChange("qbr_field", trim, {...(q[trim]||{}), [key]:val});
+  const save = () => { setSavedMsg("Salvato ✓"); setTimeout(()=>setSavedMsg(""),2000); };
+
+  const trimestri = [];
+  const now = new Date();
+  for(let i=0;i<8;i++){
+    const d = new Date(now.getFullYear(), now.getMonth()-i*3, 1);
+    const qn = Math.ceil((d.getMonth()+1)/3);
+    trimestri.push(`${d.getFullYear()}-Q${qn}`);
+  }
+
+  const SEZIONI_QBR = [
+    {key:"obiettivi_risultati", lbl:"Obiettivi vs Risultati",
+     hint:"Confronto tra gli obiettivi fissati all'inizio del trimestre e i risultati effettivi.",
+     ph:"Obiettivo: +20% engagement → Risultato: +31% ✓\nObiettivo: 5 lead/mese → Risultato: 3.2/mese ✗"},
+    {key:"best_worst", lbl:"Best & Worst performer",
+     hint:"I contenuti/campagne migliori e peggiori del trimestre con dati.",
+     ph:"BEST: carosello 'Sapori di Sicilia' — reach 4.200, ER 8.2%\nWORST: Reel monologo — reach 340, ER 1.1%"},
+    {key:"decisioni", lbl:"Decisioni strategiche",
+     hint:"Cosa cambia nel prossimo trimestre sulla base dei dati raccolti.",
+     ph:"1. Aumentare frequenza caroselli a 2/settimana\n2. Eliminare Reel monologo\n3. Test campagna ADV geolocalizzata"},
+    {key:"budget_review", lbl:"Review budget",
+     hint:"Speso vs allocato nel trimestre. Efficienza ADV.",
+     ph:"Budget Q1: €1.500 — Speso: €1.320 — ROAS medio: 3.2x"},
+    {key:"prossimi_obiettivi", lbl:"Obiettivi prossimo trimestre",
+     hint:"3-5 obiettivi SMART per il trimestre successivo.",
+     ph:"1. Raggiungere 2.000 follower entro fine Q2\n2. ER medio ≥ 5%\n3. Almeno 8 lead qualificati"},
+  ];
+
+  return h("div",{style:{maxWidth:760}},
+    h(ActionBar,{title:"QBR — Quarterly Business Review",sub:"Review trimestrale strategica con il cliente",savedMsg,onSave:save}),
+    h("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:20,background:"var(--surface-lt)",
+      borderRadius:8,padding:"10px 14px",border:"0.5px solid var(--border)"}},
+      h("span",{style:{fontSize:13,fontWeight:600,color:"var(--text)"}},"Trimestre:"),
+      h("select",{value:trim,onChange:e=>setTrim(e.target.value),
+        style:{fontSize:13,padding:"5px 10px",borderRadius:6,border:"0.5px solid var(--border)",
+               background:"var(--surface)",color:"var(--text)",fontWeight:500}},
+        trimestri.map(t=>h("option",{key:t,value:t},t))
+      )
+    ),
+    h(Alert,{type:"info"},"La QBR si fa ogni 3 mesi con il cliente. Compila prima di ogni incontro e usala come agenda strutturata."),
+    SEZIONI_QBR.map(s=>h(Field,{key:s.key,label:s.lbl,hint:s.hint,placeholder:s.ph,
+      value:trimData[s.key]||"",onChange:v=>upd(s.key,v),rows:4}))
+  );
+}
+
+// ─── SHOOTING BRIEF VIEW ──────────────────────────────────────────────────────
+function ShootingBriefView({ client, onChange }) {
+  const h = React.createElement;
+  const [savedMsg, setSavedMsg] = React.useState("");
+  const b = client.brief || {};
+  const upd = (key,val) => onChange("brief_field", key, val);
+  const save = () => { setSavedMsg("Salvato ✓"); setTimeout(()=>setSavedMsg(""),2000); };
+  const pc = client.brand?.colors[0]?.hex || client.color || G;
+
+  const SEZIONI = [
+    {key:"obiettivo",   lbl:"Obiettivo dello shooting",
+     hint:"Cosa deve comunicare questo set di immagini. A cosa serviranno.",
+     ph:"Es. Feed Instagram per il lancio estivo. 15 scatti per caroselli + storie. Mood caldo, territoriale."},
+    {key:"mood_ref",    lbl:"Mood & Reference visivi",
+     hint:"Descrivi lo stile visivo desiderato. Aggiungi reference se puoi.",
+     ph:"Es. Luce naturale golden hour. Textures naturali (legno, pietra, lino). No studio, no sfondi bianchi."},
+    {key:"soggetti",    lbl:"Soggetti e scene da riprendere",
+     hint:"Lista dettagliata di cosa fotografare. Più specifico è, meglio è.",
+     ph:"1. Prodotto su piano in legno con erbe aromatiche\n2. Mani che lavorano l'impasto\n3. Vista del paesaggio rurale al tramonto\n4. Packaging su sfondo neutro"},
+    {key:"formato",     lbl:"Formati e specifiche tecniche",
+     hint:"Orientamento, proporzioni, spazio per testi, numero scatti per soggetto.",
+     ph:"- Feed: 1:1 e 4:5 (30 scatti)\n- Stories: 9:16 (10 scatti)\n- Lasciare spazio in alto/basso per testi\n- RAW + JPEG"},
+    {key:"location",    lbl:"Location e logistica",
+     hint:"Dove, quando, con chi. Note pratiche per il fotografo.",
+     ph:"Location: Masseria Iblea, Via del Carrubo 12, Ragusa\nData: sabato 12 luglio, ore 7:00-13:00\nPresenti: Luca (AD), titolare azienda\nPermessi: già accordati"},
+    {key:"non_fare",    lbl:"Visual do/don't",
+     hint:"Cosa evitare assolutamente in questo shooting.",
+     ph:"NON usare: filtri HDR, colori saturi, sfondi bianchi, piatti vuoti\nEvitare: riprese frontali simmetriche, logotipi concorrenti in scena"},
+    {key:"output",      lbl:"Deliverable attesi",
+     hint:"Cosa consegna il fotografo, in che formato, entro quando.",
+     ph:"- 60 scatti selezionati, ritoccati in Lightroom\n- Profilo colore: sRGB per social\n- Consegna: WeTransfer entro 7 giorni dallo shooting\n- 5 scatti fast entro 24h per stories"},
+  ];
+
+  return h("div",{style:{maxWidth:760}},
+    h(ActionBar,{title:"Shooting Brief",sub:"Mod. 10 — Brief fotografico + shotlist",savedMsg,onSave:save}),
+    h("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16,
+      background:pc+"18",border:`0.5px solid ${pc}44`,borderRadius:8,padding:"10px 14px"}},
+      h("div",{style:{width:12,height:12,borderRadius:2,background:pc,flexShrink:0}}),
+      h("span",{style:{fontSize:13,color:"var(--text)",fontWeight:500}},
+        client.name," · ",client.brand?.tov||"shooting brief")
+    ),
+    SEZIONI.map(s=>h(Field,{key:s.key,label:s.lbl,hint:s.hint,placeholder:s.ph,
+      value:b[s.key]||"",onChange:v=>upd(s.key,v),rows:4}))
+  );
+}
+
 // ─── BRAND AUDIT VIEW ─────────────────────────────────────────────────────────
 function BrandAuditView({ client, onChange, onNext }) {
   const [savedMsg, setSavedMsg] = React.useState("");
@@ -3007,6 +3221,9 @@ const MOD_ICONS = {
   pdc:      /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'})),
   brand:    /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('circle',{cx:12,cy:12,r:10}),React.createElement('circle',{cx:8,cy:9,r:1.5,fill:'currentColor'}),React.createElement('circle',{cx:15,cy:8,r:1.5,fill:'currentColor'}),React.createElement('circle',{cx:16,cy:14,r:1.5,fill:'currentColor'}),React.createElement('circle',{cx:10,cy:15,r:1.5,fill:'currentColor'})),
   strategy: /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('polygon',{points:'12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'})),
+  report:   /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('line',{x1:18,y1:20,x2:18,y2:10}),React.createElement('line',{x1:12,y1:20,x2:12,y2:4}),React.createElement('line',{x1:6,y1:20,x2:6,y2:14}),React.createElement('polyline',{points:'2 20 22 20'})),
+  qbr:      /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('polyline',{points:'23 4 23 10 17 10'}),React.createElement('path',{d:'M20.49 15a9 9 0 1 1-2.12-9.36L23 10'})),
+  brief:    /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('rect',{x:2,y:2,width:20,height:20,rx:2}),React.createElement('circle',{cx:12,cy:12,r:4}),React.createElement('circle',{cx:12,cy:12,r:1,fill:'currentColor'})),
   output:   /*#__PURE__*/React.createElement('svg',{viewBox:'0 0 24 24',width:18,height:18,fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M21 8v13H3V8'}),React.createElement('path',{d:'M1 3h22v5H1z'}),React.createElement('path',{d:'M10 12h4'})),
 };
 
@@ -3045,6 +3262,21 @@ const MOD_LIST = [{
   lbl: "Output & Archivio",
   icon: "📦",
   phase: "Output"
+}, {
+  id: "report",
+  lbl: "Report mensile",
+  icon: "📈",
+  phase: "Operatività"
+}, {
+  id: "qbr",
+  lbl: "QBR Trimestrale",
+  icon: "🔁",
+  phase: null
+}, {
+  id: "brief",
+  lbl: "Shooting Brief",
+  icon: "📷",
+  phase: null
 }];
 function ClienteScheda({
   client,
@@ -3105,6 +3337,15 @@ function ClienteScheda({
           }
         };
       }
+      if (type === "report_field") {
+        return { ...cl, report: { ...(cl.report||{}), [key]: value } };
+      }
+      if (type === "qbr_field") {
+        return { ...cl, qbr: { ...(cl.qbr||{}), [key]: value } };
+      }
+      if (type === "brief_field") {
+        return { ...cl, brief: { ...(cl.brief||{}), [key]: value } };
+      }
       if (type === "audit_field") {
         return {
           ...cl,
@@ -3137,7 +3378,22 @@ function ClienteScheda({
       const tot = (c.strategy.mod4a.done ? 1 : 0) + (c.strategy.mod5.done ? 1 : 0);
       return tot === 0 ? "empty" : tot === 2 ? "done" : "partial";
     }
-    return "empty";
+    if (id === "report") {
+    const r = c.report || {};
+    const filled = Object.values(r).filter(v => v && (typeof v === "string" ? v.trim() : true)).length;
+    return filled === 0 ? "empty" : filled >= 5 ? "done" : "partial";
+  }
+  if (id === "qbr") {
+    const q = c.qbr || {};
+    const filled = Object.values(q).filter(v => v && (typeof v === "string" ? v.trim() : true)).length;
+    return filled === 0 ? "empty" : filled >= 3 ? "done" : "partial";
+  }
+  if (id === "brief") {
+    const b = c.brief || {};
+    const filled = Object.values(b).filter(v => v && (typeof v === "string" ? v.trim() : true)).length;
+    return filled === 0 ? "empty" : filled >= 4 ? "done" : "partial";
+  }
+  return "empty";
   };
   const STATUS_ICON = {
     done: "✓",
@@ -3294,15 +3550,17 @@ function ClienteScheda({
       onPrev: () => setMod("brand")
     });
     if (mod === "output") return /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: "1.5rem",
-        overflowY: "auto",
-        flex: 1
-      }
-    }, /*#__PURE__*/React.createElement(OutputView, {
-      client: c,
-      onNavigate: setMod
-    }));
+      style: { padding: "1.5rem", overflowY: "auto", flex: 1 }
+    }, /*#__PURE__*/React.createElement(OutputView, { client: c, onNavigate: setMod }));
+    if (mod === "report") return /*#__PURE__*/React.createElement("div", {
+      style: { padding: "1.5rem", overflowY: "auto", flex: 1 }
+    }, /*#__PURE__*/React.createElement(ReportMensileView, { client: c, onChange: updateClient }));
+    if (mod === "qbr") return /*#__PURE__*/React.createElement("div", {
+      style: { padding: "1.5rem", overflowY: "auto", flex: 1 }
+    }, /*#__PURE__*/React.createElement(QBRView, { client: c, onChange: updateClient }));
+    if (mod === "brief") return /*#__PURE__*/React.createElement("div", {
+      style: { padding: "1.5rem", overflowY: "auto", flex: 1 }
+    }, /*#__PURE__*/React.createElement(ShootingBriefView, { client: c, onChange: updateClient }));
   };
   if (mod === "pdm" || mod === "pdc" || mod === "brand" || mod === "strategy") {
     return /*#__PURE__*/React.createElement("div", {
