@@ -304,17 +304,59 @@ function Swatch({c}){
   );
 }
 
+// ── Upload logo via Dropbox ──
+async function uploadLogo(file){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('user', 'nassa_studio');
+  const r = await fetch('/api/dropbox-upload',{
+    method:'POST',
+    headers:{'x-nassa-key':API_KEY},
+    credentials:'include',
+    body:fd
+  });
+  if(!r.ok) throw new Error('Upload fallito: '+r.status);
+  const data = await r.json();
+  return data.url || data.shared_link || '';
+}
+
 // ── Brand Assets ──
-function BrandAssets({client,isAdmin}){
-  const b=client.brand||{colors:[],fonts:[],logos:[],templates:[]};
-  const pc=b.colors[0]?.hex||client.color||'#1A8C3F';
+function BrandAssets({client, isAdmin, onAddLogo}){
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState('');
+  const fileRef = useRef(null);
+  const b = client.brand || {colors:[],fonts:[],logos:[],templates:[]};
+  const pc = b.colors[0]?.hex || client.color || '#1A8C3F';
+
+  const handleFile = async(e) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    setUploading(true); setUploadErr('');
+    try {
+      const url = await uploadLogo(file);
+      const ext = file.name.split('.').pop().toUpperCase();
+      onAddLogo && onAddLogo({
+        id:'logo_'+Date.now(),
+        name:file.name.replace(/\.[^.]+$/,''),
+        format:ext, variant:'colore', url, note:''
+      });
+    } catch(err){ setUploadErr(err.message); }
+    finally { setUploading(false); if(fileRef.current) fileRef.current.value=''; }
+  };
+
+  const go = () => !uploading && fileRef.current?.click();
+
   return h('div',null,
-    // Palette
+    isAdmin&&h('input',{ref:fileRef,type:'file',accept:'image/*,.svg,.pdf,.ai,.eps',style:{display:'none'},onChange:handleFile}),
+
+    uploadErr&&h('div',{style:{background:'#fff5f5',border:'var(--bw) solid #fca5a5',color:'#ef4444',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:16,fontSize:'var(--fs-sm)',display:'flex',alignItems:'center',gap:8}},
+      '⚠ ',uploadErr,h('button',{onClick:()=>setUploadErr(''),style:{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:16}},'×')
+    ),
+
     b.colors.length>0&&h('div',{style:{marginBottom:24}},
       h('div',{className:'section-title'},'Palette colori'),
       h('div',{className:'palette-grid'},b.colors.map((c,i)=>h(Swatch,{key:i,c})))
     ),
-    // Font
     b.fonts.length>0&&h('div',{style:{marginBottom:24}},
       h('div',{className:'section-title'},'Font'),
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}},
@@ -325,33 +367,41 @@ function BrandAssets({client,isAdmin}){
         ))
       )
     ),
-    // Loghi
+
     h('div',{style:{marginBottom:24}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
         h('div',{className:'section-title',style:{margin:0}},'Loghi'),
-        isAdmin&&h('button',{className:'btn btn-ghost',onClick:()=>alert('Upload — collegare a Dropbox')},'↑ Carica logo')
+        isAdmin&&h('button',{className:'btn btn-ghost',onClick:go,disabled:uploading,style:{opacity:uploading?.6:1}},
+          uploading?'⏳ Caricamento…':'↑ Carica logo')
+      ),
+      uploading&&h('div',{style:{background:'var(--green-lt)',border:'var(--bw) solid var(--green-mid)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:'var(--fs-sm)',color:'var(--green-dk)'}},
+        '⏳ Upload su Dropbox in corso…'
       ),
       h('div',{className:'logo-grid'},
         b.logos.map(l=>h('div',{key:l.id,className:'logo-card'},
-          h('div',{className:'logo-preview',style:{background:l.variant==='bianco'?'#111':'var(--bg)'}},
-            h('div',{style:{width:40,height:40,borderRadius:8,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
-              h('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},client.name?.charAt(0)||'N')
-            )
+          h('div',{className:'logo-preview',style:{background:l.variant==='bianco'?'#111':'var(--surface-lt)'}},
+            l.url
+              ?h('img',{src:l.url,alt:l.name,style:{maxWidth:80,maxHeight:50,objectFit:'contain'}})
+              :h('div',{style:{width:40,height:40,borderRadius:8,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
+                  h('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},client.name?.charAt(0)||'N'))
           ),
           h('div',{className:'logo-info'},
             h('div',{className:'logo-name'},l.name),
             h('div',{className:'logo-meta'},l.format+(l.note?' · '+l.note:'')),
-            h('button',{className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0'}},'↓ Scarica')
+            l.url
+              ?h('a',{href:l.url,target:'_blank',rel:'noopener',className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0',display:'block',textAlign:'center',textDecoration:'none'}},'↓ Scarica')
+              :h('button',{className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0'}},'↓ Scarica')
           )
         )),
-        isAdmin&&h('div',{className:'logo-add',onClick:()=>alert('Aggiungi logo')},'+',h('span',null,'Aggiungi logo'))
+        isAdmin&&h('div',{className:'logo-add',onClick:go,style:{opacity:uploading?.5:1,cursor:uploading?'default':'pointer'}},
+          '+',h('span',null,uploading?'Upload in corso…':'Aggiungi logo'))
       )
     ),
-    // Template
+
     b.templates.length>0&&h('div',null,
       h('div',{className:'section-title'},'Template'),
       h('div',{style:{display:'flex',flexDirection:'column',gap:8}},
-        b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',background:'var(--bg)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
+        b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',background:'var(--surface-lt)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
           h('div',{style:{width:36,height:36,borderRadius:6,background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}},'📐'),
           h('div',{style:{flex:1}},
             h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)'}},t.name),
@@ -361,69 +411,16 @@ function BrandAssets({client,isAdmin}){
         ))
       )
     ),
+
     b.colors.length===0&&b.logos.length===0&&b.templates.length===0&&h('div',{className:'empty'},
       h('div',{className:'empty-icon'},'🎨'),
       h('div',{className:'empty-title'},'Nessun asset caricato'),
-      h('div',{className:'empty-sub'},isAdmin?'Usa il bottone "Carica logo" per iniziare':'Gli asset verranno caricati da Nassa Studio')
+      h('div',{className:'empty-sub'},isAdmin
+        ?h('span',null,'Clicca ',h('strong',null,'↑ Carica logo'),' per aggiungere il primo file')
+        :'Gli asset verranno caricati da Nassa Studio')
     )
   );
 }
-
-// ── Semaforo Nassa — 8 punti pre-pubblicazione ──
-const SEMAFORO_ITEMS = [
-  {id:'s1', lbl:'Il contenuto rispetta il ToV del brand (tono, parole sì/no)'},
-  {id:'s2', lbl:'Caption corretta: lunghezza, emoji, hashtag, CTA presenti'},
-  {id:'s3', lbl:'Visual coerente con la palette e la moodboard del brand'},
-  {id:'s4', lbl:'Formato e dimensioni corretti per la piattaforma'},
-  {id:'s5', lbl:'Nessun errore ortografico o grammaticale'},
-  {id:'s6', lbl:'Data e ora di pubblicazione definite'},
-  {id:'s7', lbl:'Link tracciato (UTM) se presente nella bio o nella caption'},
-  {id:'s8', lbl:'Pilastro narrativo dichiarato e coerente con il calendario'},
-];
-
-function Semaforo({approvalId, onConfirm, onCancel}){
-  const [checked, setChecked] = useState({});
-  const count = Object.values(checked).filter(Boolean).length;
-  const total = SEMAFORO_ITEMS.length;
-  const allOk = count === total;
-
-  const toggle = (id) => setChecked(p => ({...p, [id]: !p[id]}));
-
-  return h('div', {className:'semaforo-wrap'},
-    h('div', {className:'semaforo-title'},
-      h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
-        h('circle',{cx:12,cy:12,r:10}),h('line',{x1:12,y1:8,x2:12,y2:12}),h('line',{x1:12,y1:16,x2:'12.01',y2:16})
-      ),
-      'Semaforo Nassa — checklist pre-approvazione',
-      h('span',{style:{marginLeft:'auto',fontSize:11,color:allOk?'var(--green-dk)':'var(--text-3)',fontWeight:600}},count+'/'+total)
-    ),
-    h('div', {className:'semaforo-progress'},
-      h('div', {className:'semaforo-progress-fill', style:{width:(count/total*100)+'%'}})
-    ),
-    h('div', {className:'semaforo-list'},
-      SEMAFORO_ITEMS.map(item =>
-        h('div', {key:item.id, className:'semaforo-item', onClick:()=>toggle(item.id)},
-          h('div', {className:'semaforo-check'+(checked[item.id]?' checked':'')},
-            h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'var(--green-text)',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},
-              h('polyline',{points:'20 6 9 17 4 12'})
-            )
-          ),
-          h('span', {className:'semaforo-lbl'+(checked[item.id]?' checked':'')}, item.lbl)
-        )
-      )
-    ),
-    h('div', {className:'semaforo-actions'},
-      h('button', {className:'btn btn-ghost', style:{fontSize:12}, onClick:onCancel}, 'Annulla'),
-      h('button', {
-        className:'btn btn-approve',
-        style:{opacity: allOk ? 1 : 0.45, cursor: allOk ? 'pointer' : 'not-allowed'},
-        onClick: allOk ? onConfirm : null,
-        title: allOk ? '' : 'Completa tutti gli 8 punti per approvare'
-      }, '✓ Conferma approvazione')
-    )
-  );
-}
-
 // ── Approvals ──
 function Approvals({client,isAdmin,onUpdateStatus}){
   const [filter,setFilter]=useState('all');
@@ -496,7 +493,7 @@ function Moodboard({client,isAdmin}){
 
   if(!items.length) return h('div',null,
     isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
-      h('button',{className:'btn btn-outline',onClick:()=>alert('Aggiungi elemento')},'+ Aggiungi elemento')
+      h('button',{className:'btn btn-outline',onClick:()=>console.info('[NassaBrand] Aggiungi elemento moodboard — in roadmap step 5'),title:'Prossimamente: upload moodboard',style:{opacity:.6,cursor:'not-allowed'}},'+ Aggiungi elemento (presto)')
     ),
     h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎭'),h('div',{className:'empty-title'},'Moodboard vuota'),h('div',{className:'empty-sub'},'Aggiungi il primo elemento'))
   );
@@ -506,7 +503,7 @@ function Moodboard({client,isAdmin}){
       '💡 Questa è la direzione creativa del tuo progetto. Clicca su un elemento per lasciare un commento.'
     ),
     isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
-      h('button',{className:'btn btn-outline',onClick:()=>alert('Aggiungi elemento')},'+ Aggiungi elemento')
+      h('button',{className:'btn btn-outline',onClick:()=>console.info('[NassaBrand] Aggiungi elemento moodboard — in roadmap step 5'),title:'Prossimamente: upload moodboard',style:{opacity:.6,cursor:'not-allowed'}},'+ Aggiungi elemento (presto)')
     ),
     h('div',{className:'moodboard-grid'},
       cols.map((col,ci)=>h('div',{key:ci,className:'mood-col'},
@@ -545,7 +542,7 @@ function Moodboard({client,isAdmin}){
 }
 
 // ── Admin Portal View ── (tab controlled externally by sidebar)
-function AdminPortaleView({client,onUpdateStatus,tab}){
+function AdminPortaleView({client,onUpdateStatus,onAddLogo,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
 
@@ -577,7 +574,7 @@ function AdminPortaleView({client,onUpdateStatus,tab}){
       h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:copyLink},ICONS.copy,' Copia'),
       h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:()=>window.open('/portal/'+client.slug,'_blank')},ICONS.ext,' Apri')
     ),
-    tab==='assets'&&h(BrandAssets,{client,isAdmin:true}),
+    tab==='assets'&&h(BrandAssets,{client,isAdmin:true,onAddLogo}),
     tab==='approvals'&&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
     tab==='moodboard'&&h(Moodboard,{client,isAdmin:true})
   );
@@ -692,7 +689,19 @@ function NassaBrand(){
     if(selected?.id===clientId)setSelected(p=>({...p,approvals:p.approvals.map(a=>a.id===aId?{...a,stato:st}:a)}));
   },[selected]);
 
-  const selectClient=(c,v='assets')=>{setSelected(c);setView('portal');setTab(v);setSidebarExp(true);};
+  const updateBrand=useCallback((clientId,updater)=>{
+    setClients(prev=>prev.map(c=>{
+      if(c.id!==clientId)return c;
+      const updated={...c,brand:updater(c.brand||{colors:[],fonts:[],logos:[],templates:[]})};
+      api('/api/brand',{method:'POST',body:JSON.stringify({clientId,field:'brand',data:updated.brand})}).catch(console.error);
+      return updated;
+    }));
+    if(selected?.id===clientId)setSelected(p=>({...p,brand:updater(p.brand||{colors:[],fonts:[],logos:[],templates:[]})}));
+  },[selected]);
+
+  const addLogo=useCallback((clientId,logo)=>{
+    updateBrand(clientId,b=>({...b,logos:[...(b.logos||[]),logo]}));
+  },[updateBrand]);
 
   if(loading)return h('div',{className:'app'},h('div',{className:'loading'},'Caricamento NassaBrand…'));
   if(error)return h('div',{className:'app'},h('div',{className:'loading'},error));
@@ -778,7 +787,7 @@ function NassaBrand(){
                 h('div',{className:'content-sub'},selected.name+(tab==='approvals'&&pending(selected)>0?' · '+pending(selected)+' in attesa':''))
               )
             ),
-            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)})
+            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st),onAddLogo:(logo)=>addLogo(selected.id,logo)})
           )
         )
       )
