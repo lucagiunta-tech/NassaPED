@@ -319,86 +319,6 @@ async function api(path,opts={}){
 
 // ─── STATUS aggiornato con 'scheduled' ────────────────────────────────────────
 // ── Semaforo Nassa — 8 punti pre-pubblicazione ──────────────────────────────
-const SEMAFORO_ITEMS = [
-  {id:'s1', lbl:'Il contenuto rispetta il ToV del brand (tono, parole sì/no)'},
-  {id:'s2', lbl:'Caption corretta: lunghezza, emoji, hashtag, CTA presenti'},
-  {id:'s3', lbl:'Visual coerente con la palette e la moodboard del brand'},
-  {id:'s4', lbl:'Formato e dimensioni corretti per la piattaforma'},
-  {id:'s5', lbl:'Nessun errore ortografico o grammaticale'},
-  {id:'s6', lbl:'Data e ora di pubblicazione definite'},
-  {id:'s7', lbl:'Link tracciato (UTM) se presente nella bio o nella caption'},
-  {id:'s8', lbl:'Pilastro narrativo dichiarato e coerente con il calendario'},
-];
-
-function Semaforo({approvalId, onConfirm, onCancel}){
-  const [checked, setChecked] = useState({});
-  const count = Object.values(checked).filter(Boolean).length;
-  const total = SEMAFORO_ITEMS.length;
-  const allOk = count === total;
-  const toggle = (id) => setChecked(p => ({...p, [id]: !p[id]}));
-
-  return h('div', {className:'semaforo-wrap'},
-    h('div', {className:'semaforo-title'},
-      h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
-        h('circle',{cx:12,cy:12,r:10}),h('line',{x1:12,y1:8,x2:12,y2:12}),h('line',{x1:12,y1:16,x2:'12.01',y2:16})
-      ),
-      'Semaforo Nassa — checklist pre-approvazione',
-      h('span',{style:{marginLeft:'auto',fontSize:11,color:allOk?'var(--green-dk)':'var(--text-3)',fontWeight:600}},count+'/'+total)
-    ),
-    h('div', {className:'semaforo-progress'},
-      h('div', {className:'semaforo-progress-fill', style:{width:(count/total*100)+'%'}})
-    ),
-    h('div', {className:'semaforo-list'},
-      SEMAFORO_ITEMS.map(item =>
-        h('div', {key:item.id, className:'semaforo-item', onClick:()=>toggle(item.id)},
-          h('div', {className:'semaforo-check'+(checked[item.id]?' checked':'')},
-            h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'var(--green-text)',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},
-              h('polyline',{points:'20 6 9 17 4 12'})
-            )
-          ),
-          h('span', {className:'semaforo-lbl'+(checked[item.id]?' checked':'')}, item.lbl)
-        )
-      )
-    ),
-    h('div', {className:'semaforo-actions'},
-      h('button', {className:'btn btn-ghost', style:{fontSize:12}, onClick:onCancel}, 'Annulla'),
-      h('button', {
-        className:'btn btn-approve',
-        style:{opacity: allOk ? 1 : 0.45, cursor: allOk ? 'pointer' : 'not-allowed'},
-        onClick: allOk ? onConfirm : null,
-        title: allOk ? '' : 'Completa tutti gli 8 punti per approvare'
-      }, '✓ Conferma approvazione')
-    )
-  );
-}
-
-const STATUS={
-  pending:  {lbl:'In attesa',   color:'#C2185B', bg:'#FCE4EC', icon:'⏳'},
-  approved: {lbl:'Approvato',   color:'#1A8C3F', bg:'#E8F5E9', icon:'✓'},
-  revision: {lbl:'Revisione',   color:'#E65100', bg:'#FFF3E0', icon:'↩'},
-  scheduled:{lbl:'Programmato', color:'#185FA5', bg:'#E8F0FB', icon:'📅'},
-};
-const TAG_COLORS={Mood:'#534AB7',Palette:'#C25B2A',Foto:'#0F6E56',Copy:'#C2185B',Tipo:'#185FA5',Strategy:'#6B1A2A',ToV:'#854F0B'};
-
-// ── SVG Icons ──
-function Icon({d,size=20,stroke='currentColor',sw=2}){
-  return h('svg',{viewBox:'0 0 24 24',width:size,height:size,fill:'none',stroke,strokeWidth:sw,strokeLinecap:'round',strokeLinejoin:'round'},
-    h('path',{d})
-  );
-}
-const ICONS = {
-  grid:    h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:3,y:3,width:7,height:7}),h('rect',{x:14,y:3,width:7,height:7}),h('rect',{x:14,y:14,width:7,height:7}),h('rect',{x:3,y:14,width:7,height:7})),
-  palette: h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('circle',{cx:12,cy:12,r:10}),h('circle',{cx:8,cy:9,r:1.5,fill:'currentColor'}),h('circle',{cx:15,cy:8,r:1.5,fill:'currentColor'}),h('circle',{cx:16,cy:14,r:1.5,fill:'currentColor'}),h('circle',{cx:10,cy:15,r:1.5,fill:'currentColor'})),
-  check:   h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'20 6 9 17 4 12'})),
-  board:   h('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:3,y:3,width:18,height:18,rx:2}),h('line',{x1:9,y1:3,x2:9,y2:21}),h('line',{x1:15,y1:3,x2:15,y2:21})),
-  chevL:   h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'15 18 9 12 15 6'})),
-  chevR:   h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'9 18 15 12 9 6'})),
-  moon:    h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'})),
-  copy:    h('svg',{viewBox:'0 0 24 24',width:14,height:14,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:9,y:9,width:13,height:13,rx:2}),h('path',{d:'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'})),
-  ext:     h('svg',{viewBox:'0 0 24 24',width:14,height:14,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'}),h('polyline',{points:'15 3 21 3 21 9'}),h('line',{x1:10,y1:14,x2:21,y2:3})),
-};
-
-// ── Swatch ──
 function Swatch({c, allColors, isAdmin, onUpdateUsage}){
   const [cp,   setCp]   = useState(false);
   const [open, setOpen] = useState(false);
@@ -530,6 +450,7 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
     setAssetPreview(p => p && p.id===assetId ? {...p,...updates} : p);
   };
 
+  const [assetVista, setAssetVista] = useState('masonry'); // 'griglia'|'masonry'|'lista'
   const openAssetModal = (catId) => {
     setAssetModal({categoria:catId||'company_profile'});
     setAssetForm({name:'',categoria:catId||'company_profile',format:'PDF',note:'',
@@ -1220,8 +1141,21 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
     isAdmin && h('div',{style:{marginBottom:24}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
         h('div',{className:'section-title',style:{margin:0}},'Asset Grafici'),
-        isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:12},
-          onClick:()=>openAssetModal(null)},'+ Aggiungi asset')
+        h('div',{style:{display:'flex',gap:8,alignItems:'center'}},
+          // Toggle viste
+          h('div',{style:{display:'flex',gap:2,background:'var(--surface-lt)',padding:2,
+            borderRadius:'var(--r)',border:'var(--bw) solid var(--border)'}},
+            [['griglia','⊞'],['masonry','⠿'],['lista','☰']].map(([id,icon])=>
+              h('button',{key:id,onClick:()=>setAssetVista(id),title:id,
+                style:{padding:'3px 8px',borderRadius:'calc(var(--r) - 2px)',fontSize:13,cursor:'pointer',
+                  border:'none',background:assetVista===id?'var(--surface)':'transparent',
+                  color:assetVista===id?'var(--text)':'var(--text-3)',
+                  boxShadow:assetVista===id?'0 1px 3px rgba(0,0,0,.08)':'none'}},icon)
+            )
+          ),
+          isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:12},
+            onClick:()=>openAssetModal(null)},'+ Aggiungi asset')
+        )
       ),
       ASSET_CATS.map(cat=>{
         const catAssets=(b.assets||[]).filter(a=>a.categoria===cat.id);
@@ -1237,26 +1171,68 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
               onClick:()=>openAssetModal(cat.id)},
               '+ Aggiungi')
           ),
-          h('div',{className:'assets-masonry'},
-            catAssets.map((a)=>h('div',{key:a.id,className:'asset-card',
-              onClick:()=>setAssetPreview(a)},
-              h('div',{className:'asset-thumb'},
-                a.url&&['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes((a.format||'').toUpperCase())
-                  ?h('img',{src:a.url,alt:a.name})
-                  :h('div',{className:'asset-icon'},cat.icon),
-                h('div',{className:'asset-hover-badge'},'👁 Anteprima')
-              ),
-              h('div',{className:'asset-info'},
-                h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:3}},
-                  h('div',{className:'asset-name',title:a.name,style:{flex:1}},a.name),
-                  a.proof_stato&&h('span',{
-                    className:'proof-pill proof-'+a.proof_stato
-                  },{bozza:'📝',revisione:'🔄',approvato:'✓',final:'🏁'}[a.proof_stato],' ',a.proof_stato)
+          h('div',{
+            style: assetVista==='griglia'
+              ? {display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:10,marginBottom:12}
+              : assetVista==='lista'
+              ? {display:'flex',flexDirection:'column',gap:6,marginBottom:12}
+              : {columns:3,columnGap:10,marginBottom:12}
+          },
+            catAssets.map((a)=>{
+              if(assetVista==='lista') return h('div',{key:a.id,
+                onClick:()=>setAssetPreview(a),
+                style:{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',cursor:'pointer',
+                  background:'var(--surface)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',
+                  transition:'border-color var(--t-fast)'}},
+                h('div',{style:{width:36,height:36,borderRadius:6,flexShrink:0,overflow:'hidden',
+                  background:'var(--surface-lt)',display:'flex',alignItems:'center',justifyContent:'center'}},
+                  a.url&&['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes((a.format||'').toUpperCase())
+                    ?h('img',{src:a.url,alt:a.name,style:{width:'100%',height:'100%',objectFit:'cover'}})
+                    :h('span',{style:{fontSize:18}},cat.icon)
                 ),
-                h('div',{className:'asset-meta'},a.format+(a.data?' · '+a.data:'')),
-                a.note&&h('div',{className:'asset-note'},a.note)
-              )
-            )),
+                h('div',{style:{flex:1,minWidth:0}},
+                  h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)',
+                    overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.name),
+                  h('div',{style:{fontSize:11,color:'var(--text-3)'}},a.format+(a.data?' · '+a.data:''))
+                ),
+                a.proof_stato&&h('span',{style:{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,
+                  background:APR_CLR[a.proof_stato]+'22',color:APR_CLR[a.proof_stato],flexShrink:0}},
+                  APR_LBL[a.proof_stato]),
+                a.url&&h('a',{href:a.url,target:'_blank',rel:'noopener',
+                  className:'btn btn-ghost',style:{fontSize:11,padding:'3px 8px',textDecoration:'none',flexShrink:0},
+                  onClick:e=>e.stopPropagation()},'↓'),
+                isAdmin&&h('button',{className:'btn btn-ghost',
+                  style:{fontSize:11,padding:'3px 8px',flexShrink:0,color:'#ef4444',borderColor:'#fca5a5'},
+                  onClick:e=>{e.stopPropagation();
+                    const assets=(b.assets||[]).filter(x=>x.id!==a.id);
+                    onUpdateBrand&&onUpdateBrand(client.id,brd=>({...brd,assets}));}
+                },'✕')
+              );
+              // Griglia e Masonry
+              return h('div',{key:a.id,className:'asset-card',
+                style:assetVista==='masonry'?{breakInside:'avoid',marginBottom:10}:{},
+                onClick:()=>setAssetPreview(a)},
+                h('div',{className:'asset-thumb',
+                  style:assetVista==='griglia'?{height:100,overflow:'hidden'}:{}},
+                  a.url&&['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes((a.format||'').toUpperCase())
+                    ?h('img',{src:a.url,alt:a.name,
+                        style:assetVista==='griglia'
+                          ?{width:'100%',height:'100%',objectFit:'cover',display:'block'}
+                          :{width:'100%',height:'auto',display:'block',objectFit:'contain'}})
+                    :h('div',{className:'asset-icon'},cat.icon),
+                  h('div',{className:'asset-hover-badge'},'👁 Anteprima')
+                ),
+                h('div',{className:'asset-info'},
+                  h('div',{style:{display:'flex',alignItems:'center',gap:4,marginBottom:2}},
+                    h('div',{className:'asset-name',title:a.name,style:{flex:1}},a.name),
+                    a.proof_stato&&h('span',{style:{fontSize:9,fontWeight:700,padding:'1px 5px',
+                      borderRadius:99,background:APR_CLR[a.proof_stato],color:'#fff',flexShrink:0}},
+                      {bozza:'📝',revisione:'🔄',approvato:'✓',final:'🏁'}[a.proof_stato])
+                  ),
+                  h('div',{className:'asset-meta'},a.format+(a.data?' · '+a.data:''))
+                )
+              );
+            }),
             catAssets.length===0&&isAdmin&&h('div',{className:'asset-add-zone',
               onClick:()=>openAssetModal(cat.id)},
               '+',h('span',null,'Aggiungi '+cat.lbl.toLowerCase())
@@ -1275,455 +1251,338 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
     )
   );
 }
-// ── Approvals ──
-function Approvals({client,isAdmin,onUpdateStatus,onAddApproval}){
-  const [filter,setFilter]=useState('all');
-  const [semaforoFor,setSemaforoFor]=useState(null);
-  const [showNew,setShowNew]=useState(false);
-  const [form,setForm]=useState({titolo:'',tipo:'Post',formato:'Feed 1:1',note:'',preview:'#C25B2A'});
-  const approvals=client.approvals||[];
-  const list=filter==='all'?approvals:approvals.filter(a=>a.stato===filter);
-  const counts={
-    pending:  approvals.filter(a=>a.stato==='pending').length,
-    approved: approvals.filter(a=>a.stato==='approved').length,
-    revision: approvals.filter(a=>a.stato==='revision').length,
-    scheduled:approvals.filter(a=>a.stato==='scheduled').length,
-  };
+// ── Approvals (Lista + Kanban unificato) ──────────────────────────────────────
+const APPROVAL_PROOF = ['bozza','revisione','approvato','final'];
+const APR_CLR = {bozza:'#9ca3af',revisione:'#f59e0b',approvato:'#185FA5',final:'#1A8C3F'};
+const APR_LBL = {bozza:'📝 Bozza',revisione:'🔄 Revisione',approvato:'✓ Approvato',final:'🏁 Final'};
+const APR_BG  = {bozza:'#f3f4f6',revisione:'#fff7ed',approvato:'#eff6ff',final:'#f0fdf4'};
 
-  const TIPI    = ['Post','Reel','Storia','Carosello','Video','Newsletter','ADV','Altro'];
-  const FORMATI = ['Feed 1:1','Feed 4:5','Feed 16:9','Storia 9:16','Reel 9:16','Carosello','Email','Banner'];
-  const PREVIEW_COLORS = ['#C25B2A','#F5EDD8','#1A8C3F','#185FA5','#C2185B','#0F6E56','#2C1A0E','#534AB7','#E8DCC8'];
-
-  const submitNew = () => {
-    if(!form.titolo.trim()) return;
-    const today = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
-    onAddApproval && onAddApproval({
-      id: 'apr_'+Date.now(),
-      titolo: form.titolo.trim(),
-      tipo:   form.tipo,
-      formato:form.formato,
-      note:   form.note.trim(),
-      preview:form.preview,
-      stato:  'pending',
-      data:   today,
-      semaforo_ok: false,
-    });
-    setForm({titolo:'',tipo:'Post',formato:'Feed 1:1',note:'',preview:'#C25B2A'});
-    setShowNew(false);
-  };
-
-  // ── Modal nuovo contenuto ──
-  const newModal = showNew && h('div',{
-    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:600,
-      display:'flex',alignItems:'center',justifyContent:'center'},
-    onClick:e=>{ if(e.target===e.currentTarget) setShowNew(false); }
-  },
-    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,
-      width:420,maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.2)'}},
-      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}},
-        h('span',{style:{fontSize:16,fontWeight:700,color:'var(--text)'}},'Nuovo contenuto'),
-        h('button',{onClick:()=>setShowNew(false),
-          style:{border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--text-2)'}},'×')
-      ),
-      // Titolo
-      h('div',{style:{marginBottom:12}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Titolo *'),
-        h('input',{type:'text',value:form.titolo,autoFocus:true,
-          onChange:e=>setForm(p=>({...p,titolo:e.target.value})),
-          placeholder:'Es. Post lancio estate — carosello 5 slide',
-          style:{width:'100%',padding:'8px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',
-            outline:'none',boxSizing:'border-box'}})
-      ),
-      // Tipo + Formato
-      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}},
-        h('div',null,
-          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Tipo'),
-          h('select',{value:form.tipo,onChange:e=>setForm(p=>({...p,tipo:e.target.value})),
-            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
-            TIPI.map(t=>h('option',{key:t,value:t},t))
-          )
-        ),
-        h('div',null,
-          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Formato'),
-          h('select',{value:form.formato,onChange:e=>setForm(p=>({...p,formato:e.target.value})),
-            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
-            FORMATI.map(f=>h('option',{key:f,value:f},f))
-          )
-        )
-      ),
-      // Note
-      h('div',{style:{marginBottom:12}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},
-          'Note / descrizione'),
-        h('textarea',{rows:3,value:form.note,
-          onChange:e=>setForm(p=>({...p,note:e.target.value})),
-          placeholder:'Es. Carosello 5 slide sul territorio estivo. CTA: prenota ora.',
-          style:{width:'100%',padding:'8px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',
-            resize:'vertical',fontFamily:'inherit',boxSizing:'border-box'}})
-      ),
-      // Colore preview
-      h('div',{style:{marginBottom:18}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:6}},
-          'Colore preview'),
-        h('div',{style:{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
-          PREVIEW_COLORS.map(c=>h('div',{key:c,onClick:()=>setForm(p=>({...p,preview:c})),
-            style:{width:28,height:28,borderRadius:4,background:c,cursor:'pointer',
-              border:form.preview===c?'2px solid var(--text)':'2px solid transparent',
-              transition:'border-color .1s'}})),
-          h('input',{type:'color',value:form.preview,onChange:e=>setForm(p=>({...p,preview:e.target.value})),
-            style:{width:36,height:28,border:'var(--bw) solid var(--border)',borderRadius:4,cursor:'pointer',padding:2}})
-        ),
-        h('div',{style:{marginTop:8,height:32,borderRadius:'var(--r)',background:form.preview}})
-      ),
-      // Actions
-      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
-        h('button',{onClick:()=>setShowNew(false),className:'btn btn-ghost'},'Annulla'),
-        h('button',{onClick:submitNew,className:'btn btn-primary',
-          style:{opacity:form.titolo.trim()?1:.45}},'Crea contenuto')
-      )
+// Semaforo Nassa items
+const SEMAFORO_ITEMS=[
+  {id:'s1',lbl:'Il contenuto rispetta il ToV del brand'},
+  {id:'s2',lbl:'Caption corretta: lunghezza, emoji, hashtag, CTA'},
+  {id:'s3',lbl:'Visual coerente con palette e moodboard'},
+  {id:'s4',lbl:'Formato e dimensioni corretti per la piattaforma'},
+  {id:'s5',lbl:'Nessun errore ortografico o grammaticale'},
+  {id:'s6',lbl:'Data e ora di pubblicazione definite'},
+  {id:'s7',lbl:'Link tracciato (UTM) se presente'},
+  {id:'s8',lbl:'Pilastro narrativo dichiarato e coerente'},
+];
+function Semaforo({onConfirm,onCancel}){
+  const [checked,setChecked]=useState({});
+  const count=Object.values(checked).filter(Boolean).length;
+  const allOk=count===SEMAFORO_ITEMS.length;
+  return h('div',{className:'semaforo-wrap'},
+    h('div',{className:'semaforo-title'},
+      h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+        h('circle',{cx:12,cy:12,r:10}),h('line',{x1:12,y1:8,x2:12,y2:12}),h('line',{x1:12,y1:16,x2:'12.01',y2:16})),
+      'Semaforo Nassa',
+      h('span',{style:{marginLeft:'auto',fontSize:11,color:allOk?'var(--green-dk)':'var(--text-3)',fontWeight:600}},count+'/'+SEMAFORO_ITEMS.length)
+    ),
+    h('div',{className:'semaforo-progress'},h('div',{className:'semaforo-progress-fill',style:{width:(count/SEMAFORO_ITEMS.length*100)+'%'}})),
+    h('div',{className:'semaforo-list'},
+      SEMAFORO_ITEMS.map(item=>h('div',{key:item.id,className:'semaforo-item',
+        onClick:()=>setChecked(p=>({...p,[item.id]:!p[item.id]}))},
+        h('div',{className:'semaforo-check'+(checked[item.id]?' checked':'')},
+          h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'var(--green-text)',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},
+            h('polyline',{points:'20 6 9 17 4 12'}))),
+        h('span',{className:'semaforo-lbl'+(checked[item.id]?' checked':'')},item.lbl)
+      ))
+    ),
+    h('div',{className:'semaforo-actions'},
+      h('button',{className:'btn btn-ghost',style:{fontSize:12},onClick:onCancel},'Annulla'),
+      h('button',{className:'btn btn-approve',style:{opacity:allOk?1:.45,cursor:allOk?'pointer':'not-allowed'},
+        onClick:allOk?onConfirm:null,title:allOk?'':'Completa tutti gli 8 punti'},
+        '✓ Conferma approvazione')
     )
-  );
-
-  return h('div',null,
-    newModal,
-    // Header con bottone nuovo contenuto (solo admin)
-    isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:12}},
-      h('button',{className:'btn btn-primary',onClick:()=>setShowNew(true)},
-        '+ Nuovo contenuto')
-    ),
-    // Filter row
-    h('div',{className:'filter-row'},
-      [['all','Tutti',approvals.length],['pending','In attesa',counts.pending],
-       ['approved','Approvati',counts.approved],['revision','Revisioni',counts.revision],
-       ['scheduled','Programmati',counts.scheduled]
-      ].map(([id,lbl,n])=>n>0||id==='all'?
-        h('button',{key:id,className:'filter-btn'+(filter===id?' active':''),onClick:()=>setFilter(id)},
-          lbl, h('span',{className:'filter-count'},n)
-        ):null
-      )
-    ),
-    list.length===0&&h('div',{className:'empty'},
-      h('div',{className:'empty-icon'},'✓'),
-      h('div',{className:'empty-title'},'Nessun contenuto'),
-      h('div',{className:'empty-sub'},'Nessun contenuto in questa categoria')
-    ),
-    h('div',null,list.map(a=>{
-      const st=STATUS[a.stato]||STATUS.pending;
-      return h('div',{key:a.id},
-        // Semaforo espanso sopra la card se attivo
-        semaforoFor===a.id && h(Semaforo,{
-          approvalId: a.id,
-          onConfirm: ()=>{ onUpdateStatus(a.id,'approved'); setSemaforoFor(null); },
-          onCancel:  ()=>setSemaforoFor(null)
-        }),
-        h('div',{className:'approval-card',style:{borderLeftColor:st.color}},
-          h('div',{className:'approval-body'},
-            h('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}},
-              h('div',{style:{flex:1,minWidth:0}},
-                h('div',{style:{display:'flex',gap:5,flexWrap:'wrap',marginBottom:6}},
-                  h('span',{className:'approval-status',style:{background:st.bg,color:st.color}},st.icon,' ',st.lbl),
-                  h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 7px',borderRadius:4}},a.tipo),
-                  a.formato&&h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 7px',borderRadius:4}},a.formato),
-                  a.semaforo_ok&&h('span',{className:'semaforo-ok'},'🟢 Semaforo OK')
-                ),
-                h('div',{className:'approval-title'},a.titolo),
-                a.note&&h('div',{className:'approval-note'},a.note)
-              ),
-              a.preview&&h('div',{className:'approval-preview',style:{background:a.preview}})
-            ),
-            h('div',{className:'approval-footer'},
-              h('span',{className:'approval-date'},'📅 ',a.data),
-              // ── Step 15: stato 'scheduled' con data/piattaforma ──
-              a.stato==='approved'&&isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
-                h('span',{style:{fontSize:12,color:'var(--green-dk)',fontWeight:600}},'✓ Approvato'),
-                h('button',{
-                  className:'btn btn-ghost',
-                  style:{fontSize:11,padding:'3px 10px',borderColor:'#185FA5',color:'#185FA5'},
-                  onClick:()=>onUpdateStatus(a.id,'scheduled')
-                },'📅 Segna come programmato')
-              ),
-              a.stato==='scheduled'&&h('div',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
-                h('span',{className:'approval-status',style:{background:'#E8F0FB',color:'#185FA5',fontSize:11}},'📅 Programmato'),
-                isAdmin&&h('input',{
-                  type:'date',
-                  value:a.scheduled_date||'',
-                  onChange:e=>onUpdateStatus(a.id,'scheduled',{scheduled_date:e.target.value}),
-                  title:'Data programmata',
-                  style:{fontSize:12,padding:'3px 8px',border:'0.5px solid var(--border)',
-                    borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',cursor:'pointer'}
-                }),
-                isAdmin&&h('select',{
-                  value:a.scheduled_platform||'',
-                  onChange:e=>onUpdateStatus(a.id,'scheduled',{scheduled_platform:e.target.value}),
-                  style:{fontSize:12,padding:'3px 8px',border:'0.5px solid var(--border)',
-                    borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',cursor:'pointer'}
-                },
-                  h('option',{value:''},'Piattaforma…'),
-                  ['Instagram','Facebook','LinkedIn','TikTok','Pinterest','Newsletter','Altro'].map(p=>
-                    h('option',{key:p,value:p},p)
-                  )
-                )
-              ),
-              a.stato==='pending'&&!isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',gap:6}},
-                h('button',{className:'btn-approve',onClick:()=>setSemaforoFor(semaforoFor===a.id?null:a.id)},
-                  semaforoFor===a.id ? '✕ Chiudi semaforo' : '🟢 Avvia Semaforo → Approva'
-                ),
-                h('button',{className:'btn-revision',onClick:()=>onUpdateStatus(a.id,'revision')},'↩ Revisione')
-              ),
-              isAdmin&&a.stato==='revision'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#E65100',fontWeight:600}},'⚠ Revisione richiesta')
-            )
-          )
-        )
-      );
-    }))
   );
 }
 
-// ── Moodboard ──
-function Moodboard({client, isAdmin, onAddMoodItem}){
-  const [sel, setSel]       = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [form, setForm]     = useState({tipo:'image',titolo:'',note:'',tag:'Mood',color:'#C25B2A',height:1});
-  const [uploadErr, setUploadErr] = useState('');
-  const moodFileRef = useRef(null);
-  const items = client.moodboard || [];
+function ApprovalCard({a, isAdmin, onProof, onSemaforo, onMoveToAssets, semaforoFor, setSemaforoFor}){
+  const [showCat, setShowCat] = useState(false);
+  const proofStato = a.proof_stato || 'bozza';
+  const previewBg = a.imageUrl ? null : (a.preview||'#C25B2A');
+  const CATS = ['company_profile','corporate_id','packaging','comunicazione','social_templates','fotografia','Altro'];
+  const CAT_LBL = {company_profile:'Company Profile',corporate_id:'Corporate Identity',
+    packaging:'Packaging',comunicazione:'Comunicazione',social_templates:'Social Templates',
+    fotografia:'Fotografia',Altro:'Altro'};
 
-  const TAG_OPTS = ['Mood','Palette','Foto','Copy','Tipo','Strategy','ToV'];
-  const COLOR_OPTS = ['#C25B2A','#F5EDD8','#1D9E75','#185FA5','#2C1A0E','#E8DCC8','#7A9E5A','#534AB7','#6B1A2A'];
-
-  const handleMoodFile = async(e) => {
-    const file = e.target.files?.[0];
-    if(!file) return;
-    setUploading(true); setUploadErr('');
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('user', 'nassa_studio');
-      const r = await fetch('/api/dropbox-upload', {
-        method:'POST', headers:{'x-nassa-key':API_KEY},
-        credentials:'include', body:fd
-      });
-      if(!r.ok) throw new Error('Upload fallito: '+r.status);
-      const data = await r.json();
-      const url = data.url || data.shared_link || '';
-      setForm(p => ({...p, imageUrl:url, tipo:'image'}));
-    } catch(err){ setUploadErr(err.message); }
-    finally { setUploading(false); if(moodFileRef.current) moodFileRef.current.value=''; }
-  };
-
-  const confirmAdd = () => {
-    if(!form.titolo.trim() && form.tipo!=='text') return;
-    if(form.tipo==='text' && !form.note.trim()) return;
-    const item = {
-      id: 'mood_'+Date.now(),
-      tipo: form.tipo,
-      titolo: form.titolo.trim() || form.note.trim().slice(0,40),
-      note: form.note.trim(),
-      tag: form.tag,
-      color: form.tipo==='image' ? '#e8e0d8' : form.color,
-      height: parseFloat(form.height)||1,
-      imageUrl: form.imageUrl||null,
-    };
-    onAddMoodItem && onAddMoodItem(item);
-    setShowModal(false);
-    setForm({tipo:'image',titolo:'',note:'',tag:'Mood',color:'#C25B2A',height:1,imageUrl:null});
-    setUploadErr('');
-  };
-
-  const vh = item => {
-    if(item.tipo==='text')  return Math.round((item.height||1)*80+60);
-    if(item.tipo==='color') return Math.round((item.height||1)*100+40);
-    return null; // image: altezza naturale
-  };
-
-  // ── Modal aggiungi elemento ──
-  const modal = showModal && h('div',{
-    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:600,
-      display:'flex',alignItems:'center',justifyContent:'center'},
-    onClick:e=>{if(e.target===e.currentTarget){setShowModal(false);setUploadErr('');}}
-  },
-    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,width:420,
-      maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.2)'}},
-      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
-        h('span',{style:{fontSize:16,fontWeight:700,color:'var(--text)'}},'Aggiungi elemento'),
-        h('button',{onClick:()=>{setShowModal(false);setUploadErr('');},
-          style:{border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--text-2)'}},'×')
-      ),
-      // Tipo
-      h('div',{style:{marginBottom:14}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:6}},'Tipo elemento'),
-        h('div',{style:{display:'flex',gap:8}},
-          ['image','color','text'].map(t=>h('button',{key:t,
-            onClick:()=>setForm(p=>({...p,tipo:t})),
-            style:{flex:1,padding:'6px 0',borderRadius:'var(--r)',fontSize:12,fontWeight:500,cursor:'pointer',
-              border:'var(--bw) solid '+(form.tipo===t?'var(--green)':'var(--border)'),
-              background:form.tipo===t?'var(--green-lt)':'var(--surface)',
-              color:form.tipo===t?'var(--green-dk)':'var(--text-2)'}
-          },{image:'🖼 Immagine',color:'🎨 Colore',text:'✏ Testo'}[t]))
-        )
-      ),
-      // Upload (solo tipo image)
-      form.tipo==='image'&&h('div',{style:{marginBottom:14}},
-        h('input',{ref:moodFileRef,type:'file',accept:'image/*',style:{display:'none'},onChange:handleMoodFile}),
-        form.imageUrl
-          ? h('div',{style:{position:'relative'}},
-              h('img',{src:form.imageUrl,alt:'preview',style:{width:'100%',borderRadius:'var(--r)',display:'block',maxHeight:200,objectFit:'contain',background:'var(--surface-lt)'}}),
-              h('button',{onClick:()=>setForm(p=>({...p,imageUrl:null})),
-                style:{position:'absolute',top:6,right:6,background:'rgba(0,0,0,.5)',border:'none',color:'#fff',borderRadius:4,padding:'2px 7px',cursor:'pointer',fontSize:11}},'✕ Rimuovi')
-            )
-          : h('div',{onClick:()=>moodFileRef.current?.click(),
-              style:{border:'1.5px dashed var(--border)',borderRadius:'var(--r)',padding:'24px 0',
-                textAlign:'center',cursor:uploading?'wait':'pointer',
-                color:'var(--text-3)',fontSize:12,transition:'border-color var(--t-fast)'}},
-              uploading?'⏳ Upload in corso…':'↑ Clicca per caricare immagine'
-            ),
-        uploadErr&&h('div',{style:{marginTop:6,fontSize:11,color:'#ef4444'}},uploadErr)
-      ),
-      // Colore (solo tipo color)
-      form.tipo==='color'&&h('div',{style:{marginBottom:14}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:6}},'Colore'),
-        h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}},
-          COLOR_OPTS.map(c=>h('div',{key:c,onClick:()=>setForm(p=>({...p,color:c})),
-            style:{width:28,height:28,borderRadius:4,background:c,cursor:'pointer',
-              border:form.color===c?'2px solid var(--text)':'2px solid transparent',
-              transition:'border-color .1s'}}))
-        ),
-        h('input',{type:'color',value:form.color,onChange:e=>setForm(p=>({...p,color:e.target.value})),
-          style:{width:'100%',height:32,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',cursor:'pointer'}})
-      ),
-      // Titolo
-      form.tipo!=='text'&&h('div',{style:{marginBottom:12}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Titolo'),
-        h('input',{type:'text',value:form.titolo,onChange:e=>setForm(p=>({...p,titolo:e.target.value})),
-          placeholder:'Es. Direzione cromatica',
-          style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-            borderRadius:'var(--r)',outline:'none',background:'var(--surface)',color:'var(--text)',boxSizing:'border-box'}})
-      ),
-      // Nota/testo
-      h('div',{style:{marginBottom:12}},
-        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},
-          form.tipo==='text'?'Testo (visibile nella card)':'Descrizione / nota'),
-        h('textarea',{rows:form.tipo==='text'?4:2,value:form.note,onChange:e=>setForm(p=>({...p,note:e.target.value})),
-                    placeholder:form.tipo==='text'?'Es. Copia alternativa per la campagna estiva':'Es. Terracotta + verde pistacchio per la stagione',
-          style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-            borderRadius:'var(--r)',outline:'none',background:'var(--surface)',color:'var(--text)',
-            resize:'vertical',fontFamily:'inherit',boxSizing:'border-box'}})
-      ),
-      // Tag + altezza
-      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
-        h('div',null,
-          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Tag'),
-          h('select',{value:form.tag,onChange:e=>setForm(p=>({...p,tag:e.target.value})),
-            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
-            TAG_OPTS.map(t=>h('option',{key:t,value:t},t))
-          )
-        ),
-        h('div',null,
-          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},
-            'Altezza card (0.5–2)'),
-          h('input',{type:'number',min:.5,max:2,step:.25,value:form.height,
-            onChange:e=>setForm(p=>({...p,height:e.target.value})),
-            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
-              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}}),
-          h('p',{style:{fontSize:10,color:'var(--text-3)',marginTop:2}},'1 = normale, 2 = doppia')
-        )
-      ),
-      // Actions
-      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
-        h('button',{onClick:()=>{setShowModal(false);setUploadErr('');},
-          style:{padding:'7px 16px',borderRadius:'var(--r)',border:'var(--bw) solid var(--border)',
-            background:'transparent',color:'var(--text-2)',fontSize:13,cursor:'pointer',fontWeight:500}},
-          'Annulla'),
-        h('button',{
-          onClick:confirmAdd,
-          disabled:uploading||(form.tipo==='image'&&!form.imageUrl)||(form.tipo==='text'&&!form.note.trim())||(form.tipo!=='text'&&!form.titolo.trim()&&!form.imageUrl),
-          style:{padding:'7px 18px',borderRadius:'var(--r)',border:'none',background:'var(--green)',
-            color:'var(--green-text)',fontSize:13,cursor:'pointer',fontWeight:700,
-            opacity:uploading?0.5:1}},
-          'Aggiungi')
-      )
-    )
-  );
-
-  // ── Render principale ──
-  const addBtn = isAdmin && h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
-    h('button',{className:'btn btn-primary',onClick:()=>setShowModal(true)},'+ Aggiungi elemento')
-  );
-
-  if(!items.length) return h('div',null,
-    modal, addBtn,
-    h('div',{className:'empty'},
-      h('div',{className:'empty-icon'},'🎭'),
-      h('div',{className:'empty-title'},'Moodboard vuota'),
-      h('div',{className:'empty-sub'},'Clicca "+ Aggiungi elemento" per iniziare')
-    )
-  );
-
-  return h('div',null,
-    modal,
-    !isAdmin&&h('div',{style:{padding:'10px 14px',borderRadius:'var(--r)',background:'#fffbeb',
-      border:'0.5px solid #fde68a',fontSize:12,color:'#92400e',marginBottom:16}},
-      '💡 Questa è la direzione creativa del tuo progetto. Clicca su un elemento per lasciare un commento.'
+  return h('div',{style:{background:'var(--surface)',border:'var(--bw) solid var(--border)',
+    borderRadius:'var(--r)',overflow:'hidden',transition:'box-shadow var(--t-fast)'}},
+    // Preview
+    h('div',{style:{height:72,background:previewBg||'var(--surface-lt)',display:'flex',
+      alignItems:'center',justifyContent:'center',overflow:'hidden',position:'relative'}},
+      a.imageUrl&&h('img',{src:a.imageUrl,alt:a.titolo,
+        style:{width:'100%',height:'100%',objectFit:'cover',display:'block'}}),
+      !a.imageUrl&&h('div',{style:{fontSize:10,fontWeight:700,color:contrast(previewBg),
+        textAlign:'center',padding:'0 8px',letterSpacing:'.02em'}}),
+      // Proof badge top-right
+      h('span',{style:{position:'absolute',top:6,right:6,fontSize:9,fontWeight:700,
+        padding:'2px 6px',borderRadius:99,background:APR_CLR[proofStato],color:'#fff'}},
+        APR_LBL[proofStato])
     ),
-    addBtn,
-    h('div',{className:'moodboard-masonry'},
-      items.map(item=>{
-        const tc=TAG_COLORS[item.tag]||'var(--text-3)';
-        const isSel=sel===item.id;
-        const h_px = item.tipo==='text' ? Math.round((item.height||1)*80+60)
-                   : item.tipo==='color'? Math.round((item.height||1)*100+40)
-                   : null;
-        return h('div',{key:item.id,
-          className:'masonry-item'+(isSel?' selected':''),
-          style:{borderColor:isSel?tc:undefined},
-          onClick:()=>setSel(isSel?null:item.id)
-        },
-          h('div',{style:{
-            background:item.imageUrl?'var(--surface-lt)':item.color,
-            height:h_px||undefined,
-            display:'flex',alignItems:'center',justifyContent:'center',
-            padding:item.imageUrl?0:16,overflow:'hidden'
-          }},
-            item.imageUrl && h('img',{src:item.imageUrl,alt:item.titolo,
-              style:{width:'100%',height:'auto',display:'block',objectFit:'contain'}}),
-            !item.imageUrl&&item.tipo==='text'&&h('p',{style:{margin:0,fontSize:13,
-              color:contrast(item.color),lineHeight:1.6,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
-            !item.imageUrl&&item.tipo==='color'&&h('div',{style:{fontSize:14,fontWeight:700,
-              color:contrast(item.color),textAlign:'center'}},item.titolo)
-          ),
-          h('div',{className:'masonry-body'},
-            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8,marginBottom:4}},
-              item.tipo!=='text'&&h('div',{className:'masonry-title'},item.titolo),
-              h('span',{className:'masonry-tag',style:{background:tc+'20',color:tc,flexShrink:0}},item.tag)
-            ),
-            item.tipo!=='text'&&item.note&&h('div',{className:'masonry-note'},item.note),
-            isSel&&!isAdmin&&h('div',{style:{marginTop:8}},
-              h('textarea',{rows:2,placeholder:'Lascia un commento...',style:{
-                width:'100%',padding:'6px 8px',fontSize:12,borderRadius:6,
-                border:'0.5px solid var(--border)',background:'var(--surface)',
-                color:'var(--text)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'
-              }}),
-              h('button',{className:'btn btn-primary',style:{marginTop:4,fontSize:12,padding:'4px 12px'}},'Invia commento')
-            ),
-            isSel&&isAdmin&&h('div',{style:{marginTop:8,display:'flex',gap:6}},
-              h('button',{className:'btn btn-ghost',style:{fontSize:11}},'✏ Modifica'),
-              h('button',{className:'btn btn-outline',style:{fontSize:11},
-                onClick:e=>{e.stopPropagation();onAddMoodItem&&onAddMoodItem(null,item.id);}},'✕ Rimuovi')
-            )
-          )
-        );
+    // Body
+    h('div',{style:{padding:'8px 10px'}},
+      h('div',{style:{fontSize:13,fontWeight:600,color:'var(--text)',marginBottom:2,
+        overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.titolo),
+      h('div',{style:{display:'flex',gap:6,alignItems:'center',marginBottom:6}},
+        h('span',{style:{fontSize:10,color:'var(--text-3)'}},(a.tipo||'')+(a.formato?' · '+a.formato:'')),
+        h('span',{style:{fontSize:10,color:'var(--text-3)',marginLeft:'auto'}},a.data)
+      ),
+      // Proof stato pills
+      isAdmin&&h('div',{style:{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}},
+        APPROVAL_PROOF.map(s=>h('button',{key:s,
+          onClick:()=>onProof(a.id,s),
+          style:{padding:'2px 7px',borderRadius:99,fontSize:9,fontWeight:700,cursor:'pointer',
+            border:'1px solid '+(proofStato===s?APR_CLR[s]:'var(--border)'),
+            background:proofStato===s?APR_CLR[s]+'22':'transparent',
+            color:proofStato===s?APR_CLR[s]:'var(--text-3)'}},
+          APR_LBL[s]
+        ))
+      ),
+      // Azioni admin
+      isAdmin&&h('div',{style:{display:'flex',gap:4,flexWrap:'wrap'}},
+        // Semaforo (solo per contenuti social)
+        a.tipo&&!['Asset visivo','Colore','Testo/Copy'].includes(a.tipo)&&
+          h('button',{className:'btn btn-ghost',style:{fontSize:10,padding:'3px 7px'},
+            onClick:()=>setSemaforoFor(semaforoFor===a.id?null:a.id)},
+            '🚦 Semaforo'),
+        // Muovi a Final → Brand Assets
+        proofStato!=='final'&&h('button',{
+          className:'btn btn-ghost',style:{fontSize:10,padding:'3px 7px'},
+          onClick:()=>{
+            if(!a.categoria){ setShowCat(true); return; }
+            onMoveToAssets&&onMoveToAssets(a);
+          },title:'Promuovi a Final e sposta in Brand Assets'
+        },'🏁 → Brand Assets'),
+        proofStato==='final'&&h('span',{style:{fontSize:10,fontWeight:700,color:'#1A8C3F',
+          padding:'3px 0'}},'✓ In Brand Assets')
+      ),
+      // Selettore categoria (prima di promuovere)
+      showCat&&h('div',{style:{marginTop:6}},
+        h('select',{
+          onChange:e=>{
+            if(e.target.value){
+              onMoveToAssets&&onMoveToAssets({...a,categoria:e.target.value});
+              setShowCat(false);
+            }
+          },
+          style:{width:'100%',fontSize:11,padding:'5px 8px',border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+          h('option',{value:''},'Scegli categoria Brand Assets…'),
+          CATS.map(c=>h('option',{key:c,value:c},CAT_LBL[c]))
+        )
+      ),
+      // Semaforo inline
+      semaforoFor===a.id&&h(Semaforo,{
+        onConfirm:()=>{onProof(a.id,'approvato');setSemaforoFor(null);},
+        onCancel:()=>setSemaforoFor(null)
       })
     )
   );
 }
-// ── Admin Portal View ── (tab controlled externally by sidebar)
-function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdateBrand,onAddApproval,tab}){
+
+function Approvals({client,isAdmin,onUpdateStatus,onAddApproval,onMoveToAssets}){
+  const [vista,    setVista]    = useState('lista'); // 'lista' | 'kanban'
+  const [filter,   setFilter]   = useState('all');
+  const [showNew,  setShowNew]  = useState(false);
+  const [semaforoFor, setSemaforoFor] = useState(null);
+  const [form, setForm] = useState({titolo:'',tipo:'Post',formato:'Feed 1:1',note:'',preview:'#C25B2A',categoria:''});
+  const approvals = client.approvals || [];
+
+  const TIPI    = ['Post','Reel','Storia','Carosello','Video','Newsletter','ADV','Asset visivo','Colore','Testo/Copy','Altro'];
+  const FORMATI = ['Feed 1:1','Feed 4:5','Feed 16:9','Storia 9:16','Reel 9:16','Carosello','Email','Banner','PNG','PDF','SVG','AI'];
+  const PREVIEW_COLORS = ['#C25B2A','#F5EDD8','#1A8C3F','#185FA5','#C2185B','#0F6E56','#2C1A0E','#534AB7','#E8DCC8'];
+
+  const proofUpdate = (aId, proofStato) => {
+    onUpdateStatus(aId, approvals.find(a=>a.id===aId)?.stato||'pending', {proof_stato:proofStato});
+  };
+
+  const byStato = stato => approvals.filter(a=>(a.proof_stato||'bozza')===stato);
+  const counts  = Object.fromEntries(APPROVAL_PROOF.map(s=>[s, byStato(s).length]));
+
+  const submitNew = () => {
+    if(!form.titolo.trim()) return;
+    const today=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+    onAddApproval&&onAddApproval({
+      id:'apr_'+Date.now(),titolo:form.titolo.trim(),tipo:form.tipo,formato:form.formato,
+      note:form.note.trim(),preview:form.preview,stato:'pending',proof_stato:'bozza',
+      data:today,semaforo_ok:false,categoria:form.categoria,
+    });
+    setForm({titolo:'',tipo:'Post',formato:'Feed 1:1',note:'',preview:'#C25B2A',categoria:''});
+    setShowNew(false);
+  };
+
+  const filteredList = filter==='all' ? approvals : approvals.filter(a=>(a.proof_stato||'bozza')===filter);
+
+  const cardProps = a => ({a, isAdmin, semaforoFor, setSemaforoFor,
+    onProof: proofUpdate,
+    onMoveToAssets,
+  });
+
+  // ── Modal nuovo contenuto ──
+  const newModal = showNew && h('div',{
+    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:600,display:'flex',alignItems:'center',justifyContent:'center'},
+    onClick:e=>{if(e.target===e.currentTarget)setShowNew(false);}
+  },
+    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,width:420,
+      maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.2)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
+        h('span',{style:{fontSize:15,fontWeight:700,color:'var(--text)'}},'Nuovo contenuto'),
+        h('button',{onClick:()=>setShowNew(false),style:{border:'none',background:'transparent',fontSize:17,cursor:'pointer',color:'var(--text-2)'}},'×')
+      ),
+      h('div',{style:{marginBottom:10}},
+        h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Titolo *'),
+        h('input',{type:'text',value:form.titolo,autoFocus:true,onChange:e=>setForm(p=>({...p,titolo:e.target.value})),
+          placeholder:'Es. Post lancio estate — carosello 5 slide',
+          style:{width:'100%',padding:'8px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',outline:'none',boxSizing:'border-box'}})
+      ),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}},
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Tipo'),
+          h('select',{value:form.tipo,onChange:e=>setForm(p=>({...p,tipo:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            TIPI.map(t=>h('option',{key:t,value:t},t)))
+        ),
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Formato'),
+          h('select',{value:form.formato,onChange:e=>setForm(p=>({...p,formato:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            FORMATI.map(f=>h('option',{key:f,value:f},f)))
+        )
+      ),
+      h('div',{style:{marginBottom:10}},
+        h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Note'),
+        h('textarea',{rows:2,value:form.note,onChange:e=>setForm(p=>({...p,note:e.target.value})),
+          placeholder:'Es. Carosello 5 slide. CTA: prenota ora.',
+          style:{width:'100%',padding:'8px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',resize:'vertical',fontFamily:'inherit',boxSizing:'border-box'}})
+      ),
+      h('div',{style:{marginBottom:16}},
+        h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:6,textTransform:'uppercase',letterSpacing:'.05em'}},'Colore preview'),
+        h('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',marginBottom:6}},
+          PREVIEW_COLORS.map(c=>h('div',{key:c,onClick:()=>setForm(p=>({...p,preview:c})),
+            style:{width:24,height:24,borderRadius:4,background:c,cursor:'pointer',
+              border:form.preview===c?'2px solid var(--text)':'2px solid transparent'}})),
+          h('input',{type:'color',value:form.preview,onChange:e=>setForm(p=>({...p,preview:e.target.value})),
+            style:{width:32,height:24,border:'var(--bw) solid var(--border)',borderRadius:4,cursor:'pointer',padding:2}})
+        ),
+        h('div',{style:{height:24,borderRadius:'var(--r)',background:form.preview}})
+      ),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{onClick:()=>setShowNew(false),className:'btn btn-ghost'},'Annulla'),
+        h('button',{onClick:submitNew,className:'btn btn-primary',style:{opacity:form.titolo.trim()?1:.45}},'Crea contenuto')
+      )
+    )
+  );
+
+  // ── Vista LISTA ──
+  const listaView = h('div',null,
+    // Filtri proof
+    h('div',{style:{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16,alignItems:'center'}},
+      h('button',{className:'filter-btn'+(filter==='all'?' active':''),onClick:()=>setFilter('all')},
+        'Tutti ',h('span',{className:'filter-count'},approvals.length)),
+      APPROVAL_PROOF.map(s=>approvals.filter(a=>(a.proof_stato||'bozza')===s).length>0&&
+        h('button',{key:s,
+          className:'filter-btn'+(filter===s?' active':''),
+          onClick:()=>setFilter(s),
+          style:{borderColor:filter===s?APR_CLR[s]:'var(--border)',
+            color:filter===s?APR_CLR[s]:'var(--text-2)',
+            background:filter===s?APR_CLR[s]+'15':'transparent'}},
+          APR_LBL[s],' ',h('span',{className:'filter-count'},counts[s])
+        )
+      )
+    ),
+    filteredList.length===0
+      ? h('div',{className:'empty'},
+          h('div',{className:'empty-icon'},'✓'),
+          h('div',{className:'empty-title'},'Nessun contenuto'),
+          h('div',{className:'empty-sub'},'Aggiungi contenuti o cambia filtro'))
+      : h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:12}},
+          filteredList.map(a=>h(ApprovalCard,{key:a.id,...cardProps(a)}))
+        )
+  );
+
+  // ── Vista KANBAN ──
+  const [dragging, setDragging] = useState(null);
+  const onDragStart = (a) => setDragging(a);
+  const onDrop = (stato) => {
+    if(dragging && (dragging.proof_stato||'bozza')!==stato){
+      if(stato==='final'){
+        onMoveToAssets&&onMoveToAssets(dragging);
+      } else {
+        proofUpdate(dragging.id, stato);
+      }
+    }
+    setDragging(null);
+  };
+
+  const kanbanView = h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,alignItems:'start'}},
+    APPROVAL_PROOF.map(stato=>h('div',{key:stato,
+      onDragOver:e=>{e.preventDefault();},
+      onDrop:()=>onDrop(stato),
+      style:{background:APR_BG[stato],borderRadius:'var(--r)',padding:10,minHeight:200,
+        border:'var(--bw) solid '+APR_CLR[stato]+'33',transition:'background var(--t-fast)'}},
+      // Colonna header
+      h('div',{style:{fontSize:11,fontWeight:700,color:APR_CLR[stato],marginBottom:8,
+        textTransform:'uppercase',letterSpacing:'.06em',display:'flex',justifyContent:'space-between'}},
+        APR_LBL[stato],
+        h('span',{style:{fontWeight:400,fontSize:10,color:APR_CLR[stato]+'cc'}},counts[stato]||0)
+      ),
+      // Cards
+      byStato(stato).map(a=>h('div',{key:a.id,
+        draggable:isAdmin,
+        onDragStart:()=>onDragStart(a),
+        style:{background:'var(--surface)',borderRadius:6,padding:'8px 10px',marginBottom:8,
+          border:'var(--bw) solid var(--border)',cursor:isAdmin?'grab':'default',
+          boxShadow:dragging?.id===a.id?'0 4px 12px rgba(0,0,0,.15)':'none',
+          opacity:dragging?.id===a.id?.6:1}},
+        // Preview mini
+        h('div',{style:{height:40,borderRadius:4,marginBottom:6,overflow:'hidden',
+          background:a.imageUrl?'#000':(a.preview||'#C25B2A'),display:'flex',alignItems:'center',justifyContent:'center'}},
+          a.imageUrl&&h('img',{src:a.imageUrl,alt:a.titolo,
+            style:{width:'100%',height:'100%',objectFit:'cover'}})),
+        h('div',{style:{fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:2,
+          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.titolo),
+        h('div',{style:{fontSize:10,color:'var(--text-3)'}},a.tipo+(a.data?' · '+a.data:'')),
+        // Move to final button
+        isAdmin&&stato!=='final'&&h('button',{
+          className:'btn btn-ghost',
+          style:{width:'100%',fontSize:10,padding:'3px 0',marginTop:6},
+          onClick:()=>stato==='approvato'?(onMoveToAssets&&onMoveToAssets(a)):proofUpdate(a.id,APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1])
+        },stato==='approvato'?'🏁 → Brand Assets':'→ '+APR_LBL[APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1]])
+      )),
+      // Drop zone hint
+      h('div',{style:{height:40,border:'1.5px dashed '+APR_CLR[stato]+'44',borderRadius:6,
+        display:'flex',alignItems:'center',justifyContent:'center',
+        fontSize:10,color:APR_CLR[stato]+'88'}},
+        'Trascina qui')
+    ))
+  );
+
+  return h('div',null,
+    newModal,
+    // Header
+    isAdmin&&h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}},
+      // Vista toggle
+      h('div',{style:{display:'flex',gap:4,background:'var(--surface-lt)',padding:3,borderRadius:'var(--r)',border:'var(--bw) solid var(--border)'}},
+        [['lista','☰ Lista'],['kanban','⊞ Kanban']].map(([id,lbl])=>
+          h('button',{key:id,onClick:()=>setVista(id),
+            style:{padding:'4px 12px',borderRadius:'calc(var(--r) - 2px)',fontSize:12,fontWeight:600,cursor:'pointer',
+              border:'none',background:vista===id?'var(--surface)':'transparent',
+              color:vista===id?'var(--text)':'var(--text-3)',
+              boxShadow:vista===id?'0 1px 3px rgba(0,0,0,.08)':'none'}},lbl)
+        )
+      ),
+      h('button',{className:'btn btn-primary',onClick:()=>setShowNew(true)},'+ Nuovo contenuto')
+    ),
+    vista==='lista' ? listaView : kanbanView
+  );
+}
+
+
+function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdateBrand,onAddApproval,onSendToApprovals,onMoveToAssets,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
   const [linkCopied,setLinkCopied]=useState(false);
@@ -1791,8 +1650,8 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdat
     ),
 
     tab==='assets'    &&h(BrandAssets,{client,isAdmin:true,onAddLogo,onUpdateBrand}),
-    tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus,onAddApproval}),
-    tab==='moodboard' &&h(Moodboard,{client,isAdmin:true,onAddMoodItem})
+    tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus,onAddApproval,onMoveToAssets}),
+    tab==='moodboard' &&h(Moodboard,{client,isAdmin:true,onAddMoodItem,onSendToApprovals})
   );
 }
 
@@ -1929,25 +1788,48 @@ function NassaBrand(){
     if(selected?.id===clientId)setSelected(p=>({...p,approvals:[...(p.approvals||[]),approval]}));
   },[selected]);
 
-  const addMoodItem=useCallback((item, removeId)=>{
+  const addMoodItem=useCallback((item, removeId, isUpdate=false)=>{
     setClients(prev=>prev.map(c=>{
       if(c.id!==selected?.id)return c;
       const moodboard = removeId
         ? (c.moodboard||[]).filter(m=>m.id!==removeId)
-        : [...(c.moodboard||[]), item];
-      const updated={...c,moodboard};
+        : isUpdate
+          ? (c.moodboard||[]).map(m=>m.id===item.id?item:m)
+          : [...(c.moodboard||[]), item];
       api('/api/brand',{method:'POST',body:JSON.stringify({clientId:c.id,field:'moodboard',data:moodboard})}).catch(console.error);
-      return updated;
+      return {...c,moodboard};
     }));
     if(selected){
       setSelected(p=>{
         const moodboard = removeId
           ? (p.moodboard||[]).filter(m=>m.id!==removeId)
-          : [...(p.moodboard||[]), item];
+          : isUpdate
+            ? (p.moodboard||[]).map(m=>m.id===item.id?item:m)
+            : [...(p.moodboard||[]), item];
         return {...p,moodboard};
       });
     }
   },[selected]);
+
+  // Invia elemento moodboard ad Approvazioni
+  const sendToApprovals=useCallback((moodItem)=>{
+    const approval={
+      id:'apr_'+Date.now(),
+      titolo:moodItem.titolo||moodItem.note?.slice(0,50)||'Elemento moodboard',
+      tipo:moodItem.tipo==='image'?'Asset visivo':moodItem.tipo==='color'?'Colore':'Testo/Copy',
+      formato:moodItem.tipo,
+      note:moodItem.note||'',
+      preview:moodItem.color||'#C25B2A',
+      imageUrl:moodItem.imageUrl||null,
+      stato:'pending',
+      proof_stato:'bozza',
+      data:new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}),
+      semaforo_ok:false,
+      source:'moodboard',
+      sourceId:moodItem.id,
+    };
+    addApproval(selected.id, approval);
+  },[selected,addApproval]);
 
   const selectClient=(c,v='assets')=>{setSelected(c);setView('portal');setTab(v);setSidebarExp(true);};
 
@@ -2035,7 +1917,31 @@ function NassaBrand(){
                 h('div',{className:'content-sub'},selected.name+(tab==='approvals'&&pending(selected)>0?' · '+pending(selected)+' in attesa':''))
               )
             ),
-            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem,onUpdateBrand:updateBrand,onAddApproval:(a)=>addApproval(selected.id,a)})
+            h(AdminPortaleView,{client:selected,tab,
+              onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),
+              onAddLogo:(logo)=>addLogo(selected.id,logo),
+              onAddMoodItem:addMoodItem,
+              onUpdateBrand:updateBrand,
+              onAddApproval:(a)=>addApproval(selected.id,a),
+              onSendToApprovals:sendToApprovals,
+              onMoveToAssets:(approval)=>{
+                // Sposta da Approvazioni a Brand Assets quando Final
+                const categoria = approval.categoria||'comunicazione';
+                const newAsset={
+                  id:'ast_'+Date.now(),
+                  name:approval.titolo,
+                  categoria,
+                  format:approval.formato||'PNG',
+                  note:approval.note||'',
+                  data:approval.data||'',
+                  url:approval.imageUrl||approval.url||'',
+                  proof_stato:'final',
+                  commenti:approval.commenti||[],
+                };
+                updateBrand(selected.id,brd=>({...brd,assets:[...(brd.assets||[]),newAsset]}));
+                updateStatus(selected.id,approval.id,'scheduled',{proof_stato:'final',moved_to_assets:true});
+              }
+            })
           )
         )
       )
