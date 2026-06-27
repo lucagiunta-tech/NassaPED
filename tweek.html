@@ -2920,12 +2920,12 @@ async function initFeedLayer(){
 /* ══ END FEED NASSAPED ═══════════════════════════════════ */
 
 
-let stream_v1 = {};       // { [jobId]: Job }
-let _streamClients = [];  // clienti da NassaPED
+var stream_v1 = {};       // { [jobId]: Job }
+var _streamClients = [];  // clienti da NassaPED
 var _streamLoaded  = false;
-let _streamTab     = 'clients'; // 'clients' | 'jobs'
-let _streamCurrentJobId = null;
-let _streamGroupCollapsed = {}; // { clientSlug: bool }
+var _streamTab     = 'clients'; // 'clients' | 'jobs'
+var _streamCurrentJobId = null;
+var _streamGroupCollapsed = {}; // { clientSlug: bool }
 
 const STREAM_STATI = {
   inplay:    { l:'In Play',   cls:'inplay'    },
