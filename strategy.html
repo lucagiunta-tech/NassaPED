@@ -349,6 +349,9 @@ function emptyPDM() {
 function emptyPDC() {
   return Object.fromEntries(PDC_SEZIONI.map(s => [s.id, ""]));
 }
+function emptyAudit() {
+  return { brand_attuale:"", percezione:"", brand_gap:"", benchmark:"", note:"" };
+}
 const INIT_CLIENTS = [{
   id: "artigianale",
   name: "L'Artigianale Gelateria",
