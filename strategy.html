@@ -3269,264 +3269,231 @@ function ClienteScheda({
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dashboard({
-  clients,
-  onOpen,
-  onAdd
-}) {
-  const [search, setSearch] = useState("");
+function Dashboard({ clients, onOpen, onAdd }) {
+  const h = React.createElement;
+  const [search,  setSearch]  = useState("");
+  const [filterMgr, setFilterMgr] = useState("all");
+  const [filterFase, setFilterFase] = useState("all");
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newPkg, setNewPkg] = useState("Essential");
-  const [newMgr, setNewMgr] = useState("Alberto");
-  const list = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "1.5rem",
-      maxWidth: 860,
-      margin: "0 auto"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "1.5rem",
-      flexWrap: "wrap",
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
-    style: {
-      margin: "0 0 2px",
-      fontSize: 20,
-      fontWeight: 600,
-      color: "var(--text-primary)"
-    }
-  }, "Clienti"), /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: 0,
-      fontSize: 13,
-      color: "var(--text-muted)"
-    }
-  }, clients.length, " totali · ogni cliente ha PDM + PDC + Brand Portal + Strategy")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    placeholder: "Cerca...",
-    value: search,
-    onChange: e => setSearch(e.target.value),
-    style: {
-      fontSize: 12,
-      padding: "6px 12px",
-      borderRadius: 8,
-      width: 180
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setShowAdd(true),
-    style: {
-      padding: "6px 14px",
-      borderRadius: 8,
-      border: "none",
-      background: G,
-      color: "#fff",
-      fontSize: 12,
-      cursor: "pointer",
-      fontWeight: 500
-    }
-  }, "+ Nuovo cliente")),
-  showAdd && /*#__PURE__*/React.createElement("div", {
-    style:{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center"},
-    onClick: e => { if(e.target===e.currentTarget) setShowAdd(false); }
-  }, /*#__PURE__*/React.createElement("div", {
-    style:{background:"var(--surface)",borderRadius:8,padding:28,width:360,boxShadow:"0 8px 32px rgba(0,0,0,.18)"}
-  }, /*#__PURE__*/React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
-    /*#__PURE__*/React.createElement("span",{style:{fontSize:17,fontWeight:700,color:"var(--text-primary)"}},"Nuovo cliente"),
-    /*#__PURE__*/React.createElement("button",{onClick:()=>setShowAdd(false),style:{border:"none",background:"transparent",fontSize:18,cursor:"pointer",color:"var(--text-secondary)"}},"×")
-  ),
-  /*#__PURE__*/React.createElement("div",{style:{marginBottom:14}},
-    /*#__PURE__*/React.createElement("label",{style:{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:4}},"Nome cliente *"),
-    /*#__PURE__*/React.createElement("input",{type:"text",value:newName,onChange:e=>setNewName(e.target.value),placeholder:"Es. Variis Bistrot",autoFocus:true,
-      style:{width:"100%",padding:"8px 12px",fontSize:15,border:"0.5px solid var(--border)",borderRadius:8,outline:"none",boxSizing:"border-box",color:"var(--text-primary)",background:"var(--surface)",fontFamily:"var(--font-sans)"}})
-  ),
-  /*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}},
-    /*#__PURE__*/React.createElement("div",null,
-      /*#__PURE__*/React.createElement("label",{style:{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:4}},"Pacchetto"),
-      /*#__PURE__*/React.createElement("select",{value:newPkg,onChange:e=>setNewPkg(e.target.value),style:{width:"100%",padding:"7px 10px",fontSize:13,border:"0.5px solid var(--border)",borderRadius:8,background:"var(--surface)",color:"var(--text-primary)",fontFamily:"var(--font-sans)"}},
-        ["Starter","Essential","Professional","Premium","Full Service"].map(p=>/*#__PURE__*/React.createElement("option",{key:p,value:p},p)))
+  const [newPkg,  setNewPkg]  = useState("Essential");
+  const [newMgr,  setNewMgr]  = useState("Alberto");
+
+  // ── Derived lists for filters ──
+  const managers = ["all", ...new Set(clients.map(c => c.manager).filter(Boolean))];
+  const fasi     = ["all", ...new Set(clients.map(c => c.phase).filter(Boolean))];
+
+  const list = clients.filter(c => {
+    const q = search.toLowerCase();
+    if (q && !c.name.toLowerCase().includes(q)) return false;
+    if (filterMgr  !== "all" && c.manager !== filterMgr)  return false;
+    if (filterFase !== "all" && c.phase   !== filterFase)  return false;
+    return true;
+  });
+
+  // ── KPI aggregates ──
+  const pdmAvviati  = clients.filter(c => PDM_SEZIONI.some(s => c.pdm[s.id]?.trim())).length;
+  const strategyOk  = clients.filter(c => c.strategy.mod4a.done && c.strategy.mod5.done).length;
+  const outputPronti= clients.filter(c => c.strategy.mod5.claim?.trim()).length;
+
+  const pilStyle = (active) => ({
+    padding:"4px 10px", borderRadius:99, border:"0.5px solid var(--border)",
+    background: active ? "var(--green-lt,#e6ffe4)" : "transparent",
+    color: active ? "var(--green-dk,#00cc00)" : "var(--text-secondary)",
+    fontWeight: active ? 600 : 400, fontSize:12, cursor:"pointer"
+  });
+
+  return h("div", { style:{ padding:"1.5rem", maxWidth:960, margin:"0 auto" }},
+
+    // ── Header ──
+    h("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1.25rem", flexWrap:"wrap", gap:10 }},
+      h("div", null,
+        h("h1", { style:{ margin:"0 0 2px", fontSize:24, fontWeight:800, color:"var(--text-primary)", letterSpacing:"-.02em" }}, "Dashboard clienti"),
+        h("p",  { style:{ margin:0, fontSize:13, color:"var(--text-muted)" }},
+          clients.length," clienti · ",pdmAvviati," con PDM · ",strategyOk," strategy completate"
+        )
+      ),
+      h("button", {
+        onClick: () => setShowAdd(true),
+        style:{ padding:"7px 16px", borderRadius:8, border:"none", background:G, color:"#111", fontSize:13, cursor:"pointer", fontWeight:700 }
+      }, "+ Nuovo cliente")
     ),
-    /*#__PURE__*/React.createElement("div",null,
-      /*#__PURE__*/React.createElement("label",{style:{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:4}},"Manager"),
-      /*#__PURE__*/React.createElement("select",{value:newMgr,onChange:e=>setNewMgr(e.target.value),style:{width:"100%",padding:"7px 10px",fontSize:13,border:"0.5px solid var(--border)",borderRadius:8,background:"var(--surface)",color:"var(--text-primary)",fontFamily:"var(--font-sans)"}},
-        ["Luca","Alberto","Gianluca"].map(m=>/*#__PURE__*/React.createElement("option",{key:m,value:m},m)))
+
+    // ── KPI strip ──
+    h("div", { style:{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:"1.25rem" }},
+      [
+        { lbl:"Clienti totali", val:clients.length,  icon:"👥", color:"var(--text-primary)" },
+        { lbl:"PDM avviati",    val:pdmAvviati,       icon:"📊", color:B },
+        { lbl:"Strategy OK",    val:strategyOk,       icon:"⭐", color:M },
+        { lbl:"Output pronti",  val:outputPronti,     icon:"📦", color:G==="#0dff00"?"#00aa00":G },
+      ].map(k => h("div", { key:k.lbl, style:{
+        background:"var(--surface)", border:"0.5px solid var(--border)",
+        borderRadius:8, padding:"14px 16px",
+        display:"flex", alignItems:"flex-start", justifyContent:"space-between"
+      }},
+        h("div", null,
+          h("p", { style:{ margin:"0 0 3px", fontSize:28, fontWeight:800, color:k.color, letterSpacing:"-.02em", lineHeight:1 }}, k.val),
+          h("p", { style:{ margin:0, fontSize:11, color:"var(--text-muted)", textTransform:"uppercase", letterSpacing:".06em" }}, k.lbl)
+        ),
+        h("span", { style:{ fontSize:20 }}, k.icon)
+      ))
+    ),
+
+    // ── Filtri ──
+    h("div", { style:{ display:"flex", gap:8, marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }},
+      h("input", {
+        placeholder:"Cerca cliente…", value:search, onChange:e=>setSearch(e.target.value),
+        style:{ fontSize:13, padding:"6px 12px", borderRadius:8, border:"0.5px solid var(--border)", outline:"none",
+                background:"var(--surface)", color:"var(--text-primary)", width:180 }
+      }),
+      h("div", { style:{ width:"0.5px", height:22, background:"var(--border)", margin:"0 4px" }}),
+      h("span", { style:{ fontSize:11, color:"var(--text-muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:".04em" }}, "Manager:"),
+      managers.map(m => h("button", { key:m, style:pilStyle(filterMgr===m), onClick:()=>setFilterMgr(m) }, m==="all"?"Tutti":m)),
+      h("div", { style:{ width:"0.5px", height:22, background:"var(--border)", margin:"0 4px" }}),
+      h("span", { style:{ fontSize:11, color:"var(--text-muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:".04em" }}, "Fase:"),
+      fasi.map(f => h("button", { key:f, style:pilStyle(filterFase===f), onClick:()=>setFilterFase(f) }, f==="all"?"Tutte":f.replace("Fase ","F")))
+    ),
+
+    // ── Risultati count ──
+    list.length !== clients.length && h("p", { style:{ fontSize:12, color:"var(--text-muted)", marginBottom:8 }},
+      list.length," di ",clients.length," clienti"
+    ),
+
+    // ── Client cards ──
+    h("div", { style:{ display:"flex", flexDirection:"column", gap:8 }},
+      list.length===0 && h("div", { style:{ textAlign:"center", padding:"48px 24px", color:"var(--text-muted)" }},
+        h("div", { style:{ fontSize:28, marginBottom:8 }}, "🔍"),
+        h("p", { style:{ fontSize:15, fontWeight:600 }}, "Nessun cliente trovato"),
+        h("p", { style:{ fontSize:13 }}, "Prova a modificare i filtri")
+      ),
+      list.map(c => {
+        const pdmF  = PDM_SEZIONI.filter(s => c.pdm[s.id]?.trim()).length;
+        const pdcF  = PDC_SEZIONI.filter(s => c.pdc[s.id]?.trim()).length;
+        const s4a   = c.strategy.mod4a.done;
+        const s5    = c.strategy.mod5.done;
+        const stratN= (s4a?1:0)+(s5?1:0);
+        const allDone = pdmF===PDM_SEZIONI.length && pdcF===PDC_SEZIONI.length && stratN===2;
+
+        const bar = (n,tot,col) => h("div", { style:{ display:"flex", alignItems:"center", gap:6 }},
+          h("span", { style:{ fontSize:11, color:"var(--text-muted)", minWidth:32 }}, n+"/"+tot),
+          h("div", { style:{ width:48, height:4, background:"var(--border-lt)", borderRadius:99, overflow:"hidden" }},
+            h("div", { style:{ height:"100%", width:Math.round(n/tot*100)+"%", borderRadius:99,
+              background: n===tot ? G : n>0 ? AMB : "var(--border-strong)", transition:"width .2s" }})
+          )
+        );
+
+        return h("div", {
+          key: c.id,
+          className: "ns-client-card",
+          style:{
+            background:"var(--surface)", border:"0.5px solid var(--border)", borderRadius:8,
+            padding:"14px 18px", display:"flex", alignItems:"center", gap:14,
+            cursor:"pointer", transition:"border-color .1s, box-shadow .1s"
+          },
+          onClick: () => onOpen(c)
+        },
+          // Avatar
+          h("div", { style:{ width:42, height:42, borderRadius:8, background:c.color, flexShrink:0,
+            display:"flex", alignItems:"center", justifyContent:"center" }},
+            h("span", { style:{ color:contrast(c.color), fontSize:16, fontWeight:800 }}, c.name.charAt(0))
+          ),
+          // Info
+          h("div", { style:{ flex:1, minWidth:0 }},
+            h("div", { style:{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }},
+              h("span", { style:{ fontSize:15, fontWeight:700, color:"var(--text-primary)" }}, c.name),
+              h("span", { style:{ fontSize:10, padding:"2px 7px", borderRadius:99,
+                background:"var(--green-lt,#e6ffe4)", color:"var(--green-dk,#00cc00)",
+                border:"0.5px solid var(--green-mid,#b3ffb0)", fontWeight:600 }}, c.pkg),
+              c.manager && h("span", { style:{ fontSize:11, color:"var(--text-muted)" }}, "· ",c.manager)
+            ),
+            // Progress bars row
+            h("div", { style:{ display:"flex", gap:16, alignItems:"center", flexWrap:"wrap" }},
+              h("div", { style:{ display:"flex", alignItems:"center", gap:5 }},
+                h("span", { style:{ fontSize:11, color:B, fontWeight:600 }}, "PDM"),
+                bar(pdmF, PDM_SEZIONI.length, B)
+              ),
+              h("div", { style:{ display:"flex", alignItems:"center", gap:5 }},
+                h("span", { style:{ fontSize:11, color:T, fontWeight:600 }}, "PDC"),
+                bar(pdcF, PDC_SEZIONI.length, T)
+              ),
+              h("div", { style:{ display:"flex", alignItems:"center", gap:5 }},
+                h("span", { style:{ fontSize:11, color:M, fontWeight:600 }}, "Strategy"),
+                bar(stratN, 2, M)
+              ),
+              allDone && h("span", { style:{ fontSize:11, fontWeight:700,
+                color:G==="#0dff00"?"#00aa00":G, marginLeft:4 }}, "✓ Completo")
+            )
+          ),
+          // Phase badge
+          h("div", { style:{ flexShrink:0, textAlign:"right" }},
+            h("div", { style:{ fontSize:11, color:"var(--text-muted)", marginBottom:4 }}, c.phase||"—"),
+            h("span", { style:{ fontSize:11, fontWeight:600, color:"var(--text-accent,#00aa00)" }}, "Apri →")
+          )
+        );
+      })
+    ),
+
+    // ── Modal nuovo cliente ──
+    showAdd && h("div", {
+      style:{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center"},
+      onClick: e => { if(e.target===e.currentTarget) setShowAdd(false); }
+    },
+      h("div", { style:{background:"var(--surface)",borderRadius:8,padding:28,width:360,boxShadow:"0 8px 32px rgba(0,0,0,.18)"}},
+        h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}},
+          h("span",{style:{fontSize:17,fontWeight:700,color:"var(--text-primary)"}},"Nuovo cliente"),
+          h("button",{onClick:()=>setShowAdd(false),style:{border:"none",background:"transparent",fontSize:18,cursor:"pointer",color:"var(--text-secondary)"}},"×")
+        ),
+        h("div",{style:{marginBottom:14}},
+          h("label",{style:{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:4}},"Nome cliente *"),
+          h("input",{type:"text",value:newName,onChange:e=>setNewName(e.target.value),placeholder:"Es. Borgo Ibleo",autoFocus:true,
+            style:{width:"100%",padding:"8px 12px",fontSize:15,border:"0.5px solid var(--border)",borderRadius:8,outline:"none",
+                   boxSizing:"border-box",color:"var(--text-primary)",background:"var(--surface)",fontFamily:"var(--font-sans)"}})
+        ),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}},
+          h("div",null,
+            h("label",{style:{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:4}},"Pacchetto"),
+            h("select",{value:newPkg,onChange:e=>setNewPkg(e.target.value),
+              style:{width:"100%",padding:"7px 10px",fontSize:13,border:"0.5px solid var(--border)",borderRadius:8,
+                     background:"var(--surface)",color:"var(--text-primary)",fontFamily:"var(--font-sans)"}},
+              ["Starter","Essential","Professional","Premium","Full Service"].map(p=>h("option",{key:p,value:p},p)))
+          ),
+          h("div",null,
+            h("label",{style:{display:"block",fontSize:13,fontWeight:500,color:"var(--text-primary)",marginBottom:4}},"Manager"),
+            h("select",{value:newMgr,onChange:e=>setNewMgr(e.target.value),
+              style:{width:"100%",padding:"7px 10px",fontSize:13,border:"0.5px solid var(--border)",borderRadius:8,
+                     background:"var(--surface)",color:"var(--text-primary)",fontFamily:"var(--font-sans)"}},
+              ["Luca","Alberto","Gianluca"].map(m=>h("option",{key:m,value:m},m)))
+          )
+        ),
+        h("div",{style:{display:"flex",gap:8,justifyContent:"flex-end"}},
+          h("button",{onClick:()=>setShowAdd(false),
+            style:{padding:"7px 16px",borderRadius:8,border:"0.5px solid var(--border)",background:"transparent",
+                   color:"var(--text-secondary)",fontSize:13,cursor:"pointer",fontWeight:500}},"Annulla"),
+          h("button",{
+            onClick:()=>{
+              const name=newName.trim(); if(!name)return;
+              const id="c_"+Date.now();
+              onAdd({id,name,pkg:newPkg,phase:"Fase 1 — Analisi",manager:newMgr,
+                since:new Date().toLocaleDateString("it-IT",{month:"short",year:"numeric"}),
+                color:"#1A8C3F",
+                brand:{claim:"",archetype:"",tov:"",colors:[],fonts:[],logos:[],images:[],pillars:[]},
+                pdm:emptyPDM(),pdc:emptyPDC(),
+                strategy:{mod4a:{done:false,target_primario:"",problema_reale:"",differenziatore:"",
+                  frase_guida:"",mood_emotivo:"",esclusioni:"",note_sessione:""},
+                  mod5:{done:false,insight:"",problema:"",reason_why:"",promessa:"",key_message:"",
+                    archetipo:"",tov_parole_si:"",tov_parole_no:"",claim:"",payoff:""}}});
+              setNewName("");setNewPkg("Essential");setNewMgr("Alberto");setShowAdd(false);
+            },
+            style:{padding:"7px 18px",borderRadius:8,border:"none",background:G,
+                   color:G==="#0dff00"?"#111":"#fff",fontSize:13,cursor:"pointer",fontWeight:700}
+          },"Crea cliente")
+        )
+      )
     )
-  ),
-  /*#__PURE__*/React.createElement("div",{style:{display:"flex",gap:8,justifyContent:"flex-end"}},
-    /*#__PURE__*/React.createElement("button",{onClick:()=>setShowAdd(false),style:{padding:"7px 16px",borderRadius:8,border:"0.5px solid var(--border)",background:"transparent",color:"var(--text-secondary)",fontSize:13,cursor:"pointer",fontWeight:500}},"Annulla"),
-    /*#__PURE__*/React.createElement("button",{
-      onClick:()=>{
-        const name=newName.trim(); if(!name)return;
-        const id="c_"+Date.now();
-        onAdd({id,name,pkg:newPkg,phase:"Fase 1 — Analisi",manager:newMgr,
-          since:new Date().toLocaleDateString("it-IT",{month:"short",year:"numeric"}),
-          color:"#1A8C3F",
-          brand:{claim:"",archetype:"",tov:"",colors:[],fonts:[],logos:[],images:[],pillars:[]},
-          pdm:emptyPDM(),pdc:emptyPDC(),
-          strategy:{mod4a:{done:false,target_primario:"",problema_reale:"",differenziatore:"",frase_guida:"",mood_emotivo:"",esclusioni:"",note_sessione:""},
-            mod5:{done:false,insight:"",problema:"",reason_why:"",promessa:"",key_message:"",archetipo:"",tov_parole_si:"",tov_parole_no:"",claim:"",payoff:""}}});
-        setNewName("");setNewPkg("Essential");setNewMgr("Alberto");setShowAdd(false);
-      },
-      style:{padding:"7px 18px",borderRadius:8,border:"none",background:G,color:G==="#0dff00"?"#111":"#fff",fontSize:13,cursor:"pointer",fontWeight:700}
-    },"Crea cliente")
-  )))) /* modal */, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
-      gap: 10,
-      marginBottom: "1.5rem"
-    }
-  }, [["Clienti totali", clients.length], ["PDM avviati", clients.filter(c => PDM_SEZIONI.some(s => c.pdm[s.id]?.trim())).length], ["Strategy OK", clients.filter(c => c.strategy.mod4a.done && c.strategy.mod5.done).length], ["Output pronti", clients.filter(c => c.strategy.mod5.claim?.trim()).length]].map(([l, v]) => /*#__PURE__*/React.createElement("div", {
-    key: l,
-    style: {
-      background: "var(--surface-1)",
-      borderRadius: 8,
-      padding: "0.75rem"
-    }
-  }, /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: "0 0 3px",
-      fontSize: 20,
-      fontWeight: 500,
-      color: "var(--text-primary)"
-    }
-  }, v), /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: 0,
-      fontSize: 11,
-      color: "var(--text-muted)"
-    }
-  }, l)))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 10
-    }
-  }, list.map(c => {
-    const pdmF = PDM_SEZIONI.filter(s => c.pdm[s.id]?.trim()).length;
-    const pdcF = PDC_SEZIONI.filter(s => c.pdc[s.id]?.trim()).length;
-    const stratOk = c.strategy.mod4a.done && c.strategy.mod5.done;
-    return /*#__PURE__*/React.createElement("div", {
-      key: c.id,
-      style: {
-        background: "var(--surface-2)",
-        border: "0.5px solid var(--border)",
-        borderRadius: 8,
-        padding: "1rem 1.25rem",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: 12,
-        cursor: "pointer",
-        transition: "border-color 0.15s"
-      },
-      className: "ns-client-card",
-      onClick: () => onOpen(c)
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 12
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        background: c.color,
-        flexShrink: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: contrast(c.color),
-        fontSize: 15,
-        fontWeight: 700
-      }
-    }, c.name.charAt(0))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
-      style: {
-        margin: "0 0 5px",
-        fontSize: 14,
-        fontWeight: 500,
-        color: "var(--text-primary)"
-      }
-    }, c.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 5,
-        flexWrap: "wrap",
-        alignItems: "center",
-        marginBottom: 5
-      }
-    }, /*#__PURE__*/React.createElement(Pill, {
-      color: G
-    }, c.pkg), /*#__PURE__*/React.createElement(Pill, {
-      color: "var(--text-muted)",
-      bg: "var(--surface-1)"
-    }, c.phase), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: "var(--text-muted)"
-      }
-    }, "Manager: ", c.manager)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 12
-      }
-    }, [["PDM", pdmF, PDM_SEZIONI.length, B], ["PDC", pdcF, PDC_SEZIONI.length, T], ["Strat.", stratOk ? 2 : c.strategy.mod4a.done ? 1 : 0, 2, M]].map(([l, n, tot, col]) => /*#__PURE__*/React.createElement("div", {
-      key: l,
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 5
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: "var(--text-muted)"
-      }
-    }, l), /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 40,
-        height: 3,
-        background: "var(--surface-0)",
-        borderRadius: 2,
-        overflow: "hidden"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        height: "100%",
-        width: `${Math.round(n / tot * 100)}%`,
-        background: n === tot ? G : n > 0 ? col : "var(--border-strong)",
-        borderRadius: 2
-      }
-    })), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: n === tot ? G : n > 0 ? AMB : "var(--text-muted)"
-      }
-    }, n, "/", tot)))))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: G,
-        fontWeight: 500
-      }
-    }, "Apri scheda →"));
-  })));
+  );
 }
+
+// ─── ROOT APP
 
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 function NassaGestionale() {
