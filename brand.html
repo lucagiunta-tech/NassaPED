@@ -628,20 +628,134 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
   );
 }
 // ── Approvals ──
-function Approvals({client,isAdmin,onUpdateStatus}){
+function Approvals({client,isAdmin,onUpdateStatus,onAddApproval}){
   const [filter,setFilter]=useState('all');
-  const [semaforoFor,setSemaforoFor]=useState(null); // approvalId attivo nel semaforo
+  const [semaforoFor,setSemaforoFor]=useState(null);
+  const [showNew,setShowNew]=useState(false);
+  const [form,setForm]=useState({titolo:'',tipo:'Post',formato:'Feed 1:1',note:'',preview:'#C25B2A'});
   const approvals=client.approvals||[];
   const list=filter==='all'?approvals:approvals.filter(a=>a.stato===filter);
-  const counts={pending:approvals.filter(a=>a.stato==='pending').length,approved:approvals.filter(a=>a.stato==='approved').length,revision:approvals.filter(a=>a.stato==='revision').length};
+  const counts={
+    pending:  approvals.filter(a=>a.stato==='pending').length,
+    approved: approvals.filter(a=>a.stato==='approved').length,
+    revision: approvals.filter(a=>a.stato==='revision').length,
+    scheduled:approvals.filter(a=>a.stato==='scheduled').length,
+  };
+
+  const TIPI    = ['Post','Reel','Storia','Carosello','Video','Newsletter','ADV','Altro'];
+  const FORMATI = ['Feed 1:1','Feed 4:5','Feed 16:9','Storia 9:16','Reel 9:16','Carosello','Email','Banner'];
+  const PREVIEW_COLORS = ['#C25B2A','#F5EDD8','#1A8C3F','#185FA5','#C2185B','#0F6E56','#2C1A0E','#534AB7','#E8DCC8'];
+
+  const submitNew = () => {
+    if(!form.titolo.trim()) return;
+    const today = new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+    onAddApproval && onAddApproval({
+      id: 'apr_'+Date.now(),
+      titolo: form.titolo.trim(),
+      tipo:   form.tipo,
+      formato:form.formato,
+      note:   form.note.trim(),
+      preview:form.preview,
+      stato:  'pending',
+      data:   today,
+      semaforo_ok: false,
+    });
+    setForm({titolo:'',tipo:'Post',formato:'Feed 1:1',note:'',preview:'#C25B2A'});
+    setShowNew(false);
+  };
+
+  // ── Modal nuovo contenuto ──
+  const newModal = showNew && h('div',{
+    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:600,
+      display:'flex',alignItems:'center',justifyContent:'center'},
+    onClick:e=>{ if(e.target===e.currentTarget) setShowNew(false); }
+  },
+    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,
+      width:420,maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.2)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}},
+        h('span',{style:{fontSize:16,fontWeight:700,color:'var(--text)'}},'Nuovo contenuto'),
+        h('button',{onClick:()=>setShowNew(false),
+          style:{border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--text-2)'}},'×')
+      ),
+      // Titolo
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Titolo *'),
+        h('input',{type:'text',value:form.titolo,autoFocus:true,
+          onChange:e=>setForm(p=>({...p,titolo:e.target.value})),
+          placeholder:'Es. Post lancio estate — carosello 5 slide',
+          style:{width:'100%',padding:'8px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',
+            outline:'none',boxSizing:'border-box'}})
+      ),
+      // Tipo + Formato
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}},
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Tipo'),
+          h('select',{value:form.tipo,onChange:e=>setForm(p=>({...p,tipo:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            TIPI.map(t=>h('option',{key:t,value:t},t))
+          )
+        ),
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Formato'),
+          h('select',{value:form.formato,onChange:e=>setForm(p=>({...p,formato:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            FORMATI.map(f=>h('option',{key:f,value:f},f))
+          )
+        )
+      ),
+      // Note
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},
+          'Note / descrizione'),
+        h('textarea',{rows:3,value:form.note,
+          onChange:e=>setForm(p=>({...p,note:e.target.value})),
+          placeholder:'Es. Carosello 5 slide sul territorio estivo. CTA: prenota ora.',
+          style:{width:'100%',padding:'8px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',
+            resize:'vertical',fontFamily:'inherit',boxSizing:'border-box'}})
+      ),
+      // Colore preview
+      h('div',{style:{marginBottom:18}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:6}},
+          'Colore preview'),
+        h('div',{style:{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}},
+          PREVIEW_COLORS.map(c=>h('div',{key:c,onClick:()=>setForm(p=>({...p,preview:c})),
+            style:{width:28,height:28,borderRadius:4,background:c,cursor:'pointer',
+              border:form.preview===c?'2px solid var(--text)':'2px solid transparent',
+              transition:'border-color .1s'}})),
+          h('input',{type:'color',value:form.preview,onChange:e=>setForm(p=>({...p,preview:e.target.value})),
+            style:{width:36,height:28,border:'var(--bw) solid var(--border)',borderRadius:4,cursor:'pointer',padding:2}})
+        ),
+        h('div',{style:{marginTop:8,height:32,borderRadius:'var(--r)',background:form.preview}})
+      ),
+      // Actions
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{onClick:()=>setShowNew(false),className:'btn btn-ghost'},'Annulla'),
+        h('button',{onClick:submitNew,className:'btn btn-primary',
+          style:{opacity:form.titolo.trim()?1:.45}},'Crea contenuto')
+      )
+    )
+  );
 
   return h('div',null,
+    newModal,
+    // Header con bottone nuovo contenuto (solo admin)
+    isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:12}},
+      h('button',{className:'btn btn-primary',onClick:()=>setShowNew(true)},
+        '+ Nuovo contenuto')
+    ),
+    // Filter row
     h('div',{className:'filter-row'},
-      [['all','Tutti',approvals.length],['pending','In attesa',counts.pending],['approved','Approvati',counts.approved],['revision','Revisioni',counts.revision]].map(([id,lbl,n])=>
+      [['all','Tutti',approvals.length],['pending','In attesa',counts.pending],
+       ['approved','Approvati',counts.approved],['revision','Revisioni',counts.revision],
+       ['scheduled','Programmati',counts.scheduled]
+      ].map(([id,lbl,n])=>n>0||id==='all'?
         h('button',{key:id,className:'filter-btn'+(filter===id?' active':''),onClick:()=>setFilter(id)},
-          lbl,
-          h('span',{className:'filter-count'},n)
-        )
+          lbl, h('span',{className:'filter-count'},n)
+        ):null
       )
     ),
     list.length===0&&h('div',{className:'empty'},
@@ -961,7 +1075,7 @@ function Moodboard({client, isAdmin, onAddMoodItem}){
   );
 }
 // ── Admin Portal View ── (tab controlled externally by sidebar)
-function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdateBrand,tab}){
+function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdateBrand,onAddApproval,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
   const [linkCopied,setLinkCopied]=useState(false);
@@ -1029,7 +1143,7 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdat
     ),
 
     tab==='assets'    &&h(BrandAssets,{client,isAdmin:true,onAddLogo,onUpdateBrand}),
-    tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
+    tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus,onAddApproval}),
     tab==='moodboard' &&h(Moodboard,{client,isAdmin:true,onAddMoodItem})
   );
 }
@@ -1157,6 +1271,16 @@ function NassaBrand(){
     updateBrand(clientId,b=>({...b,logos:[...(b.logos||[]),logo]}));
   },[updateBrand]);
 
+  const addApproval=useCallback((clientId,approval)=>{
+    setClients(prev=>prev.map(c=>{
+      if(c.id!==clientId)return c;
+      const approvals=[...(c.approvals||[]), approval];
+      api('/api/brand',{method:'POST',body:JSON.stringify({clientId,field:'approvals',data:approvals})}).catch(console.error);
+      return {...c,approvals};
+    }));
+    if(selected?.id===clientId)setSelected(p=>({...p,approvals:[...(p.approvals||[]),approval]}));
+  },[selected]);
+
   const addMoodItem=useCallback((item, removeId)=>{
     setClients(prev=>prev.map(c=>{
       if(c.id!==selected?.id)return c;
@@ -1263,7 +1387,7 @@ function NassaBrand(){
                 h('div',{className:'content-sub'},selected.name+(tab==='approvals'&&pending(selected)>0?' · '+pending(selected)+' in attesa':''))
               )
             ),
-            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem,onUpdateBrand:updateBrand})
+            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem,onUpdateBrand:updateBrand,onAddApproval:(a)=>addApproval(selected.id,a)})
           )
         )
       )
