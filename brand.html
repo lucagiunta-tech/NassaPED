@@ -1264,6 +1264,199 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
     )
   );
 }
+// ── Proof system constants (shared) ──
+const PROOF_STATI = ['bozza','revisione','approvato','final'];
+const PROOF_CLR   = {bozza:'#9ca3af',revisione:'#f59e0b',approvato:'#185FA5',final:'#1A8C3F'};
+const PROOF_LBL   = {bozza:'\u274d Bozza',revisione:'\u{1f504} Revisione',approvato:'\u2713 Approvato',final:'\u{1f3c1} Final'};
+const TAG_COLORS={Mood:'#534AB7',Palette:'#C25B2A',Foto:'#0F6E56',Copy:'#C2185B',Tipo:'#185FA5',Strategy:'#6B1A2A',ToV:'#854F0B'};
+
+function Moodboard({client,isAdmin,onAddMoodItem,onSendToApprovals}){
+  const [sel,setSel]=useState(null);
+  const [showModal,setShowModal]=useState(false);
+  const [uploading,setUploading]=useState(false);
+  const [form,setForm]=useState({tipo:'image',titolo:'',note:'',tag:'Mood',color:'#C25B2A',height:1,imageUrl:null});
+  const [uploadErr,setUploadErr]=useState('');
+  const moodFileRef=useRef(null);
+  const items=client.moodboard||[];
+  const TAG_OPTS=['Mood','Palette','Foto','Copy','Tipo','Strategy','ToV'];
+  const COLOR_OPTS=['#C25B2A','#F5EDD8','#1D9E75','#185FA5','#2C1A0E','#E8DCC8','#7A9E5A','#534AB7','#6B1A2A'];
+
+  const handleMoodFile=async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    setUploading(true);setUploadErr('');
+    try{
+      const fd=new FormData();fd.append('file',file);fd.append('user','nassa_studio');
+      const r=await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':API_KEY},credentials:'include',body:fd});
+      if(!r.ok)throw new Error('Upload fallito: '+r.status);
+      const d=await r.json();
+      setForm(p=>({...p,imageUrl:d.url||d.shared_link||'',tipo:'image'}));
+    }catch(err){setUploadErr(err.message);}
+    finally{setUploading(false);if(moodFileRef.current)moodFileRef.current.value='';}
+  };
+
+  const confirmAdd=()=>{
+    if(form.tipo!=='text'&&!form.titolo.trim()&&!form.imageUrl)return;
+    if(form.tipo==='text'&&!form.note.trim())return;
+    const item={id:'mood_'+Date.now(),tipo:form.tipo,
+      titolo:form.titolo.trim()||form.note.trim().slice(0,40),
+      note:form.note.trim(),tag:form.tag,
+      color:form.tipo==='image'?'#e8e0d8':form.color,
+      height:parseFloat(form.height)||1,imageUrl:form.imageUrl||null,
+      proof_stato:'bozza'};
+    onAddMoodItem&&onAddMoodItem(item);
+    setShowModal(false);
+    setForm({tipo:'image',titolo:'',note:'',tag:'Mood',color:'#C25B2A',height:1,imageUrl:null});
+    setUploadErr('');
+  };
+
+  const modal=showModal&&h('div',{
+    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:600,display:'flex',alignItems:'center',justifyContent:'center'},
+    onClick:e=>{if(e.target===e.currentTarget){setShowModal(false);setUploadErr('');}}
+  },
+    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,width:420,maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.2)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
+        h('span',{style:{fontSize:16,fontWeight:700,color:'var(--text)'}},'Aggiungi elemento'),
+        h('button',{onClick:()=>{setShowModal(false);setUploadErr('');},style:{border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--text-2)'}},'\u00d7')
+      ),
+      h('div',{style:{marginBottom:14}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:6}},'Tipo elemento'),
+        h('div',{style:{display:'flex',gap:8}},
+          ['image','color','text'].map(t=>h('button',{key:t,onClick:()=>setForm(p=>({...p,tipo:t})),
+            style:{flex:1,padding:'6px 0',borderRadius:'var(--r)',fontSize:12,fontWeight:500,cursor:'pointer',
+              border:'var(--bw) solid '+(form.tipo===t?'var(--green)':'var(--border)'),
+              background:form.tipo===t?'var(--green-lt)':'var(--surface)',
+              color:form.tipo===t?'var(--green-dk)':'var(--text-2)'}
+          },{image:'\ud83d\uddbc Immagine',color:'\ud83c\udfa8 Colore',text:'\u270f Testo'}[t]))
+        )
+      ),
+      form.tipo==='image'&&h('div',{style:{marginBottom:14}},
+        h('input',{ref:moodFileRef,type:'file',accept:'image/*',style:{display:'none'},onChange:handleMoodFile}),
+        form.imageUrl
+          ?h('div',{style:{position:'relative'}},
+              h('img',{src:form.imageUrl,alt:'preview',style:{width:'100%',borderRadius:'var(--r)',display:'block',maxHeight:200,objectFit:'contain',background:'var(--surface-lt)'}}),
+              h('button',{onClick:()=>setForm(p=>({...p,imageUrl:null})),style:{position:'absolute',top:6,right:6,background:'rgba(0,0,0,.5)',border:'none',color:'#fff',borderRadius:4,padding:'2px 7px',cursor:'pointer',fontSize:11}},'\u2715 Rimuovi'))
+          :h('div',{onClick:()=>moodFileRef.current?.click(),
+              style:{border:'1.5px dashed var(--border)',borderRadius:'var(--r)',padding:'24px 0',textAlign:'center',cursor:uploading?'wait':'pointer',color:'var(--text-3)',fontSize:12}},
+              uploading?'\u23f3 Upload in corso\u2026':'\u2191 Clicca per caricare immagine'),
+        uploadErr&&h('div',{style:{marginTop:6,fontSize:11,color:'#ef4444'}},uploadErr)
+      ),
+      form.tipo==='color'&&h('div',{style:{marginBottom:14}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:6}},'Colore'),
+        h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}},
+          COLOR_OPTS.map(c=>h('div',{key:c,onClick:()=>setForm(p=>({...p,color:c})),
+            style:{width:28,height:28,borderRadius:4,background:c,cursor:'pointer',
+              border:form.color===c?'2px solid var(--text)':'2px solid transparent'}}))
+        ),
+        h('input',{type:'color',value:form.color,onChange:e=>setForm(p=>({...p,color:e.target.value})),
+          style:{width:'100%',height:32,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',cursor:'pointer'}})
+      ),
+      form.tipo!=='text'&&h('div',{style:{marginBottom:12}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Titolo'),
+        h('input',{type:'text',value:form.titolo,onChange:e=>setForm(p=>({...p,titolo:e.target.value})),
+          placeholder:'Es. Direzione cromatica',
+          style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',outline:'none',background:'var(--surface)',color:'var(--text)',boxSizing:'border-box'}})
+      ),
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},
+          form.tipo==='text'?'Testo':'Descrizione / nota'),
+        h('textarea',{rows:form.tipo==='text'?4:2,value:form.note,onChange:e=>setForm(p=>({...p,note:e.target.value})),
+          placeholder:form.tipo==='text'?'Es. Copia alternativa per la campagna':'Es. Terracotta + verde pistacchio',
+          style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',outline:'none',background:'var(--surface)',color:'var(--text)',resize:'vertical',fontFamily:'inherit',boxSizing:'border-box'}})
+      ),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Tag'),
+          h('select',{value:form.tag,onChange:e=>setForm(p=>({...p,tag:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            TAG_OPTS.map(t=>h('option',{key:t,value:t},t)))
+        ),
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Altezza card'),
+          h('input',{type:'number',min:.5,max:2,step:.25,value:form.height,onChange:e=>setForm(p=>({...p,height:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}}),
+          h('p',{style:{fontSize:10,color:'var(--text-3)',marginTop:2}},'1=normale, 2=doppia')
+        )
+      ),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{onClick:()=>{setShowModal(false);setUploadErr('');},className:'btn btn-ghost'},'Annulla'),
+        h('button',{onClick:confirmAdd,className:'btn btn-primary',
+          style:{opacity:(form.tipo==='image'&&!form.imageUrl)||(form.tipo==='text'&&!form.note.trim())?0.45:1}},
+          'Aggiungi')
+      )
+    )
+  );
+
+  const addBtn=isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
+    h('button',{className:'btn btn-primary',onClick:()=>setShowModal(true)},'+ Aggiungi elemento'));
+
+  if(!items.length)return h('div',null,modal,addBtn,
+    h('div',{className:'empty'},
+      h('div',{className:'empty-icon'},'\ud83c\udfad'),
+      h('div',{className:'empty-title'},'Moodboard vuota'),
+      h('div',{className:'empty-sub'},'Clicca "+ Aggiungi elemento" per iniziare')));
+
+  return h('div',null,modal,
+    !isAdmin&&h('div',{style:{padding:'10px 14px',borderRadius:'var(--r)',background:'#fffbeb',
+      border:'0.5px solid #fde68a',fontSize:12,color:'#92400e',marginBottom:16}},
+      '\ud83d\udca1 Questa \u00e8 la direzione creativa del tuo progetto. Clicca su un elemento per lasciare un commento.'),
+    addBtn,
+    h('div',{className:'moodboard-masonry'},
+      items.map(item=>{
+        const tc=TAG_COLORS[item.tag]||'var(--text-3)';
+        const isSel=sel===item.id;
+        const hPx=item.tipo==='text'?Math.round((item.height||1)*80+60)
+               :item.tipo==='color'?Math.round((item.height||1)*100+40):null;
+        return h('div',{key:item.id,className:'masonry-item'+(isSel?' selected':''),
+          style:{borderColor:isSel?tc:undefined},
+          onClick:()=>setSel(isSel?null:item.id)},
+          h('div',{style:{background:item.imageUrl?'var(--surface-lt)':item.color,
+            height:hPx||undefined,display:'flex',alignItems:'center',justifyContent:'center',
+            padding:item.imageUrl?0:16,overflow:'hidden'}},
+            item.imageUrl&&h('img',{src:item.imageUrl,alt:item.titolo,style:{width:'100%',height:'auto',display:'block',objectFit:'contain'}}),
+            !item.imageUrl&&item.tipo==='text'&&h('p',{style:{margin:0,fontSize:13,color:contrast(item.color),lineHeight:1.6,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
+            !item.imageUrl&&item.tipo==='color'&&h('div',{style:{fontSize:14,fontWeight:700,color:contrast(item.color),textAlign:'center'}},item.titolo)
+          ),
+          h('div',{className:'masonry-body'},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8,marginBottom:4}},
+              item.tipo!=='text'&&h('div',{className:'masonry-title'},item.titolo),
+              h('span',{className:'masonry-tag',style:{background:tc+'20',color:tc,flexShrink:0}},item.tag)
+            ),
+            item.tipo!=='text'&&item.note&&h('div',{className:'masonry-note'},item.note),
+            item.proof_stato&&h('div',{style:{marginTop:6}},
+              h('span',{style:{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,
+                background:PROOF_CLR[item.proof_stato]+'22',color:PROOF_CLR[item.proof_stato],
+                border:'1px solid '+PROOF_CLR[item.proof_stato]+'44'}},
+                PROOF_LBL[item.proof_stato])
+            ),
+            isSel&&!isAdmin&&h('div',{style:{marginTop:8}},
+              h('textarea',{rows:2,placeholder:'Lascia un commento...',style:{width:'100%',padding:'6px 8px',fontSize:12,borderRadius:6,border:'0.5px solid var(--border)',background:'var(--surface)',color:'var(--text)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}),
+              h('button',{className:'btn btn-primary',style:{marginTop:4,fontSize:12,padding:'4px 12px'}},'Invia commento')
+            ),
+            isSel&&isAdmin&&h('div',{style:{marginTop:6,display:'flex',flexDirection:'column',gap:6}},
+              h('div',{style:{display:'flex',gap:4,flexWrap:'wrap'}},
+                PROOF_STATI.map(s=>h('button',{key:s,
+                  onClick:e=>{e.stopPropagation();onAddMoodItem&&onAddMoodItem({...item,proof_stato:s},null,true);},
+                  style:{padding:'2px 7px',borderRadius:99,fontSize:10,fontWeight:600,cursor:'pointer',
+                    border:'1px solid '+(item.proof_stato===s?PROOF_CLR[s]:'var(--border)'),
+                    background:item.proof_stato===s?PROOF_CLR[s]+'22':'transparent',
+                    color:item.proof_stato===s?PROOF_CLR[s]:'var(--text-3)'}},PROOF_LBL[s]))
+              ),
+              h('div',{style:{display:'flex',gap:6}},
+                h('button',{className:'btn btn-ghost',style:{fontSize:11}},'\u270f Modifica'),
+                h('button',{className:'btn btn-primary',style:{fontSize:11},
+                  onClick:e=>{e.stopPropagation();onSendToApprovals&&onSendToApprovals(item);}},
+                  '\u2192 Invia ad Approvazioni'),
+                h('button',{className:'btn btn-outline',style:{fontSize:11},
+                  onClick:e=>{e.stopPropagation();onAddMoodItem&&onAddMoodItem(null,item.id);}},'\u2715')
+              )
+            )
+          )
+        );
+      })
+    )
+  );
+}
+
 // ── Approvals (Lista + Kanban unificato) ──────────────────────────────────────
 const APPROVAL_PROOF = ['bozza','revisione','approvato','final'];
 const APR_CLR = {bozza:'#9ca3af',revisione:'#f59e0b',approvato:'#185FA5',final:'#1A8C3F'};
