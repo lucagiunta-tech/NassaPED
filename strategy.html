@@ -800,6 +800,196 @@ function NavBtn({
 }
 
 // ─── CAMPO TESTO GENERICO ─────────────────────────────────────────────────────
+
+
+// ── Budget Tracker ─────────────────────────────────────────────
+const BUDGET_CATS = ["ADV Meta/Google","Content Production","Events","Tool & Software","PR & Partnership","Altro"];
+const EMPTY_BUDGET_ROW = (cat) => ({id: Date.now()+Math.random(), cat: cat||"", allocated:0, spent:0, note:""});
+
+function BudgetTracker({value, onChange}) {
+  const h = React.createElement;
+  let rows = [];
+  try { rows = value ? JSON.parse(value) : []; } catch(e) { rows = []; }
+  if (!rows.length) rows = BUDGET_CATS.map(cat => EMPTY_BUDGET_ROW(cat));
+
+  const update = (newRows) => onChange(JSON.stringify(newRows));
+  const setCell = (id, key, val) => update(rows.map(r => r.id===id ? {...r, [key]:val} : r));
+  const addRow = () => update([...rows, EMPTY_BUDGET_ROW()]);
+  const delRow = (id) => update(rows.filter(r => r.id!==id));
+
+  const totAllocated = rows.reduce((s,r) => s + (parseFloat(r.allocated)||0), 0);
+  const totSpent     = rows.reduce((s,r) => s + (parseFloat(r.spent)||0), 0);
+  const totLeft      = totAllocated - totSpent;
+  const fmt = n => "€" + parseFloat(n||0).toLocaleString("it-IT", {minimumFractionDigits:0});
+
+  const numStyle = {
+    width:"100%", padding:"7px 9px", fontSize:13, textAlign:"right",
+    border:"0.5px solid var(--border)", borderRadius:4,
+    background:"var(--surface)", color:"var(--text-primary)",
+    fontFamily:"var(--font-sans)"
+  };
+  const cellPad = {padding:"3px 4px"};
+
+  return React.createElement("div", {style:{marginTop:8}},
+    React.createElement("div", {style:{overflowX:"auto"}},
+      React.createElement("table", {style:{width:"100%", borderCollapse:"collapse", fontSize:13}},
+        React.createElement("thead", null,
+          React.createElement("tr", null,
+            ...[["Voce","40%"],["Allocato","17%"],["Speso","17%"],["Disponibile","17%"],["Note",""]].map(([l,w])=>
+              React.createElement("th",{key:l,style:{
+                width:w,padding:"6px 10px",textAlign:l==="Voce"?"left":"right",
+                fontSize:11,fontWeight:600,color:"var(--text-muted)",
+                textTransform:"uppercase",letterSpacing:"0.05em",
+                borderBottom:"1.5px solid var(--border)"
+              }},l)
+            ),
+            React.createElement("th",{style:{width:32}})
+          )
+        ),
+        React.createElement("tbody", null,
+          rows.map(row => {
+            const left = (parseFloat(row.allocated)||0) - (parseFloat(row.spent)||0);
+            const pct  = row.allocated ? Math.min(100, Math.round((row.spent/row.allocated)*100)) : 0;
+            const leftColor = left < 0 ? "#ef4444" : left === 0 ? "var(--text-muted)" : "var(--text-primary)";
+            return React.createElement("tr",{key:row.id,style:{borderBottom:"0.5px solid var(--border-lt)"}},
+              React.createElement("td",{style:cellPad},
+                React.createElement("input",{type:"text",value:row.cat||"",
+                  onChange:e=>setCell(row.id,"cat",e.target.value),
+                  placeholder:"Es. ADV Meta",
+                  style:{width:"100%",padding:"7px 9px",fontSize:13,border:"0.5px solid var(--border)",
+                         borderRadius:4,background:"var(--surface)",color:"var(--text-primary)",fontFamily:"var(--font-sans)"}})
+              ),
+              React.createElement("td",{style:cellPad},
+                React.createElement("input",{type:"number",min:0,value:row.allocated||"",
+                  onChange:e=>setCell(row.id,"allocated",e.target.value),
+                  placeholder:"0",style:numStyle})
+              ),
+              React.createElement("td",{style:cellPad},
+                React.createElement("div",{style:{position:"relative"}},
+                  React.createElement("input",{type:"number",min:0,value:row.spent||"",
+                    onChange:e=>setCell(row.id,"spent",e.target.value),
+                    placeholder:"0",style:{...numStyle,paddingBottom:14}}),
+                  row.allocated>0&&React.createElement("div",{style:{
+                    position:"absolute",bottom:4,left:8,right:8,height:3,
+                    background:"var(--border-lt)",borderRadius:99
+                  }},React.createElement("div",{style:{
+                    width:pct+"%",height:"100%",borderRadius:99,
+                    background:pct>90?"#ef4444":pct>70?"#f59e0b":"var(--green-dk)",
+                    transition:"width .2s"
+                  }}))
+                )
+              ),
+              React.createElement("td",{style:{...cellPad,padding:"3px 10px",textAlign:"right",
+                fontWeight:600,fontSize:13,color:leftColor,whiteSpace:"nowrap"}},
+                row.allocated ? fmt(left) : "—"
+              ),
+              React.createElement("td",{style:cellPad},
+                React.createElement("input",{type:"text",value:row.note||"",
+                  onChange:e=>setCell(row.id,"note",e.target.value),
+                  placeholder:"Nota…",
+                  style:{width:"100%",padding:"7px 9px",fontSize:12,border:"0.5px solid var(--border)",
+                         borderRadius:4,background:"var(--surface)",color:"var(--text-secondary)",fontFamily:"var(--font-sans)"}})
+              ),
+              React.createElement("td",{style:{...cellPad,textAlign:"center"}},
+                React.createElement("button",{onClick:()=>delRow(row.id),
+                  style:{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:16,padding:"4px"},
+                  title:"Rimuovi"},"×")
+              )
+            );
+          }),
+          // Totali
+          React.createElement("tr",{style:{borderTop:"1.5px solid var(--border)",background:"var(--surface-lt)"}},
+            React.createElement("td",{style:{...cellPad,padding:"8px 10px",fontWeight:700,fontSize:13,color:"var(--text-primary)"}},"TOTALE"),
+            React.createElement("td",{style:{...cellPad,textAlign:"right",fontWeight:700,fontSize:13,color:"var(--text-primary)",padding:"8px 10px"}},fmt(totAllocated)),
+            React.createElement("td",{style:{...cellPad,textAlign:"right",fontWeight:700,fontSize:13,color:"var(--text-primary)",padding:"8px 10px"}},fmt(totSpent)),
+            React.createElement("td",{style:{...cellPad,textAlign:"right",fontWeight:700,fontSize:13,
+              color:totLeft<0?"#ef4444":totLeft===0?"var(--text-muted)":"var(--green-dk)",padding:"8px 10px"}},
+              fmt(totLeft)),
+            React.createElement("td",{colSpan:2,style:{...cellPad,fontSize:11,color:"var(--text-muted)",padding:"8px 10px"}},
+              totAllocated>0 ? Math.round(totSpent/totAllocated*100)+"% utilizzato" : "")
+          )
+        )
+      )
+    ),
+    React.createElement("button",{onClick:addRow,
+      style:{marginTop:8,padding:"5px 14px",borderRadius:6,border:"0.5px solid var(--border)",
+             background:"transparent",color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontWeight:500}},
+      "+ Aggiungi voce")
+  );
+}
+
+// ── Competitor Map ─────────────────────────────────────────────
+const COMP_COLS = [
+  {key:"nome",    lbl:"Competitor",        w:"15%", ph:"Es. Borgo Ficuzza"},
+  {key:"pos",     lbl:"Posizionamento",    w:"20%", ph:"Es. Premium rurale"},
+  {key:"tov",     lbl:"ToV / Tone",        w:"15%", ph:"Es. Serio, formale"},
+  {key:"gap",     lbl:"Il loro punto debole", w:"25%", ph:"Es. Nessun racconto autentico"},
+  {key:"opp",     lbl:"La nostra opportunità",w:"25%", ph:"Es. Territorio + storia"},
+];
+const EMPTY_ROW = () => ({id: Date.now(), nome:"", pos:"", tov:"", gap:"", opp:""});
+
+function CompetitorMap({value, onChange}) {
+  const h = React.createElement;
+  let rows = [];
+  try { rows = value ? JSON.parse(value) : []; } catch(e) { rows = []; }
+  if (!rows.length) rows = [EMPTY_ROW()];
+
+  const update = (newRows) => onChange(JSON.stringify(newRows));
+  const setCell = (id, key, val) => update(rows.map(r => r.id===id ? {...r, [key]:val} : r));
+  const addRow = () => update([...rows, EMPTY_ROW()]);
+  const delRow = (id) => update(rows.filter(r => r.id!==id));
+
+  return React.createElement("div", {style:{marginTop:8}},
+    React.createElement("div", {style:{overflowX:"auto"}},
+      React.createElement("table", {style:{width:"100%",borderCollapse:"collapse",fontSize:13}},
+        React.createElement("thead", null,
+          React.createElement("tr", null,
+            ...COMP_COLS.map(col => React.createElement("th", {key:col.key, style:{
+              width:col.w, padding:"6px 10px", textAlign:"left",
+              fontSize:11, fontWeight:600, color:"var(--text-muted)",
+              textTransform:"uppercase", letterSpacing:"0.05em",
+              borderBottom:"1.5px solid var(--border)", whiteSpace:"nowrap"
+            }}, col.lbl)),
+            React.createElement("th", {style:{width:32}})
+          )
+        ),
+        React.createElement("tbody", null,
+          rows.map(row => React.createElement("tr", {key:row.id, style:{borderBottom:"0.5px solid var(--border-lt)"}},
+            ...COMP_COLS.map(col => React.createElement("td", {key:col.key, style:{padding:"2px 4px"}},
+              React.createElement("input", {
+                type:"text", value:row[col.key]||"",
+                onChange: e => setCell(row.id, col.key, e.target.value),
+                placeholder: col.ph,
+                style:{
+                  width:"100%", padding:"7px 9px", fontSize:13,
+                  border:"0.5px solid transparent", borderRadius:4,
+                  background:"transparent", color:"var(--text-primary)",
+                  fontFamily:"var(--font-sans)",
+                  transition:"border-color .1s, background .1s"
+                },
+                onFocus:  e => { e.target.style.borderColor="var(--green)"; e.target.style.background="var(--surface)"; },
+                onBlur:   e => { e.target.style.borderColor="transparent"; e.target.style.background="transparent"; }
+              })
+            )),
+            React.createElement("td", {style:{padding:"2px 4px", textAlign:"center"}},
+              React.createElement("button", {
+                onClick: () => delRow(row.id),
+                style:{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:16,lineHeight:1,padding:"4px"},
+                title:"Rimuovi riga"
+              }, "×")
+            )
+          ))
+        )
+      )
+    ),
+    React.createElement("button", {
+      onClick: addRow,
+      style:{marginTop:8,padding:"5px 14px",borderRadius:6,border:"0.5px solid var(--border)",
+             background:"transparent",color:"var(--text-secondary)",fontSize:12,cursor:"pointer",fontWeight:500}
+    }, "+ Aggiungi competitor")
+  );
+}
+
 function Field({
   label,
   hint,
@@ -1138,14 +1328,44 @@ function PDMView({
     savedMsg: savedMsg
   }), /*#__PURE__*/React.createElement(Alert, {
     type: "info"
-  }, "I dati di questa sezione alimentano automaticamente il Piano di Comunicazione. Compila con precisione — vengono riusati come contesto."), currentSec && /*#__PURE__*/React.createElement(Field, {
-    label: currentSec.lbl,
-    hint: currentSec.hint,
-    placeholder: currentSec.ph,
-    value: client.pdm[currentSec.id] || "",
-    onChange: v => onChange("pdm", currentSec.id, v),
-    rows: 6
-  }), /*#__PURE__*/React.createElement("div", {
+  }, "I dati di questa sezione alimentano automaticamente il Piano di Comunicazione. Compila con precisione — vengono riusati come contesto."),
+  currentSec && (
+    currentSec.id === "analisi_esterna"
+      ? /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement(Field, {
+            label: currentSec.lbl, hint: currentSec.hint,
+            placeholder: "Fattori PEST, opportunità di mercato, minacce...",
+            value: client.pdm[currentSec.id] || "", onChange: v => onChange("pdm", currentSec.id, v), rows: 3
+          }),
+          /*#__PURE__*/React.createElement("div", {style:{marginTop:16}},
+            /*#__PURE__*/React.createElement("p", {style:{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:4}},
+              "Competitor Map"),
+            /*#__PURE__*/React.createElement("p", {style:{fontSize:12,color:"var(--text-muted)",marginBottom:8}},
+              "Mappa strutturata dei competitor principali (max 5)"),
+            /*#__PURE__*/React.createElement(CompetitorMap, {
+              value: client.pdm["competitor_map"] || "",
+              onChange: v => onChange("pdm", "competitor_map", v)
+            })
+          )
+        )
+      : currentSec.id === "budget"
+        ? /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("p", {style:{fontSize:12,fontWeight:600,color:"var(--text-primary)",marginBottom:4}},
+              "Budget Tracker"),
+            /*#__PURE__*/React.createElement("p", {style:{fontSize:12,color:"var(--text-muted)",marginBottom:8}},
+              currentSec.hint),
+            /*#__PURE__*/React.createElement(BudgetTracker, {
+              value: client.pdm["budget"] || "",
+              onChange: v => onChange("pdm", "budget", v)
+            })
+          )
+        : /*#__PURE__*/React.createElement(Field, {
+            label: currentSec.lbl, hint: currentSec.hint,
+            placeholder: currentSec.ph,
+            value: client.pdm[currentSec.id] || "",
+            onChange: v => onChange("pdm", currentSec.id, v), rows: 6
+          })
+  ), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -1422,6 +1642,7 @@ function BrandPortalView({
   const [sec, setSec] = useState("overview");
   const b = client.brand;
   const pc = b.colors[0]?.hex || G;
+  const b_editable = true; // Admin sempre in modalità edit
   const pdcHasTov = client.pdc.tov_regole?.trim();
   const pdcHasClaim = client.pdc.creative_territory?.trim();
   const SECS = [{
@@ -1658,7 +1879,26 @@ function BrandPortalView({
         fontSize: 11,
         color: "var(--text-muted)"
       }
-    }, c.role)));
+    }, c.role),
+    b_editable && /*#__PURE__*/React.createElement("textarea", {
+      value: c.usage || "",
+      onChange: e => {
+        const updated = b.colors.map((col, j) => j===i ? {...col, usage: e.target.value} : col);
+        onChange("brand", "colors", updated);
+      },
+      placeholder: "Es. Colore primario. Su sfondo bianco. Mai su verde.",
+      rows: 2,
+      style:{
+        width:"100%",marginTop:6,padding:"5px 7px",
+        fontSize:11,fontFamily:"var(--font-sans)",
+        border:"0.5px solid var(--border)",borderRadius:4,
+        background:"var(--surface)",color:"var(--text-primary)",
+        resize:"vertical",lineHeight:1.4
+      }
+    }),
+    !b_editable && c.usage && /*#__PURE__*/React.createElement("p", {
+      style:{margin:"4px 0 0",fontSize:11,color:"var(--text-secondary)",lineHeight:1.4,fontStyle:"italic"}
+    }, c.usage)));
   }))), sec === "fonts" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionTitle, {
     title: "Sistema tipografico"
   }), /*#__PURE__*/React.createElement("div", {
