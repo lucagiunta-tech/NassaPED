@@ -259,9 +259,13 @@ textarea,input{font-family:var(--font);}
 .assets-masonry{columns:3;column-gap:10px;margin-bottom:20px;}
 .asset-card{break-inside:avoid;margin-bottom:10px;border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);background:var(--surface);transition:border-color var(--t-fast),box-shadow var(--t-fast);}
 .asset-card:hover{border-color:var(--green);box-shadow:var(--shadow-sm);}
-.asset-thumb{width:100%;background:var(--surface-lt);display:flex;align-items:center;justify-content:center;padding:12px;min-height:60px;max-height:120px;overflow:hidden;}
-.asset-thumb img{width:100%;max-height:96px;object-fit:contain;display:block;}
-.asset-thumb .asset-icon{font-size:28px;}
+.asset-card{break-inside:avoid;margin-bottom:10px;border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);background:var(--surface);cursor:pointer;transition:border-color var(--t-fast),box-shadow var(--t-fast);}
+.asset-card:hover{border-color:var(--green);box-shadow:var(--shadow-sm);}
+.asset-thumb{width:100%;background:var(--surface-lt);display:flex;align-items:center;justify-content:center;padding:12px;position:relative;}
+.asset-thumb img{width:100%;height:auto;display:block;object-fit:contain;}
+.asset-thumb .asset-icon{font-size:32px;padding:12px 0;}
+.asset-thumb .asset-hover-badge{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--t-fast);color:#fff;font-size:13px;font-weight:600;gap:6px;}
+.asset-card:hover .asset-hover-badge{opacity:1;}
 .asset-info{padding:8px 10px;}
 .asset-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .asset-meta{font-size:10px;color:var(--text-3);margin-top:2px;}
@@ -269,6 +273,12 @@ textarea,input{font-family:var(--font);}
 .asset-actions{display:flex;gap:4px;margin-top:6px;}
 .asset-add-zone{break-inside:avoid;margin-bottom:10px;height:80px;border:1.5px dashed var(--border);border-radius:var(--r);display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:12px;color:var(--text-3);transition:border-color var(--t-fast);}
 .asset-add-zone:hover{border-color:var(--green);color:var(--green-dk);}
+/* ── Proof stato pills ── */
+.proof-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;border:1px solid;}
+.proof-bozza{background:#f3f4f6;color:#6b7280;border-color:#d1d5db;}
+.proof-revisione{background:#fff7ed;color:#c2410c;border-color:#fed7aa;}
+.proof-approvato{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+.proof-final{background:#f0fdf4;color:#15803d;border-color:#bbf7d0;}
 @media(max-width:700px){.assets-masonry{columns:2;}}
 </style>
 </head>
@@ -508,6 +518,17 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
   const [assetUploading,setAssetUploading]= useState(false);
   const [assetUrl,      setAssetUrl]      = useState('');
   const assetFileRef = useRef(null);
+
+  const [assetPreview, setAssetPreview] = useState(null); // asset in anteprima
+  const PROOF_STATI = ['bozza','revisione','approvato','final'];
+  const PROOF_CLR   = {bozza:'#6b7280',revisione:'#c2410c',approvato:'#1d4ed8',final:'#15803d'};
+
+  const updateAssetField = (assetId, updates) => {
+    const assets = (b.assets||[]).map(a => a.id===assetId ? {...a,...updates} : a);
+    onUpdateBrand && onUpdateBrand(client.id, brd=>({...brd, assets}));
+    // Aggiorna anche il preview aperto
+    setAssetPreview(p => p && p.id===assetId ? {...p,...updates} : p);
+  };
 
   const openAssetModal = (catId) => {
     setAssetModal({categoria:catId||'company_profile'});
@@ -867,7 +888,153 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
   return h('div',null,
     colorModal, fontModal, logoDetailModal, logoEditModal,
 
-    // ── Modal aggiungi asset grafico ──
+    // ── Modal anteprima asset + proof ──
+    assetPreview && h('div',{
+      style:{position:'fixed',inset:0,background:'rgba(0,0,0,.8)',zIndex:800,
+        display:'flex',alignItems:'stretch',justifyContent:'center'},
+      onClick:e=>{ if(e.target===e.currentTarget) setAssetPreview(null); }
+    },
+      h('div',{style:{display:'flex',width:'100%',maxWidth:1100,margin:'auto',
+        background:'var(--surface)',borderRadius:'var(--r)',overflow:'hidden',
+        maxHeight:'92vh',boxShadow:'0 24px 64px rgba(0,0,0,.4)'}},
+
+        // ── Sinistra: immagine/preview ──
+        h('div',{style:{flex:'1 1 60%',background:'#111',display:'flex',alignItems:'center',
+          justifyContent:'center',minHeight:300,position:'relative',overflow:'hidden'}},
+          assetPreview.url && ['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes((assetPreview.format||'').toUpperCase())
+            ? h('img',{src:assetPreview.url,alt:assetPreview.name,
+                style:{maxWidth:'100%',maxHeight:'90vh',objectFit:'contain',display:'block'}})
+            : h('div',{style:{textAlign:'center',color:'#fff'}},
+                h('div',{style:{fontSize:64,marginBottom:12}},
+                  ASSET_CATS.find(c=>c.id===assetPreview.categoria)?.icon||'📄'),
+                h('div',{style:{fontSize:14,fontWeight:600}}),
+                assetPreview.url
+                  ? h('a',{href:assetPreview.url,target:'_blank',rel:'noopener',
+                      style:{color:'var(--green)',fontSize:13,textDecoration:'none',
+                        border:'1px solid var(--green)',borderRadius:6,padding:'6px 14px',display:'inline-block',marginTop:8}},
+                      '↓ Apri file')
+                  : h('div',{style:{fontSize:12,color:'#888',marginTop:8}},'Nessun file caricato')
+              ),
+          // Close button
+          h('button',{onClick:()=>setAssetPreview(null),
+            style:{position:'absolute',top:12,right:12,width:32,height:32,borderRadius:'50%',
+              border:'none',background:'rgba(255,255,255,.15)',color:'#fff',fontSize:16,
+              cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
+              backdropFilter:'blur(4px)'}},'×')
+        ),
+
+        // ── Destra: info + proof ──
+        h('div',{style:{flex:'0 0 320px',display:'flex',flexDirection:'column',
+          borderLeft:'var(--bw) solid var(--border)',overflowY:'auto'}},
+
+          // Header
+          h('div',{style:{padding:'16px 18px',borderBottom:'var(--bw) solid var(--border)'}},
+            h('div',{style:{fontSize:14,fontWeight:700,color:'var(--text)',marginBottom:4}},
+              assetPreview.name),
+            h('div',{style:{fontSize:11,color:'var(--text-3)'}},
+              ASSET_CATS.find(c=>c.id===assetPreview.categoria)?.lbl,
+              ' · ',assetPreview.format,
+              assetPreview.data&&(' · '+assetPreview.data)
+            ),
+            assetPreview.note&&h('div',{style:{fontSize:11,color:'var(--text-2)',
+              marginTop:6,fontStyle:'italic',lineHeight:1.5}},assetPreview.note)
+          ),
+
+          // Proof stato
+          h('div',{style:{padding:'14px 18px',borderBottom:'var(--bw) solid var(--border)'}},
+            h('div',{style:{fontSize:11,fontWeight:600,color:'var(--text)',
+              textTransform:'uppercase',letterSpacing:'.05em',marginBottom:8}},'Stato Proof'),
+            h('div',{style:{display:'flex',flexWrap:'wrap',gap:6}},
+              PROOF_STATI.map(s=>h('button',{key:s,
+                onClick:()=>{ if(isAdmin) updateAssetField(assetPreview.id,{proof_stato:s}); },
+                style:{padding:'4px 10px',borderRadius:99,fontSize:11,fontWeight:600,
+                  cursor:isAdmin?'pointer':'default',
+                  border:'1.5px solid '+((assetPreview.proof_stato||'bozza')===s?PROOF_CLR[s]:'var(--border)'),
+                  background:(assetPreview.proof_stato||'bozza')===s?PROOF_CLR[s]+'22':'transparent',
+                  color:(assetPreview.proof_stato||'bozza')===s?PROOF_CLR[s]:'var(--text-3)'}},
+                {bozza:'📝 Bozza',revisione:'🔄 In revisione',approvato:'✓ Approvato',final:'🏁 Final'}[s]
+              ))
+            )
+          ),
+
+          // Commenti
+          h('div',{style:{padding:'14px 18px',flex:1,display:'flex',flexDirection:'column'}},
+            h('div',{style:{fontSize:11,fontWeight:600,color:'var(--text)',
+              textTransform:'uppercase',letterSpacing:'.05em',marginBottom:8}},'Commenti proof'),
+            // Lista commenti
+            h('div',{style:{flex:1,overflowY:'auto',marginBottom:10}},
+              (assetPreview.commenti||[]).length===0
+                ? h('div',{style:{fontSize:12,color:'var(--text-3)',textAlign:'center',padding:'20px 0',fontStyle:'italic'}},
+                    'Nessun commento — aggiungi il primo')
+                : (assetPreview.commenti||[]).map((c,i)=>
+                    h('div',{key:i,style:{marginBottom:10,padding:'8px 10px',
+                      background:'var(--surface-lt)',borderRadius:6,
+                      borderLeft:'3px solid '+(c.tipo==='approvazione'?'var(--green)':c.tipo==='revisione'?'#ef4444':'var(--border)')  }},
+                      h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
+                        h('span',{style:{fontSize:10,fontWeight:700,color:'var(--text)'}},'👤 ',c.autore||'Nassa Studio'),
+                        h('span',{style:{fontSize:10,color:'var(--text-3)'}},c.data||'')
+                      ),
+                      h('div',{style:{fontSize:12,color:'var(--text-2)',lineHeight:1.5}},c.testo)
+                    )
+                  )
+            ),
+            // Nuovo commento
+            h('div',{style:{borderTop:'var(--bw) solid var(--border)',paddingTop:10}},
+              h('textarea',{
+                id:'asset-comment-input',
+                rows:2,
+                placeholder:'Lascia un commento…',
+                style:{width:'100%',padding:'7px 10px',fontSize:12,border:'var(--bw) solid var(--border)',
+                  borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',
+                  resize:'none',fontFamily:'inherit',boxSizing:'border-box',marginBottom:6}
+              }),
+              h('div',{style:{display:'flex',gap:6}},
+                h('button',{
+                  className:'btn btn-ghost',style:{flex:1,fontSize:11},
+                  onClick:()=>{
+                    const el=document.getElementById('asset-comment-input');
+                    const testo=el?.value?.trim(); if(!testo) return;
+                    const oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+                    const nuovoCommento={testo,autore:'Nassa Studio',data:oggi,tipo:'nota'};
+                    const commenti=[...(assetPreview.commenti||[]),nuovoCommento];
+                    updateAssetField(assetPreview.id,{commenti});
+                    if(el) el.value='';
+                  }
+                },'💬 Commento'),
+                isAdmin&&h('button',{
+                  className:'btn btn-primary',style:{flex:1,fontSize:11},
+                  onClick:()=>{
+                    const el=document.getElementById('asset-comment-input');
+                    const testo=el?.value?.trim()||'Approvato ✓';
+                    const oggi=new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+                    const nuovoCommento={testo,autore:'Nassa Studio',data:oggi,tipo:'approvazione'};
+                    const commenti=[...(assetPreview.commenti||[]),nuovoCommento];
+                    updateAssetField(assetPreview.id,{commenti,proof_stato:'approvato'});
+                    if(el) el.value='';
+                  }
+                },'✓ Approva')
+              )
+            )
+          ),
+
+          // Footer azioni
+          h('div',{style:{padding:'12px 18px',borderTop:'var(--bw) solid var(--border)',
+            display:'flex',gap:8,flexWrap:'wrap'}},
+            assetPreview.url&&h('a',{href:assetPreview.url,target:'_blank',rel:'noopener',
+              className:'btn btn-ghost',style:{fontSize:11,textDecoration:'none',flex:1,textAlign:'center'}},
+              '↓ Scarica'),
+            isAdmin&&h('button',{className:'btn btn-ghost',
+              style:{fontSize:11,color:'#ef4444',borderColor:'#fca5a5',flex:1},
+              onClick:()=>{
+                const assets=(b.assets||[]).filter(a=>a.id!==assetPreview.id);
+                onUpdateBrand&&onUpdateBrand(client.id,brd=>({...brd,assets}));
+                setAssetPreview(null);
+              }
+            },'✕ Rimuovi')
+          )
+        )
+      )
+    ),
     assetModal && h('div',{
       style:{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center'},
       onClick:e=>{if(e.target===e.currentTarget)setAssetModal(null);}
@@ -1071,25 +1238,23 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
               '+ Aggiungi')
           ),
           h('div',{className:'assets-masonry'},
-            catAssets.map((a,i)=>h('div',{key:a.id,className:'asset-card'},
+            catAssets.map((a)=>h('div',{key:a.id,className:'asset-card',
+              onClick:()=>setAssetPreview(a)},
               h('div',{className:'asset-thumb'},
-                a.url&&a.format&&['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes(a.format.toUpperCase())
+                a.url&&['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes((a.format||'').toUpperCase())
                   ?h('img',{src:a.url,alt:a.name})
-                  :h('div',{className:'asset-icon'},cat.icon)
+                  :h('div',{className:'asset-icon'},cat.icon),
+                h('div',{className:'asset-hover-badge'},'👁 Anteprima')
               ),
               h('div',{className:'asset-info'},
-                h('div',{className:'asset-name',title:a.name},a.name),
+                h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:3}},
+                  h('div',{className:'asset-name',title:a.name,style:{flex:1}},a.name),
+                  a.proof_stato&&h('span',{
+                    className:'proof-pill proof-'+a.proof_stato
+                  },{bozza:'📝',revisione:'🔄',approvato:'✓',final:'🏁'}[a.proof_stato],' ',a.proof_stato)
+                ),
                 h('div',{className:'asset-meta'},a.format+(a.data?' · '+a.data:'')),
-                a.note&&h('div',{className:'asset-note'},a.note),
-                h('div',{className:'asset-actions'},
-                  a.url&&h('a',{href:a.url,target:'_blank',rel:'noopener',
-                    className:'btn btn-ghost',style:{fontSize:11,padding:'3px 8px',textDecoration:'none'}},
-                    '↓ Scarica'),
-                  isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:11,padding:'3px 8px'},
-                    onClick:()=>{ const assets=(b.assets||[]).filter((_,j)=>j!==i+(b.assets||[]).filter(x=>x.categoria===cat.id).indexOf(a));
-                      onUpdateBrand&&onUpdateBrand(client.id,brd=>({...brd,assets})); }},
-                    '✕')
-                )
+                a.note&&h('div',{className:'asset-note'},a.note)
               )
             )),
             catAssets.length===0&&isAdmin&&h('div',{className:'asset-add-zone',
