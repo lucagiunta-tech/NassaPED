@@ -151,13 +151,16 @@ textarea,input{font-family:var(--font);}
 .swatch-role{font-size:9px;color:var(--text-3);}
 
 /* ── Logo cards ── */
-.logo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:24px;}
-.logo-card{border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);transition:border-color var(--t-fast),box-shadow var(--t-fast);}
+.logo-masonry{columns:3;column-gap:12px;margin-bottom:24px;}
+.logo-card{break-inside:avoid;display:block;margin-bottom:12px;border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);background:var(--surface);transition:border-color var(--t-fast),box-shadow var(--t-fast);}
 .logo-card:hover{border-color:var(--green);box-shadow:var(--shadow-sm);}
-.logo-preview{height:120px;display:flex;align-items:center;justify-content:center;background:var(--surface-lt);padding:12px;}
-.logo-info{padding:9px 12px;background:var(--surface);}
+.logo-preview{width:100%;display:flex;align-items:center;justify-content:center;background:var(--surface-lt);padding:16px;}
+.logo-preview img{width:100%;height:auto;display:block;object-fit:contain;}
+.logo-info{padding:10px 12px;background:var(--surface);}
+@media(max-width:600px){.logo-masonry{columns:2;}}
 .logo-name{font-size:11px;font-weight:500;color:var(--text);margin-bottom:2px;}
 .logo-meta{font-size:10px;color:var(--text-3);margin-bottom:6px;}
+.logo-add-wrap{break-inside:avoid;display:block;margin-bottom:12px;}
 .logo-add{height:120px;border:1.5px dashed var(--border);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--text-3);cursor:pointer;font-size:var(--fs-xs);transition:border-color var(--t-fast);}
 .logo-add:hover{border-color:var(--green);color:var(--green-dk);}
 
@@ -398,11 +401,11 @@ function BrandAssets({client, isAdmin, onAddLogo}){
       uploading&&h('div',{style:{background:'var(--green-lt)',border:'var(--bw) solid var(--green-mid)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:'var(--fs-sm)',color:'var(--green-dk)'}},
         '⏳ Upload su Dropbox in corso…'
       ),
-      h('div',{className:'logo-grid'},
+      h('div',{className:'logo-masonry'},
         b.logos.map(l=>h('div',{key:l.id,className:'logo-card'},
-          h('div',{className:'logo-preview',style:{background:l.variant==='bianco'?'#111':'var(--surface-lt)'}},
+          h('div',{className:'logo-preview',style:{background:l.variant==='bianco'?'#111':'var(--surface-lt)',minHeight:80}},
             l.url
-              ?h('img',{src:l.url,alt:l.name,style:{maxWidth:'100%',maxHeight:96,objectFit:'contain',display:'block'}})
+              ?h('img',{src:l.url,alt:l.name,style:{width:'100%',height:'auto',display:'block',objectFit:'contain'}})
               :h('div',{style:{width:40,height:40,borderRadius:8,background:pc,display:'flex',alignItems:'center',justifyContent:'center'}},
                   h('span',{style:{color:contrast(pc),fontSize:16,fontWeight:700}},client.name?.charAt(0)||'N'))
           ),
@@ -414,8 +417,8 @@ function BrandAssets({client, isAdmin, onAddLogo}){
               :h('button',{className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0'}},'↓ Scarica')
           )
         )),
-        isAdmin&&h('div',{className:'logo-add',onClick:go,style:{opacity:uploading?.5:1,cursor:uploading?'default':'pointer'}},
-          '+',h('span',null,uploading?'Upload in corso…':'Aggiungi logo'))
+        isAdmin&&h('div',{className:'logo-add-wrap'},h('div',{className:'logo-add',onClick:go,style:{opacity:uploading?.5:1,cursor:uploading?'default':'pointer'}},
+          '+',h('span',null,uploading?'Upload in corso…':'Aggiungi logo')))
       )
     ),
 
