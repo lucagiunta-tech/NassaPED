@@ -2024,9 +2024,21 @@ function StrategyView({
       done: true
     };
     onChange("strategy", mod, updated);
-    setSavedMsg("Completato ✓");
+    // ── Auto-populate Brand Portal da Mod.5 ──
+    if (mod === "mod5") {
+      const m5 = s.mod5;
+      if (m5.archetipo?.trim())     onChange("brand", "archetype",  m5.archetipo.trim());
+      if (m5.claim?.trim())         onChange("brand", "claim",      m5.claim.trim());
+      if (m5.tov_parole_si?.trim()) onChange("brand", "tov",
+        "Parole SÌ: " + m5.tov_parole_si.trim() +
+        (m5.tov_parole_no?.trim() ? "\nParole NO: " + m5.tov_parole_no.trim() : "")
+      );
+      setSavedMsg("Completato ✓ — Brand Portal aggiornato");
+    } else {
+      setSavedMsg("Completato ✓");
+    }
     setStep(next);
-    setTimeout(() => setSavedMsg(""), 2000);
+    setTimeout(() => setSavedMsg(""), 3000);
   };
   const updateField = (mod, key, val) => onChange("strategy_field", mod, {
     key,

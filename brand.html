@@ -197,7 +197,22 @@ textarea,input{font-family:var(--font);}
 /* ── Portal header ── */
 .portal-logo{width:44px;height:44px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;}
 
-/* ── Misc ── */
+/* ── Semaforo Nassa ── */
+.semaforo-wrap{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;border-left:3px solid var(--magenta);}
+.semaforo-title{font-size:var(--fs-sm);font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.semaforo-title svg{flex-shrink:0;}
+.semaforo-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.semaforo-item{display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:4px 0;}
+.semaforo-check{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all var(--t-fast);}
+.semaforo-check.checked{background:var(--green);border-color:var(--green-dk);}
+.semaforo-check.checked svg{display:block;}
+.semaforo-check svg{display:none;width:10px;height:10px;}
+.semaforo-lbl{font-size:var(--fs-sm);color:var(--text-2);line-height:1.4;}
+.semaforo-lbl.checked{color:var(--text-3);text-decoration:line-through;}
+.semaforo-progress{height:4px;background:var(--border-lt);border-radius:99px;margin-bottom:12px;overflow:hidden;}
+.semaforo-progress-fill{height:100%;background:var(--green);border-radius:99px;transition:width var(--t-base);}
+.semaforo-actions{display:flex;gap:8px;justify-content:flex-end;}
+.semaforo-ok{background:var(--green-lt);border:var(--bw) solid var(--green-mid);color:var(--green-dk);font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:4px;}
 .empty{text-align:center;padding:48px 24px;color:var(--text-3);}
 .empty-icon{font-size:var(--fs-lg);margin-bottom:12px;}
 .empty-title{font-size:var(--fs-md);font-weight:600;color:var(--text-2);margin-bottom:6px;}
@@ -354,9 +369,65 @@ function BrandAssets({client,isAdmin}){
   );
 }
 
+// ── Semaforo Nassa — 8 punti pre-pubblicazione ──
+const SEMAFORO_ITEMS = [
+  {id:'s1', lbl:'Il contenuto rispetta il ToV del brand (tono, parole sì/no)'},
+  {id:'s2', lbl:'Caption corretta: lunghezza, emoji, hashtag, CTA presenti'},
+  {id:'s3', lbl:'Visual coerente con la palette e la moodboard del brand'},
+  {id:'s4', lbl:'Formato e dimensioni corretti per la piattaforma'},
+  {id:'s5', lbl:'Nessun errore ortografico o grammaticale'},
+  {id:'s6', lbl:'Data e ora di pubblicazione definite'},
+  {id:'s7', lbl:'Link tracciato (UTM) se presente nella bio o nella caption'},
+  {id:'s8', lbl:'Pilastro narrativo dichiarato e coerente con il calendario'},
+];
+
+function Semaforo({approvalId, onConfirm, onCancel}){
+  const [checked, setChecked] = useState({});
+  const count = Object.values(checked).filter(Boolean).length;
+  const total = SEMAFORO_ITEMS.length;
+  const allOk = count === total;
+
+  const toggle = (id) => setChecked(p => ({...p, [id]: !p[id]}));
+
+  return h('div', {className:'semaforo-wrap'},
+    h('div', {className:'semaforo-title'},
+      h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+        h('circle',{cx:12,cy:12,r:10}),h('line',{x1:12,y1:8,x2:12,y2:12}),h('line',{x1:12,y1:16,x2:'12.01',y2:16})
+      ),
+      'Semaforo Nassa — checklist pre-approvazione',
+      h('span',{style:{marginLeft:'auto',fontSize:11,color:allOk?'var(--green-dk)':'var(--text-3)',fontWeight:600}},count+'/'+total)
+    ),
+    h('div', {className:'semaforo-progress'},
+      h('div', {className:'semaforo-progress-fill', style:{width:(count/total*100)+'%'}})
+    ),
+    h('div', {className:'semaforo-list'},
+      SEMAFORO_ITEMS.map(item =>
+        h('div', {key:item.id, className:'semaforo-item', onClick:()=>toggle(item.id)},
+          h('div', {className:'semaforo-check'+(checked[item.id]?' checked':'')},
+            h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'var(--green-text)',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},
+              h('polyline',{points:'20 6 9 17 4 12'})
+            )
+          ),
+          h('span', {className:'semaforo-lbl'+(checked[item.id]?' checked':'')}, item.lbl)
+        )
+      )
+    ),
+    h('div', {className:'semaforo-actions'},
+      h('button', {className:'btn btn-ghost', style:{fontSize:12}, onClick:onCancel}, 'Annulla'),
+      h('button', {
+        className:'btn btn-approve',
+        style:{opacity: allOk ? 1 : 0.45, cursor: allOk ? 'pointer' : 'not-allowed'},
+        onClick: allOk ? onConfirm : null,
+        title: allOk ? '' : 'Completa tutti gli 8 punti per approvare'
+      }, '✓ Conferma approvazione')
+    )
+  );
+}
+
 // ── Approvals ──
 function Approvals({client,isAdmin,onUpdateStatus}){
   const [filter,setFilter]=useState('all');
+  const [semaforoFor,setSemaforoFor]=useState(null); // approvalId attivo nel semaforo
   const approvals=client.approvals||[];
   const list=filter==='all'?approvals:approvals.filter(a=>a.stato===filter);
   const counts={pending:approvals.filter(a=>a.stato==='pending').length,approved:approvals.filter(a=>a.stato==='approved').length,revision:approvals.filter(a=>a.stato==='revision').length};
@@ -377,28 +448,39 @@ function Approvals({client,isAdmin,onUpdateStatus}){
     ),
     h('div',null,list.map(a=>{
       const st=STATUS[a.stato]||STATUS.pending;
-      return h('div',{key:a.id,className:'approval-card',style:{borderLeftColor:st.color}},
-        h('div',{className:'approval-body'},
-          h('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}},
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{display:'flex',gap:5,flexWrap:'wrap',marginBottom:6}},
-                h('span',{className:'approval-status',style:{background:st.bg,color:st.color}},st.icon,' ',st.lbl),
-                h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 7px',borderRadius:4}},a.tipo),
-                a.formato&&h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 7px',borderRadius:4}},a.formato)
+      return h('div',{key:a.id},
+        // Semaforo espanso sopra la card se attivo
+        semaforoFor===a.id && h(Semaforo,{
+          approvalId: a.id,
+          onConfirm: ()=>{ onUpdateStatus(a.id,'approved'); setSemaforoFor(null); },
+          onCancel:  ()=>setSemaforoFor(null)
+        }),
+        h('div',{className:'approval-card',style:{borderLeftColor:st.color}},
+          h('div',{className:'approval-body'},
+            h('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}},
+              h('div',{style:{flex:1,minWidth:0}},
+                h('div',{style:{display:'flex',gap:5,flexWrap:'wrap',marginBottom:6}},
+                  h('span',{className:'approval-status',style:{background:st.bg,color:st.color}},st.icon,' ',st.lbl),
+                  h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 7px',borderRadius:4}},a.tipo),
+                  a.formato&&h('span',{className:'pill',style:{background:'var(--bg)',color:'var(--text-3)',fontSize:11,padding:'2px 7px',borderRadius:4}},a.formato),
+                  a.semaforo_ok&&h('span',{className:'semaforo-ok'},'🟢 Semaforo OK')
+                ),
+                h('div',{className:'approval-title'},a.titolo),
+                a.note&&h('div',{className:'approval-note'},a.note)
               ),
-              h('div',{className:'approval-title'},a.titolo),
-              a.note&&h('div',{className:'approval-note'},a.note)
+              a.preview&&h('div',{className:'approval-preview',style:{background:a.preview}})
             ),
-            a.preview&&h('div',{className:'approval-preview',style:{background:a.preview}})
-          ),
-          h('div',{className:'approval-footer'},
-            h('span',{className:'approval-date'},'📅 ',a.data),
-            a.stato==='pending'&&!isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',gap:6}},
-              h('button',{className:'btn-approve',onClick:()=>onUpdateStatus(a.id,'approved')},'✓ Approvo'),
-              h('button',{className:'btn-revision',onClick:()=>onUpdateStatus(a.id,'revision')},'↩ Revisione')
-            ),
-            isAdmin&&a.stato==='revision'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#E65100',fontWeight:600}},'⚠ Revisione richiesta'),
-            a.stato==='approved'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'var(--green-dk)',fontWeight:600}},'✓ Approvato')
+            h('div',{className:'approval-footer'},
+              h('span',{className:'approval-date'},'📅 ',a.data),
+              a.stato==='pending'&&!isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',gap:6}},
+                h('button',{className:'btn-approve',onClick:()=>setSemaforoFor(semaforoFor===a.id?null:a.id)},
+                  semaforoFor===a.id ? '✕ Chiudi semaforo' : '🟢 Avvia Semaforo → Approva'
+                ),
+                h('button',{className:'btn-revision',onClick:()=>onUpdateStatus(a.id,'revision')},'↩ Revisione')
+              ),
+              isAdmin&&a.stato==='revision'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#E65100',fontWeight:600}},'⚠ Revisione richiesta'),
+              a.stato==='approved'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'var(--green-dk)',fontWeight:600}},'✓ Approvato')
+            )
           )
         )
       );
