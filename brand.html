@@ -182,17 +182,29 @@ textarea,input{font-family:var(--font);}
 .btn-revision{padding:5px 14px;border-radius:var(--r);border:var(--bw) solid var(--magenta);background:transparent;color:var(--magenta);font-size:var(--fs-xs);font-weight:600;cursor:pointer;transition:background var(--t-fast);}
 .btn-revision:hover{background:var(--magenta-lt);}
 
-/* ── Moodboard ── */
-.moodboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start;}
-.mood-col{display:flex;flex-direction:column;gap:12px;}
-.mood-item{border-radius:var(--r);overflow:hidden;border:var(--bw) solid var(--border);cursor:pointer;transition:border-color var(--t-fast);}
-.mood-item:hover{border-color:var(--green);}
-.mood-item.selected{border-width:2px;}
-.mood-visual{display:flex;align-items:center;justify-content:center;padding:16px;}
-.mood-info{padding:9px 12px;background:var(--surface);}
-.mood-title{font-size:11px;font-weight:500;color:var(--text);}
-.mood-note{font-size:10px;color:var(--text-3);line-height:1.4;margin-top:2px;}
-.mood-tag{font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;}
+/* ── Moodboard masonry ── */
+.moodboard-masonry{
+  columns:3;column-gap:12px;
+  width:100%;
+}
+.masonry-item{
+  break-inside:avoid;
+  display:block;
+  margin-bottom:12px;
+  border-radius:var(--r);overflow:hidden;
+  border:var(--bw) solid var(--border);
+  cursor:pointer;transition:border-color var(--t-fast);
+  background:var(--surface);
+}
+.masonry-item:hover{border-color:var(--green);}
+.masonry-item.selected{border-width:2px;}
+.masonry-visual{width:100%;display:block;object-fit:cover;}
+.masonry-body{padding:10px 12px;}
+.masonry-title{font-size:var(--fs-sm);font-weight:600;color:var(--text);margin-bottom:3px;}
+.masonry-note{font-size:var(--fs-xs);color:var(--text-2);line-height:1.5;}
+.masonry-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:var(--r-pill);}
+@media(max-width:700px){.moodboard-masonry{columns:2;}}
+@media(max-width:440px){.moodboard-masonry{columns:1;}}
 
 /* ── Portal header ── */
 .portal-logo{width:44px;height:44px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;}
@@ -489,58 +501,79 @@ function Approvals({client,isAdmin,onUpdateStatus}){
 function Moodboard({client,isAdmin}){
   const [sel,setSel]=useState(null);
   const items=client.moodboard||[];
-  const cols=[0,1,2].map(ci=>items.filter((_,i)=>i%3===ci));
 
   if(!items.length) return h('div',null,
     isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
-      h('button',{className:'btn btn-outline',onClick:()=>console.info('[NassaBrand] Aggiungi elemento moodboard — in roadmap step 5'),title:'Prossimamente: upload moodboard',style:{opacity:.6,cursor:'not-allowed'}},'+ Aggiungi elemento (presto)')
+      h('button',{className:'btn btn-outline',style:{opacity:.5,cursor:'not-allowed'},title:'Prossimamente: upload moodboard'},'+ Aggiungi elemento')
     ),
-    h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎭'),h('div',{className:'empty-title'},'Moodboard vuota'),h('div',{className:'empty-sub'},'Aggiungi il primo elemento'))
+    h('div',{className:'empty'},
+      h('div',{className:'empty-icon'},'🎭'),
+      h('div',{className:'empty-title'},'Moodboard vuota'),
+      h('div',{className:'empty-sub'},'Aggiungi il primo elemento dalla barra in alto')
+    )
   );
 
+  // Altezza visiva basata su tipo e item.height (0.5–2.0 — dà varietà masonry)
+  const vh=item=>{
+    if(item.tipo==='text')  return Math.round((item.height||1)*80+60);
+    if(item.tipo==='color') return Math.round((item.height||1)*100+40);
+    return Math.round((item.height||1)*140+40);
+  };
+
   return h('div',null,
-    !isAdmin&&h('div',{style:{padding:'10px 14px',borderRadius:'var(--r)',background:'#fffbeb',border:'0.5px solid #fde68a',fontSize:12,color:'#92400e',marginBottom:16}},
+    !isAdmin&&h('div',{style:{padding:'10px 14px',borderRadius:'var(--r)',background:'#fffbeb',
+      border:'0.5px solid #fde68a',fontSize:12,color:'#92400e',marginBottom:16}},
       '💡 Questa è la direzione creativa del tuo progetto. Clicca su un elemento per lasciare un commento.'
     ),
     isAdmin&&h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:16}},
-      h('button',{className:'btn btn-outline',onClick:()=>console.info('[NassaBrand] Aggiungi elemento moodboard — in roadmap step 5'),title:'Prossimamente: upload moodboard',style:{opacity:.6,cursor:'not-allowed'}},'+ Aggiungi elemento (presto)')
+      h('button',{className:'btn btn-outline',style:{opacity:.5,cursor:'not-allowed'},
+        title:'Prossimamente: upload moodboard'},'+ Aggiungi elemento')
     ),
-    h('div',{className:'moodboard-grid'},
-      cols.map((col,ci)=>h('div',{key:ci,className:'mood-col'},
-        col.map(item=>{
-          const tc=TAG_COLORS[item.tag]||'var(--text-3)';
-          const isSel=sel===item.id;
-          return h('div',{key:item.id,className:'mood-item'+(isSel?' selected':''),
-            style:{borderColor:isSel?tc:'var(--border)'},
-            onClick:()=>setSel(isSel?null:item.id)
-          },
-            h('div',{className:'mood-visual',style:{background:item.color,aspectRatio:'1/'+(item.height||1)}},
-              item.tipo==='text'&&h('p',{style:{margin:0,fontSize:12,color:contrast(item.color),lineHeight:1.5,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
-              item.tipo==='color'&&h('div',{style:{fontSize:13,fontWeight:600,color:contrast(item.color),textAlign:'center'}},item.titolo),
-              item.tipo==='image'&&h('div',{style:{textAlign:'center',opacity:.65}},h('div',{style:{fontSize:24,marginBottom:4}},'🖼'),h('div',{style:{fontSize:10,color:contrast(item.color)}},'Immagine'))
-            ),
-            h('div',{className:'mood-info'},
-              h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}},
-                h('div',{className:'mood-title'},item.titolo),
-                h('span',{className:'mood-tag',style:{background:tc+'18',color:tc}},item.tag)
-              ),
-              item.tipo!=='text'&&h('div',{className:'mood-note'},item.note),
-              isSel&&!isAdmin&&h('div',{style:{marginTop:8}},
-                h('textarea',{rows:2,placeholder:'Lascia un commento...',style:{width:'100%',padding:'6px 8px',fontSize:11,borderRadius:6,border:'0.5px solid var(--border)',background:'var(--bg)',color:'var(--text)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'}}),
-                h('button',{className:'btn btn-primary',style:{marginTop:4,fontSize:11,padding:'4px 12px'}},'Invia commento')
-              ),
-              isSel&&isAdmin&&h('div',{style:{marginTop:8,display:'flex',gap:6}},
-                h('button',{className:'btn btn-ghost',style:{fontSize:11}},'✏ Modifica'),
-                h('button',{className:'btn btn-outline',style:{fontSize:11}},'✕ Rimuovi')
-              )
+    h('div',{className:'moodboard-masonry'},
+      items.map(item=>{
+        const tc=TAG_COLORS[item.tag]||'var(--text-3)';
+        const isSel=sel===item.id;
+        return h('div',{key:item.id,
+          className:'masonry-item'+(isSel?' selected':''),
+          style:{borderColor:isSel?tc:undefined},
+          onClick:()=>setSel(isSel?null:item.id)
+        },
+          // Area visiva — altezza variabile → guida il masonry naturale
+          h('div',{style:{background:item.color,height:vh(item),
+            display:'flex',alignItems:'center',justifyContent:'center',padding:16,overflow:'hidden'}},
+            item.tipo==='text'&&h('p',{style:{margin:0,fontSize:13,color:contrast(item.color),
+              lineHeight:1.6,textAlign:'center',fontStyle:'italic',whiteSpace:'pre-line'}},item.note),
+            item.tipo==='color'&&h('div',{style:{fontSize:14,fontWeight:700,
+              color:contrast(item.color),textAlign:'center'}},item.titolo),
+            item.tipo==='image'&&h('div',{style:{textAlign:'center',opacity:.65}},
+              h('div',{style:{fontSize:32,marginBottom:6}},'🖼')
             )
-          );
-        })
-      ))
+          ),
+          // Info
+          h('div',{className:'masonry-body'},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8,marginBottom:4}},
+              item.tipo!=='text'&&h('div',{className:'masonry-title'},item.titolo),
+              h('span',{className:'masonry-tag',style:{background:tc+'20',color:tc,flexShrink:0}},item.tag)
+            ),
+            item.tipo!=='text'&&item.note&&h('div',{className:'masonry-note'},item.note),
+            isSel&&!isAdmin&&h('div',{style:{marginTop:8}},
+              h('textarea',{rows:2,placeholder:'Lascia un commento...',style:{
+                width:'100%',padding:'6px 8px',fontSize:12,borderRadius:6,
+                border:'0.5px solid var(--border)',background:'var(--surface)',
+                color:'var(--text)',fontFamily:'inherit',resize:'vertical',boxSizing:'border-box'
+              }}),
+              h('button',{className:'btn btn-primary',style:{marginTop:4,fontSize:12,padding:'4px 12px'}},'Invia commento')
+            ),
+            isSel&&isAdmin&&h('div',{style:{marginTop:8,display:'flex',gap:6}},
+              h('button',{className:'btn btn-ghost',style:{fontSize:11}},'✏ Modifica'),
+              h('button',{className:'btn btn-outline',style:{fontSize:11}},'✕ Rimuovi')
+            )
+          )
+        );
+      })
     )
   );
 }
-
 // ── Admin Portal View ── (tab controlled externally by sidebar)
 function AdminPortaleView({client,onUpdateStatus,onAddLogo,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
