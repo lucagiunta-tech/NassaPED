@@ -2948,14 +2948,18 @@ function streamUID(){return'str_'+Date.now().toString(36)+Math.random().toString
 async function streamFetchClients(){
   if(_streamLoaded) return;
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${STREAM_API}?user=${STREAM_USER}`, {
       headers:{'x-nassa-key': STREAM_KEY},
-      credentials:'include'
+      credentials:'include',
+      signal: controller.signal
     });
+    clearTimeout(timeout);
     if(!res.ok) throw new Error('API error '+res.status);
     const data = await res.json();
     const raw = data?.data || data;
-    _streamClients = (raw?.clients || []).map(c => ({
+    const loaded = (raw?.clients || []).map(c => ({
       slug: c.id || c.name?.toLowerCase().replace(/\s+/g,'_'),
       n:    c.name || c.Nome || '',
       c:    c.color || '#888',
@@ -2963,25 +2967,40 @@ async function streamFetchClients(){
       rev:  c.revenue || 0,
       stato: c.status || 'Attivo',
     })).filter(c => c.n);
-    _streamLoaded = true;
+    if(loaded.length > 0) {
+      _streamClients = loaded;
+    } else {
+      // DB vuoto o struttura inattesa — usa clienti NassaTime locali
+      _streamClients = clients.map(c => ({
+        slug: c.id, n: c.label, c: c.color, pkg:'', rev:0, stato:'Attivo'
+      }));
+      console.warn('[Stream] DB vuoto, uso clienti locali');
+    }
   } catch(e) {
-    // Fallback: usa clienti Tweek esistenti
+    // Timeout o errore rete — usa clienti NassaTime locali
     _streamClients = clients.map(c => ({
       slug: c.id, n: c.label, c: c.color, pkg:'', rev:0, stato:'Attivo'
     }));
+    console.warn('[Stream] Fallback a clienti locali:', e.message);
+  } finally {
     _streamLoaded = true;
-    console.warn('[Stream] Fallback a clienti Tweek:', e.message);
   }
 }
 
-/* ── Init ────────────────────────────────────────────── */
+/* ── Init ── */
 async function streamInit(){
   if(!_streamLoaded){
-    document.getElementById('stream-loading').style.display = 'flex';
-    document.getElementById('stream-clients-view').style.display = 'none';
-    document.getElementById('stream-jobs-view').style.display = 'none';
-    await streamFetchClients();
-    document.getElementById('stream-loading').style.display = 'none';
+    const loadEl = document.getElementById('stream-loading');
+    const clientsEl = document.getElementById('stream-clients-view');
+    const jobsEl = document.getElementById('stream-jobs-view');
+    if(loadEl) loadEl.style.display = 'flex';
+    if(clientsEl) clientsEl.style.display = 'none';
+    if(jobsEl) jobsEl.style.display = 'none';
+    try {
+      await streamFetchClients();
+    } finally {
+      if(loadEl) loadEl.style.display = 'none';
+    }
   }
   streamSetTab(_streamTab);
 }
