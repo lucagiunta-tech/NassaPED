@@ -2195,15 +2195,39 @@ function BrandAuditView({ client, onChange, onNext }) {
 // ─── BRAND PORTAL VIEW ────────────────────────────────────────────────────────
 function BrandPortalView({
   client,
+  onChange,
   onNext,
   onPrev
 }) {
   const [sec, setSec] = useState("overview");
+  const [syncMsg, setSyncMsg] = useState("");
   const b = client.brand;
   const pc = b.colors[0]?.hex || G;
-  const b_editable = true; // Admin sempre in modalità edit
+  const b_editable = true;
   const pdcHasTov = client.pdc.tov_regole?.trim();
   const pdcHasClaim = client.pdc.creative_territory?.trim();
+
+  // Sync brand field to NassaBrand brand_data
+  const syncBrandField = async (field, data) => {
+    try {
+      await fetch('/api/brand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-nassa-key': 'NASSA_SECRET_2026' },
+        credentials: 'include',
+        body: JSON.stringify({ clientId: client.id, field, data }),
+      });
+      setSyncMsg("✓ NassaBrand aggiornato");
+      setTimeout(() => setSyncMsg(""), 2500);
+    } catch(e) {
+      console.warn('[BrandPortal] sync failed:', e.message);
+    }
+  };
+
+  // Wrapper: aggiorna state locale + sync su brand_data
+  const changeBrand = (field, value) => {
+    onChange && onChange("brand", field, value);
+    syncBrandField(field, value);
+  };
   const SECS = [{
     id: "overview",
     icon: "◈",
@@ -2443,7 +2467,7 @@ function BrandPortalView({
       value: c.usage || "",
       onChange: e => {
         const updated = b.colors.map((col, j) => j===i ? {...col, usage: e.target.value} : col);
-        onChange("brand", "colors", updated);
+        changeBrand("colors", updated);
       },
       placeholder: "Es. Colore primario. Su sfondo bianco. Mai su verde.",
       rows: 2,
@@ -2808,10 +2832,42 @@ function StrategyView({
 }) {
   const [step, setStep] = useState("mod4a");
   const [savedMsg, setSavedMsg] = useState("");
+  const [syncMsg,  setSyncMsg]  = useState(""); // feedback sync NassaBrand
   const s = client.strategy;
   const c4 = Q4A.filter(q => s.mod4a[q.key]?.trim()).length;
   const c5 = Q5.filter(q => s.mod5[q.key]?.trim()).length;
   const pc = client.brand.colors[0]?.hex || G;
+
+  // ── Sync brand data → NassaBrand (brand_data table) ──
+  const syncToBrand = async (m5) => {
+    try {
+      const brandUpdate = {};
+      if (m5.archetipo?.trim()) brandUpdate.archetype = m5.archetipo.trim();
+      if (m5.claim?.trim())     brandUpdate.claim     = m5.claim.trim();
+      if (m5.tov_parole_si?.trim()) {
+        brandUpdate.tov = "Parole SÌ: " + m5.tov_parole_si.trim() +
+          (m5.tov_parole_no?.trim() ? "\nParole NO: " + m5.tov_parole_no.trim() : "");
+      }
+      if (!Object.keys(brandUpdate).length) return;
+
+      // Scrive ogni campo in brand_data via /api/brand
+      await Promise.all(Object.entries(brandUpdate).map(([field, data]) =>
+        fetch('/api/brand', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-nassa-key': 'NASSA_SECRET_2026' },
+          credentials: 'include',
+          body: JSON.stringify({ clientId: client.id, field, data }),
+        })
+      ));
+      setSyncMsg("✓ NassaBrand sincronizzato");
+      setTimeout(() => setSyncMsg(""), 3000);
+    } catch(e) {
+      console.warn('[Strategy] Sync to brand failed:', e.message);
+      setSyncMsg("⚠ Sync NassaBrand fallita");
+      setTimeout(() => setSyncMsg(""), 4000);
+    }
+  };
+
   const save = mod => {
     onChange("strategy", mod, s[mod]);
     setSavedMsg("Salvato ✓");
@@ -2832,6 +2888,8 @@ function StrategyView({
         "Parole SÌ: " + m5.tov_parole_si.trim() +
         (m5.tov_parole_no?.trim() ? "\nParole NO: " + m5.tov_parole_no.trim() : "")
       );
+      // Sync anche su NassaBrand (brand_data su Supabase)
+      syncToBrand(m5);
       setSavedMsg("Completato ✓ — Brand Portal aggiornato");
     } else {
       setSavedMsg("Completato ✓");
@@ -3880,6 +3938,7 @@ function ClienteScheda({
     });
     if (mod === "brand") return /*#__PURE__*/React.createElement(BrandPortalView, {
       client: c,
+      onChange: updateClient,
       onNext: () => setMod("strategy"),
       onPrev: () => setMod("pdc")
     });
