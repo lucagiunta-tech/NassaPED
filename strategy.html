@@ -427,6 +427,7 @@ const INIT_CLIENTS = [{
       pct: 10
     }]
   },
+  audit: emptyAudit(),
   pdm: emptyPDM(),
   pdc: emptyPDC(),
   strategy: {
@@ -1634,6 +1635,46 @@ function PDCView({
 }
 
 // ─── BRAND PORTAL VIEW ───────────────────────────────────────────────────────
+// ─── BRAND AUDIT VIEW ─────────────────────────────────────────────────────────
+function BrandAuditView({ client, onChange, onNext }) {
+  const [savedMsg, setSavedMsg] = React.useState("");
+  const a = client.audit || { brand_attuale:"", percezione:"", brand_gap:"", benchmark:"", note:"" };
+  const h = React.createElement;
+  const upd = (key, val) => onChange("audit_field", key, val);
+  const save = () => { onChange("audit_obj", null, a); setSavedMsg("Salvato ✓"); setTimeout(()=>setSavedMsg(""),2000); };
+  const filled = Object.values(a).filter(v=>v?.trim()).length;
+  const SEZIONI = [
+    {key:"brand_attuale",lbl:"Brand esistente",hint:"Logo, colori, tono, presenza online, materiali attuali.",ph:"Es. Logo anni '90, colori terracotta e bianco, tono istituzionale, sito non aggiornato..."},
+    {key:"percezione",lbl:"Come è percepito ora",hint:"Come lo vedono clienti, concorrenti e mercato. Percezione esterna reale.",ph:"Es. 'Affidabile ma un po' vecchio', forte nel passaparola locale, poca presenza digitale..."},
+    {key:"brand_gap",lbl:"Brand gap",hint:"Differenza tra come è percepito oggi e come vorrebbe essere percepito dopo il lavoro strategico.",ph:"Es. Da 'azienda locale artigianale' a 'brand territoriale premium con identità moderna'..."},
+    {key:"benchmark",lbl:"Benchmark — brand di riferimento",hint:"2-3 brand che il cliente ammira o vuole avvicinarsi per stile, tono o posizionamento.",ph:"Es. Slow Food (valori), Mulino Bianco (calore), Eataly (territorio + premium)..."},
+    {key:"note",lbl:"Note audit",hint:"Qualsiasi altra osservazione emersa durante la fase di analisi iniziale.",ph:"Es. Il cliente ha già un logo ridisegnato non ancora pubblicato..."},
+  ];
+  const sidebar = h("div",{style:{padding:"8px 0"}},
+    h("div",{style:{padding:"8px 14px 4px",fontSize:11,fontWeight:600,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:".06em",opacity:.65}},"Sezioni"),
+    SEZIONI.map(s=>{
+      const done=a[s.key]?.trim();
+      return h("div",{key:s.key,style:{display:"flex",alignItems:"center",gap:10,padding:"9px 14px",fontSize:14,color:"var(--text-secondary)"}},
+        h("span",{style:{fontSize:12,color:done?"var(--green-dk,#00cc00)":"var(--text-muted)",fontWeight:700}},done?"✓":"○"),
+        h("span",null,s.lbl)
+      );
+    }),
+    h("div",{style:{margin:"12px 14px 0",height:4,background:"var(--border-lt)",borderRadius:99,overflow:"hidden"}},
+      h("div",{style:{height:"100%",width:Math.round(filled/5*100)+"%",background:filled===5?"var(--green-dk,#00cc00)":AMB,borderRadius:99,transition:"width .3s"}})
+    ),
+    h("p",{style:{fontSize:11,color:"var(--text-muted)",padding:"4px 14px"}},filled+"/5 sezioni"),
+    h("div",{style:{borderTop:"0.5px solid var(--border-lt)",marginTop:8,padding:"8px 14px 0"}},
+      h("button",{onClick:onNext,style:{width:"100%",padding:"8px",borderRadius:6,border:"none",background:M,color:"#fff",fontSize:12,cursor:"pointer",fontWeight:600}},"Vai a PDM →")
+    )
+  );
+  return h(SidebarLayout,{sidebar},
+    h(ActionBar,{title:"Brand Audit",sub:"Mod. 3 — Analisi brand esistente",savedMsg,onSave:save}),
+    h(Alert,{type:"info"},"Completa l'audit prima del Piano di Marketing. Alimenta il PDM (analisi esterna) e la strategia creativa."),
+    SEZIONI.map(s=>h(Field,{key:s.key,label:s.lbl,hint:s.hint,placeholder:s.ph,value:a[s.key]||"",onChange:v=>upd(s.key,v),rows:4}))
+  );
+}
+
+// ─── BRAND PORTAL VIEW ────────────────────────────────────────────────────────
 function BrandPortalView({
   client,
   onNext,
@@ -2975,6 +3016,11 @@ const MOD_LIST = [{
   icon: "◈",
   phase: null
 }, {
+  id: "audit",
+  lbl: "Brand Audit",
+  icon: "🔍",
+  phase: "Fase 0 — Audit"
+}, {
   id: "pdm",
   lbl: "Piano di Marketing",
   icon: "📊",
@@ -3058,6 +3104,15 @@ function ClienteScheda({
             [key]: value
           }
         };
+      }
+      if (type === "audit_field") {
+        return {
+          ...cl,
+          audit: { ...(cl.audit||{}), [key]: value }
+        };
+      }
+      if (type === "audit_obj") {
+        return { ...cl, audit: value };
       }
       if (type === "brand_field") {
         const { key: fkey, val } = value;
@@ -3210,6 +3265,11 @@ function ClienteScheda({
     if (mod === "overview") return /*#__PURE__*/React.createElement(OverviewView, {
       client: c,
       onNavigate: setMod
+    });
+    if (mod === "audit") return /*#__PURE__*/React.createElement(BrandAuditView, {
+      client: c,
+      onChange: updateClient,
+      onNext: () => setMod("pdm")
     });
     if (mod === "pdm") return /*#__PURE__*/React.createElement(PDMView, {
       client: c,
@@ -3476,6 +3536,7 @@ function Dashboard({ clients, onOpen, onAdd }) {
               onAdd({id,name,pkg:newPkg,phase:"Fase 1 — Analisi",manager:newMgr,
                 since:new Date().toLocaleDateString("it-IT",{month:"short",year:"numeric"}),
                 color:"#1A8C3F",
+                audit:emptyAudit(),
                 brand:{claim:"",archetype:"",tov:"",colors:[],fonts:[],logos:[],images:[],pillars:[]},
                 pdm:emptyPDM(),pdc:emptyPDC(),
                 strategy:{mod4a:{done:false,target_primario:"",problema_reale:"",differenziatore:"",
