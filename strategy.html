@@ -82,6 +82,7 @@ textarea,input,select{font-family:var(--font);}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--r-pill);}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 .ns-swatch-hover{transition:transform .15s;cursor:pointer;}
 .ns-swatch-hover:hover{transform:translateY(-2px);}
@@ -3993,28 +3994,119 @@ const SVG = {
   ),
 };
 
+// ── Supabase API helpers ──────────────────────────────────────────────────────
+const STRATEGY_API  = '/api/project';
+const STRATEGY_KEY  = 'NASSA_SECRET_2026';
+const STRATEGY_USER = 'nassa_strategy'; // chiave separata da NassaPED
+
+async function strategyLoad() {
+  const r = await fetch(`${STRATEGY_API}?user=${STRATEGY_USER}`, {
+    headers: { 'x-nassa-key': STRATEGY_KEY },
+    credentials: 'include',
+  });
+  if (!r.ok) throw new Error('Load failed: ' + r.status);
+  const { data } = await r.json();
+  return data?.clients || null;
+}
+
+async function strategySave(clients) {
+  const r = await fetch(STRATEGY_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-nassa-key': STRATEGY_KEY },
+    credentials: 'include',
+    body: JSON.stringify({ user: STRATEGY_USER, data: { clients } }),
+  });
+  if (!r.ok) throw new Error('Save failed: ' + r.status);
+}
+
+// ── NassaStrategyHub ──────────────────────────────────────────────────────────
 function NassaStrategyHub(){
-  const [view, setView] = useState("dashboard");
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [clients, setClients] = useState(INIT_CLIENTS);
+  const [view,          setView]          = useState("dashboard");
+  const [selectedClient,setSelectedClient]= useState(null);
+  const [clients,       setClients]       = useState([]);
+  const [loadState,     setLoadState]     = useState("loading"); // loading | ok | error
+  const [saveState,     setSaveState]     = useState("");        // "" | "saving" | "saved" | "error"
+  const saveTimer = React.useRef(null);
+  const h = React.createElement;
+
+  // ── Load da Supabase al mount ──
+  React.useEffect(() => {
+    strategyLoad()
+      .then(loaded => {
+        if (loaded && loaded.length > 0) {
+          setClients(loaded);
+        } else {
+          // Primo accesso — usa i clienti demo
+          setClients(INIT_CLIENTS);
+        }
+        setLoadState("ok");
+      })
+      .catch(err => {
+        console.warn('[NassaStrategy] Load error, using demo data:', err.message);
+        setClients(INIT_CLIENTS);
+        setLoadState("ok"); // continua con dati locali
+      });
+  }, []);
+
+  // ── Salvataggio debounced (1.5s dopo l'ultima modifica) ──
+  const saveClients = React.useCallback((newClients) => {
+    clearTimeout(saveTimer.current);
+    setSaveState("saving");
+    saveTimer.current = setTimeout(() => {
+      strategySave(newClients)
+        .then(() => {
+          setSaveState("saved");
+          setTimeout(() => setSaveState(""), 2000);
+        })
+        .catch(err => {
+          console.error('[NassaStrategy] Save error:', err.message);
+          setSaveState("error");
+          setTimeout(() => setSaveState(""), 4000);
+        });
+    }, 1500);
+  }, []);
+
+  // Wrapper setClients che triggera anche il save
+  const setClientsAndSave = React.useCallback((updater) => {
+    setClients(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      saveClients(next);
+      return next;
+    });
+  }, [saveClients]);
 
   const openClient = c => { setSelectedClient(c); setView("cliente"); };
   const goBack = () => { setSelectedClient(null); setView("dashboard"); };
-  const h = React.createElement;
+
+  // Indicatore save nella topbar
+  const saveIndicator = saveState === "saving"
+    ? h("span", {style:{fontSize:11,color:"var(--text-muted)",display:"flex",alignItems:"center",gap:4}},
+        h("span", {style:{display:"inline-block",animation:"spin 1s linear infinite"}}, "⟳"), " Salvataggio…")
+    : saveState === "saved"
+    ? h("span", {style:{fontSize:11,color:"var(--green-dk,#00cc00)",fontWeight:600}}, "✓ Salvato")
+    : saveState === "error"
+    ? h("span", {style:{fontSize:11,color:"#ef4444",fontWeight:600}}, "⚠ Errore salvataggio")
+    : null;
+
+  // Loading screen
+  if (loadState === "loading") return h("div", {
+    style:{display:"flex",alignItems:"center",justifyContent:"center",
+           height:"100vh",flexDirection:"column",gap:12,background:"var(--surface-0)"}
+  },
+    h("div", {style:{fontSize:28,animation:"spin 1s linear infinite"}}, "⟳"),
+    h("p", {style:{fontSize:14,color:"var(--text-muted)"}}, "Caricamento NassaStrategy…")
+  );
 
   return h("div", {style:{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",background:"var(--surface-0)"}},
-    // ── Topbar (56px, NassaPED aligned) ──
+    // ── Topbar ──
     h("div", {className:"ns-topbar"},
-      // Brand mark
       h("div", {className:"ns-topbar-brand"},
         h("div", {className:"ns-brand-mark"}, "NS")
       ),
-      // Title
       h("div", {className:"ns-topbar-title"},
         h("span", {className:"name"}, "NassaStrategy"),
         h("span", {className:"sub"}, "Staffetta Nassa v3")
       ),
-      // Nav tabs
       h("div", {className:"ns-topbar-nav"},
         h("button", {
           className:"ns-nav-tab"+(view==="dashboard"?" active":""),
@@ -4030,16 +4122,13 @@ function NassaStrategyHub(){
           selectedClient && h("span",{className:"tab-chip"}, selectedClient.name.split(" ")[0])
         )
       ),
-      // Client indicator when selected
       selectedClient && h("div", {className:"ns-topbar-client"},
         h("div", {className:"ns-client-dot", style:{background:selectedClient.color}}),
         h("span", {className:"ns-client-name"}, selectedClient.name),
-        h("button", {className:"ns-close-btn", onClick:goBack},
-          SVG.chevLeft, " Chiudi"
-        )
+        h("button", {className:"ns-close-btn", onClick:goBack}, SVG.chevLeft, " Chiudi")
       ),
-      // Right actions
       h("div", {className:"ns-topbar-right"},
+        saveIndicator,
         h("button", {className:"ns-icon-btn", onClick:toggleTheme, title:"Tema"}, SVG.moon),
         h("a", {href:"/", className:"hub-link"}, SVG.chevLeft, " Hub")
       )
@@ -4047,12 +4136,16 @@ function NassaStrategyHub(){
     // ── Content ──
     h("div", {style:{flex:1,overflow:"hidden"}},
       view==="dashboard" && h("div", {style:{height:"100%",overflowY:"auto"}},
-        h(Dashboard, {clients, onOpen: openClient, onAdd: c=>{setClients(prev=>[...prev,c]);}})
+        h(Dashboard, {
+          clients,
+          onOpen: openClient,
+          onAdd: c => setClientsAndSave(prev => [...prev, c])
+        })
       ),
       view==="cliente" && selectedClient && h(ClienteScheda, {
         client: selectedClient,
         clients,
-        setClients,
+        setClients: setClientsAndSave,
         onBack: goBack
       })
     )
