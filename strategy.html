@@ -586,7 +586,7 @@ function Card({
     style: {
       background: "var(--surface-2)",
       border: "0.5px solid var(--border)",
-      borderRadius: 12,
+      borderRadius: 8,
       padding: "1.25rem",
       ...style
     }
@@ -683,7 +683,7 @@ function ActionBar({
     onClick: onSave,
     style: {
       padding: "5px 13px",
-      borderRadius: 6,
+      borderRadius: 8,
       border: "none",
       background: G,
       color: "#fff",
@@ -695,7 +695,7 @@ function ActionBar({
     onClick: onNext,
     style: {
       padding: "5px 13px",
-      borderRadius: 6,
+      borderRadius: 8,
       border: `1px solid ${M}`,
       background: "transparent",
       color: M,
@@ -762,7 +762,7 @@ function SidebarLayout({
     style: {
       width: 230,
       flexShrink: 0,
-      background: "var(--surface-1)",
+      background: "var(--surface)",
       borderRight: "0.5px solid var(--border)",
       display: "flex",
       flexDirection: "column",
@@ -898,19 +898,19 @@ function OverviewView({
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "repeat(2,1fr)",
-      gap: 10,
-      marginBottom: "1.25rem"
+      gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+      gap: 12,
+      marginBottom: "1.5rem"
     }
   }, modules.map(m => /*#__PURE__*/React.createElement("div", {
     key: m.id,
     onClick: () => onNavigate(m.id),
     style: {
-      background: "var(--surface-1)",
-      borderRadius: 10,
-      padding: "0.9rem",
+      background: "var(--surface)",
+      borderRadius: 8,
+      padding: "14px 16px",
       cursor: "pointer",
-      transition: "border 0.15s",
+      transition: "border-color .1s,box-shadow .1s",
       border: "0.5px solid var(--border)"
     },
     className: "ns-nav-group-btn"
@@ -933,7 +933,7 @@ function OverviewView({
   }), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "5px 0 0",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, Math.round(m.n / m.tot * 100), "% · clicca per aprire")))), /*#__PURE__*/React.createElement(Card, {
@@ -960,7 +960,7 @@ function OverviewView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -975,7 +975,7 @@ function OverviewView({
   }, v))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -1037,7 +1037,7 @@ function PDMView({
     style: {
       width: 30,
       height: 30,
-      borderRadius: 6,
+      borderRadius: 8,
       background: B,
       display: "flex",
       alignItems: "center",
@@ -1059,7 +1059,7 @@ function PDMView({
   }, "Piano di Marketing"), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 6px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, client.name), /*#__PURE__*/React.createElement(ProgressBar, {
@@ -1068,7 +1068,7 @@ function PDMView({
   }), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "4px 0 0",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, filled, "/", PDM_SEZIONI.length, " sezioni")), /*#__PURE__*/React.createElement("div", {
@@ -1120,7 +1120,7 @@ function PDMView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: `1px solid ${M}`,
       background: "transparent",
       color: M,
@@ -1155,7 +1155,7 @@ function PDMView({
     onClick: () => setActiveSec(PDM_SEZIONI[_pdmIdx - 1].id),
     style: {
       padding: "5px 12px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
       background: "transparent",
       color: "var(--text-secondary)",
@@ -1166,7 +1166,7 @@ function PDMView({
     onClick: () => setActiveSec(PDM_SEZIONI[_pdmIdx + 1].id),
     style: {
       padding: "5px 12px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "none",
       background: G,
       color: "#fff",
@@ -1212,7 +1212,7 @@ function PDCView({
     style: {
       width: 30,
       height: 30,
-      borderRadius: 6,
+      borderRadius: 8,
       background: T,
       display: "flex",
       alignItems: "center",
@@ -1234,7 +1234,7 @@ function PDCView({
   }, "Piano di Comunicazione"), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 6px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, client.name), /*#__PURE__*/React.createElement(ProgressBar, {
@@ -1243,7 +1243,7 @@ function PDCView({
   }), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "4px 0 0",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, filled, "/", PDC_SEZIONI.length, " sezioni")), /*#__PURE__*/React.createElement("div", {
@@ -1298,7 +1298,7 @@ function PDCView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
       background: "transparent",
       color: "var(--text-secondary)",
@@ -1310,7 +1310,7 @@ function PDCView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: `1px solid ${M}`,
       background: "transparent",
       color: M,
@@ -1339,7 +1339,7 @@ function PDCView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: B,
       textTransform: "uppercase",
       letterSpacing: "0.05em",
@@ -1361,7 +1361,7 @@ function PDCView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: T,
       textTransform: "uppercase",
       letterSpacing: "0.05em",
@@ -1391,7 +1391,7 @@ function PDCView({
     onClick: () => setActiveSec(PDC_SEZIONI[_pdcIdx - 1].id),
     style: {
       padding: "5px 12px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
       background: "transparent",
       color: "var(--text-secondary)",
@@ -1402,7 +1402,7 @@ function PDCView({
     onClick: () => setActiveSec(PDC_SEZIONI[_pdcIdx + 1].id),
     style: {
       padding: "5px 12px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "none",
       background: G,
       color: "#fff",
@@ -1458,7 +1458,7 @@ function BrandPortalView({
     style: {
       width: 30,
       height: 30,
-      borderRadius: 6,
+      borderRadius: 8,
       background: pc,
       display: "flex",
       alignItems: "center",
@@ -1507,7 +1507,7 @@ function BrandPortalView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
       background: "transparent",
       color: "var(--text-secondary)",
@@ -1519,7 +1519,7 @@ function BrandPortalView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: `1px solid ${M}`,
       background: "transparent",
       color: M,
@@ -1559,7 +1559,7 @@ function BrandPortalView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -1581,9 +1581,9 @@ function BrandPortalView({
     key: l,
     onClick: () => setSec(id),
     style: {
-      background: "var(--surface-1)",
+      background: "var(--surface)",
       borderRadius: 8,
-      padding: "0.75rem",
+      padding: "12px 14px",
       cursor: "pointer",
       transition: "border 0.1s",
       border: "0.5px solid transparent"
@@ -1621,7 +1621,7 @@ function BrandPortalView({
         } catch (e) {}
       },
       style: {
-        borderRadius: 10,
+        borderRadius: 8,
         overflow: "hidden",
         border: "1px solid var(--border)",
         cursor: "pointer",
@@ -1694,7 +1694,7 @@ function BrandPortalView({
   }, f.role, " · w", f.weight)))), /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -1723,7 +1723,7 @@ function BrandPortalView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: T,
       textTransform: "uppercase",
       letterSpacing: "0.05em",
@@ -1789,7 +1789,7 @@ function BrandPortalView({
   }, l.name), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 7px",
-      fontSize: 10,
+      fontSize: 11,
       color: l.variant === "bianco" ? "#666" : "var(--text-muted)"
     }
   }, l.format, " · ", l.variant), /*#__PURE__*/React.createElement("button", {
@@ -1849,7 +1849,7 @@ function BrandPortalView({
   }, img.tag)))), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 166,
-      borderRadius: 12,
+      borderRadius: 8,
       border: "1.5px dashed var(--border-strong)",
       display: "flex",
       flexDirection: "column",
@@ -2063,7 +2063,7 @@ function StrategyView({
     style: {
       width: 30,
       height: 30,
-      borderRadius: 6,
+      borderRadius: 8,
       background: M,
       display: "flex",
       alignItems: "center",
@@ -2085,7 +2085,7 @@ function StrategyView({
   }, "Strategy Builder"), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: 0,
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, client.name)), /*#__PURE__*/React.createElement("nav", {
@@ -2130,13 +2130,13 @@ function StrategyView({
   }, st.lbl)), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 0 12px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, st.sub), st.n !== null && /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "1px 0 0 12px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, st.n, "/", st.tot, " campi")))), /*#__PURE__*/React.createElement("div", {
@@ -2152,7 +2152,7 @@ function StrategyView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
       background: "transparent",
       color: "var(--text-secondary)",
@@ -2164,7 +2164,7 @@ function StrategyView({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: `1px solid ${M}`,
       background: "transparent",
       color: M,
@@ -2181,8 +2181,8 @@ function StrategyView({
       padding: "8px 11px",
       fontSize: 13,
       color: "var(--text-primary)",
-      background: "var(--surface-1)",
-      border: "0.5px solid var(--border-strong)",
+      background: "var(--surface)",
+      border: "0.5px solid var(--border)",
       borderRadius: 8,
       fontFamily: "var(--font-sans)",
       outline: "none",
@@ -2253,7 +2253,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: B,
       textTransform: "uppercase",
       letterSpacing: "0.05em",
@@ -2283,7 +2283,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -2310,7 +2310,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: T,
       textTransform: "uppercase",
       letterSpacing: "0.05em",
@@ -2372,7 +2372,7 @@ function StrategyView({
   }), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "5px 0 0",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, m.n, "/", m.tot, " · clicca per modificare")))), s.mod5.claim || s.mod5.promessa ? /*#__PURE__*/React.createElement(Card, {
@@ -2383,7 +2383,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 12px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -2395,7 +2395,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "CLAIM"), /*#__PURE__*/React.createElement("p", {
@@ -2412,7 +2412,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "PAYOFF"), /*#__PURE__*/React.createElement("p", {
@@ -2429,7 +2429,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "PROMESSA"), /*#__PURE__*/React.createElement("p", {
@@ -2445,7 +2445,7 @@ function StrategyView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "ARCHETIPO"), /*#__PURE__*/React.createElement(Pill, {
@@ -2462,7 +2462,7 @@ function StrategyView({
   }, s.mod5.tov_parole_si && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: G,
       fontWeight: 500
     }
@@ -2476,7 +2476,7 @@ function StrategyView({
   }, s.mod5.tov_parole_si)), s.mod5.tov_parole_no && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 4px",
-      fontSize: 10,
+      fontSize: 11,
       color: M,
       fontWeight: 500
     }
@@ -2491,7 +2491,7 @@ function StrategyView({
     style: {
       padding: "2rem",
       textAlign: "center",
-      borderRadius: 12,
+      borderRadius: 8,
       border: "1.5px dashed var(--border-strong)",
       color: "var(--text-muted)",
       marginBottom: "1.25rem"
@@ -2505,7 +2505,7 @@ function StrategyView({
     onClick: () => setStep("mod4a"),
     style: {
       padding: "5px 14px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: `1px solid ${G}`,
       background: "transparent",
       color: G,
@@ -2561,7 +2561,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 12px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -2597,7 +2597,7 @@ function OutputView({
   }, m.n, "/", m.tot, m.n === m.tot ? " ✓" : ""), /*#__PURE__*/React.createElement("button", {
     onClick: () => onNavigate(m.id),
     style: {
-      fontSize: 10,
+      fontSize: 11,
       padding: "3px 8px",
       borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
@@ -2613,7 +2613,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 12px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       textTransform: "uppercase",
       letterSpacing: "0.05em"
@@ -2625,7 +2625,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "CLAIM"), /*#__PURE__*/React.createElement("p", {
@@ -2642,7 +2642,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "PAYOFF"), /*#__PURE__*/React.createElement("p", {
@@ -2659,7 +2659,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "PROMESSA"), /*#__PURE__*/React.createElement("p", {
@@ -2675,7 +2675,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "FRASE GUIDA"), /*#__PURE__*/React.createElement("p", {
@@ -2692,7 +2692,7 @@ function OutputView({
   }, /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "0 0 2px",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, "CREATIVE TERRITORY (dal PDC)"), /*#__PURE__*/React.createElement("p", {
@@ -2798,6 +2798,27 @@ function ClienteScheda({
           }
         };
       }
+      if (type === "brand") {
+        return {
+          ...cl,
+          brand: {
+            ...cl.brand,
+            [key]: value
+          }
+        };
+      }
+      if (type === "brand_field") {
+        const { key: fkey, val } = value;
+        return {
+          ...cl,
+          brand: {
+            ...cl.brand,
+            [key]: Array.isArray(cl.brand[key])
+              ? cl.brand[key].map((item, i) => i === fkey ? val : item)
+              : val
+          }
+        };
+      }
       return cl;
     }));
   };
@@ -2825,7 +2846,7 @@ function ClienteScheda({
     style: {
       width: 230,
       flexShrink: 0,
-      background: "var(--surface-1)",
+      background: "var(--surface)",
       borderRight: "0.5px solid var(--border)",
       display: "flex",
       flexDirection: "column",
@@ -2867,7 +2888,7 @@ function ClienteScheda({
   }, c.pkg), /*#__PURE__*/React.createElement("p", {
     style: {
       margin: "5px 0 0",
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)"
     }
   }, c.phase)), /*#__PURE__*/React.createElement("nav", {
@@ -2922,7 +2943,7 @@ function ClienteScheda({
     style: {
       width: "100%",
       padding: "5px 10px",
-      borderRadius: 5,
+      borderRadius: 4,
       border: "0.5px solid var(--border-strong)",
       background: "transparent",
       color: "var(--text-secondary)",
@@ -3047,14 +3068,14 @@ function Dashboard({
     style: {
       fontSize: 12,
       padding: "6px 12px",
-      borderRadius: 6,
+      borderRadius: 8,
       width: 180
     }
   }), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAdd(true),
     style: {
       padding: "6px 14px",
-      borderRadius: 6,
+      borderRadius: 8,
       border: "none",
       background: G,
       color: "#fff",
@@ -3148,7 +3169,7 @@ function Dashboard({
       style: {
         background: "var(--surface-2)",
         border: "0.5px solid var(--border)",
-        borderRadius: 12,
+        borderRadius: 8,
         padding: "1rem 1.25rem",
         display: "flex",
         alignItems: "center",
@@ -3180,7 +3201,7 @@ function Dashboard({
     }, /*#__PURE__*/React.createElement("span", {
       style: {
         color: contrast(c.color),
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: 700
       }
     }, c.name.charAt(0))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
@@ -3242,7 +3263,7 @@ function Dashboard({
       }
     })), /*#__PURE__*/React.createElement("span", {
       style: {
-        fontSize: 10,
+        fontSize: 11,
         color: n === tot ? G : n > 0 ? AMB : "var(--text-muted)"
       }
     }, n, "/", tot)))))), /*#__PURE__*/React.createElement("div", {
@@ -3299,7 +3320,7 @@ function NassaGestionale() {
     style: {
       width: 26,
       height: 26,
-      borderRadius: 6,
+      borderRadius: 8,
       background: G,
       display: "flex",
       alignItems: "center",
@@ -3319,7 +3340,7 @@ function NassaGestionale() {
     }
   }, "Nassa Studio"), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 10,
+      fontSize: 11,
       color: "var(--text-muted)",
       borderLeft: "0.5px solid var(--border)",
       paddingLeft: 8
@@ -3338,7 +3359,7 @@ function NassaGestionale() {
     },
     style: {
       padding: "5px 12px",
-      borderRadius: 6,
+      borderRadius: 8,
       border: "none",
       cursor: t.id === "cliente" && !selectedClient ? "not-allowed" : "pointer",
       fontSize: 12,
@@ -3350,7 +3371,7 @@ function NassaGestionale() {
   }, t.lbl, t.id === "cliente" && selectedClient && /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: 5,
-      fontSize: 10,
+      fontSize: 11,
       padding: "1px 5px",
       borderRadius: 8,
       background: G + "20",
