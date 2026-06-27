@@ -2004,6 +2004,20 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor();closeDayDetail();}});
 document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 
+/* ── Stream vars — hoisted prima di setView('stream') ── */
+var stream_v1 = {};
+var _streamClients = [];
+var _streamLoaded  = false;
+var _streamTab     = 'clients';
+var _streamCurrentJobId = null;
+var _streamGroupCollapsed = {};
+function streamLoad(){
+  try{const raw=localStorage.getItem(SK);if(raw){const p=JSON.parse(raw);stream_v1=p.stream_v1||{};}}catch(e){}
+}
+function streamPersist(){
+  try{const raw=localStorage.getItem(SK);const p=raw?JSON.parse(raw):{};p.stream_v1=stream_v1;localStorage.setItem(SK,JSON.stringify(p));flashSave();}catch(e){}
+}
+
 renderLegend();renderBottom();initTeamFilter();setView('stream');
 tvLoad();
 streamLoad();
@@ -2920,13 +2934,6 @@ async function initFeedLayer(){
 /* ══ END FEED NASSAPED ═══════════════════════════════════ */
 
 
-var stream_v1 = {};       // { [jobId]: Job }
-var _streamClients = [];  // clienti da NassaPED
-var _streamLoaded  = false;
-var _streamTab     = 'clients'; // 'clients' | 'jobs'
-var _streamCurrentJobId = null;
-var _streamGroupCollapsed = {}; // { clientSlug: bool }
-
 const STREAM_STATI = {
   inplay:    { l:'In Play',   cls:'inplay'    },
   completed: { l:'Completed', cls:'completed' },
@@ -2936,12 +2943,7 @@ const STREAM_STATI = {
 const STREAM_EMOJIS = ['🚀','📋','🎯','⚡','🔥','💡','✨','📌','🎨','📊','🏆','💼'];
 
 /* ── Storage ─────────────────────────────────────────── */
-function streamLoad(){
-  try{const raw=localStorage.getItem(SK);if(raw){const p=JSON.parse(raw);stream_v1=p.stream_v1||{};}}catch(e){}
-}
-function streamPersist(){
-  try{const raw=localStorage.getItem(SK);const p=raw?JSON.parse(raw):{};p.stream_v1=stream_v1;localStorage.setItem(SK,JSON.stringify(p));flashSave();}catch(e){}
-}
+
 function streamUID(){return'str_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 
 /* ── Carica clienti da NassaPED ──────────────────────── */
