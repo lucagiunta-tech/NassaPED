@@ -703,6 +703,8 @@ function NassaBrand(){
     updateBrand(clientId,b=>({...b,logos:[...(b.logos||[]),logo]}));
   },[updateBrand]);
 
+  const selectClient=(c,v='assets')=>{setSelected(c);setView('portal');setTab(v);setSidebarExp(true);};
+
   if(loading)return h('div',{className:'app'},h('div',{className:'loading'},'Caricamento NassaBrand…'));
   if(error)return h('div',{className:'app'},h('div',{className:'loading'},error));
   if(pub&&selected)return h(PortaleCliente,{client:selected,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)});
