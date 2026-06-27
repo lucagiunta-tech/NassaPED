@@ -280,10 +280,14 @@ async function api(path,opts={}){
 }
 
 // ── STATUS ──
+// ── Semaforo CSS (già presente) ──
+
+// ─── STATUS aggiornato con 'scheduled' ────────────────────────────────────────
 const STATUS={
-  pending: {lbl:'In attesa', color:'#C2185B', bg:'#FCE4EC', icon:'⏳'},
-  approved:{lbl:'Approvato', color:'#1A8C3F', bg:'#E8F5E9', icon:'✓'},
-  revision:{lbl:'Revisione', color:'#E65100', bg:'#FFF3E0', icon:'↩'},
+  pending:  {lbl:'In attesa',   color:'#C2185B', bg:'#FCE4EC', icon:'⏳'},
+  approved: {lbl:'Approvato',   color:'#1A8C3F', bg:'#E8F5E9', icon:'✓'},
+  revision: {lbl:'Revisione',   color:'#E65100', bg:'#FFF3E0', icon:'↩'},
+  scheduled:{lbl:'Programmato', color:'#185FA5', bg:'#E8F0FB', icon:'📅'},
 };
 const TAG_COLORS={Mood:'#534AB7',Palette:'#C25B2A',Foto:'#0F6E56',Copy:'#C2185B',Tipo:'#185FA5',Strategy:'#6B1A2A',ToV:'#854F0B'};
 
@@ -493,14 +497,44 @@ function Approvals({client,isAdmin,onUpdateStatus}){
             ),
             h('div',{className:'approval-footer'},
               h('span',{className:'approval-date'},'📅 ',a.data),
+              // ── Step 15: stato 'scheduled' con data/piattaforma ──
+              a.stato==='approved'&&isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
+                h('span',{style:{fontSize:12,color:'var(--green-dk)',fontWeight:600}},'✓ Approvato'),
+                h('button',{
+                  className:'btn btn-ghost',
+                  style:{fontSize:11,padding:'3px 10px',borderColor:'#185FA5',color:'#185FA5'},
+                  onClick:()=>onUpdateStatus(a.id,'scheduled')
+                },'📅 Segna come programmato')
+              ),
+              a.stato==='scheduled'&&h('div',{style:{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}},
+                h('span',{className:'approval-status',style:{background:'#E8F0FB',color:'#185FA5',fontSize:11}},'📅 Programmato'),
+                isAdmin&&h('input',{
+                  type:'date',
+                  value:a.scheduled_date||'',
+                  onChange:e=>onUpdateStatus(a.id,'scheduled',{scheduled_date:e.target.value}),
+                  title:'Data programmata',
+                  style:{fontSize:12,padding:'3px 8px',border:'0.5px solid var(--border)',
+                    borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',cursor:'pointer'}
+                }),
+                isAdmin&&h('select',{
+                  value:a.scheduled_platform||'',
+                  onChange:e=>onUpdateStatus(a.id,'scheduled',{scheduled_platform:e.target.value}),
+                  style:{fontSize:12,padding:'3px 8px',border:'0.5px solid var(--border)',
+                    borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',cursor:'pointer'}
+                },
+                  h('option',{value:''},'Piattaforma…'),
+                  ['Instagram','Facebook','LinkedIn','TikTok','Pinterest','Newsletter','Altro'].map(p=>
+                    h('option',{key:p,value:p},p)
+                  )
+                )
+              ),
               a.stato==='pending'&&!isAdmin&&h('div',{style:{marginLeft:'auto',display:'flex',gap:6}},
                 h('button',{className:'btn-approve',onClick:()=>setSemaforoFor(semaforoFor===a.id?null:a.id)},
                   semaforoFor===a.id ? '✕ Chiudi semaforo' : '🟢 Avvia Semaforo → Approva'
                 ),
                 h('button',{className:'btn-revision',onClick:()=>onUpdateStatus(a.id,'revision')},'↩ Revisione')
               ),
-              isAdmin&&a.stato==='revision'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#E65100',fontWeight:600}},'⚠ Revisione richiesta'),
-              a.stato==='approved'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'var(--green-dk)',fontWeight:600}},'✓ Approvato')
+              isAdmin&&a.stato==='revision'&&h('span',{style:{marginLeft:'auto',fontSize:12,color:'#E65100',fontWeight:600}},'⚠ Revisione richiesta')
             )
           )
         )
@@ -752,9 +786,19 @@ function Moodboard({client, isAdmin, onAddMoodItem}){
 function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
+  const [linkCopied,setLinkCopied]=useState(false);
+  const [reminderCopied,setReminderCopied]=useState(false);
+  const portalUrl='https://nassa-ped-yp63.vercel.app/portal/'+client.slug;
 
   const copyLink=()=>{
-    try{navigator.clipboard.writeText('https://nassa-ped-yp63.vercel.app/portal/'+client.slug);}catch(e){}
+    try{navigator.clipboard.writeText(portalUrl);}catch(e){}
+    setLinkCopied(true); setTimeout(()=>setLinkCopied(false),2000);
+  };
+
+  const copyReminder=()=>{
+    const msg=`Ciao! 👋\nHai ${pending} contenut${pending===1?'o':'i'} in attesa di approvazione sul portale Nassa Studio.\n\n🔗 ${portalUrl}\n\nAppena puoi dai un'occhiata — bastano pochi click! 🙏`;
+    try{navigator.clipboard.writeText(msg);}catch(e){}
+    setReminderCopied(true); setTimeout(()=>setReminderCopied(false),2500);
   };
 
   return h('div',null,
@@ -763,9 +807,9 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,tab}){
       (()=>{
         const assetN=(client.brand?.logos?.length||0)+(client.brand?.templates?.length||0)+(client.brand?.colors?.length||0);
         return [
-          {lbl:'Asset',            val:assetN,  icon:'🎨', cls:''},
-          {lbl:'In approvazione',  val:pending,  icon:'⏳', cls:pending>0?' pending':''},
-          {lbl:'Moodboard',        val:client.moodboard?.length||0, icon:'🎭', cls:''},
+          {lbl:'Asset',           val:assetN,                      icon:'🎨', cls:''},
+          {lbl:'In approvazione', val:pending,                     icon:'⏳', cls:pending>0?' pending':''},
+          {lbl:'Moodboard',       val:client.moodboard?.length||0, icon:'🎭', cls:''},
         ].map(s=>h('div',{key:s.lbl,className:'stat-card'},
           h('div',{className:'stat-main'},
             h('div',{className:'stat-val'},s.val+''),
@@ -775,15 +819,40 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,tab}){
         ));
       })()
     ),
-    // Link row
-    h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:24}},
-      h('div',{className:'link-box'},'nassa-ped-yp63.vercel.app/portal/'+client.slug),
-      h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:copyLink},ICONS.copy,' Copia'),
-      h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12},onClick:()=>window.open('/portal/'+client.slug,'_blank')},ICONS.ext,' Apri')
+
+    // ── Step 14: Banner promemoria se pending > 0 ──
+    pending>0&&h('div',{style:{
+      display:'flex',alignItems:'center',gap:12,
+      background:'var(--magenta-lt)',border:'var(--bw) solid var(--magenta)',
+      borderRadius:'var(--r)',padding:'10px 14px',marginBottom:16,flexWrap:'wrap'
+    }},
+      h('div',{style:{flex:1}},
+        h('div',{style:{fontSize:13,fontWeight:700,color:'var(--magenta)',marginBottom:2}},
+          `⏳ ${pending} contenut${pending===1?'o':'i'} in attesa di approvazione`
+        ),
+        h('div',{style:{fontSize:12,color:'var(--text-2)'}},
+          'Il cliente non ha ancora approvato. Invia un promemoria.'
+        )
+      ),
+      h('button',{
+        className:'btn',
+        style:{fontSize:12,borderColor:'var(--magenta)',color:'var(--magenta)',flexShrink:0},
+        onClick:copyReminder
+      }, reminderCopied?'✓ Copiato!':'📋 Copia messaggio WhatsApp')
     ),
-    tab==='assets'&&h(BrandAssets,{client,isAdmin:true,onAddLogo}),
-    tab==='approvals'&&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
-    tab==='moodboard'&&h(Moodboard,{client,isAdmin:true,onAddMoodItem})
+
+    // Link portale
+    h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:24,flexWrap:'wrap'}},
+      h('div',{className:'link-box',style:{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},portalUrl),
+      h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12,flexShrink:0},onClick:copyLink},
+        ICONS.copy, linkCopied?' Copiato!':(h('span',null,' Copia'))
+      ),
+      h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12,flexShrink:0},onClick:()=>window.open('/portal/'+client.slug,'_blank')},ICONS.ext,' Apri')
+    ),
+
+    tab==='assets'    &&h(BrandAssets,{client,isAdmin:true,onAddLogo}),
+    tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
+    tab==='moodboard' &&h(Moodboard,{client,isAdmin:true,onAddMoodItem})
   );
 }
 
@@ -886,14 +955,14 @@ function NassaBrand(){
     }
   },[]);
 
-  const updateStatus=useCallback(async(clientId,aId,st)=>{
+  const updateStatus=useCallback(async(clientId,aId,st,meta={})=>{
     setClients(prev=>prev.map(c=>{
       if(c.id!==clientId)return c;
-      const approvals=c.approvals.map(a=>a.id===aId?{...a,stato:st}:a);
+      const approvals=c.approvals.map(a=>a.id===aId?{...a,stato:st,...meta}:a);
       api('/api/brand',{method:'POST',body:JSON.stringify({clientId,field:'approvals',data:approvals})}).catch(console.error);
       return {...c,approvals};
     }));
-    if(selected?.id===clientId)setSelected(p=>({...p,approvals:p.approvals.map(a=>a.id===aId?{...a,stato:st}:a)}));
+    if(selected?.id===clientId)setSelected(p=>({...p,approvals:p.approvals.map(a=>a.id===aId?{...a,stato:st,...meta}:a)}));
   },[selected]);
 
   const updateBrand=useCallback((clientId,updater)=>{
@@ -934,7 +1003,7 @@ function NassaBrand(){
 
   if(loading)return h('div',{className:'app'},h('div',{className:'loading'},'Caricamento NassaBrand…'));
   if(error)return h('div',{className:'app'},h('div',{className:'loading'},error));
-  if(pub&&selected)return h(PortaleCliente,{client:selected,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st)});
+  if(pub&&selected)return h(PortaleCliente,{client:selected,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{})});
 
   const pending=c=>((c.approvals||[]).filter(a=>a.stato==='pending').length);
 
@@ -1016,7 +1085,7 @@ function NassaBrand(){
                 h('div',{className:'content-sub'},selected.name+(tab==='approvals'&&pending(selected)>0?' · '+pending(selected)+' in attesa':''))
               )
             ),
-            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st)=>updateStatus(selected.id,aId,st),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem})
+            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem})
           )
         )
       )
