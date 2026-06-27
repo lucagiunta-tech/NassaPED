@@ -229,6 +229,12 @@ textarea,input{font-family:var(--font);}
 .semaforo-progress-fill{height:100%;background:var(--green);border-radius:99px;transition:width var(--t-base);}
 .semaforo-actions{display:flex;gap:8px;justify-content:flex-end;}
 .semaforo-ok{background:var(--green-lt);border:var(--bw) solid var(--green-mid);color:var(--green-dk);font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:4px;}
+.semaforo-lbl{font-size:var(--fs-sm);color:var(--text-2);line-height:1.4;}
+.semaforo-lbl.checked{color:var(--text-3);text-decoration:line-through;}
+.semaforo-progress{height:4px;background:var(--border-lt);border-radius:99px;margin-bottom:12px;overflow:hidden;}
+.semaforo-progress-fill{height:100%;background:var(--green);border-radius:99px;transition:width var(--t-base);}
+.semaforo-actions{display:flex;gap:8px;justify-content:flex-end;}
+.semaforo-ok{background:var(--green-lt);border:var(--bw) solid var(--green-mid);color:var(--green-dk);font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:4px;}
 .empty{text-align:center;padding:48px 24px;color:var(--text-3);}
 .empty-icon{font-size:var(--fs-lg);margin-bottom:12px;}
 .empty-title{font-size:var(--fs-md);font-weight:600;color:var(--text-2);margin-bottom:6px;}
@@ -283,6 +289,60 @@ async function api(path,opts={}){
 // ── Semaforo CSS (già presente) ──
 
 // ─── STATUS aggiornato con 'scheduled' ────────────────────────────────────────
+// ── Semaforo Nassa — 8 punti pre-pubblicazione ──────────────────────────────
+const SEMAFORO_ITEMS = [
+  {id:'s1', lbl:'Il contenuto rispetta il ToV del brand (tono, parole sì/no)'},
+  {id:'s2', lbl:'Caption corretta: lunghezza, emoji, hashtag, CTA presenti'},
+  {id:'s3', lbl:'Visual coerente con la palette e la moodboard del brand'},
+  {id:'s4', lbl:'Formato e dimensioni corretti per la piattaforma'},
+  {id:'s5', lbl:'Nessun errore ortografico o grammaticale'},
+  {id:'s6', lbl:'Data e ora di pubblicazione definite'},
+  {id:'s7', lbl:'Link tracciato (UTM) se presente nella bio o nella caption'},
+  {id:'s8', lbl:'Pilastro narrativo dichiarato e coerente con il calendario'},
+];
+
+function Semaforo({approvalId, onConfirm, onCancel}){
+  const [checked, setChecked] = useState({});
+  const count = Object.values(checked).filter(Boolean).length;
+  const total = SEMAFORO_ITEMS.length;
+  const allOk = count === total;
+  const toggle = (id) => setChecked(p => ({...p, [id]: !p[id]}));
+
+  return h('div', {className:'semaforo-wrap'},
+    h('div', {className:'semaforo-title'},
+      h('svg',{viewBox:'0 0 24 24',width:16,height:16,fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},
+        h('circle',{cx:12,cy:12,r:10}),h('line',{x1:12,y1:8,x2:12,y2:12}),h('line',{x1:12,y1:16,x2:'12.01',y2:16})
+      ),
+      'Semaforo Nassa — checklist pre-approvazione',
+      h('span',{style:{marginLeft:'auto',fontSize:11,color:allOk?'var(--green-dk)':'var(--text-3)',fontWeight:600}},count+'/'+total)
+    ),
+    h('div', {className:'semaforo-progress'},
+      h('div', {className:'semaforo-progress-fill', style:{width:(count/total*100)+'%'}})
+    ),
+    h('div', {className:'semaforo-list'},
+      SEMAFORO_ITEMS.map(item =>
+        h('div', {key:item.id, className:'semaforo-item', onClick:()=>toggle(item.id)},
+          h('div', {className:'semaforo-check'+(checked[item.id]?' checked':'')},
+            h('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'var(--green-text)',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},
+              h('polyline',{points:'20 6 9 17 4 12'})
+            )
+          ),
+          h('span', {className:'semaforo-lbl'+(checked[item.id]?' checked':'')}, item.lbl)
+        )
+      )
+    ),
+    h('div', {className:'semaforo-actions'},
+      h('button', {className:'btn btn-ghost', style:{fontSize:12}, onClick:onCancel}, 'Annulla'),
+      h('button', {
+        className:'btn btn-approve',
+        style:{opacity: allOk ? 1 : 0.45, cursor: allOk ? 'pointer' : 'not-allowed'},
+        onClick: allOk ? onConfirm : null,
+        title: allOk ? '' : 'Completa tutti gli 8 punti per approvare'
+      }, '✓ Conferma approvazione')
+    )
+  );
+}
+
 const STATUS={
   pending:  {lbl:'In attesa',   color:'#C2185B', bg:'#FCE4EC', icon:'⏳'},
   approved: {lbl:'Approvato',   color:'#1A8C3F', bg:'#E8F5E9', icon:'✓'},
