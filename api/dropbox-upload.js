@@ -21,16 +21,65 @@ function safePath(rawPath, user) {
   return `/nassa/${safeUser}/uploads/${Date.now()}_${name}`;
 }
 
-async function getAccessToken() {
-  // DROPBOX_ACCESS_TOKEN: long-lived token generated from Dropbox App Console
-  // (Settings → OAuth 2 → Generated access token → Generate)
-  // For Development apps this token does not expire.
-  // If it ever expires, regenerate it in the App Console and update the Vercel env var.
-  const token = process.env.DROPBOX_ACCESS_TOKEN;
-  if (!token) throw new Error('Missing DROPBOX_ACCESS_TOKEN env var');
-  return token;
-}
+// Token cache server-side (shared across invocations in same Vercel instance)
+let _tokenCache = null;
+let _tokenCacheExp = 0;
 
+async function getAccessToken() {
+  const now = Date.now();
+  if (_tokenCache && now < _tokenCacheExp) return _tokenCache;
+
+  const {
+    DROPBOX_APP_KEY, DROPBOX_APP_SECRET,
+    DROPBOX_REFRESH_TOKEN, DROPBOX_ACCESS_TOKEN,
+  } = process.env;
+
+  // Strategy 1: OAuth2 refresh token (preferred — never expires)
+  if (DROPBOX_APP_KEY && DROPBOX_APP_SECRET && DROPBOX_REFRESH_TOKEN) {
+    try {
+      const resp = await fetch('https://api.dropbox.com/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic ' + Buffer.from(
+            DROPBOX_APP_KEY + ':' + DROPBOX_APP_SECRET
+          ).toString('base64'),
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: DROPBOX_REFRESH_TOKEN,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.access_token) {
+          _tokenCache = data.access_token;
+          _tokenCacheExp = now + ((data.expires_in || 14400) - 300) * 1000;
+          console.log('[dropbox-upload] OAuth2 refresh OK');
+          return _tokenCache;
+        }
+      }
+      console.warn('[dropbox-upload] OAuth2 refresh failed:', resp.status);
+    } catch (err) {
+      console.warn('[dropbox-upload] OAuth2 exception:', err.message);
+    }
+  }
+
+  // Strategy 2: Static token fallback
+  if (DROPBOX_ACCESS_TOKEN) {
+    _tokenCache = DROPBOX_ACCESS_TOKEN;
+    _tokenCacheExp = now + 60 * 60 * 1000;
+    return _tokenCache;
+  }
+
+  // Nothing available
+  const missing = [];
+  if (!DROPBOX_APP_KEY)       missing.push('DROPBOX_APP_KEY');
+  if (!DROPBOX_APP_SECRET)    missing.push('DROPBOX_APP_SECRET');
+  if (!DROPBOX_REFRESH_TOKEN) missing.push('DROPBOX_REFRESH_TOKEN');
+  if (!DROPBOX_ACCESS_TOKEN)  missing.push('DROPBOX_ACCESS_TOKEN');
+  throw new Error('Dropbox: env vars mancanti su Vercel: ' + missing.join(', '));
+}
 function toDirectUrl(url) {
   if (!url) return '';
   // Convert shared link to direct download URL using dl=1 — no rlkey expiry
