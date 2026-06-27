@@ -341,68 +341,240 @@ async function uploadLogo(file){
 }
 
 // ── Brand Assets ──
-function BrandAssets({client, isAdmin, onAddLogo}){
+function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
+  const [showColorModal, setShowColorModal] = useState(false);
+  const [showFontModal,  setShowFontModal]  = useState(false);
+  const [colorForm, setColorForm] = useState({name:'', hex:'#C25B2A', role:'Primario', usage:''});
+  const [fontForm,  setFontForm]  = useState({name:'', role:'Display', weight:'700'});
   const fileRef = useRef(null);
   const b = client.brand || {colors:[],fonts:[],logos:[],templates:[]};
   const pc = b.colors[0]?.hex || client.color || '#1A8C3F';
 
+  // ── Upload logo ──
   const handleFile = async(e) => {
-    const file = e.target.files?.[0];
-    if(!file) return;
+    const file = e.target.files?.[0]; if(!file) return;
     setUploading(true); setUploadErr('');
     try {
       const url = await uploadLogo(file);
       const ext = file.name.split('.').pop().toUpperCase();
       const rawName = file.name.replace(/\.[^.]+$/, '');
       const cleanName = rawName
-        .replace(/\s*copia\s*\d+\s*$/i, '')
-        .replace(/\s*copy\s*\d+\s*$/i, '')
-        .replace(/_+/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .trim()
-        .slice(0, 40) || rawName.slice(0, 40);
-      onAddLogo && onAddLogo({
-        id:'logo_'+Date.now(),
-        name:cleanName,
-        format:ext, variant:'colore', url, note:''
-      });
+        .replace(/\s*copia\s*\d+\s*$/i,'').replace(/\s*copy\s*\d+\s*$/i,'')
+        .replace(/_+/g,' ').replace(/\s{2,}/g,' ').trim().slice(0,40) || rawName.slice(0,40);
+      onAddLogo && onAddLogo({id:'logo_'+Date.now(),name:cleanName,format:ext,variant:'colore',url,note:''});
     } catch(err){ setUploadErr(err.message); }
     finally { setUploading(false); if(fileRef.current) fileRef.current.value=''; }
   };
-
   const go = () => !uploading && fileRef.current?.click();
 
-  return h('div',null,
-    isAdmin&&h('input',{ref:fileRef,type:'file',accept:'image/*,.svg,.pdf,.ai,.eps',style:{display:'none'},onChange:handleFile}),
+  // ── Aggiungi colore ──
+  const addColor = () => {
+    if(!colorForm.name.trim()) return;
+    const colors = [...(b.colors||[]), {
+      id:'col_'+Date.now(), name:colorForm.name.trim(),
+      hex:colorForm.hex, role:colorForm.role.trim(), usage:colorForm.usage.trim()
+    }];
+    onUpdateBrand && onUpdateBrand(client.id, brd=>({...brd, colors}));
+    setColorForm({name:'', hex:'#C25B2A', role:'Primario', usage:''});
+    setShowColorModal(false);
+  };
 
-    uploadErr&&h('div',{style:{background:'#fff5f5',border:'var(--bw) solid #fca5a5',color:'#ef4444',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:16,fontSize:'var(--fs-sm)',display:'flex',alignItems:'center',gap:8}},
-      '⚠ ',uploadErr,h('button',{onClick:()=>setUploadErr(''),style:{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:16}},'×')
-    ),
+  // ── Aggiungi font ──
+  const addFont = () => {
+    if(!fontForm.name.trim()) return;
+    const fonts = [...(b.fonts||[]), {
+      id:'font_'+Date.now(), name:fontForm.name.trim(),
+      role:fontForm.role.trim(), weight:fontForm.weight
+    }];
+    onUpdateBrand && onUpdateBrand(client.id, brd=>({...brd, fonts}));
+    setFontForm({name:'', role:'Display', weight:'700'});
+    setShowFontModal(false);
+  };
 
-    b.colors.length>0&&h('div',{style:{marginBottom:24}},
-      h('div',{className:'section-title'},'Palette colori'),
-      h('div',{className:'palette-grid'},b.colors.map((c,i)=>h(Swatch,{key:i,c})))
-    ),
-    b.fonts.length>0&&h('div',{style:{marginBottom:24}},
-      h('div',{className:'section-title'},'Font'),
-      h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}},
-        b.fonts.map((f,i)=>h('div',{key:i,className:'card',style:{padding:16}},
-          h('div',{style:{fontFamily:f.name+',serif',fontSize:24,fontWeight:f.weight,color:'var(--text)',marginBottom:4}},'Aa Bb'),
-          h('div',{style:{fontSize:12,fontWeight:500,color:'var(--text)'}},f.name),
-          h('div',{style:{fontSize:11,color:'var(--text-3)'}},f.role+' · w'+f.weight)
-        ))
+  // ── Preset colori rapidi ──
+  const COLOR_PRESETS = ['#C25B2A','#F5EDD8','#1A8C3F','#185FA5','#C2185B',
+    '#0F6E56','#534AB7','#2C1A0E','#E8DCC8','#6B1A2A','#111111','#ffffff'];
+
+  // ── Modal colore ──
+  const colorModal = showColorModal && h('div',{
+    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:600,display:'flex',alignItems:'center',justifyContent:'center'},
+    onClick:e=>{ if(e.target===e.currentTarget) setShowColorModal(false); }
+  },
+    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,width:380,boxShadow:'0 8px 32px rgba(0,0,0,.18)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
+        h('span',{style:{fontSize:16,fontWeight:700,color:'var(--text)'}},'Aggiungi colore'),
+        h('button',{onClick:()=>setShowColorModal(false),style:{border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--text-2)'}},'×')
+      ),
+      // Preview
+      h('div',{style:{height:64,borderRadius:'var(--r)',background:colorForm.hex,marginBottom:16,
+        display:'flex',alignItems:'center',justifyContent:'center'}},
+        h('span',{style:{fontSize:12,fontWeight:600,color:contrast(colorForm.hex)}},colorForm.hex.toUpperCase())
+      ),
+      // Preset
+      h('div',{style:{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}},
+        COLOR_PRESETS.map(c=>h('div',{key:c,onClick:()=>setColorForm(p=>({...p,hex:c})),
+          style:{width:26,height:26,borderRadius:4,background:c,cursor:'pointer',
+            border:colorForm.hex===c?'2px solid var(--text)':'2px solid transparent',transition:'border .1s'}}))
+      ),
+      // Hex input
+      h('div',{style:{display:'flex',gap:8,alignItems:'center',marginBottom:14}},
+        h('input',{type:'color',value:colorForm.hex,onChange:e=>setColorForm(p=>({...p,hex:e.target.value})),
+          style:{width:44,height:36,border:'var(--bw) solid var(--border)',borderRadius:'var(--r)',cursor:'pointer',padding:2}}),
+        h('input',{type:'text',value:colorForm.hex,maxLength:7,
+          onChange:e=>{ const v=e.target.value; if(/^#[0-9a-fA-F]{0,6}$/.test(v)) setColorForm(p=>({...p,hex:v})); },
+          style:{flex:1,padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',fontFamily:'monospace',background:'var(--surface)',color:'var(--text)'}})
+      ),
+      // Nome + ruolo
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}},
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Nome colore *'),
+          h('input',{type:'text',value:colorForm.name,autoFocus:true,
+            onChange:e=>setColorForm(p=>({...p,name:e.target.value})),
+            placeholder:'Es. Terracotta',
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',boxSizing:'border-box'}})
+        ),
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Ruolo'),
+          h('select',{value:colorForm.role,onChange:e=>setColorForm(p=>({...p,role:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            ['Primario','Secondario','Accento','Neutro','Sfondo','Testo'].map(r=>h('option',{key:r,value:r},r))
+          )
+        )
+      ),
+      // Regole uso
+      h('div',{style:{marginBottom:16}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Regole d\'uso'),
+        h('textarea',{rows:2,value:colorForm.usage,onChange:e=>setColorForm(p=>({...p,usage:e.target.value})),
+          placeholder:'Es. Colore principale. Su sfondo bianco. Mai su verde.',
+          style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',
+            resize:'vertical',fontFamily:'inherit',boxSizing:'border-box'}})
+      ),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{onClick:()=>setShowColorModal(false),className:'btn btn-ghost'},'Annulla'),
+        h('button',{onClick:addColor,className:'btn btn-primary',
+          style:{opacity:colorForm.name.trim()?1:.45}},'Aggiungi colore')
       )
+    )
+  );
+
+  // ── Modal font ──
+  const fontModal = showFontModal && h('div',{
+    style:{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:600,display:'flex',alignItems:'center',justifyContent:'center'},
+    onClick:e=>{ if(e.target===e.currentTarget) setShowFontModal(false); }
+  },
+    h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,width:380,boxShadow:'0 8px 32px rgba(0,0,0,.18)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
+        h('span',{style:{fontSize:16,fontWeight:700,color:'var(--text)'}},'Aggiungi font'),
+        h('button',{onClick:()=>setShowFontModal(false),style:{border:'none',background:'transparent',fontSize:18,cursor:'pointer',color:'var(--text-2)'}},'×')
+      ),
+      // Preview
+      fontForm.name && h('div',{style:{padding:'12px 16px',background:'var(--surface-lt)',borderRadius:'var(--r)',marginBottom:14,
+        fontFamily:fontForm.name+',sans-serif',fontSize:28,fontWeight:fontForm.weight,color:'var(--text)'}},
+        'Aa Bb — ',fontForm.name
+      ),
+      h('div',{style:{marginBottom:12}},
+        h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Nome font *'),
+        h('input',{type:'text',value:fontForm.name,autoFocus:true,
+          onChange:e=>setFontForm(p=>({...p,name:e.target.value})),
+          placeholder:'Es. Playfair Display',
+          style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+            borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',boxSizing:'border-box'}}),
+        h('p',{style:{fontSize:10,color:'var(--text-3)',marginTop:3}},'Usa il nome esatto di Google Fonts per il preview')
+      ),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}},
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Ruolo'),
+          h('select',{value:fontForm.role,onChange:e=>setFontForm(p=>({...p,role:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            ['Display','Body','Caption','Monospace','Accent'].map(r=>h('option',{key:r,value:r},r))
+          )
+        ),
+        h('div',null,
+          h('label',{style:{display:'block',fontSize:12,fontWeight:600,color:'var(--text)',marginBottom:4}},'Peso'),
+          h('select',{value:fontForm.weight,onChange:e=>setFontForm(p=>({...p,weight:e.target.value})),
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+            [['300','Light 300'],['400','Regular 400'],['500','Medium 500'],['600','SemiBold 600'],['700','Bold 700'],['800','ExtraBold 800'],['900','Black 900']]
+              .map(([v,l])=>h('option',{key:v,value:v},l))
+          )
+        )
+      ),
+      h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+        h('button',{onClick:()=>setShowFontModal(false),className:'btn btn-ghost'},'Annulla'),
+        h('button',{onClick:addFont,className:'btn btn-primary',
+          style:{opacity:fontForm.name.trim()?1:.45}},'Aggiungi font')
+      )
+    )
+  );
+
+  return h('div',null,
+    colorModal, fontModal,
+    isAdmin&&h('input',{ref:fileRef,type:'file',accept:'image/*,.svg,.pdf,.ai,.eps',
+      style:{display:'none'},onChange:handleFile}),
+
+    uploadErr&&h('div',{style:{background:'#fff5f5',border:'var(--bw) solid #fca5a5',color:'#ef4444',
+      borderRadius:'var(--r)',padding:'10px 14px',marginBottom:16,fontSize:'var(--fs-sm)',
+      display:'flex',alignItems:'center',gap:8}},
+      '⚠ ',uploadErr,
+      h('button',{onClick:()=>setUploadErr(''),style:{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'inherit',fontSize:16}},'×')
     ),
 
+    // ── Palette colori ──
+    h('div',{style:{marginBottom:24}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+        h('div',{className:'section-title',style:{margin:0}},'Palette colori'),
+        isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:12},
+          onClick:()=>setShowColorModal(true)},
+          '+ Aggiungi colore')
+      ),
+      b.colors.length>0
+        ? h('div',{className:'palette-grid'},b.colors.map((c,i)=>h(Swatch,{key:c.id||i,c})))
+        : isAdmin&&h('div',{style:{textAlign:'center',padding:'24px',color:'var(--text-3)',fontSize:13,
+            border:'1.5px dashed var(--border)',borderRadius:'var(--r)',cursor:'pointer'},
+            onClick:()=>setShowColorModal(true)},
+            '+ Aggiungi il primo colore del brand')
+    ),
+
+    // ── Font ──
+    h('div',{style:{marginBottom:24}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+        h('div',{className:'section-title',style:{margin:0}},'Font'),
+        isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:12},
+          onClick:()=>setShowFontModal(true)},
+          '+ Aggiungi font')
+      ),
+      b.fonts.length>0
+        ? h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:10}},
+            b.fonts.map((f,i)=>h('div',{key:f.id||i,className:'card',style:{padding:16}},
+              h('div',{style:{fontFamily:f.name+',serif',fontSize:24,fontWeight:f.weight,
+                color:'var(--text)',marginBottom:4}},'Aa Bb'),
+              h('div',{style:{fontSize:12,fontWeight:500,color:'var(--text)'}},f.name),
+              h('div',{style:{fontSize:11,color:'var(--text-3)'}},f.role+' · w'+f.weight)
+            ))
+          )
+        : isAdmin&&h('div',{style:{textAlign:'center',padding:'24px',color:'var(--text-3)',fontSize:13,
+            border:'1.5px dashed var(--border)',borderRadius:'var(--r)',cursor:'pointer'},
+            onClick:()=>setShowFontModal(true)},
+            '+ Aggiungi il primo font')
+    ),
+
+    // ── Loghi ──
     h('div',{style:{marginBottom:24}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
         h('div',{className:'section-title',style:{margin:0}},'Loghi'),
-        isAdmin&&h('button',{className:'btn btn-ghost',onClick:go,disabled:uploading,style:{opacity:uploading?.6:1}},
+        isAdmin&&h('button',{className:'btn btn-ghost',onClick:go,disabled:uploading,
+          style:{opacity:uploading?.6:1,fontSize:12}},
           uploading?'⏳ Caricamento…':'↑ Carica logo')
       ),
-      uploading&&h('div',{style:{background:'var(--green-lt)',border:'var(--bw) solid var(--green-mid)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:'var(--fs-sm)',color:'var(--green-dk)'}},
+      uploading&&h('div',{style:{background:'var(--green-lt)',border:'var(--bw) solid var(--green-mid)',
+        borderRadius:'var(--r)',padding:'10px 14px',marginBottom:12,fontSize:'var(--fs-sm)',color:'var(--green-dk)'}},
         '⏳ Upload su Dropbox in corso…'
       ),
       h('div',{className:'logo-masonry'},
@@ -417,20 +589,26 @@ function BrandAssets({client, isAdmin, onAddLogo}){
             h('div',{className:'logo-name',title:l.name,style:{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}},l.name),
             h('div',{className:'logo-meta'},l.format+(l.note?' · '+l.note:'')),
             l.url
-              ?h('a',{href:l.url,target:'_blank',rel:'noopener',className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0',display:'block',textAlign:'center',textDecoration:'none'}},'↓ Scarica')
+              ?h('a',{href:l.url,target:'_blank',rel:'noopener',className:'btn btn-ghost',
+                  style:{width:'100%',fontSize:11,padding:'4px 0',display:'block',textAlign:'center',textDecoration:'none'}},'↓ Scarica')
               :h('button',{className:'btn btn-ghost',style:{width:'100%',fontSize:11,padding:'4px 0'}},'↓ Scarica')
           )
         )),
-        isAdmin&&h('div',{className:'logo-add-wrap'},h('div',{className:'logo-add',onClick:go,style:{opacity:uploading?.5:1,cursor:uploading?'default':'pointer'}},
-          '+',h('span',null,uploading?'Upload in corso…':'Aggiungi logo')))
+        isAdmin&&h('div',{className:'logo-add-wrap'},
+          h('div',{className:'logo-add',onClick:go,
+            style:{opacity:uploading?.5:1,cursor:uploading?'default':'pointer'}},
+            '+',h('span',null,uploading?'Upload in corso…':'Aggiungi logo')))
       )
     ),
 
+    // ── Template ──
     b.templates.length>0&&h('div',null,
       h('div',{className:'section-title'},'Template'),
       h('div',{style:{display:'flex',flexDirection:'column',gap:8}},
-        b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',background:'var(--surface-lt)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
-          h('div',{style:{width:36,height:36,borderRadius:6,background:'var(--border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}},'📐'),
+        b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,
+          padding:'10px 14px',background:'var(--surface-lt)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
+          h('div',{style:{width:36,height:36,borderRadius:6,background:'var(--border)',display:'flex',
+            alignItems:'center',justifyContent:'center',fontSize:16}},'📐'),
           h('div',{style:{flex:1}},
             h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)'}},t.name),
             h('div',{style:{fontSize:11,color:'var(--text-3)'}},t.format+(t.note?' · '+t.note:''))
@@ -440,11 +618,11 @@ function BrandAssets({client, isAdmin, onAddLogo}){
       )
     ),
 
-    b.colors.length===0&&b.logos.length===0&&b.templates.length===0&&h('div',{className:'empty'},
+    b.colors.length===0&&b.logos.length===0&&b.templates.length===0&&b.fonts.length===0&&h('div',{className:'empty'},
       h('div',{className:'empty-icon'},'🎨'),
       h('div',{className:'empty-title'},'Nessun asset caricato'),
       h('div',{className:'empty-sub'},isAdmin
-        ?h('span',null,'Clicca ',h('strong',null,'↑ Carica logo'),' per aggiungere il primo file')
+        ?h('span',null,'Aggiungi colori, font e loghi con i bottoni qui sopra')
         :'Gli asset verranno caricati da Nassa Studio')
     )
   );
@@ -783,7 +961,7 @@ function Moodboard({client, isAdmin, onAddMoodItem}){
   );
 }
 // ── Admin Portal View ── (tab controlled externally by sidebar)
-function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,tab}){
+function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdateBrand,tab}){
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
   const [linkCopied,setLinkCopied]=useState(false);
@@ -850,7 +1028,7 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,tab}){
       h('button',{className:'btn btn-ghost',style:{gap:4,fontSize:12,flexShrink:0},onClick:()=>window.open('/portal/'+client.slug,'_blank')},ICONS.ext,' Apri')
     ),
 
-    tab==='assets'    &&h(BrandAssets,{client,isAdmin:true,onAddLogo}),
+    tab==='assets'    &&h(BrandAssets,{client,isAdmin:true,onAddLogo,onUpdateBrand}),
     tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus}),
     tab==='moodboard' &&h(Moodboard,{client,isAdmin:true,onAddMoodItem})
   );
@@ -1085,7 +1263,7 @@ function NassaBrand(){
                 h('div',{className:'content-sub'},selected.name+(tab==='approvals'&&pending(selected)>0?' · '+pending(selected)+' in attesa':''))
               )
             ),
-            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem})
+            h(AdminPortaleView,{client:selected,tab,onUpdateStatus:(aId,st,meta)=>updateStatus(selected.id,aId,st,meta||{}),onAddLogo:(logo)=>addLogo(selected.id,logo),onAddMoodItem:addMoodItem,onUpdateBrand:updateBrand})
           )
         )
       )
