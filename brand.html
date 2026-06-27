@@ -455,7 +455,19 @@ async function uploadLogo(file){
   return data.url || data.shared_link || '';
 }
 
-// ── Brand Assets ──
+// ── Categorie Asset Grafici ──────────────────────────────────────────────────
+const ASSET_CATS = [
+  {id:'company_profile',  lbl:'Company Profile',     icon:'📋', desc:'Brochure, presentazione aziendale, profilo istituzionale'},
+  {id:'corporate_id',     lbl:'Corporate Identity',  icon:'🏢', desc:'Carta intestata, biglietti da visita, firma email, buste, cartelle'},
+  {id:'packaging',        lbl:'Packaging & Etichette',icon:'📦', desc:'Etichette prodotto, packaging, sleeve, sacchetti, scatole'},
+  {id:'comunicazione',    lbl:'Comunicazione',       icon:'📢', desc:'Locandine, flyer, banner, roll-up, totem, affissioni'},
+  {id:'social_templates', lbl:'Social Templates',    icon:'📱', desc:'Template caroselli, storie, post, copertine'},
+  {id:'fotografia',       lbl:'Fotografia',          icon:'📸', desc:'Foto prodotto, foto istituzionali, shooting reference'},
+];
+
+const ASSET_FORMATS = ['PDF','AI','PSD','INDD','SVG','PNG','JPG','WEBP','MP4','ZIP','Altro'];
+
+// ── BrandAssets ──
 function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
@@ -471,6 +483,46 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
   const [pendingLogo, setPendingLogo] = useState(null); // {url,name,format} dopo upload, prima di conferma
   const [logoDetail, setLogoDetail] = useState({variant:'colore',clearspace:'',minSize:'',note:''});
   const [editingLogo, setEditingLogo] = useState(null); // {idx, logo}
+  // Asset grafici
+  const [assetModal,    setAssetModal]    = useState(null);
+  const [assetForm,     setAssetForm]     = useState({name:'',categoria:'company_profile',format:'PDF',note:'',data:''});
+  const [assetUploading,setAssetUploading]= useState(false);
+  const [assetUrl,      setAssetUrl]      = useState('');
+  const assetFileRef = useRef(null);
+
+  const openAssetModal = (catId) => {
+    setAssetModal({categoria:catId||'company_profile'});
+    setAssetForm({name:'',categoria:catId||'company_profile',format:'PDF',note:'',
+      data:new Date().toLocaleDateString('it-IT',{month:'short',year:'numeric'})});
+    setAssetUrl('');
+  };
+
+  const handleAssetFile = async(e) => {
+    const file = e.target.files?.[0]; if(!file) return;
+    setAssetUploading(true);
+    try {
+      const fd=new FormData(); fd.append('file',file); fd.append('user','nassa_studio');
+      const r=await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':API_KEY},credentials:'include',body:fd});
+      if(!r.ok) throw new Error('Upload '+r.status);
+      const d=await r.json();
+      setAssetUrl(d.url||d.shared_link||'');
+      const ext=file.name.split('.').pop().toUpperCase();
+      const name=file.name.replace(/\.[^.]+$/,'').replace(/_+/g,' ').trim().slice(0,40);
+      setAssetForm(p=>({...p,name:p.name||name,format:ext}));
+    } catch(err){console.error('[asset upload]',err.message);}
+    finally{setAssetUploading(false);if(assetFileRef.current)assetFileRef.current.value='';}
+  };
+
+  const confirmAsset = () => {
+    if(!assetForm.name.trim()) return;
+    const assets=[...(b.assets||[]),{
+      id:'ast_'+Date.now(),name:assetForm.name.trim(),
+      categoria:assetForm.categoria,format:assetForm.format,
+      note:assetForm.note.trim(),data:assetForm.data,url:assetUrl,
+    }];
+    onUpdateBrand&&onUpdateBrand(client.id,brd=>({...brd,assets}));
+    setAssetModal(null);
+  };
 
   const handleFile = async(e) => {
     const file = e.target.files?.[0]; if(!file) return;
@@ -795,6 +847,83 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
 
   return h('div',null,
     colorModal, fontModal, logoDetailModal, logoEditModal,
+
+    // ── Modal aggiungi asset grafico ──
+    assetModal && h('div',{
+      style:{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center'},
+      onClick:e=>{if(e.target===e.currentTarget)setAssetModal(null);}
+    },
+      h('div',{style:{background:'var(--surface)',borderRadius:'var(--r)',padding:24,width:420,
+        maxHeight:'90vh',overflowY:'auto',boxShadow:'0 8px 32px rgba(0,0,0,.2)'}},
+        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
+          h('span',{style:{fontSize:15,fontWeight:700,color:'var(--text)'}},'Aggiungi asset grafico'),
+          h('button',{onClick:()=>setAssetModal(null),style:{border:'none',background:'transparent',fontSize:17,cursor:'pointer',color:'var(--text-2)'}},'×')
+        ),
+        // Upload file
+        h('input',{ref:assetFileRef,type:'file',accept:'*/*',style:{display:'none'},onChange:handleAssetFile}),
+        assetUrl
+          ? h('div',{style:{background:'var(--green-lt)',border:'var(--bw) solid var(--green-mid)',borderRadius:'var(--r)',
+              padding:'10px 14px',marginBottom:14,fontSize:12,color:'var(--green-dk)',display:'flex',alignItems:'center',gap:8}},
+              '✓ File caricato su Dropbox',
+              h('button',{onClick:()=>setAssetUrl(''),style:{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'var(--green-dk)',fontSize:12}},'✕ Rimuovi')
+            )
+          : h('div',{onClick:()=>assetFileRef.current?.click(),
+              style:{border:'1.5px dashed var(--border)',borderRadius:'var(--r)',padding:'20px 0',
+                textAlign:'center',cursor:assetUploading?'wait':'pointer',color:'var(--text-3)',
+                fontSize:12,marginBottom:14,transition:'border-color var(--t-fast)'}},
+              assetUploading?'⏳ Upload in corso…':'↑ Carica file (PDF, AI, PSD, PNG, JPG, ZIP…)'
+            ),
+        // Nome
+        h('div',{style:{marginBottom:10}},
+          h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Nome *'),
+          h('input',{type:'text',value:assetForm.name,autoFocus:true,
+            onChange:e=>setAssetForm(p=>({...p,name:e.target.value})),
+            placeholder:'Es. Brochure Aziendale 2024',
+            style:{width:'100%',padding:'7px 10px',fontSize:13,border:'var(--bw) solid var(--border)',
+              borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',boxSizing:'border-box'}})
+        ),
+        // Categoria + Formato
+        h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}},
+          h('div',null,
+            h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Categoria'),
+            h('select',{value:assetForm.categoria,onChange:e=>setAssetForm(p=>({...p,categoria:e.target.value})),
+              style:{width:'100%',padding:'6px 8px',fontSize:12,border:'var(--bw) solid var(--border)',
+                borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+              ASSET_CATS.map(cat=>h('option',{key:cat.id,value:cat.id},cat.icon+' '+cat.lbl))
+            )
+          ),
+          h('div',null,
+            h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Formato'),
+            h('select',{value:assetForm.format,onChange:e=>setAssetForm(p=>({...p,format:e.target.value})),
+              style:{width:'100%',padding:'6px 8px',fontSize:12,border:'var(--bw) solid var(--border)',
+                borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}},
+              ASSET_FORMATS.map(f=>h('option',{key:f,value:f},f))
+            )
+          )
+        ),
+        // Note + Data
+        h('div',{style:{display:'grid',gridTemplateColumns:'1fr auto',gap:10,marginBottom:16}},
+          h('div',null,
+            h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Note'),
+            h('input',{type:'text',value:assetForm.note,onChange:e=>setAssetForm(p=>({...p,note:e.target.value})),
+              placeholder:'Es. Versione EN, Rev.3',
+              style:{width:'100%',padding:'7px 10px',fontSize:12,border:'var(--bw) solid var(--border)',
+                borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)',boxSizing:'border-box'}})
+          ),
+          h('div',null,
+            h('label',{style:{display:'block',fontSize:11,fontWeight:600,color:'var(--text)',marginBottom:3,textTransform:'uppercase',letterSpacing:'.05em'}},'Data'),
+            h('input',{type:'text',value:assetForm.data,onChange:e=>setAssetForm(p=>({...p,data:e.target.value})),
+              style:{width:80,padding:'7px 8px',fontSize:12,border:'var(--bw) solid var(--border)',
+                borderRadius:'var(--r)',background:'var(--surface)',color:'var(--text)'}})
+          )
+        ),
+        h('div',{style:{display:'flex',gap:8,justifyContent:'flex-end'}},
+          h('button',{onClick:()=>setAssetModal(null),className:'btn btn-ghost'},'Annulla'),
+          h('button',{onClick:confirmAsset,className:'btn btn-primary',
+            style:{opacity:assetForm.name.trim()?1:.45}},'Aggiungi asset')
+        )
+      )
+    ),
     isAdmin&&h('input',{ref:fileRef,type:'file',accept:'image/*,.svg,.pdf,.ai,.eps',
       style:{display:'none'},onChange:handleFile}),
 
@@ -901,21 +1030,55 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
       )
     ),
 
-    // ── Template ──
-    b.templates.length>0&&h('div',null,
-      h('div',{className:'section-title'},'Template'),
-      h('div',{style:{display:'flex',flexDirection:'column',gap:8}},
-        b.templates.map(t=>h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:12,
-          padding:'10px 14px',background:'var(--surface-lt)',border:'var(--bw) solid var(--border)',borderRadius:'var(--r)'}},
-          h('div',{style:{width:36,height:36,borderRadius:6,background:'var(--border)',display:'flex',
-            alignItems:'center',justifyContent:'center',fontSize:16}},'📐'),
-          h('div',{style:{flex:1}},
-            h('div',{style:{fontSize:13,fontWeight:500,color:'var(--text)'}},t.name),
-            h('div',{style:{fontSize:11,color:'var(--text-3)'}},t.format+(t.note?' · '+t.note:''))
+    // ── Asset Grafici ──
+    isAdmin && h('div',{style:{marginBottom:24}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}},
+        h('div',{className:'section-title',style:{margin:0}},'Asset Grafici'),
+        isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:12},
+          onClick:()=>openAssetModal(null)},'+ Aggiungi asset')
+      ),
+      ASSET_CATS.map(cat=>{
+        const catAssets=(b.assets||[]).filter(a=>a.categoria===cat.id);
+        return h('div',{key:cat.id,style:{marginBottom:20}},
+          h('div',{className:'assets-cat-header'},
+            h('div',{className:'assets-cat-label'},
+              h('span',null,cat.icon),
+              cat.lbl,
+              catAssets.length>0&&h('span',{className:'assets-cat-count'},catAssets.length)
+            ),
+            isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:11,padding:'3px 10px'},
+              onClick:()=>openAssetModal(cat.id)},
+              '+ Aggiungi')
           ),
-          h('button',{className:'btn btn-primary',style:{fontSize:11}},'↓ Scarica')
-        ))
-      )
+          h('div',{className:'assets-masonry'},
+            catAssets.map((a,i)=>h('div',{key:a.id,className:'asset-card'},
+              h('div',{className:'asset-thumb'},
+                a.url&&a.format&&['JPG','JPEG','PNG','WEBP','SVG','GIF'].includes(a.format.toUpperCase())
+                  ?h('img',{src:a.url,alt:a.name})
+                  :h('div',{className:'asset-icon'},cat.icon)
+              ),
+              h('div',{className:'asset-info'},
+                h('div',{className:'asset-name',title:a.name},a.name),
+                h('div',{className:'asset-meta'},a.format+(a.data?' · '+a.data:'')),
+                a.note&&h('div',{className:'asset-note'},a.note),
+                h('div',{className:'asset-actions'},
+                  a.url&&h('a',{href:a.url,target:'_blank',rel:'noopener',
+                    className:'btn btn-ghost',style:{fontSize:11,padding:'3px 8px',textDecoration:'none'}},
+                    '↓ Scarica'),
+                  isAdmin&&h('button',{className:'btn btn-ghost',style:{fontSize:11,padding:'3px 8px'},
+                    onClick:()=>{ const assets=(b.assets||[]).filter((_,j)=>j!==i+(b.assets||[]).filter(x=>x.categoria===cat.id).indexOf(a));
+                      onUpdateBrand&&onUpdateBrand(client.id,brd=>({...brd,assets})); }},
+                    '✕')
+                )
+              )
+            )),
+            catAssets.length===0&&isAdmin&&h('div',{className:'asset-add-zone',
+              onClick:()=>openAssetModal(cat.id)},
+              '+',h('span',null,'Aggiungi '+cat.lbl.toLowerCase())
+            )
+          )
+        );
+      })
     ),
 
     b.colors.length===0&&b.logos.length===0&&b.templates.length===0&&b.fonts.length===0&&h('div',{className:'empty'},
