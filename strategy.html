@@ -663,7 +663,8 @@ function ActionBar({
   onSave,
   onNext,
   nextLabel,
-  savedMsg
+  savedMsg,
+  pageNum  // es. "02 / 07" — journey map numerale pattern
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -674,26 +675,37 @@ function ActionBar({
       flexWrap: "wrap",
       gap: 10
     }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
-    style: {
-      margin: "0 0 4px",
-      fontSize: 18,
-      fontWeight: 600,
-      color: "var(--text-primary)"
-    }
-  }, title), sub && /*#__PURE__*/React.createElement("p", {
-    style: {
-      margin: 0,
-      fontSize: 13,
-      color: "var(--text-muted)"
-    }
-  }, sub)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", { style:{display:"flex",alignItems:"flex-start",gap:12,flex:1} },
+    /*#__PURE__*/React.createElement("div", { style:{flex:1} },
+    /*#__PURE__*/React.createElement("h2", {
+      style: {
+        margin: "0 0 4px",
+        fontSize: 18,
+        fontWeight: 600,
+        color: "var(--text-primary)"
+      }
+    }, title), sub && /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: 0,
+        fontSize: 13,
+        color: "var(--text-muted)"
+      }
+    }, sub))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
       alignItems: "center"
     }
-  }, savedMsg && /*#__PURE__*/React.createElement("span", {
+  },
+  // Journey map numerale top-right (Customer Journey Map pattern)
+  pageNum && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11, fontWeight: 600, color: "var(--text-muted)",
+      border: "0.5px solid var(--border-strong)", borderRadius: 4,
+      padding: "2px 7px", fontVariantNumeric: "tabular-nums", letterSpacing: ".04em"
+    }
+  }, pageNum),
+  savedMsg && /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 11,
       color: G,
@@ -1228,7 +1240,55 @@ function OverviewView({
       fontWeight: 500,
       color: "var(--text-secondary)"
     }
-  }, "Flusso Staffetta:"), " PDM → PDC → Brand Portal → Strategy Builder → Output"),
+  }, "Flusso Staffetta:"),
+    // Step connector (Customer Journey Map pattern) — pills con connettore orizzontale
+    /*#__PURE__*/React.createElement("div", {
+      style: { display:"flex", alignItems:"center", gap:0, marginTop:8, flexWrap:"wrap" }
+    },
+      [
+        {id:"audit",       lbl:"Audit",       clr:"#9ca3af"},
+        {id:"pdm",         lbl:"PDM",         clr:B},
+        {id:"pdc",         lbl:"PDC",         clr:T},
+        {id:"brand",       lbl:"Brand",       clr:"#534AB7"},
+        {id:"strategy",    lbl:"Strategy",    clr:M},
+        {id:"output",      lbl:"Output",      clr:G},
+      ].map((step, i, arr) => {
+        const isActive = modStatus(step.id) === "partial" || modStatus(step.id) === "done";
+        const isDone   = modStatus(step.id) === "done";
+        return /*#__PURE__*/React.createElement(React.Fragment, { key: step.id },
+          // Pill step
+          /*#__PURE__*/React.createElement("div", {
+            onClick: () => onNavigate(step.id),
+            style: {
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "4px 10px", borderRadius: 99, cursor: "pointer",
+              background: isDone ? step.clr+"18" : isActive ? step.clr+"12" : "transparent",
+              border: "0.5px solid " + (isDone ? step.clr : isActive ? step.clr+"88" : "var(--border)"),
+              fontSize: 11, fontWeight: isDone||isActive ? 600 : 400,
+              color: isDone||isActive ? step.clr : "var(--text-muted)",
+              transition: "all .15s", whiteSpace:"nowrap"
+            }
+          },
+            /*#__PURE__*/React.createElement("span", {
+              style: { width:6, height:6, borderRadius:"50%", flexShrink:0,
+                background: isDone ? step.clr : isActive ? step.clr+"88" : "var(--border-strong)" }
+            }),
+            step.lbl,
+            isDone && /*#__PURE__*/React.createElement("span", {
+              style: { fontSize:9, opacity:.8 }
+            }, " ✓")
+          ),
+          // Connettore tra step (non sull'ultimo)
+          i < arr.length-1 && /*#__PURE__*/React.createElement("div", {
+            style: {
+              width: 16, height: 1, flexShrink: 0,
+              background: isDone ? "var(--border-strong)" : "var(--border)",
+              margin: "0 1px"
+            }
+          })
+        );
+      })
+    )),
 
   // P20 — Gantt dinamico cliente (UX Process Overview pattern)
   /*#__PURE__*/React.createElement("div", {
@@ -1448,7 +1508,8 @@ function PDMView({
     title: currentSec?.lbl,
     sub: `Gruppo: ${currentSec?.grp} · Piano di Marketing`,
     onSave: save,
-    savedMsg: savedMsg
+    savedMsg: savedMsg,
+    pageNum: `${String(_pdmIdx+1).padStart(2,"0")} / ${PDM_SEZIONI.length}`
   }), /*#__PURE__*/React.createElement(Alert, {
     type: "info"
   }, "I dati di questa sezione alimentano automaticamente il Piano di Comunicazione. Compila con precisione — vengono riusati come contesto."),
@@ -1678,7 +1739,8 @@ function PDCView({
     title: currentSec?.lbl,
     sub: `Gruppo: ${currentSec?.grp} · Piano di Comunicazione · documento figlio del PDM`,
     onSave: save,
-    savedMsg: savedMsg
+    savedMsg: savedMsg,
+    pageNum: `${String(_pdcIdx+1).padStart(2,"0")} / ${PDC_SEZIONI.length}`
   }), activeSec === "obiettivi_comunicativi" && pdmContext.obiettivi && /*#__PURE__*/React.createElement(Card, {
     style: {
       marginBottom: "1.25rem",
@@ -4706,6 +4768,83 @@ function Dashboard({ clients, onOpen, onAdd }) {
             );
           });
         })()
+      )
+    ),
+    // ── Vista JOURNEY (Customer Journey Map pattern) ──
+    dashVista === "journey" && h("div", { style:{ overflowX:"auto", paddingBottom:8 }},
+      h("div", { style:{
+        display:"grid",
+        gridTemplateColumns: "120px " + list.map(()=>"1fr").join(" "),
+        gap:0,
+        minWidth: 120 + list.length*180 + "px",
+        border:"0.5px solid var(--border)",
+        borderRadius:10,
+        overflow:"hidden"
+      }},
+        // Header row
+        h("div", { style:{ padding:"10px 12px", background:"var(--surface-lt)",
+          borderBottom:"0.5px solid var(--border)", borderRight:"0.5px solid var(--border)",
+          fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:".07em",
+          color:"var(--text-muted)" }}, "Fase"),
+        ...list.map(c => h("div", { key:"h-"+c.id,
+          style:{ padding:"10px 12px", background:"var(--surface-lt)",
+            borderBottom:"0.5px solid var(--border)", borderRight:"0.5px solid var(--border)",
+            display:"flex", alignItems:"center", gap:8 }
+        },
+          h("div", { style:{ width:20, height:20, borderRadius:5, background:c.color,
+            flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:9, fontWeight:800, color:"#fff" }}, c.name.charAt(0)),
+          h("div", { style:{ minWidth:0 }},
+            h("div", { style:{ fontSize:11, fontWeight:600, color:"var(--text-primary)",
+              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}, c.name),
+            h("div", { style:{ fontSize:9, color:"var(--text-muted)" }}, c.pkg)
+          )
+        )),
+        // Swimlane rows
+        ...[
+          { id:"analisi",        lbl:"Analisi",        icon:"📊", clr:B,          getN:(c)=>PDM_SEZIONI.filter(sec=>c.pdm[sec.id]&&c.pdm[sec.id].trim()).length, tot:PDM_SEZIONI.length },
+          { id:"strategia",      lbl:"Strategia",      icon:"🧠", clr:"#8b5cf6",  getN:(c)=>(c.strategy.mod4a.done?1:0)+(c.strategy.mod5.done?1:0), tot:2 },
+          { id:"produzione",     lbl:"Produzione",     icon:"🎨", clr:G,          getN:(c)=>PDC_SEZIONI.filter(sec=>c.pdc[sec.id]&&c.pdc[sec.id].trim()).length, tot:PDC_SEZIONI.length },
+          { id:"pianificazione", lbl:"Pianificazione", icon:"📅", clr:"#f59e0b",  getN:(c)=>{ const ped=c.ped||{}; return Math.min(Object.values(ped).flatMap(v=>v||[]).length,10); }, tot:10 },
+          { id:"monitoraggio",   lbl:"Monitoraggio",   icon:"📈", clr:M,          getN:(c)=>Object.keys(c.report||{}).length, tot:3 },
+        ].flatMap(fase => [
+          h("div", { key:fase.id+"-lbl",
+            style:{ padding:"10px 12px", background:"var(--surface)",
+              borderBottom:"0.5px solid var(--border)", borderRight:"0.5px solid var(--border)",
+              display:"flex", alignItems:"center", gap:6 }
+          },
+            h("span", { style:{fontSize:12}}, fase.icon),
+            h("span", { style:{ fontSize:11, fontWeight:600, color:"var(--text-secondary)" }}, fase.lbl)
+          ),
+          ...list.map(c => {
+            const n   = fase.getN(c);
+            const tot = fase.tot;
+            const pct = Math.min(Math.round(n/tot*100), 100);
+            const done = pct===100;
+            const active = pct>0 && !done;
+            return h("div", { key:fase.id+"-"+c.id,
+              onClick:()=>onOpen(c),
+              style:{ padding:"10px 12px", background:"var(--surface)",
+                borderBottom:"0.5px solid var(--border)", borderRight:"0.5px solid var(--border)",
+                cursor:"pointer",
+                outline: active ? "1.5px dashed "+fase.clr+"66" : "none",
+                outlineOffset:"-2px",
+                background: done ? fase.clr+"08" : "var(--surface)" }
+            },
+              h("div", { style:{ height:3, background:"var(--border-lt)",
+                borderRadius:99, marginBottom:6, overflow:"hidden" }},
+                pct>0 && h("div", { style:{ height:"100%", width:pct+"%",
+                  background:done?fase.clr:fase.clr+"99", borderRadius:99 }})
+              ),
+              h("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"center" }},
+                h("span", { style:{ fontSize:10, fontWeight:600,
+                  color:done?fase.clr:active?fase.clr:"var(--text-muted)" }},
+                  done?"✓ Fatto":active?pct+"%":"—"),
+                h("span", { style:{ fontSize:9, color:"var(--text-muted)" }}, n+"/"+tot)
+              )
+            );
+          })
+        ])
       )
     ),
     dashVista === "lista" && h("div", { style:{ display:"flex", flexDirection:"column", gap:8 }},
