@@ -4165,10 +4165,12 @@ function ClienteScheda({
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function Dashboard({ clients, onOpen, onAdd }) {
   const h = React.createElement;
-  const [search,  setSearch]  = useState("");
+  const [search,    setSearch]    = useState("");
   const [filterMgr, setFilterMgr] = useState("all");
   const [filterFase, setFilterFase] = useState("all");
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd,   setShowAdd]   = useState(false);
+  const [dashVista, setDashVista] = useState("lista"); // 'lista' | 'kanban'
+  const [draggingClient, setDraggingClient] = useState(null);
   const [newName, setNewName] = useState("");
   const [newPkg,  setNewPkg]  = useState("Essential");
   const [newMgr,  setNewMgr]  = useState("Alberto");
@@ -4237,8 +4239,19 @@ function Dashboard({ clients, onOpen, onAdd }) {
     ),
 
 
-    // ── Filtri ──
+    // ── Toggle lista/kanban + filtri ──
     h("div", { style:{ display:"flex", gap:8, marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }},
+      // Toggle pill vista (fitness pattern)
+      h("div",{style:{display:"inline-flex",background:"var(--surface)",
+        border:"0.5px solid var(--border)",borderRadius:99,padding:3,gap:2,marginRight:4}},
+        [["lista","☰ Lista"],["kanban","⊞ Kanban"]].map(([id,lbl])=>
+          h("button",{key:id,onClick:()=>setDashVista(id),
+            style:{padding:"4px 12px",borderRadius:99,fontSize:11,fontWeight:600,
+              cursor:"pointer",border:"none",transition:"all .15s",
+              background:dashVista===id?"#111":"transparent",
+              color:dashVista===id?"#fff":"var(--text-muted)"}},lbl)
+        )
+      ),
       h("input", {
         placeholder:"Cerca cliente…", value:search, onChange:e=>setSearch(e.target.value),
         style:{ fontSize:13, padding:"6px 12px", borderRadius:8, border:"0.5px solid var(--border)", outline:"none",
@@ -4257,8 +4270,108 @@ function Dashboard({ clients, onOpen, onAdd }) {
       list.length," di ",clients.length," clienti"
     ),
 
-    // ── Client cards ──
-    h("div", { style:{ display:"flex", flexDirection:"column", gap:8 }},
+    // ── Client cards — lista o kanban ──
+    dashVista === "kanban" && h("div",{style:{display:"grid",
+      gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12,alignItems:"start",marginTop:8}},
+      (()=>{
+        const FASI_KB = ["Fase 0 — Audit","Fase 1 — Analisi","Fase 2 — Strategia","Fase 3 — Produzione","Fase 4 — Mantenimento"];
+        const FASI_CLR = {
+          "Fase 0 — Audit":"#9ca3af",
+          "Fase 1 — Analisi":"#3b82f6",
+          "Fase 2 — Strategia":"#8b5cf6",
+          "Fase 3 — Produzione":"#10b981",
+          "Fase 4 — Mantenimento":"#f59e0b"
+        };
+        return FASI_KB.map(fase=>{
+          const faseClients = list.filter(c=>c.phase===fase);
+          const clr = FASI_CLR[fase]||"#9ca3af";
+          const isDark = fase==="Fase 3 — Produzione";
+          return h("div",{key:fase,
+            onDragOver:e=>e.preventDefault(),
+            onDrop:()=>{
+              if(draggingClient&&draggingClient.phase!==fase){
+                const updated={...draggingClient,phase:fase};
+                setClients(prev=>prev.map(c=>c.id===draggingClient.id?updated:c));
+                saveClients(clients.map(c=>c.id===draggingClient.id?updated:c));
+                setDraggingClient(null);
+              }
+            },
+            style:{borderRadius:12,overflow:"hidden",minHeight:120,
+              border:"0.5px solid "+clr+"33",
+              background:isDark?"#111":clr+"0d"}
+          },
+            // Colonna header
+            h("div",{style:{padding:"10px 12px 8px",display:"flex",alignItems:"center",
+              justifyContent:"space-between",
+              borderBottom:"0.5px solid "+( isDark?"rgba(255,255,255,.08)":clr+"22")}},
+              h("span",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",
+                letterSpacing:".06em",color:isDark?"rgba(255,255,255,.6)":clr}},
+                fase.replace("Fase ","F").replace(" — ",": ")),
+              h("span",{style:{fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:99,
+                background:isDark?"rgba(255,255,255,.1)":clr+"22",
+                color:isDark?"#fff":clr}},faseClients.length)
+            ),
+            // Client cards
+            h("div",{style:{padding:"8px",display:"flex",flexDirection:"column",gap:8}},
+              faseClients.map(c=>{
+                const pdmF = PDM_SEZIONI.filter(sec=>c.pdm[sec.id]?.trim()).length;
+                const pdcF = PDC_SEZIONI.filter(sec=>c.pdc[sec.id]?.trim()).length;
+                return h("div",{key:c.id,
+                  draggable:true,
+                  onDragStart:()=>setDraggingClient(c),
+                  onDragEnd:()=>setDraggingClient(null),
+                  onClick:()=>onOpen(c),
+                  style:{background:isDark?"rgba(255,255,255,.07)":"var(--surface)",
+                    borderRadius:8,padding:"10px 12px",cursor:"grab",
+                    border:"0.5px solid "+(isDark?"rgba(255,255,255,.1)":"var(--border)"),
+                    opacity:draggingClient?.id===c.id?.4:1,
+                    transform:draggingClient?.id===c.id?"scale(.97)":"scale(1)",
+                    transition:"transform .12s,opacity .12s"}
+                },
+                  // Avatar + nome
+                  h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
+                    h("div",{style:{width:28,height:28,borderRadius:6,background:c.color,
+                      flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:11,fontWeight:800,color:"#fff"}},
+                      (c.name||"?").charAt(0).toUpperCase()),
+                    h("div",{style:{minWidth:0}},
+                      h("div",{style:{fontSize:12,fontWeight:700,color:isDark?"#fff":"var(--text-primary)",
+                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.name),
+                      h("div",{style:{fontSize:10,color:isDark?"rgba(255,255,255,.4)":"var(--text-muted)"}},
+                        c.manager||"—")
+                    )
+                  ),
+                  // Badge progress row (fitness pattern)
+                  h("div",{style:{display:"flex",gap:4,flexWrap:"wrap"}},
+                    [["PDM",pdmF,PDM_SEZIONI.length,B],
+                     ["PDC",pdcF,PDC_SEZIONI.length,"#6b7280"],
+                     ["Str.",(c.strategy.mod4a.done?1:0)+(c.strategy.mod5.done?1:0),2,M]
+                    ].map(([lbl,n,tot,col])=>
+                      h("span",{key:lbl,style:{
+                        fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,
+                        background:n===tot?col+"22":n>0?col+"15":isDark?"rgba(255,255,255,.06)":"var(--border-lt)",
+                        color:n===tot?col:n>0?col:isDark?"rgba(255,255,255,.25)":"var(--text-muted)",
+                        border:"0.5px solid "+(n===tot?col+"44":n>0?col+"33":"transparent")}},
+                        lbl+" "+n+"/"+tot)
+                    )
+                  )
+                );
+              }),
+              // Drop zone
+              h("div",{style:{
+                padding:"12px 8px",borderRadius:8,
+                border:"1.5px dashed "+(isDark?"rgba(255,255,255,.1)":clr+"33"),
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:10,color:isDark?"rgba(255,255,255,.2)":clr+"66",
+                opacity:draggingClient?1:faseClients.length?0:1,
+                transition:"opacity .15s"}},
+                "Trascina qui")
+            )
+          );
+        });
+      })()
+    ),
+    dashVista === "lista" && h("div", { style:{ display:"flex", flexDirection:"column", gap:8 }},
       list.length===0 && h("div", { style:{ textAlign:"center", padding:"48px 24px", color:"var(--text-muted)" }},
         h("div", { style:{ fontSize:28, marginBottom:8 }}, "🔍"),
         h("p", { style:{ fontSize:15, fontWeight:600 }}, "Nessun cliente trovato"),

@@ -1755,65 +1755,110 @@ function Approvals({client,isAdmin,onUpdateStatus,onAddApproval,onMoveToAssets})
         )
   );
 
-  // ── Vista KANBAN ──
+  // ── Vista KANBAN (fitness dashboard style) ──
   const [dragging, setDragging] = useState(null);
   const onDragStart = (a) => setDragging(a);
   const onDrop = (stato) => {
     if(dragging && (dragging.proof_stato||'bozza')!==stato){
-      if(stato==='final'){
-        onMoveToAssets&&onMoveToAssets(dragging);
-      } else {
-        proofUpdate(dragging.id, stato);
-      }
+      if(stato==='final') onMoveToAssets&&onMoveToAssets(dragging);
+      else proofUpdate(dragging.id, stato);
     }
     setDragging(null);
   };
 
-  const kanbanView = h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,alignItems:'start'}},
-    APPROVAL_PROOF.map(stato=>h('div',{key:stato,
-      onDragOver:e=>{e.preventDefault();},
-      onDrop:()=>onDrop(stato),
-      style:{background:APR_BG[stato],borderRadius:'var(--r)',padding:10,minHeight:200,
-        border:'var(--bw) solid '+APR_CLR[stato]+'33',transition:'background var(--t-fast)'}},
-      // Colonna header
-      h('div',{style:{fontSize:11,fontWeight:700,color:APR_CLR[stato],marginBottom:8,
-        textTransform:'uppercase',letterSpacing:'.06em',display:'flex',justifyContent:'space-between'}},
-        APR_LBL[stato],
-        h('span',{style:{fontWeight:400,fontSize:10,color:APR_CLR[stato]+'cc'}},counts[stato]||0)
-      ),
-      // Cards
-      byStato(stato).map(a=>h('div',{key:a.id,
-        draggable:isAdmin,
-        onDragStart:()=>onDragStart(a),
-        style:{background:'var(--surface)',borderRadius:6,padding:'8px 10px',marginBottom:8,
-          border:'var(--bw) solid var(--border)',cursor:isAdmin?'grab':'default',
-          boxShadow:dragging?.id===a.id?'0 4px 12px rgba(0,0,0,.15)':'none',
-          opacity:dragging?.id===a.id?.6:1}},
-        // Preview mini
-        h('div',{style:{height:40,borderRadius:4,marginBottom:6,overflow:'hidden',
-          background:a.imageUrl?'#000':(a.preview||'#C25B2A'),display:'flex',alignItems:'center',justifyContent:'center'}},
-          a.imageUrl&&h('img',{src:a.imageUrl,alt:a.titolo,
-            style:{width:'100%',height:'100%',objectFit:'cover'}})),
-        h('div',{style:{fontSize:12,fontWeight:600,marginBottom:2,
-          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-          color:(a.proof_stato==='final'||a.proof_stato==='approvato')?'var(--text-3)':'var(--text)',
-          textDecoration:(a.proof_stato==='final'||a.proof_stato==='approvato')?'line-through':'none'}},
-          a.titolo),
-        h('div',{style:{fontSize:10,color:'var(--text-3)'}},a.tipo+(a.data?' · '+a.data:'')),
-        // Move to final button
-        isAdmin&&stato!=='final'&&h('button',{
-          className:'btn btn-ghost',
-          style:{width:'100%',fontSize:10,padding:'3px 0',marginTop:6},
-          onClick:()=>stato==='approvato'?(onMoveToAssets&&onMoveToAssets(a)):proofUpdate(a.id,APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1])
-        },stato==='approvato'?'🏁 → Brand Assets':'→ '+APR_LBL[APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1]])
-      )),
-      // Drop zone hint
-      h('div',{style:{height:40,border:'1.5px dashed '+APR_CLR[stato]+'44',borderRadius:6,
-        display:'flex',alignItems:'center',justifyContent:'center',
-        fontSize:10,color:APR_CLR[stato]+'88'}},
-        'Trascina qui')
-    ))
+  const kanbanView = h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,alignItems:'start'}},
+    APPROVAL_PROOF.map(stato=>{
+      const cards = byStato(stato);
+      const isDark = stato==='approvato'||stato==='final';
+      return h('div',{key:stato,
+        onDragOver:e=>e.preventDefault(),
+        onDrop:()=>onDrop(stato),
+        style:{borderRadius:12,overflow:'hidden',
+          border:'0.5px solid '+(isDark?'rgba(255,255,255,.08)':APR_CLR[stato]+'22'),
+          background:isDark?'#111':APR_BG[stato],
+          minHeight:180,transition:'opacity var(--t-fast)',
+          opacity:dragging&&(dragging.proof_stato||'bozza')!==stato?.85:1}
+      },
+        // Colonna header fitness style
+        h('div',{style:{padding:'12px 14px 10px',display:'flex',alignItems:'center',
+          justifyContent:'space-between',borderBottom:'0.5px solid '+(isDark?'rgba(255,255,255,.1)':APR_CLR[stato]+'22')}},
+          h('div',{style:{display:'flex',alignItems:'center',gap:8}},
+            h('span',{style:{fontSize:11,fontWeight:700,textTransform:'uppercase',
+              letterSpacing:'.06em',color:isDark?'rgba(255,255,255,.6)':APR_CLR[stato]}},
+              APR_LBL[stato]),
+            // Badge count (fitness pill pattern)
+            h('span',{style:{fontSize:10,fontWeight:700,
+              padding:'1px 7px',borderRadius:99,
+              background:isDark?'rgba(255,255,255,.12)':APR_CLR[stato]+'22',
+              color:isDark?'#fff':APR_CLR[stato]}},
+              counts[stato]||0)
+          )
+        ),
+        // Cards
+        h('div',{style:{padding:'8px',display:'flex',flexDirection:'column',gap:8}},
+          cards.map(a=>{
+            const isActive = stato==='approvato'||stato==='final';
+            return h('div',{key:a.id,
+              draggable:isAdmin,
+              onDragStart:()=>onDragStart(a),
+              style:{
+                background:isActive?'rgba(255,255,255,.08)':'var(--surface)',
+                borderRadius:8,overflow:'hidden',cursor:isAdmin?'grab':'default',
+                border:'0.5px solid '+(isActive?'rgba(255,255,255,.12)':'var(--border)'),
+                boxShadow:dragging?.id===a.id?'0 8px 24px rgba(0,0,0,.3)':'none',
+                opacity:dragging?.id===a.id?.5:1,
+                transform:dragging?.id===a.id?'scale(1.02)':'scale(1)',
+                transition:'transform .12s, box-shadow .12s'}
+            },
+              // Preview immagine (più alta — fitness card style)
+              h('div',{style:{height:56,overflow:'hidden',position:'relative',
+                background:a.imageUrl?'#000':(a.preview||'#C25B2A')}},
+                a.imageUrl&&h('img',{src:a.imageUrl,alt:a.titolo,
+                  style:{width:'100%',height:'100%',objectFit:'cover',opacity:.9}}),
+                // Badge tipo top-left (fitness "13/15" pattern)
+                h('span',{style:{position:'absolute',top:6,left:6,
+                  fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:99,
+                  background:'rgba(0,0,0,.5)',color:'#fff',backdropFilter:'blur(4px)'}},
+                  a.tipo||'Contenuto')
+              ),
+              // Info
+              h('div',{style:{padding:'8px 10px'}},
+                h('div',{style:{
+                  fontSize:12,fontWeight:600,marginBottom:3,
+                  color:isActive?'rgba(255,255,255,.5)':'var(--text)',
+                  textDecoration:isActive?'line-through':'none',
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                  a.titolo),
+                h('div',{style:{fontSize:10,color:isActive?'rgba(255,255,255,.3)':'var(--text-3)',
+                  marginBottom:isAdmin?6:0}},
+                  (a.formato||'')+( a.data?' · '+a.data:'')),
+                // Avanza stato button (fitness CTA style)
+                isAdmin&&stato!=='final'&&h('button',{
+                  onClick:e=>{e.stopPropagation();
+                    stato==='approvato'?(onMoveToAssets&&onMoveToAssets(a)):proofUpdate(a.id,APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1]);},
+                  style:{width:'100%',padding:'5px 0',borderRadius:6,fontSize:10,fontWeight:700,
+                    cursor:'pointer',border:'none',
+                    background:isActive?'rgba(255,255,255,.15)':APR_CLR[stato]+'22',
+                    color:isActive?'rgba(255,255,255,.8)':APR_CLR[stato]}},
+                  stato==='approvato'?'🏁 → Brand Assets':'→ '+APR_LBL[APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1]])
+              )
+            );
+          }),
+          // Drop zone (elegante, nessun bordo se colonna vuota)
+          h('div',{style:{
+            padding:'16px 8px',borderRadius:8,
+            border:'1.5px dashed '+(isDark?'rgba(255,255,255,.12)':APR_CLR[stato]+'33'),
+            display:'flex',alignItems:'center',justifyContent:'center',
+            fontSize:10,fontWeight:600,
+            color:isDark?'rgba(255,255,255,.2)':APR_CLR[stato]+'66',
+            opacity:dragging?1:cards.length?0:1,
+            transition:'opacity .15s'}},
+            'Trascina qui')
+        )
+      );
+    })
   );
+
 
   return h('div',null,
     newModal,
