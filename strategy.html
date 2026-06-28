@@ -5229,6 +5229,7 @@ function NassaStrategyHub(){
   const [saveState,     setSaveState]     = useState("");        // "" | "saving" | "saved" | "error"
   const saveTimer = React.useRef(null);
   const [hubAiOpen, setHubAiOpen] = useState(false); // P07 — AI panel toggle
+  const [popupDismissed, setPopupDismissed] = useState(false); // P02 — urgency popup
   const h = React.createElement;
 
   // ── Load da Supabase al mount ──
@@ -5300,13 +5301,12 @@ function NassaStrategyHub(){
   );
 
   // P02 — Dark popup urgenza (Do. App pattern)
-  // Clienti con PDM < 4 sezioni compilate e in fase avanzata = urgenza
+  // urgenti e showUrgency calcolati a render time (non hook)
   const urgenti = clients.filter(c => {
     const pdmN = PDM_SEZIONI.filter(sec => c.pdm[sec.id]?.trim()).length;
     const fase  = c.phase || "";
     return pdmN < 4 && (fase.includes("Strategia") || fase.includes("Produzione"));
   });
-  const [popupDismissed, setPopupDismissed] = useState(false);
   const showUrgency = urgenti.length > 0 && !popupDismissed && view === "dashboard";
 
   return h("div", {style:{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",background:"var(--surface-0)"}},
