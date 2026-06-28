@@ -1038,6 +1038,9 @@ body{
 .stream-group-meta{font-size:10px;color:var(--text-3);margin-left:4px;}
 
 /* Job row */
+.stream-job-active td:first-child{border-radius:8px 0 0 8px;}
+.stream-job-active td:last-child{border-radius:0 8px 8px 0;}
+.stream-job-active{overflow:hidden;}
 .stream-job-row{cursor:pointer;transition:background var(--t);}
 .stream-job-row:hover{background:var(--bg);}
 .stream-job-title{font-size:var(--fs-sm);font-weight:600;color:var(--text);}
@@ -3202,26 +3205,66 @@ function streamRenderJobs(){
           else scadStr=`<span style="color:var(--text-3);">${j.dataEnd}</span>`;
         }
 
+        const isActive = j.stato === 'inplay';
         const tr = document.createElement('tr');
-        tr.className = 'stream-job-row';
+        tr.className = 'stream-job-row' + (isActive ? ' stream-job-active' : '');
+        if(isActive) {
+          // Card nera (fitness app pattern) per job in corso
+          tr.style.cssText = 'background:#111;color:#fff;border-radius:8px;';
+        }
+
+        // Dot progress bar con badge N/Tot (fitness app pattern)
+        const dotBar = `<div style="display:flex;align-items:center;gap:8px;min-width:140px;">
+          <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;
+            background:${pct>=100?'#00cc00'+'33':pct>0?'#d97706'+'33':'rgba(255,255,255,.08)'};
+            color:${pct>=100?'#00cc00':pct>0?'#d97706':isActive?'rgba(255,255,255,.4)':'var(--text-3)'};
+            border:0.5px solid ${pct>=100?'#00cc00'+'66':pct>0?'#d97706'+'55':'rgba(255,255,255,.15)'};
+            white-space:nowrap;">${oreUsed}h/${oreStim}h</span>
+          <div style="flex:1;height:3px;background:${isActive?'rgba(255,255,255,.12)':'var(--border-lt)'};
+            border-radius:99px;position:relative;overflow:visible;">
+            <div style="position:absolute;top:0;left:0;height:100%;width:${pct}%;border-radius:99px;
+              background:${barColor};transition:width .25s;"></div>
+            ${pct>0&&pct<100?`<div style="position:absolute;top:50%;left:${pct}%;
+              transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;
+              background:${barColor};border:1.5px solid ${isActive?'#111':'var(--surface)'};"></div>`:''}
+          </div>
+        </div>`;
+
+        // Pill orario scadenza (fitness app pill pattern)
+        const pillScad = j.dataEnd ? `<span style="display:inline-flex;align-items:center;gap:4px;
+          padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;
+          background:${isActive?'rgba(255,255,255,.12)':'var(--surface-lt)'};
+          color:${isActive?'#fff':'var(--text-2)'};">${scadStr}</span>` : scadStr;
+
         tr.innerHTML = `
-          <td style="padding-left:24px;"><span class="stream-job-num">#${j.num||'—'}</span></td>
-          <td>
-            <span class="stream-job-title">${esc(j.emoji||'')} ${esc(j.title||'Job senza titolo')}</span>
-          </td>
-          <td style="text-align:right;">
-            <span style="font-weight:700;">€${budget.toLocaleString('it-IT')}</span>
-            <span style="color:var(--text-3);font-size:10px;"> / €${used.toLocaleString('it-IT')}</span>
+          <td style="padding-left:24px;">
+            <span style="font-size:10px;font-weight:600;color:${isActive?'rgba(255,255,255,.4)':'var(--text-3)'};">#${j.num||'—'}</span>
           </td>
           <td>
-            <div style="display:flex;align-items:center;gap:7px;">
-              <div class="stream-ore-bar"><div class="stream-ore-fill" style="width:${pct}%;background:${barColor};"></div></div>
-              <span style="font-size:10px;color:var(--text-3);white-space:nowrap;">${oreUsed}h/${oreStim}h</span>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-weight:700;font-size:13px;color:${isActive?'#fff':'var(--text-primary)'};">
+                ${esc(j.emoji||'')} ${esc(j.title||'Job senza titolo')}</span>
+              ${isActive?`<span style="font-size:10px;color:rgba(255,255,255,.45);">${streamClientName(j.client)||''}</span>`:''}
             </div>
           </td>
-          <td style="text-align:right;" class="${profit>0?'stream-profit pos':profit<0?'stream-profit neg':''}">€${profit.toLocaleString('it-IT')}</td>
-          <td>${scadStr}</td>
-          <td><span class="stream-status ${stCfg.cls}">${stCfg.l}</span></td>
+          <td style="text-align:right;">
+            <span style="font-weight:700;color:${isActive?'#fff':'var(--text-primary)'};">€${budget.toLocaleString('it-IT')}</span>
+            <span style="color:${isActive?'rgba(255,255,255,.4)':'var(--text-3)'};font-size:10px;"> / €${used.toLocaleString('it-IT')}</span>
+          </td>
+          <td>${dotBar}</td>
+          <td style="text-align:right;" class="${profit>0?'stream-profit pos':profit<0?'stream-profit neg':''}">
+            <span style="color:${isActive?profit>0?'#4ade80':profit<0?'#f87171':'rgba(255,255,255,.5)':''}"}>€${profit.toLocaleString('it-IT')}</span>
+          </td>
+          <td>${pillScad}</td>
+          <td>
+            ${isActive
+              ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;
+                  font-size:11px;font-weight:700;background:rgba(255,255,255,.12);color:#fff;">
+                  <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+                  In corso</span>`
+              : `<span class="stream-status ${stCfg.cls}">${stCfg.l}</span>`
+            }
+          </td>
         `;
         tr.onclick = () => streamOpenPanel(j.id);
         tbody.appendChild(tr);

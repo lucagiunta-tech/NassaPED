@@ -4272,11 +4272,32 @@ function Dashboard({ clients, onOpen, onAdd }) {
         const stratN= (s4a?1:0)+(s5?1:0);
         const allDone = pdmF===PDM_SEZIONI.length && pdcF===PDC_SEZIONI.length && stratN===2;
 
-        const bar = (n,tot,col) => h("div", { style:{ display:"flex", alignItems:"center", gap:6 }},
-          h("span", { style:{ fontSize:11, color:"var(--text-muted)", minWidth:32 }}, n+"/"+tot),
-          h("div", { style:{ width:48, height:4, background:"var(--border-lt)", borderRadius:99, overflow:"hidden" }},
-            h("div", { style:{ height:"100%", width:Math.round(n/tot*100)+"%", borderRadius:99,
-              background: n===tot ? G : n>0 ? AMB : "var(--border-strong)", transition:"width .2s" }})
+        // Badge N/Tot (fitness app pattern) + dot progress bar
+        const bar = (n,tot,col,lbl) => h("div", { style:{ display:"flex", alignItems:"center", gap:8 }},
+          // Badge pill N/Tot
+          h("span", { style:{
+            fontSize:10, fontWeight:700, padding:"1px 7px", borderRadius:99,
+            background: n===tot ? G+"22" : n>0 ? AMB+"22" : "var(--border-lt)",
+            color:       n===tot ? G      : n>0 ? AMB      : "var(--text-muted)",
+            border: "0.5px solid "+(n===tot ? G+"55" : n>0 ? AMB+"55" : "var(--border)"),
+            fontVariantNumeric:"tabular-nums"
+          }}, n+"/"+tot),
+          // Dot progress bar
+          h("div", { style:{ flex:1, height:3, background:"var(--border-lt)", borderRadius:99,
+            position:"relative", overflow:"visible" }},
+            h("div", { style:{ position:"absolute", top:0, left:0, height:"100%",
+              width: Math.round(n/tot*100)+"%", borderRadius:99,
+              background: n===tot ? G : n>0 ? AMB : "var(--border-strong)",
+              transition:"width .25s" }}),
+            // Dot indicator (fitness app "sei qui" pattern)
+            n>0 && n<tot && h("div", { style:{
+              position:"absolute", top:"50%", left: Math.round(n/tot*100)+"%",
+              transform:"translate(-50%,-50%)",
+              width:7, height:7, borderRadius:"50%",
+              background: n>0 ? AMB : "var(--border-strong)",
+              border:"1.5px solid var(--surface)",
+              boxShadow:"0 0 0 1px "+(n>0?AMB:"var(--border)")
+            }})
           )
         );
 
