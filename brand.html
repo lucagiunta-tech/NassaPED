@@ -1755,7 +1755,7 @@ function Approvals({client,isAdmin,onUpdateStatus,onAddApproval,onMoveToAssets})
         )
   );
 
-  // ── Vista KANBAN (fitness dashboard style) ──
+  // ── Vista KANBAN — stile fitness dashboard ──
   const [dragging, setDragging] = useState(null);
   const onDragStart = (a) => setDragging(a);
   const onDrop = (stato) => {
@@ -1766,94 +1766,108 @@ function Approvals({client,isAdmin,onUpdateStatus,onAddApproval,onMoveToAssets})
     setDragging(null);
   };
 
-  const kanbanView = h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,alignItems:'start'}},
+  const KB_COL = {
+    bozza:     {bg:'var(--surface-1)', border:'var(--border)',         labelClr:'var(--text-muted)',     countBg:'var(--surface-lt)',countClr:'var(--text-3)'},
+    revisione: {bg:'var(--surface-1)', border:'var(--border)',         labelClr:'var(--text-muted)',     countBg:'var(--surface-lt)',countClr:'var(--text-3)'},
+    approvato: {bg:'#0f0f0f',          border:'rgba(255,255,255,.06)', labelClr:'rgba(255,255,255,.35)',countBg:'rgba(255,255,255,.07)',countClr:'rgba(255,255,255,.45)'},
+    final:     {bg:'#080f08',          border:'rgba(74,222,128,.12)',  labelClr:'#4ade80',              countBg:'rgba(74,222,128,.1)',countClr:'#4ade80'},
+  };
+
+  const kanbanView = h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,alignItems:'start'}},
     APPROVAL_PROOF.map(stato=>{
-      const cards = byStato(stato);
+      const cards  = byStato(stato);
+      const col    = KB_COL[stato]||KB_COL.bozza;
       const isDark = stato==='approvato'||stato==='final';
+      const isFinal= stato==='final';
+
       return h('div',{key:stato,
         onDragOver:e=>e.preventDefault(),
         onDrop:()=>onDrop(stato),
-        style:{borderRadius:12,overflow:'hidden',
-          border:'0.5px solid '+(isDark?'rgba(255,255,255,.08)':APR_CLR[stato]+'22'),
-          background:isDark?'#111':APR_BG[stato],
-          minHeight:180,transition:'opacity var(--t-fast)',
-          opacity:dragging&&(dragging.proof_stato||'bozza')!==stato?.85:1}
+        style:{borderRadius:16,overflow:'hidden',border:'0.5px solid '+col.border,
+          background:col.bg,minHeight:120,transition:'opacity .15s',
+          opacity:dragging&&(dragging.proof_stato||'bozza')!==stato?.7:1}
       },
-        // Colonna header fitness style
-        h('div',{style:{padding:'12px 14px 10px',display:'flex',alignItems:'center',
-          justifyContent:'space-between',borderBottom:'0.5px solid '+(isDark?'rgba(255,255,255,.1)':APR_CLR[stato]+'22')}},
-          h('div',{style:{display:'flex',alignItems:'center',gap:8}},
-            h('span',{style:{fontSize:11,fontWeight:700,textTransform:'uppercase',
-              letterSpacing:'.06em',color:isDark?'rgba(255,255,255,.6)':APR_CLR[stato]}},
-              APR_LBL[stato]),
-            // Badge count (fitness pill pattern)
-            h('span',{style:{fontSize:10,fontWeight:700,
-              padding:'1px 7px',borderRadius:99,
-              background:isDark?'rgba(255,255,255,.12)':APR_CLR[stato]+'22',
-              color:isDark?'#fff':APR_CLR[stato]}},
-              counts[stato]||0)
-          )
+        h('div',{style:{padding:'14px 16px 12px',display:'flex',alignItems:'center',
+          justifyContent:'space-between',
+          borderBottom:'0.5px solid '+(isDark?'rgba(255,255,255,.06)':'var(--border)')}},
+          h('span',{style:{fontSize:11,fontWeight:600,textTransform:'uppercase',
+            letterSpacing:'.07em',color:col.labelClr}},APR_LBL[stato]),
+          h('span',{style:{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:99,
+            background:col.countBg,color:col.countClr}},counts[stato]||0)
         ),
-        // Cards
-        h('div',{style:{padding:'8px',display:'flex',flexDirection:'column',gap:8}},
+        h('div',{style:{padding:10,display:'flex',flexDirection:'column',gap:10}},
           cards.map(a=>{
-            const isActive = stato==='approvato'||stato==='final';
+            const ps      = a.proof_stato||'bozza';
+            const isDone  = ps==='approvato'||ps==='final';
+            const prevBg  = a.imageUrl?'#000':(a.preview||'#C25B2A');
+            const cardBg  = isDark?(isFinal?'#0e1a0e':'#1a1a1a'):'var(--surface)';
+            const cardBdr = isDark?'rgba(255,255,255,.09)':'var(--border)';
+            const titleClr= isDark?(isFinal?'rgba(255,255,255,.3)':'rgba(255,255,255,.45)'):'var(--text)';
+            const catClr  = isDark?(isFinal?'rgba(74,222,128,.4)':'rgba(255,255,255,.3)'):'var(--text-3)';
+            const badgeBg = isFinal?'rgba(74,222,128,.1)':isDark?'rgba(255,255,255,.07)':'var(--surface-lt)';
+            const badgeClr= isFinal?'#4ade80':isDark?'rgba(255,255,255,.4)':'var(--text-3)';
+            const ctaBg   = isFinal?'rgba(74,222,128,.1)':isDark?'rgba(255,255,255,.07)':APR_CLR[ps]+'18';
+            const ctaClr  = isFinal?'#4ade80':isDark?'rgba(255,255,255,.5)':APR_CLR[ps];
+            const pct     = ps==='bozza'?12:ps==='revisione'?50:100;
+            const nextS   = APPROVAL_PROOF[APPROVAL_PROOF.indexOf(ps)+1];
+
             return h('div',{key:a.id,
               draggable:isAdmin,
               onDragStart:()=>onDragStart(a),
-              style:{
-                background:isActive?'rgba(255,255,255,.08)':'var(--surface)',
-                borderRadius:8,overflow:'hidden',cursor:isAdmin?'grab':'default',
-                border:'0.5px solid '+(isActive?'rgba(255,255,255,.12)':'var(--border)'),
-                boxShadow:dragging?.id===a.id?'0 8px 24px rgba(0,0,0,.3)':'none',
-                opacity:dragging?.id===a.id?.5:1,
-                transform:dragging?.id===a.id?'scale(1.02)':'scale(1)',
-                transition:'transform .12s, box-shadow .12s'}
+              onDragEnd:()=>setDragging(null),
+              style:{borderRadius:12,border:'0.5px solid '+cardBdr,background:cardBg,
+                overflow:'hidden',cursor:isAdmin?'grab':'default',
+                transform:dragging?.id===a.id?'scale(.97)':'scale(1)',
+                opacity:dragging?.id===a.id?.4:1,transition:'transform .12s,opacity .12s'}
             },
-              // Preview immagine (più alta — fitness card style)
-              h('div',{style:{height:56,overflow:'hidden',position:'relative',
-                background:a.imageUrl?'#000':(a.preview||'#C25B2A')}},
+              h('div',{style:{height:64,background:prevBg,position:'relative',overflow:'hidden',
+                display:'flex',alignItems:'center',justifyContent:'center'}},
                 a.imageUrl&&h('img',{src:a.imageUrl,alt:a.titolo,
-                  style:{width:'100%',height:'100%',objectFit:'cover',opacity:.9}}),
-                // Badge tipo top-left (fitness "13/15" pattern)
-                h('span',{style:{position:'absolute',top:6,left:6,
-                  fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:99,
-                  background:'rgba(0,0,0,.5)',color:'#fff',backdropFilter:'blur(4px)'}},
-                  a.tipo||'Contenuto')
+                  style:{width:'100%',height:'100%',objectFit:'cover',display:'block',opacity:isDark?.65:1}}),
+                h('span',{style:{position:'absolute',top:8,left:8,fontSize:9,fontWeight:700,
+                  padding:'2px 7px',borderRadius:99,letterSpacing:'.03em',
+                  background:isDark?'rgba(255,255,255,.1)':'rgba(0,0,0,.45)',
+                  color:isDark?'rgba(255,255,255,.7)':'#fff'}},a.tipo||'Post')
               ),
-              // Info
-              h('div',{style:{padding:'8px 10px'}},
-                h('div',{style:{
-                  fontSize:12,fontWeight:600,marginBottom:3,
-                  color:isActive?'rgba(255,255,255,.5)':'var(--text)',
-                  textDecoration:isActive?'line-through':'none',
-                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
-                  a.titolo),
-                h('div',{style:{fontSize:10,color:isActive?'rgba(255,255,255,.3)':'var(--text-3)',
-                  marginBottom:isAdmin?6:0}},
-                  (a.formato||'')+( a.data?' · '+a.data:'')),
-                // Avanza stato button (fitness CTA style)
-                isAdmin&&stato!=='final'&&h('button',{
+              h('div',{style:{padding:'10px 12px'}},
+                h('div',{style:{fontSize:10,marginBottom:3,color:catClr}},
+                  (a.formato||'')+(a.data?' · '+a.data:'')),
+                h('div',{style:{fontSize:13,fontWeight:600,marginBottom:8,lineHeight:1.35,
+                  color:titleClr,textDecoration:isDone?'line-through':'none'}},a.titolo||'—'),
+                h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
+                  isFinal
+                    ?h('span',{style:{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,
+                        background:'rgba(74,222,128,.1)',color:'#4ade80'}},'\u2713 Completato')
+                    :h('span',{style:{fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:99,
+                        background:badgeBg,color:badgeClr}},APR_LBL[ps]),
+                  !isFinal&&h('div',{style:{flex:1,height:3,borderRadius:99,position:'relative',
+                    background:isDark?'rgba(255,255,255,.07)':'var(--border-lt)'}},
+                    h('div',{style:{position:'absolute',top:0,left:0,height:'100%',width:pct+'%',
+                      borderRadius:99,transition:'width .25s',
+                      background:isDark?'rgba(255,255,255,.2)':APR_CLR[ps]}}),
+                    ps==='revisione'&&h('div',{style:{position:'absolute',top:'50%',left:'50%',
+                      transform:'translate(-50%,-50%)',width:7,height:7,borderRadius:'50%',
+                      background:APR_CLR['revisione'],
+                      border:'1.5px solid '+(isDark?'#1a1a1a':'var(--surface)')}})
+                  )
+                ),
+                isAdmin&&!isFinal&&h('button',{
                   onClick:e=>{e.stopPropagation();
-                    stato==='approvato'?(onMoveToAssets&&onMoveToAssets(a)):proofUpdate(a.id,APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1]);},
-                  style:{width:'100%',padding:'5px 0',borderRadius:6,fontSize:10,fontWeight:700,
-                    cursor:'pointer',border:'none',
-                    background:isActive?'rgba(255,255,255,.15)':APR_CLR[stato]+'22',
-                    color:isActive?'rgba(255,255,255,.8)':APR_CLR[stato]}},
-                  stato==='approvato'?'🏁 → Brand Assets':'→ '+APR_LBL[APPROVAL_PROOF[APPROVAL_PROOF.indexOf(stato)+1]])
+                    ps==='approvato'?(onMoveToAssets&&onMoveToAssets(a)):proofUpdate(a.id,nextS);},
+                  style:{width:'100%',padding:'6px 0',borderRadius:8,fontSize:10,fontWeight:700,
+                    cursor:'pointer',border:'none',background:ctaBg,color:ctaClr}},
+                  ps==='approvato'?'\u2192 Brand Assets':'\u2192 '+APR_LBL[nextS])
               )
             );
           }),
-          // Drop zone (elegante, nessun bordo se colonna vuota)
-          h('div',{style:{
-            padding:'16px 8px',borderRadius:8,
-            border:'1.5px dashed '+(isDark?'rgba(255,255,255,.12)':APR_CLR[stato]+'33'),
+          h('div',{style:{borderRadius:10,padding:'14px 8px',
+            border:'1.5px dashed '+(isFinal?'rgba(74,222,128,.15)':isDark?'rgba(255,255,255,.08)':'var(--border)'),
             display:'flex',alignItems:'center',justifyContent:'center',
-            fontSize:10,fontWeight:600,
-            color:isDark?'rgba(255,255,255,.2)':APR_CLR[stato]+'66',
+            fontSize:10,fontWeight:500,
+            color:isFinal?'rgba(74,222,128,.3)':isDark?'rgba(255,255,255,.15)':'var(--text-3)',
             opacity:dragging?1:cards.length?0:1,
-            transition:'opacity .15s'}},
-            'Trascina qui')
+            pointerEvents:dragging?'all':'none',transition:'opacity .2s'}},
+            'trascina qui')
         )
       );
     })

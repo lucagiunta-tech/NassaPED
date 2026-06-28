@@ -4271,105 +4271,137 @@ function Dashboard({ clients, onOpen, onAdd }) {
     ),
 
     // ── Client cards — lista o kanban ──
-    dashVista === "kanban" && h("div",{style:{display:"grid",
-      gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:12,alignItems:"start",marginTop:8}},
-      (()=>{
-        const FASI_KB = ["Fase 0 — Audit","Fase 1 — Analisi","Fase 2 — Strategia","Fase 3 — Produzione","Fase 4 — Mantenimento"];
-        const FASI_CLR = {
-          "Fase 0 — Audit":"#9ca3af",
-          "Fase 1 — Analisi":"#3b82f6",
-          "Fase 2 — Strategia":"#8b5cf6",
-          "Fase 3 — Produzione":"#10b981",
-          "Fase 4 — Mantenimento":"#f59e0b"
-        };
-        return FASI_KB.map(fase=>{
-          const faseClients = list.filter(c=>c.phase===fase);
-          const clr = FASI_CLR[fase]||"#9ca3af";
-          const isDark = fase==="Fase 3 — Produzione";
-          return h("div",{key:fase,
-            onDragOver:e=>e.preventDefault(),
-            onDrop:()=>{
-              if(draggingClient&&draggingClient.phase!==fase){
-                const updated={...draggingClient,phase:fase};
-                setClients(prev=>prev.map(c=>c.id===draggingClient.id?updated:c));
-                saveClients(clients.map(c=>c.id===draggingClient.id?updated:c));
-                setDraggingClient(null);
-              }
+    dashVista === "kanban" && h("div",{style:{overflowX:"auto"}},
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,minmax(200px,1fr))",
+        gap:16,alignItems:"start",minWidth:900}},
+        (()=>{
+          const FASI_KB = [
+            {id:"Fase 0 — Audit",     lbl:"Audit",      dark:false, clr:"#9ca3af"},
+            {id:"Fase 1 — Analisi",   lbl:"Analisi",    dark:false, clr:"#3b82f6"},
+            {id:"Fase 2 — Strategia", lbl:"Strategia",  dark:false, clr:"#8b5cf6"},
+            {id:"Fase 3 — Produzione",lbl:"Produzione", dark:true,  clr:"#10b981"},
+            {id:"Fase 4 — Mantenimento",lbl:"Mantenimento",dark:false,clr:"#f59e0b"},
+          ];
+          return FASI_KB.map(({id,lbl,dark,clr})=>{
+            const colCards = list.filter(c=>c.phase===id);
+            const colBg    = dark?"#0f1a13":"var(--surface)";
+            const colBdr   = dark?"rgba(16,185,129,.12)":"var(--border)";
+            const headClr  = dark?"#34d399":"var(--text-muted)";
+            const cntBg    = dark?"rgba(52,211,153,.1)":"var(--surface-lt)";
+            const cntClr   = dark?"#34d399":"var(--text-3)";
+
+            return h("div",{key:id,
+              onDragOver:e=>e.preventDefault(),
+              onDrop:()=>{
+                if(draggingClient&&draggingClient.phase!==id){
+                  const upd={...draggingClient,phase:id};
+                  setClients(prev=>prev.map(c=>c.id===draggingClient.id?upd:c));
+                  saveClients(clients.map(c=>c.id===draggingClient.id?upd:c));
+                  setDraggingClient(null);
+                }
+              },
+              style:{borderRadius:16,overflow:"hidden",border:"0.5px solid "+colBdr,
+                background:colBg,minHeight:120}
             },
-            style:{borderRadius:12,overflow:"hidden",minHeight:120,
-              border:"0.5px solid "+clr+"33",
-              background:isDark?"#111":clr+"0d"}
-          },
-            // Colonna header
-            h("div",{style:{padding:"10px 12px 8px",display:"flex",alignItems:"center",
-              justifyContent:"space-between",
-              borderBottom:"0.5px solid "+( isDark?"rgba(255,255,255,.08)":clr+"22")}},
-              h("span",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",
-                letterSpacing:".06em",color:isDark?"rgba(255,255,255,.6)":clr}},
-                fase.replace("Fase ","F").replace(" — ",": ")),
-              h("span",{style:{fontSize:10,fontWeight:700,padding:"1px 7px",borderRadius:99,
-                background:isDark?"rgba(255,255,255,.1)":clr+"22",
-                color:isDark?"#fff":clr}},faseClients.length)
-            ),
-            // Client cards
-            h("div",{style:{padding:"8px",display:"flex",flexDirection:"column",gap:8}},
-              faseClients.map(c=>{
-                const pdmF = PDM_SEZIONI.filter(sec=>c.pdm[sec.id]?.trim()).length;
-                const pdcF = PDC_SEZIONI.filter(sec=>c.pdc[sec.id]?.trim()).length;
-                return h("div",{key:c.id,
-                  draggable:true,
-                  onDragStart:()=>setDraggingClient(c),
-                  onDragEnd:()=>setDraggingClient(null),
-                  onClick:()=>onOpen(c),
-                  style:{background:isDark?"rgba(255,255,255,.07)":"var(--surface)",
-                    borderRadius:8,padding:"10px 12px",cursor:"grab",
-                    border:"0.5px solid "+(isDark?"rgba(255,255,255,.1)":"var(--border)"),
-                    opacity:draggingClient?.id===c.id?.4:1,
-                    transform:draggingClient?.id===c.id?"scale(.97)":"scale(1)",
-                    transition:"transform .12s,opacity .12s"}
-                },
-                  // Avatar + nome
-                  h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:8}},
-                    h("div",{style:{width:28,height:28,borderRadius:6,background:c.color,
-                      flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:11,fontWeight:800,color:"#fff"}},
-                      (c.name||"?").charAt(0).toUpperCase()),
-                    h("div",{style:{minWidth:0}},
-                      h("div",{style:{fontSize:12,fontWeight:700,color:isDark?"#fff":"var(--text-primary)",
-                        overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.name),
-                      h("div",{style:{fontSize:10,color:isDark?"rgba(255,255,255,.4)":"var(--text-muted)"}},
-                        c.manager||"—")
+              // Header colonna
+              h("div",{style:{padding:"14px 16px 12px",display:"flex",alignItems:"center",
+                justifyContent:"space-between",
+                borderBottom:"0.5px solid "+(dark?"rgba(52,211,153,.1)":"var(--border)")}},
+                h("span",{style:{fontSize:11,fontWeight:600,textTransform:"uppercase",
+                  letterSpacing:".07em",color:headClr}},lbl),
+                h("span",{style:{fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:99,
+                  background:cntBg,color:cntClr}},colCards.length)
+              ),
+              // Cards
+              h("div",{style:{padding:10,display:"flex",flexDirection:"column",gap:10}},
+                colCards.map(c=>{
+                  const pdmF   = PDM_SEZIONI.filter(sec=>c.pdm[sec.id]?.trim()).length;
+                  const pdcF   = PDC_SEZIONI.filter(sec=>c.pdc[sec.id]?.trim()).length;
+                  const stratN = (c.strategy.mod4a.done?1:0)+(c.strategy.mod5.done?1:0);
+                  const cardBg = dark?"#0e2018":"var(--surface)";
+                  const cardBdr= dark?"rgba(52,211,153,.1)":"var(--border)";
+
+                  return h("div",{key:c.id,
+                    draggable:true,
+                    onDragStart:()=>setDraggingClient(c),
+                    onDragEnd:()=>setDraggingClient(null),
+                    onClick:()=>onOpen(c),
+                    style:{borderRadius:12,border:"0.5px solid "+cardBdr,background:cardBg,
+                      overflow:"hidden",cursor:"grab",
+                      transform:draggingClient?.id===c.id?"scale(.97)":"scale(1)",
+                      opacity:draggingClient?.id===c.id?.4:1,
+                      transition:"transform .12s,opacity .12s"}
+                  },
+                    // Accent top strip col colore cliente
+                    h("div",{style:{height:3,background:c.color||clr}}),
+                    // Body
+                    h("div",{style:{padding:"10px 12px"}},
+                      // Avatar + nome
+                      h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:10}},
+                        h("div",{style:{width:32,height:32,borderRadius:8,background:c.color,
+                          flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:12,fontWeight:800,color:"#fff"}},
+                          (c.name||"?").charAt(0).toUpperCase()),
+                        h("div",{style:{minWidth:0}},
+                          h("div",{style:{fontSize:13,fontWeight:700,
+                            color:dark?"rgba(255,255,255,.85)":"var(--text-primary)",
+                            overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},c.name),
+                          h("div",{style:{fontSize:10,
+                            color:dark?"rgba(255,255,255,.3)":"var(--text-muted)"}},
+                            c.pkg+" · "+(c.manager||"—"))
+                        )
+                      ),
+                      // Badge progress row (fitness N/Tot pattern)
+                      h("div",{style:{display:"flex",flexDirection:"column",gap:5}},
+                        [["PDM",pdmF,PDM_SEZIONI.length,B],
+                         ["PDC",pdcF,PDC_SEZIONI.length,"#6b7280"],
+                         ["Strategy",stratN,2,M]
+                        ].map(([lbl2,n,tot,col2])=>{
+                          const done = n===tot;
+                          const some = n>0&&!done;
+                          const bg2  = done?col2+"22":some?col2+"14":dark?"rgba(255,255,255,.05)":"var(--surface-lt)";
+                          const clr2 = done?col2:some?col2:dark?"rgba(255,255,255,.2)":"var(--text-3)";
+                          const bdr2 = done?col2+"44":some?col2+"33":"transparent";
+                          return h("div",{key:lbl2,style:{display:"flex",alignItems:"center",gap:8}},
+                            h("span",{style:{fontSize:9,fontWeight:700,minWidth:44,
+                              color:dark?"rgba(255,255,255,.3)":"var(--text-3)"}},lbl2),
+                            // Badge N/Tot
+                            h("span",{style:{fontSize:9,fontWeight:700,padding:"1px 6px",
+                              borderRadius:99,background:bg2,color:clr2,border:"0.5px solid "+bdr2,
+                              fontVariantNumeric:"tabular-nums"}},n+"/"+tot),
+                            // Dot progress bar
+                            h("div",{style:{flex:1,height:3,borderRadius:99,position:"relative",
+                              background:dark?"rgba(255,255,255,.06)":"var(--border-lt)"}},
+                              h("div",{style:{position:"absolute",top:0,left:0,height:"100%",
+                                width:Math.round(n/tot*100)+"%",borderRadius:99,
+                                background:done?col2:some?col2:"var(--border-strong)",
+                                transition:"width .25s"}}),
+                              some&&h("div",{style:{position:"absolute",top:"50%",
+                                left:Math.round(n/tot*100)+"%",
+                                transform:"translate(-50%,-50%)",
+                                width:6,height:6,borderRadius:"50%",background:col2,
+                                border:"1.5px solid "+(dark?"#0e2018":"var(--surface)")}})
+                            )
+                          );
+                        })
+                      )
                     )
-                  ),
-                  // Badge progress row (fitness pattern)
-                  h("div",{style:{display:"flex",gap:4,flexWrap:"wrap"}},
-                    [["PDM",pdmF,PDM_SEZIONI.length,B],
-                     ["PDC",pdcF,PDC_SEZIONI.length,"#6b7280"],
-                     ["Str.",(c.strategy.mod4a.done?1:0)+(c.strategy.mod5.done?1:0),2,M]
-                    ].map(([lbl,n,tot,col])=>
-                      h("span",{key:lbl,style:{
-                        fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:99,
-                        background:n===tot?col+"22":n>0?col+"15":isDark?"rgba(255,255,255,.06)":"var(--border-lt)",
-                        color:n===tot?col:n>0?col:isDark?"rgba(255,255,255,.25)":"var(--text-muted)",
-                        border:"0.5px solid "+(n===tot?col+"44":n>0?col+"33":"transparent")}},
-                        lbl+" "+n+"/"+tot)
-                    )
-                  )
-                );
-              }),
-              // Drop zone
-              h("div",{style:{
-                padding:"12px 8px",borderRadius:8,
-                border:"1.5px dashed "+(isDark?"rgba(255,255,255,.1)":clr+"33"),
-                display:"flex",alignItems:"center",justifyContent:"center",
-                fontSize:10,color:isDark?"rgba(255,255,255,.2)":clr+"66",
-                opacity:draggingClient?1:faseClients.length?0:1,
-                transition:"opacity .15s"}},
-                "Trascina qui")
-            )
-          );
-        });
-      })()
+                  );
+                }),
+                // Drop zone
+                h("div",{style:{borderRadius:10,padding:"14px 8px",
+                  border:"1.5px dashed "+(dark?"rgba(52,211,153,.12)":"var(--border)"),
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  fontSize:10,fontWeight:500,
+                  color:dark?"rgba(52,211,153,.25)":"var(--text-muted)",
+                  opacity:draggingClient?1:colCards.length?0:1,
+                  pointerEvents:draggingClient?"all":"none",transition:"opacity .2s"}},
+                  "trascina qui")
+              )
+            );
+          });
+        })()
+      )
     ),
     dashVista === "lista" && h("div", { style:{ display:"flex", flexDirection:"column", gap:8 }},
       list.length===0 && h("div", { style:{ textAlign:"center", padding:"48px 24px", color:"var(--text-muted)" }},
