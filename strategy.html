@@ -1082,25 +1082,29 @@ function OverviewView({
     lbl: "Piano di Marketing",
     n: pdmFilled,
     tot: PDM_SEZIONI.length,
-    color: B
+    color: B,
+    tools: "📋 Paper · 📊 Metricool · Milanote"
   }, {
     id: "pdc",
     lbl: "Piano di Comunicazione",
     n: pdcFilled,
     tot: PDC_SEZIONI.length,
-    color: T
+    color: T,
+    tools: "📋 Paper · 🎨 Adobe CC · Milanote"
   }, {
     id: "brand",
     lbl: "Brand Portal",
     n: brandScore,
     tot: 6,
-    color: "#534AB7"
+    color: "#534AB7",
+    tools: "🎨 Adobe CC · 📋 Paper · Dropbox"
   }, {
     id: "strategy",
     lbl: "Strategy Builder",
     n: stratScore,
     tot: 2,
-    color: M
+    color: M,
+    tools: "📋 Paper · ✨ AI · Milanote"
   }];
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionTitle, {
     title: client.name,
@@ -1146,7 +1150,12 @@ function OverviewView({
       fontSize: 11,
       color: "var(--text-muted)"
     }
-  }, Math.round(m.n / m.tot * 100), "% · clicca per aprire")))), /*#__PURE__*/React.createElement(Card, {
+  }, Math.round(m.n / m.tot * 100), "% · clicca per aprire"),
+      // P21 — tool icon strip
+      m.tools && /*#__PURE__*/React.createElement("p", {
+        style: { margin:"5px 0 0", fontSize:10, color:"var(--text-muted)",
+          borderTop:"0.5px solid var(--border-lt)", paddingTop:5 }
+      }, m.tools)))), /*#__PURE__*/React.createElement(Card, {
     style: {
       borderLeft: `3px solid ${client.color}`,
       marginBottom: "1.25rem"
@@ -1866,6 +1875,59 @@ function ReportMensileView({ client, onChange }) {
       )
     ),
     // Note mese
+    // Dot Matrix — distribuzione post per stato nel mese (Salesforce pattern)
+    (()=>{
+      const ped = client.ped || {};
+      const allPosts = [];
+      const days = new Date(parseInt(mese.split('-')[0]), parseInt(mese.split('-')[1]), 0).getDate();
+      for(let d=1; d<=days; d++){
+        const dk = mese+'-'+String(d).padStart(2,'0');
+        (ped[dk]||[]).forEach(p => allPosts.push(p));
+      }
+      if(allPosts.length === 0) return null;
+      const ST_CLR = {bozza:'#9ca3af',approvazione:'#f59e0b',approvato:'#185FA5',pubblicato:'#1A8C3F'};
+      const cols = 7; // 7 giorni settimana
+      const rows = Math.ceil(allPosts.length / cols);
+      return h("div", { style:{marginBottom:20} },
+        h("div", { style:{display:"flex",justifyContent:"space-between",
+          alignItems:"center",marginBottom:10} },
+          h("span", { style:{fontSize:10,fontWeight:700,textTransform:"uppercase",
+            letterSpacing:".07em",color:"var(--text-muted)"} }, "Distribuzione post · "+allPosts.length+" totali"),
+          h("div", { style:{display:"flex",gap:12} },
+            Object.entries(ST_CLR).map(([st,clr]) => {
+              const n = allPosts.filter(p=>p.stato===st).length;
+              if(!n) return null;
+              return h("div", { key:st,
+                style:{display:"flex",alignItems:"center",gap:4} },
+                h("span", { style:{width:7,height:7,borderRadius:"50%",
+                  background:clr,display:"inline-block"} }),
+                h("span", { style:{fontSize:10,color:"var(--text-muted)"} }, n+" "+st)
+              );
+            })
+          )
+        ),
+        h("div", { style:{
+          display:"grid",
+          gridTemplateColumns:"repeat("+cols+", 14px)",
+          gap:4
+        }},
+          allPosts.map((p,i) => {
+            const clr = ST_CLR[p.stato] || '#9ca3af';
+            return h("div", { key:i,
+              title:p.tema+" · "+p.stato,
+              style:{
+                width:14, height:14, borderRadius:"50%",
+                background:clr,
+                opacity: p.stato==='pubblicato' ? 1 : p.stato==='approvato' ? 0.85 :
+                         p.stato==='approvazione' ? 0.65 : 0.4,
+                cursor:"default", transition:"transform .1s",
+                flexShrink:0
+              }
+            });
+          })
+        )
+      );
+    })(),
     h(Field,{label:"Note e commenti del mese",hint:"Cosa ha funzionato, cosa no, decisioni per il prossimo mese.",
       placeholder:"Es. Il carosello 'Territorio' ha performato 3x la media. Ridurre i Reel monologo.",
       value:meseData.note||"",onChange:v=>upd("note",v),rows:3})
@@ -4707,7 +4769,14 @@ function Dashboard({ clients, onOpen, onAdd }) {
           // Info
           h("div", { style:{ flex:1, minWidth:0 }},
             h("div", { style:{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }},
-              h("span", { style:{ fontSize:15, fontWeight:700, color:"var(--text-primary)" }}, c.name),
+              h("div", { style:{ display:"flex", flexDirection:"column", gap:1 }},
+              // P18 — micro-label cliente+tipo (Salesforce pattern)
+              h("span", { style:{ fontSize:9, fontWeight:600, textTransform:"uppercase",
+                letterSpacing:".07em", color:"var(--text-muted)" }},
+                c.pkg + " · " + (c.manager||"—")
+              ),
+              h("span", { style:{ fontSize:15, fontWeight:700, color:"var(--text-primary)" }}, c.name)
+            ),
               h("span", { style:{ fontSize:10, padding:"2px 7px", borderRadius:99,
                 background:"var(--green-lt,#e6ffe4)", color:"var(--green-dk,#00cc00)",
                 border:"0.5px solid var(--green-mid,#b3ffb0)", fontWeight:600 }}, c.pkg),
@@ -5091,6 +5160,16 @@ function NassaStrategyHub(){
     h("p", {style:{fontSize:14,color:"var(--text-muted)"}}, "Caricamento NassaStrategy…")
   );
 
+  // P02 — Dark popup urgenza (Do. App pattern)
+  // Clienti con PDM < 4 sezioni compilate e in fase avanzata = urgenza
+  const urgenti = clients.filter(c => {
+    const pdmN = PDM_SEZIONI.filter(sec => c.pdm[sec.id]?.trim()).length;
+    const fase  = c.phase || "";
+    return pdmN < 4 && (fase.includes("Strategia") || fase.includes("Produzione"));
+  });
+  const [popupDismissed, setPopupDismissed] = useState(false);
+  const showUrgency = urgenti.length > 0 && !popupDismissed && view === "dashboard";
+
   return h("div", {style:{display:"flex",flexDirection:"column",height:"100vh",overflow:"hidden",background:"var(--surface-0)"}},
     // ── Topbar ──
     h("div", {className:"ns-topbar"},
@@ -5155,6 +5234,42 @@ function NassaStrategyHub(){
         defaultAiOpen: hubAiOpen,
         onAiToggle: setHubAiOpen
       })
+    ),
+    // P02 — Dark popup urgenza (Do. App pattern)
+    showUrgency && h("div", {style:{
+      position:"fixed", bottom:20, right:20, zIndex:900,
+      background:"#1A1A1A", color:"#fff", borderRadius:12,
+      padding:"14px 16px", maxWidth:280,
+      boxShadow:"0 8px 32px rgba(0,0,0,.35)",
+      display:"flex", flexDirection:"column", gap:8,
+      animation:"slideUp .25s ease"
+    }},
+      h("style", null, "@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}"),
+      h("div", {style:{display:"flex", alignItems:"center", gap:8}},
+        h("span", {style:{
+          width:8, height:8, borderRadius:"50%", background:M, flexShrink:0,
+          animation:"pulse 1.5s ease-in-out infinite",
+          boxShadow:"0 0 0 0 "+M
+        }}),
+        h("style", null, "@keyframes pulse{0%,100%{box-shadow:0 0 0 0 "+M+"88}50%{box-shadow:0 0 0 6px transparent}}"),
+        h("span", {style:{fontSize:12, fontWeight:700, color:"#fff"}},
+          urgenti.length+" client" + (urgenti.length===1?"e":"i") + " con PDM incompleto")
+      ),
+      h("div", {style:{fontSize:11, color:"rgba(255,255,255,.6)", lineHeight:1.5}},
+        urgenti.map(c=>c.name).join(", ") + " — PDM da completare prima di procedere"
+      ),
+      h("div", {style:{display:"flex", gap:8, marginTop:2}},
+        h("button", {
+          onClick:()=>{ setView("cliente"); setSelectedClient(urgenti[0]); setPopupDismissed(true); },
+          style:{flex:1, padding:"6px 0", borderRadius:8, border:"none",
+            background:M, color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer"}
+        }, "Apri " + urgenti[0].name.split(" ")[0]),
+        h("button", {
+          onClick:()=>setPopupDismissed(true),
+          style:{padding:"6px 10px", borderRadius:8, border:"0.5px solid rgba(255,255,255,.2)",
+            background:"transparent", color:"rgba(255,255,255,.6)", fontSize:11, cursor:"pointer"}
+        }, "Ignora")
+      )
     )
   );
 }
