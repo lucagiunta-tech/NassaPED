@@ -1989,28 +1989,81 @@ function PEDView({ client, onChange }) {
   );
 
   return h('div',{style:{maxWidth:1100}},
-    // Topbar mese
-    h('div',{style:{display:'flex',alignItems:'center',gap:12,marginBottom:16,flexWrap:'wrap'}},
-      h('div',{style:{display:'flex',alignItems:'center',gap:8}},
-        h('button',{onClick:()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); },
-          style:{width:28,height:28,borderRadius:6,border:'0.5px solid var(--border)',background:'transparent',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text-secondary)'}},'‹'),
-        h('span',{style:{fontSize:18,fontWeight:700,color:'var(--text-primary)',minWidth:160,textAlign:'center'}},
-          MESI_IT[month]+' '+year),
-        h('button',{onClick:()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); },
-          style:{width:28,height:28,borderRadius:6,border:'0.5px solid var(--border)',background:'transparent',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text-secondary)'}},'›')
-      ),
-      h('button',{onClick:()=>{setYear(now.getFullYear());setMonth(now.getMonth());},
-        style:{padding:'4px 12px',borderRadius:99,border:'0.5px solid var(--border)',background:'transparent',
-          color:'var(--text-secondary)',fontSize:11,cursor:'pointer'}},'Oggi'),
-      // Stats del mese
-      h('div',{style:{marginLeft:'auto',display:'flex',gap:10,flexWrap:'wrap'}},
-        Object.entries(statsByStato).filter(([,n])=>n>0).map(([s,n])=>
-          h('span',{key:s,style:{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:99,
-            background:PED_STATO_CLR[s]+'22',color:PED_STATO_CLR[s],border:`1px solid ${PED_STATO_CLR[s]}44`}},
-            n+' '+s)
+    // ── Extra-bold heading livello cliente ──
+    h('div',{style:{marginBottom:20}},
+      h('div',{style:{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em',
+        color:'var(--text-muted)',marginBottom:4}},'Piano Editoriale'),
+      h('div',{style:{fontSize:32,fontWeight:700,lineHeight:1.1,color:'var(--text-primary)',letterSpacing:'-.02em'}},
+        MESI_IT[month]),
+      h('div',{style:{fontSize:15,color:'var(--text-secondary)',marginTop:2}},
+        year+' · '+allPostsMese.length+' post pianificati')
+    ),
+
+    // ── Timeline orizzontale (ispirata a Do. dashboard) ──
+    h('div',{style:{marginBottom:20,overflowX:'auto',paddingBottom:4}},
+      h('div',{style:{position:'relative',minWidth:700}},
+        // Riga mesi — scorri ±3 mesi dal corrente
+        h('div',{style:{display:'flex',gap:0,borderBottom:'0.5px solid var(--border-strong)',
+          paddingBottom:6,marginBottom:8}},
+          (()=>{
+            const months=[]; let y=year,m=month-2;
+            while(m<0){m+=12;y--;}
+            for(let i=0;i<7;i++){
+              const cm=m%12, cy=y+Math.floor(m/12);
+              const isCur=(cm===month&&cy===year);
+              months.push(h('div',{key:i,
+                onClick:()=>{setMonth(cm);setYear(cy);},
+                style:{flex:cm===month?'0 0 auto':1,minWidth:cm===month?120:60,
+                  textAlign:'center',cursor:'pointer',paddingBottom:4,
+                  borderBottom:isCur?'2px solid var(--text-primary)':'2px solid transparent',
+                  marginBottom:-1,fontSize:isCur?13:11,
+                  fontWeight:isCur?700:400,
+                  color:isCur?'var(--text-primary)':'var(--text-muted)',
+                  transition:'color .15s'}},
+                MESI_IT[cm].toLowerCase()+(cm===month?' '+cy:'')
+              ));
+              m++;
+            }
+            return months;
+          })()
         ),
-        allPostsMese.length>0&&h('span',{style:{fontSize:11,color:'var(--text-muted)'}},
-          allPostsMese.length+' post tot.')
+        // Riga giorni — mostra i 31 giorni del mese corrente
+        h('div',{style:{display:'flex',gap:2,overflowX:'auto',paddingBottom:4}},
+          Array.from({length:new Date(year,month+1,0).getDate()},(_,i)=>i+1).map(d=>{
+            const isToday=d===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
+            const dateKey=pedKey(year,month,d);
+            const hasPost=(ped[dateKey]||[]).length>0;
+            const nPosts=(ped[dateKey]||[]).length;
+            const dow=['D','L','M','M','G','V','S'][new Date(year,month,d).getDay()];
+            return h('div',{key:d,
+              onClick:()=>setAdding(dateKey),
+              title:dow+' '+d+(hasPost?' · '+nPosts+' post':''),
+              style:{display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+                cursor:'pointer',minWidth:28,flexShrink:0,padding:'0 2px'}},
+              h('div',{style:{
+                width:26,height:26,borderRadius:'50%',display:'flex',alignItems:'center',
+                justifyContent:'center',fontSize:11,fontWeight:isToday?700:400,
+                background:isToday?'var(--text-primary)':'transparent',
+                color:isToday?'var(--surface-2)':'var(--text-secondary)',
+                border:hasPost&&!isToday?'1.5px solid var(--text-primary)':'none',
+                transition:'background .12s'}},d),
+              h('div',{style:{fontSize:9,color:'var(--text-muted)',letterSpacing:'.03em'}},dow),
+              // Dot indicatore post
+              h('div',{style:{
+                width:4,height:4,borderRadius:'50%',
+                background:hasPost?PED_STATO_CLR[(ped[dateKey]||[])[0]?.stato||'bozza']:'transparent'}})
+            );
+          })
+        )
+      )
+    ),
+    // Stats bar compatta
+    Object.values(statsByStato).some(n=>n>0)&&h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}},
+      Object.entries(statsByStato).filter(([,n])=>n>0).map(([st,n])=>
+        h('span',{key:st,style:{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:99,
+          background:PED_STATO_CLR[st]+'22',color:PED_STATO_CLR[st],
+          border:'1px solid '+PED_STATO_CLR[st]+'44'}},
+          n+' '+st)
       )
     ),
 
