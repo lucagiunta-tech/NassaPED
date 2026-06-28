@@ -2839,7 +2839,7 @@ function StrategyView({
   const pc = client.brand.colors[0]?.hex || G;
 
   // ── Sync brand data → NassaBrand (brand_data table) ──
-  const syncToBrand = async (m5) => {
+  const syncToBrand = async (m5, pillars) => {
     try {
       const brandUpdate = {};
       if (m5.archetipo?.trim()) brandUpdate.archetype = m5.archetipo.trim();
@@ -2848,6 +2848,7 @@ function StrategyView({
         brandUpdate.tov = "Parole SÌ: " + m5.tov_parole_si.trim() +
           (m5.tov_parole_no?.trim() ? "\nParole NO: " + m5.tov_parole_no.trim() : "");
       }
+      if (pillars?.length > 0) brandUpdate.pillars = pillars;
       if (!Object.keys(brandUpdate).length) return;
 
       // Scrive ogni campo in brand_data via /api/brand
@@ -2888,8 +2889,10 @@ function StrategyView({
         "Parole SÌ: " + m5.tov_parole_si.trim() +
         (m5.tov_parole_no?.trim() ? "\nParole NO: " + m5.tov_parole_no.trim() : "")
       );
+      // Sync pilastri se presenti nel brand
+      if (c.brand?.pillars?.length > 0) onChange("brand", "pillars", c.brand.pillars);
       // Sync anche su NassaBrand (brand_data su Supabase)
-      syncToBrand(m5);
+      syncToBrand(m5, c.brand?.pillars);
       setSavedMsg("Completato ✓ — Brand Portal aggiornato");
     } else {
       setSavedMsg("Completato ✓");

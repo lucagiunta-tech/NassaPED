@@ -1070,6 +1070,45 @@ function BrandAssets({client, isAdmin, onAddLogo, onUpdateBrand}){
             '+ Aggiungi il primo colore del brand')
     ),
 
+    // ── Pilastri narrativi ──
+    (b.pillars?.length>0||isAdmin)&&h('div',{style:{marginBottom:24}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
+        h('div',{className:'section-title',style:{margin:0}},'Pilastri narrativi'),
+        isAdmin&&h('a',{href:'/strategy',target:'_blank',
+          style:{fontSize:11,color:'var(--text-3)',textDecoration:'none',
+            display:'flex',alignItems:'center',gap:3}},
+          '✏ Modifica in Strategy →')
+      ),
+      b.pillars?.length>0
+        ? h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:10}},
+            b.pillars.map((p,i)=>{
+              const nome = p.nome||p.name||p;
+              const icon = p.icon||'';
+              const perc = p.perc||null;
+              const desc = p.desc||p.descrizione||'';
+              return h('div',{key:i,style:{
+                padding:'12px 14px',borderRadius:'var(--r)',
+                background:'var(--surface)',border:'var(--bw) solid var(--border)',
+                borderTop:'3px solid '+pc
+              }},
+                h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:desc?4:0}},
+                  h('div',{style:{fontSize:13,fontWeight:700,color:'var(--text)'}},
+                    icon&&h('span',{style:{marginRight:5}},icon), nome),
+                  perc&&h('div',{style:{fontSize:11,fontWeight:700,color:pc,
+                    background:pc+'15',padding:'1px 6px',borderRadius:99}},perc+'%')
+                ),
+                desc&&h('div',{style:{fontSize:11,color:'var(--text-3)',lineHeight:1.5}},desc)
+              );
+            })
+          )
+        : isAdmin&&h('div',{style:{padding:'16px',textAlign:'center',fontSize:13,color:'var(--text-3)',
+            border:'1.5px dashed var(--border)',borderRadius:'var(--r)'}},
+            'Nessun pilastro definito. ',
+            h('a',{href:'/strategy',target:'_blank',style:{color:'var(--text-2)',textDecoration:'underline'}},
+              'Aggiungili in NassaStrategy → Mod.3')
+          )
+    ),
+
     // ── Font ──
     h('div',{style:{marginBottom:24}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
@@ -1825,6 +1864,53 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdat
       })()
     ),
 
+    // ── Brand Overview: claim · archetype · tov · pilastri ──
+    (client.brand?.claim||client.brand?.archetype||client.brand?.tov||(client.brand?.pillars?.length>0))&&h('div',{
+      style:{background:'var(--surface)',border:'var(--bw) solid var(--border)',
+        borderRadius:'var(--r)',padding:'14px 16px',marginBottom:16,
+        borderLeft:'3px solid '+pc}
+    },
+      // Claim
+      client.brand?.claim&&h('div',{style:{fontSize:18,fontStyle:'italic',fontWeight:500,
+        color:'var(--text)',marginBottom:10,lineHeight:1.4}},
+        '"',client.brand.claim,'"'
+      ),
+      // Archetipo + ToV
+      (client.brand?.archetype||client.brand?.tov)&&h('div',{
+        style:{display:'flex',gap:16,flexWrap:'wrap',marginBottom:client.brand?.pillars?.length?12:0}},
+        client.brand?.archetype&&h('div',null,
+          h('div',{style:{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',
+            color:'var(--text-3)',marginBottom:3}},'Archetipo'),
+          h('div',{style:{fontSize:13,fontWeight:600,color:'var(--text)',
+            padding:'3px 10px',borderRadius:99,background:pc+'18',border:'0.5px solid '+pc+'44'}},
+            client.brand.archetype)
+        ),
+        client.brand?.tov&&h('div',{style:{flex:1,minWidth:160}},
+          h('div',{style:{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',
+            color:'var(--text-3)',marginBottom:3}},'Tone of Voice'),
+          h('div',{style:{fontSize:12,color:'var(--text-2)',lineHeight:1.5}},
+            client.brand.tov)
+        )
+      ),
+      // Pilastri narrativi
+      client.brand?.pillars?.length>0&&h('div',null,
+        h('div',{style:{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',
+          color:'var(--text-3)',marginBottom:6}},'Pilastri narrativi'),
+        h('div',{style:{display:'flex',gap:6,flexWrap:'wrap'}},
+          (client.brand.pillars||[]).map((p,i)=>h('div',{key:i,
+            style:{padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:600,
+              background:pc+'15',color:pc,border:'0.5px solid '+pc+'33'}},
+            (p.icon||'')+' '+(p.nome||p.name||p)+(p.perc?' · '+p.perc+'%':'')
+          ))
+        )
+      ),
+      h('div',{style:{fontSize:10,color:'var(--text-3)',marginTop:8,display:'flex',alignItems:'center',gap:4}},
+        '↗ Modificabile in ',
+        h('a',{href:'/strategy',target:'_blank',
+          style:{color:'var(--text-3)',textDecoration:'underline',cursor:'pointer'}},'NassaStrategy → Mod.5')
+      )
+    ),
+
     // ── Step 14: Banner promemoria se pending > 0 ──
     pending>0&&h('div',{style:{
       display:'flex',alignItems:'center',gap:12,
@@ -1896,6 +1982,29 @@ function PortaleCliente({client,onUpdateStatus}){
       ))
     ),
     h('div',{style:{maxWidth:860,margin:'0 auto',padding:24}},
+      // Brand overview (claim + archetype + tov) per il cliente
+      (client.brand?.claim||client.brand?.archetype||client.brand?.tov)&&h('div',{
+        style:{background:'var(--surface)',border:'var(--bw) solid var(--border)',
+          borderRadius:'var(--r)',padding:'14px 16px',marginBottom:20,
+          borderLeft:'3px solid '+pc}
+      },
+        client.brand?.claim&&h('div',{style:{fontSize:17,fontStyle:'italic',fontWeight:500,
+          color:'var(--text)',marginBottom:8,lineHeight:1.4}},'"',client.brand.claim,'"'),
+        (client.brand?.archetype||client.brand?.tov)&&h('div',{style:{display:'flex',gap:16,flexWrap:'wrap'}},
+          client.brand?.archetype&&h('div',null,
+            h('div',{style:{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',
+              color:'var(--text-3)',marginBottom:3}},'Archetipo'),
+            h('div',{style:{fontSize:12,fontWeight:600,color:pc,
+              padding:'2px 9px',borderRadius:99,background:pc+'18',border:'0.5px solid '+pc+'44'}},
+              client.brand.archetype)
+          ),
+          client.brand?.tov&&h('div',{style:{flex:1,minWidth:160}},
+            h('div',{style:{fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.06em',
+              color:'var(--text-3)',marginBottom:3}},'Tone of Voice'),
+            h('div',{style:{fontSize:12,color:'var(--text-2)',lineHeight:1.5}},client.brand.tov)
+          )
+        )
+      ),
       tab==='assets'&&h(BrandAssets,{client,isAdmin:false}),
       tab==='approvals'&&h(Approvals,{client,isAdmin:false,onUpdateStatus}),
       tab==='moodboard'&&h(Moodboard,{client,isAdmin:false})
