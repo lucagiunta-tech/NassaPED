@@ -1400,6 +1400,34 @@ function OverviewView({
   ));
 }
 
+// ─── P11: OutputBox — output list per modulo (TM Studio pattern) ────────────
+function OutputBox({ items, color }) {
+  return React.createElement("div", {
+    style: { marginTop:20, marginBottom:8, padding:"10px 14px",
+      background:"var(--surface-1)", border:"0.5px solid var(--border)",
+      borderLeft:"2px solid "+color, borderRadius:8 }
+  },
+    React.createElement("div", {
+      style:{ fontSize:9, fontWeight:700, textTransform:"uppercase",
+        letterSpacing:".07em", color:color, marginBottom:6 }
+    }, "Output di questo modulo"),
+    React.createElement("div", {
+      style:{ display:"flex", flexWrap:"wrap", gap:"3px 10px" }
+    },
+      items.map(item => React.createElement("span", { key:item,
+        style:{ fontSize:11, color:"var(--text-secondary)",
+          display:"flex", alignItems:"center", gap:4 }
+      },
+        React.createElement("span", {
+          style:{ width:4, height:4, borderRadius:"50%",
+            background:color, display:"inline-block", flexShrink:0 }
+        }),
+        item
+      ))
+    )
+  );
+}
+
 // ─── PDM VIEW ────────────────────────────────────────────────────────────────
 function PDMView({
   client,
