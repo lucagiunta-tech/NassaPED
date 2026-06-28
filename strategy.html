@@ -1253,8 +1253,23 @@ function OverviewView({
         {id:"strategy",    lbl:"Strategy",    clr:M},
         {id:"output",      lbl:"Output",      clr:G},
       ].map((step, i, arr) => {
-        const isActive = modStatus(step.id) === "partial" || modStatus(step.id) === "done";
-        const isDone   = modStatus(step.id) === "done";
+        // Calcola stato localmente (modStatus non disponibile in OverviewView)
+        let isDone = false, isActive = false;
+        if (step.id === "audit") {
+          const n = Object.values(client.audit||{}).filter(v=>v&&v.trim()).length;
+          isDone = n >= 4; isActive = n > 0 && !isDone;
+        } else if (step.id === "pdm") {
+          isDone = pdmFilled === PDM_SEZIONI.length; isActive = pdmFilled > 0 && !isDone;
+        } else if (step.id === "pdc") {
+          isDone = pdcFilled === PDC_SEZIONI.length; isActive = pdcFilled > 0 && !isDone;
+        } else if (step.id === "brand") {
+          isDone = brandScore >= 4; isActive = brandScore > 0 && !isDone;
+        } else if (step.id === "strategy") {
+          isDone = stratScore === 2; isActive = stratScore > 0 && !isDone;
+        } else if (step.id === "output") {
+          isDone = stratScore === 2 && pdmFilled === PDM_SEZIONI.length;
+          isActive = (stratScore > 0 || pdmFilled > 0) && !isDone;
+        }
         return /*#__PURE__*/React.createElement(React.Fragment, { key: step.id },
           // Pill step
           /*#__PURE__*/React.createElement("div", {
