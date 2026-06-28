@@ -459,7 +459,14 @@ const INIT_CLIENTS = [{
       claim: "",
       payoff: ""
     }
-  }
+  },
+  gantt:{
+    analisi:       {start:"2026-03-01",end:"2026-03-14",done:true},
+    strategia:     {start:"2026-03-15",end:"2026-04-15",done:true},
+    produzione:    {start:"2026-04-16",end:null,done:false},
+    pianificazione:{start:null,end:null,done:false},
+    monitoraggio:  {start:null,end:null,done:false},
+  },
 }, {
   id: "ramaddini",
   name: "Ramaddini Vini",
@@ -562,7 +569,14 @@ const INIT_CLIENTS = [{
       claim: "Vino che racconta la terra.",
       payoff: ""
     }
-  }
+  },
+  gantt:{
+    analisi:       {start:"2026-04-01",end:"2026-04-20",done:true},
+    strategia:     {start:"2026-04-21",end:null,done:false},
+    produzione:    {start:null,end:null,done:false},
+    pianificazione:{start:null,end:null,done:false},
+    monitoraggio:  {start:null,end:null,done:false},
+  },
 }];
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
@@ -1205,7 +1219,101 @@ function OverviewView({
       fontWeight: 500,
       color: "var(--text-secondary)"
     }
-  }, "Flusso Staffetta:"), " PDM → PDC → Brand Portal → Strategy Builder → Output"));
+  }, "Flusso Staffetta:"), " PDM → PDC → Brand Portal → Strategy Builder → Output"),
+
+  // P20 — Gantt dinamico cliente (UX Process Overview pattern)
+  /*#__PURE__*/React.createElement("div", {
+    style: { marginTop: "1.5rem" }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { fontSize:11, fontWeight:700, textTransform:"uppercase",
+          letterSpacing:".07em", color:"var(--text-muted)" }
+      }, "Timeline Staffetta"),
+      /*#__PURE__*/React.createElement("div", {
+        style: { fontSize:10, color:"var(--text-muted)" }
+      }, new Date().toLocaleDateString("it-IT", {month:"long", year:"numeric"}))
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: { display:"flex", flexDirection:"column", gap:10 }
+    },
+      [
+        {id:"analisi",        lbl:"Analisi",        clr:B,   icon:"📊"},
+        {id:"strategia",      lbl:"Strategia",      clr:"#8b5cf6", icon:"🧠"},
+        {id:"produzione",     lbl:"Produzione",     clr:G,   icon:"🎨"},
+        {id:"pianificazione", lbl:"Pianificazione", clr:"#f59e0b", icon:"📅"},
+        {id:"monitoraggio",   lbl:"Monitoraggio",   clr:M,   icon:"📈"},
+      ].map(fase => {
+        const gf = (client.gantt || {})[fase.id] || {};
+        const done = gf.done;
+        const hasStart = !!gf.start;
+        const hasEnd   = !!gf.end;
+        // Calcola % progresso basata su sezioni compilate per questa fase
+        let pct = 0;
+        if (fase.id === "analisi") {
+          const n = PDM_SEZIONI.filter(s => client.pdm[s.id]?.trim()).length;
+          pct = Math.round(n / PDM_SEZIONI.length * 100);
+        } else if (fase.id === "strategia") {
+          const n = PDC_SEZIONI.filter(s => client.pdc[s.id]?.trim()).length;
+          const n2 = (client.strategy.mod4a.done?1:0)+(client.strategy.mod5.done?1:0);
+          pct = Math.round((n/PDC_SEZIONI.length + n2/2) / 2 * 100);
+        } else if (fase.id === "produzione") {
+          const n = client.brand.colors.length + client.brand.logos.length;
+          pct = Math.min(100, Math.round(n / 6 * 100));
+        } else if (done) {
+          pct = 100;
+        }
+
+        return /*#__PURE__*/React.createElement("div", {
+          key: fase.id,
+          style: { display:"flex", alignItems:"center", gap:12 }
+        },
+          // Icona + label
+          /*#__PURE__*/React.createElement("div", {
+            style: { width:100, flexShrink:0, display:"flex", alignItems:"center", gap:6 }
+          },
+            /*#__PURE__*/React.createElement("span", { style:{ fontSize:12 } }, fase.icon),
+            /*#__PURE__*/React.createElement("span", {
+              style: { fontSize:11, fontWeight: hasStart?600:400,
+                color: done?"var(--text-primary)":hasStart?"var(--text-secondary)":"var(--text-muted)" }
+            }, fase.lbl)
+          ),
+          // Barra gantt
+          /*#__PURE__*/React.createElement("div", {
+            style: { flex:1, height:8, background:"var(--border-lt)",
+              borderRadius:99, overflow:"hidden", position:"relative" }
+          },
+            pct > 0 && /*#__PURE__*/React.createElement("div", {
+              style: { position:"absolute", top:0, left:0, height:"100%",
+                width: pct+"%", borderRadius:99,
+                background: done ? fase.clr : fase.clr+"99",
+                transition:"width .4s ease" }
+            })
+          ),
+          // Badge stato
+          /*#__PURE__*/React.createElement("div", {
+            style: { minWidth:72, textAlign:"right" }
+          },
+            done
+              ? /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize:10, fontWeight:700, color:G }
+                }, "✓ Fatto")
+              : hasStart
+              ? /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize:10, fontWeight:600,
+                    color: fase.clr, background:fase.clr+"18",
+                    padding:"1px 7px", borderRadius:99 }
+                }, pct+"%")
+              : /*#__PURE__*/React.createElement("span", {
+                  style: { fontSize:10, color:"var(--text-muted)" }
+                }, "—")
+          )
+        );
+      })
+    )
+  ));
 }
 
 // ─── PDM VIEW ────────────────────────────────────────────────────────────────
@@ -1815,8 +1923,39 @@ function QBRView({ client, onChange }) {
       )
     ),
     h(Alert,{type:"info"},"La QBR si fa ogni 3 mesi con il cliente. Compila prima di ogni incontro e usala come agenda strutturata."),
-    SEZIONI_QBR.map(s=>h(Field,{key:s.key,label:s.lbl,hint:s.hint,placeholder:s.ph,
-      value:trimData[s.key]||"",onChange:v=>upd(s.key,v),rows:4}))
+    // P22 — Layout numerale macro (UX Process Overview pattern)
+    SEZIONI_QBR.map((sec, idx) =>
+      h("div", { key: sec.key,
+        style:{ display:"grid", gridTemplateColumns:"64px 1fr",
+          gap:"0 20px", marginBottom:24, alignItems:"start" }
+      },
+        // Numerale macro
+        h("div", { style:{
+          fontSize:52, fontWeight:800, lineHeight:1,
+          color: trimData[sec.key]?.trim() ? G : "var(--border-strong)",
+          letterSpacing:"-.04em", textAlign:"center", paddingTop:4
+        }}, String(idx+1).padStart(2,"0")),
+        // Label + hint + textarea
+        h("div", null,
+          h("div", { style:{ fontSize:13, fontWeight:700,
+            color:"var(--text-primary)", marginBottom:3 }}, sec.lbl),
+          sec.hint && h("div", { style:{ fontSize:11, color:"var(--text-muted)",
+            marginBottom:8, lineHeight:1.5 }}, sec.hint),
+          h("textarea", {
+            rows: 4, value: trimData[sec.key] || "",
+            onChange: e => upd(sec.key, e.target.value),
+            placeholder: sec.ph,
+            style:{ width:"100%", padding:"8px 11px", fontSize:13,
+              color:"var(--text-primary)", background:"var(--surface-2)",
+              border: trimData[sec.key]?.trim()
+                ? "0.5px solid var(--border-strong)" : "0.5px solid var(--border-strong)",
+              borderLeft: trimData[sec.key]?.trim() ? "2px solid "+G : "0.5px solid var(--border-strong)",
+              borderRadius:8, fontFamily:"var(--font-sans)", outline:"none",
+              boxSizing:"border-box", resize:"vertical" }
+          })
+        )
+      )
+    )
   );
 }
 
