@@ -1869,10 +1869,11 @@ function PEDView({ client, onChange }) {
   const now = new Date();
   const [year,  setYear]  = React.useState(now.getFullYear());
   const [month, setMonth] = React.useState(now.getMonth());
-  const [editing, setEditing] = React.useState(null); // {dateKey,idx} or null
-  const [adding,  setAdding]  = React.useState(null); // dateKey or null
-  const [newPost, setNewPost] = React.useState({pilastro:'Brand',formato:'Post feed',tema:'',caption:'',stato:'bozza'});
-  const [savedMsg,setSavedMsg]= React.useState('');
+  const [editing,  setEditing]  = React.useState(null);
+  const [adding,   setAdding]   = React.useState(null);
+  const [newPost,  setNewPost]  = React.useState({pilastro:'Brand',formato:'Post feed',tema:'',caption:'',stato:'bozza'});
+  const [savedMsg, setSavedMsg] = React.useState('');
+  const [pedVista, setPedVista] = React.useState('mese'); // 'mese'|'settimana'|'lista'
 
   const ped = client.ped || {};
   const MESI_IT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
@@ -1999,6 +2000,23 @@ function PEDView({ client, onChange }) {
         year+' · '+allPostsMese.length+' post pianificati')
     ),
 
+    // ── Pill toggle Mese / Settimana / Lista (ispirato a Dashlab) ──
+    h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',
+      marginBottom:16,flexWrap:'wrap',gap:8}},
+      h('div',{style:{display:'inline-flex',background:'var(--surface)',
+        border:'0.5px solid var(--border)',borderRadius:99,padding:3,gap:2}},
+        [['mese','Mese'],['settimana','Settimana'],['lista','Lista']].map(([id,lbl])=>
+          h('button',{key:id,onClick:()=>setPedVista(id),
+            style:{padding:'5px 14px',borderRadius:99,fontSize:12,fontWeight:600,
+              cursor:'pointer',border:'none',transition:'all .15s',
+              background:pedVista===id?G:'transparent',
+              color:pedVista===id?'#111':'var(--text-muted)'}},lbl)
+        )
+      ),
+      pedVista==='lista'&&h('div',{style:{marginLeft:'auto',fontSize:12,color:'var(--text-muted)'}},
+        allPostsMese.length+' post nel mese')
+    ),
+
     // ── Timeline orizzontale (ispirata a Do. dashboard) ──
     h('div',{style:{marginBottom:20,overflowX:'auto',paddingBottom:4}},
       h('div',{style:{position:'relative',minWidth:700}},
@@ -2057,8 +2075,8 @@ function PEDView({ client, onChange }) {
         )
       )
     ),
-    // Stats bar compatta
-    Object.values(statsByStato).some(n=>n>0)&&h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}},
+    // Stats bar compatta (solo mese/settimana)
+    pedVista!=='lista'&&Object.values(statsByStato).some(n=>n>0)&&h('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}},
       Object.entries(statsByStato).filter(([,n])=>n>0).map(([st,n])=>
         h('span',{key:st,style:{fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:99,
           background:PED_STATO_CLR[st]+'22',color:PED_STATO_CLR[st],
@@ -2067,8 +2085,8 @@ function PEDView({ client, onChange }) {
       )
     ),
 
-    // Griglia calendario
-    h('div',{style:{border:'0.5px solid var(--border)',borderRadius:8,overflow:'hidden'}},
+    // Griglia calendario (solo vista mese)
+    pedVista==='mese'&&h('div',{style:{border:'0.5px solid var(--border)',borderRadius:8,overflow:'hidden'}},
       // Header giorni
       h('div',{style:{display:'grid',gridTemplateColumns:'repeat(7,1fr)',background:'var(--surface-lt)'}},
         PED_GIORNI.map(g=>h('div',{key:g,style:{padding:'8px 0',textAlign:'center',
@@ -2129,6 +2147,81 @@ function PEDView({ client, onChange }) {
 
     // CSS per il bottone + su hover della cella
     h('style',null,`.ped-add-btn{opacity:0!important;} td:hover .ped-add-btn,div:hover>.ped-add-btn{opacity:1!important;}`),
+
+    // ── Vista LISTA (alternativa al calendario) ──
+    pedVista==='lista' && allPostsMese.length===0 && h('div',{style:{
+      textAlign:'center',padding:'32px 0',color:'var(--text-muted)',fontSize:13}},
+      'Nessun post pianificato in '+MESI_IT[month]+'. Clicca un giorno nel calendario.'
+    ),
+    pedVista==='lista' && allPostsMese.length>0 && h('div',{
+      style:{marginTop:8,display:'flex',flexDirection:'column',gap:8}},
+      allPostsMese.map(p=>{
+        const clr = PED_STATO_CLR[p.stato]||'#9ca3af';
+        const d = new Date(year, month, p.day);
+        const dowIt = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][d.getDay()];
+        return h('div',{key:p.dateKey+'-'+p.idx,
+          onClick:()=>setEditing({dateKey:p.dateKey,idx:p.idx}),
+          style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',cursor:'pointer',
+            background:'var(--surface)',border:'0.5px solid var(--border)',
+            borderLeft:'3px solid '+clr,borderRadius:8,
+            transition:'border-color .12s'}},
+          // Data
+          h('div',{style:{flexShrink:0,textAlign:'center',minWidth:36}},
+            h('div',{style:{fontSize:18,fontWeight:700,lineHeight:1,color:'var(--text-primary)'}},''+p.day),
+            h('div',{style:{fontSize:10,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'.04em'}},dowIt)
+          ),
+          h('div',{style:{width:'0.5px',background:'var(--border)',alignSelf:'stretch',flexShrink:0}}),
+          // Content
+          h('div',{style:{flex:1,minWidth:0}},
+            h('div',{style:{fontSize:13,fontWeight:600,color:'var(--text-primary)',
+              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+              textDecoration:p.stato==='pubblicato'?'line-through':'none',
+              opacity:p.stato==='pubblicato'?.65:1}},p.tema),
+            h('div',{style:{fontSize:11,color:'var(--text-muted)',marginTop:2}},
+              p.pilastro+' · '+p.formato)
+          ),
+          // Stato badge
+          h('span',{style:{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,
+            flexShrink:0,background:clr+'22',color:clr,border:'1px solid '+clr+'44'}},p.stato)
+        );
+      })
+    ),
+
+    // ── Vista SETTIMANA ──
+    pedVista==='settimana' && h('div',{style:{marginTop:8}},
+      (()=>{
+        // Trova la settimana contenente oggi (o prima settimana del mese)
+        const todayD = (month===now.getMonth()&&year===now.getFullYear())?now.getDate():1;
+        const weekStart = todayD - new Date(year,month,todayD).getDay() + 1;
+        const days = Array.from({length:7},(_,i)=>weekStart+i).filter(d=>d>=1&&d<=new Date(year,month+1,0).getDate());
+        return h('div',{style:{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:8}},
+          days.map(d=>{
+            const dk = pedKey(year,month,d);
+            const posts = ped[dk]||[];
+            const isToday=d===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
+            const dow=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][new Date(year,month,d).getDay()];
+            return h('div',{key:d,
+              style:{background:isToday?G+'12':'var(--surface)',
+                border:'0.5px solid '+(isToday?G:'var(--border)'),
+                borderRadius:8,padding:'10px 8px',minHeight:120}},
+              h('div',{style:{textAlign:'center',marginBottom:8}},
+                h('div',{style:{fontSize:10,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'.05em'}},dow),
+                h('div',{style:{fontSize:20,fontWeight:700,color:isToday?G:'var(--text-primary)',lineHeight:1.2}},d)
+              ),
+              posts.map((p,i)=>h('div',{key:i,
+                onClick:()=>setEditing({dateKey:dk,idx:i}),
+                style:{fontSize:10,padding:'3px 6px',borderRadius:4,marginBottom:3,cursor:'pointer',
+                  background:PED_STATO_CLR[p.stato]+'22',color:PED_STATO_CLR[p.stato],
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                p.tema||p.formato)),
+              h('div',{style:{marginTop:4,textAlign:'center'},onClick:()=>setAdding(dk)},
+                h('button',{style:{fontSize:10,color:'var(--text-muted)',background:'transparent',
+                  border:'none',cursor:'pointer',padding:'2px 6px'}},'+'))
+            );
+          })
+        );
+      })()
+    ),
 
     // Modals
     adding && addForm(adding),
@@ -4079,41 +4172,45 @@ function Dashboard({ clients, onOpen, onAdd }) {
     fontWeight: active ? 600 : 400, fontSize:12, cursor:"pointer"
   });
 
-  return h("div", { style:{ padding:"1.5rem", maxWidth:960, margin:"0 auto" }},
+  return h("div", { style:{ padding:"1.5rem", maxWidth:1100, margin:"0 auto" }},
 
-    // ── Header ──
-    h("div", { style:{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1.25rem", flexWrap:"wrap", gap:10 }},
-      h("div", null,
-        h("h1", { style:{ margin:"0 0 2px", fontSize:24, fontWeight:800, color:"var(--text-primary)", letterSpacing:"-.02em" }}, "Dashboard clienti"),
-        h("p",  { style:{ margin:0, fontSize:13, color:"var(--text-muted)" }},
-          clients.length," clienti · ",pdmAvviati," con PDM · ",strategyOk," strategy completate"
+    // ── Bento header (ispirato a Dashlab) ──
+    h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:"1.5rem"}},
+      h("div",{style:{gridColumn:"span 2",background:"var(--surface)",border:"0.5px solid var(--border)",
+        borderRadius:12,padding:"20px 24px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:120}},
+        h("div",null,
+          h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",
+            color:"var(--text-muted)",marginBottom:6}},"Nassa Strategy"),
+          h("h1",{style:{margin:"0 0 4px",fontSize:28,fontWeight:800,color:"var(--text-primary)",
+            letterSpacing:"-.02em",lineHeight:1.1}},"Dashboard clienti"),
+          h("p",{style:{margin:0,fontSize:13,color:"var(--text-muted)"}},
+            clients.length+" clienti attivi · Q"+Math.ceil((new Date().getMonth()+1)/3)+" "+new Date().getFullYear())
+        ),
+        h("div",{style:{display:"flex",gap:8,marginTop:14,alignItems:"center"}},
+          h("button",{onClick:()=>setShowAdd(true),
+            style:{padding:"7px 16px",borderRadius:99,border:"none",background:G,
+              color:"#111",fontSize:12,cursor:"pointer",fontWeight:700}},
+            "+ Nuovo cliente"),
+          h("span",{style:{fontSize:12,color:"var(--text-muted)"}},
+            outputPronti+" output pronti")
         )
       ),
-      h("button", {
-        onClick: () => setShowAdd(true),
-        style:{ padding:"7px 16px", borderRadius:8, border:"none", background:G, color:"#111", fontSize:13, cursor:"pointer", fontWeight:700 }
-      }, "+ Nuovo cliente")
+      h("div",{style:{background:"var(--surface)",border:"0.5px solid var(--border)",
+        borderRadius:12,padding:"20px 20px",display:"flex",flexDirection:"column",justifyContent:"space-between"}},
+        h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",
+          color:"var(--text-muted)"}},"PDM avviati"),
+        h("div",{style:{fontSize:38,fontWeight:800,color:B,letterSpacing:"-.03em",lineHeight:1,margin:"8px 0"}},pdmAvviati),
+        h("div",{style:{fontSize:11,color:"var(--text-muted)"}},"di "+clients.length+" clienti")
+      ),
+      h("div",{style:{background:"var(--surface)",border:"0.5px solid var(--border)",
+        borderRadius:12,padding:"20px 20px",display:"flex",flexDirection:"column",justifyContent:"space-between"}},
+        h("div",{style:{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em",
+          color:"var(--text-muted)"}},"Strategy OK"),
+        h("div",{style:{fontSize:38,fontWeight:800,color:M,letterSpacing:"-.03em",lineHeight:1,margin:"8px 0"}},strategyOk),
+        h("div",{style:{fontSize:11,color:"var(--text-muted)"}},"completate")
+      )
     ),
 
-    // ── KPI strip ──
-    h("div", { style:{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom:"1.25rem" }},
-      [
-        { lbl:"Clienti totali", val:clients.length,  icon:"👥", color:"var(--text-primary)" },
-        { lbl:"PDM avviati",    val:pdmAvviati,       icon:"📊", color:B },
-        { lbl:"Strategy OK",    val:strategyOk,       icon:"⭐", color:M },
-        { lbl:"Output pronti",  val:outputPronti,     icon:"📦", color:G==="#0dff00"?"#00aa00":G },
-      ].map(k => h("div", { key:k.lbl, style:{
-        background:"var(--surface)", border:"0.5px solid var(--border)",
-        borderRadius:8, padding:"14px 16px",
-        display:"flex", alignItems:"flex-start", justifyContent:"space-between"
-      }},
-        h("div", null,
-          h("p", { style:{ margin:"0 0 3px", fontSize:28, fontWeight:800, color:k.color, letterSpacing:"-.02em", lineHeight:1 }}, k.val),
-          h("p", { style:{ margin:0, fontSize:11, color:"var(--text-muted)", textTransform:"uppercase", letterSpacing:".06em" }}, k.lbl)
-        ),
-        h("span", { style:{ fontSize:20 }}, k.icon)
-      ))
-    ),
 
     // ── Filtri ──
     h("div", { style:{ display:"flex", gap:8, marginBottom:"1rem", flexWrap:"wrap", alignItems:"center" }},
