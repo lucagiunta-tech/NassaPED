@@ -1400,7 +1400,13 @@ function PDMView({
       cursor: "pointer",
       fontWeight: 500
     }
-  }, "Salva & vai avanti →")));
+  }, "Salva & vai avanti →")),
+  // P11 — Output list PDM (TM Studio pattern)
+  React.createElement(OutputBox, {
+    items:["Obiettivi SMART","Budget marketing","Buyer personas",
+           "Analisi SWOT","Competitor map","Posizionamento"],
+    color:B
+  }));
 }
 
 // ─── PDC VIEW ────────────────────────────────────────────────────────────────
@@ -1636,7 +1642,13 @@ function PDCView({
       cursor: "pointer",
       fontWeight: 500
     }
-  }, "Salva & vai avanti →")));
+  }, "Salva & vai avanti →")),
+  // P11 — Output list PDC (TM Studio pattern)
+  React.createElement(OutputBox, {
+    items:["ToV · 10 regole","Message House","Campaign Moments",
+           "Tone escalation","Crisis copy","Brand vocabulary"],
+    color:T
+  }));
 }
 
 // ─── BRAND PORTAL VIEW ───────────────────────────────────────────────────────
