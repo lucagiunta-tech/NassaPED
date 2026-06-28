@@ -4017,41 +4017,41 @@ function ClienteScheda({
     setAiLoading(false);
   };
 
-  const aiPanel = h("div",{style:{
+  const aiPanel = React.createElement("div",{style:{
     width:aiOpen?260:0, minWidth:aiOpen?260:0, flexShrink:0,
     background:"var(--surface-2)", borderLeft:aiOpen?"0.5px solid var(--border)":"none",
     overflowY:"auto", overflowX:"hidden", transition:"width .2s,min-width .2s",
     display:"flex", flexDirection:"column"
   }},
-    aiOpen && h("div",{style:{padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,minWidth:260}},
-      h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}},
-        h("span",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",
+    aiOpen && React.createElement("div",{style:{padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,minWidth:260}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}},
+        React.createElement("span",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",
           letterSpacing:".07em",color:"var(--text-muted)"}},"AI Nassa"),
-        h("button",{onClick:()=>setAiOpen(false),
+        React.createElement("button",{onClick:()=>setAiOpen(false),
           style:{border:"none",background:"transparent",cursor:"pointer",fontSize:18,
             color:"var(--text-muted)",lineHeight:1,padding:"0 2px"}},"×")
       ),
-      h("div",{style:{fontSize:11,color:"var(--text-muted)",padding:"7px 10px",
+      React.createElement("div",{style:{fontSize:11,color:"var(--text-muted)",padding:"7px 10px",
         borderRadius:8,background:"var(--surface-1)",border:"0.5px solid var(--border)"}},
-        "Modulo: ",h("span",{style:{fontWeight:700,color:"var(--text-primary)"}},mod.toUpperCase())
+        "Modulo: ",React.createElement("span",{style:{fontWeight:700,color:"var(--text-primary)"}},mod.toUpperCase())
       ),
-      aiMsg && h("div",{style:{fontSize:12,color:"var(--text-primary)",lineHeight:1.65,
+      aiMsg && React.createElement("div",{style:{fontSize:12,color:"var(--text-primary)",lineHeight:1.65,
         padding:"10px 12px",borderRadius:8,background:"var(--surface-1)",
         border:"0.5px solid var(--border)",borderLeft:"2px solid #534AB7",
         whiteSpace:"pre-wrap"}},aiMsg),
-      !aiMsg && !aiLoading && h("div",{style:{fontSize:12,color:"var(--text-muted)",
+      !aiMsg && !aiLoading && React.createElement("div",{style:{fontSize:12,color:"var(--text-muted)",
         padding:"12px",borderRadius:8,border:"1.5px dashed var(--border)",
         textAlign:"center",lineHeight:1.6}},
-        "🧠 Suggerimento contestuale per ",h("strong",null,mod)),
-      aiLoading && h("div",{style:{fontSize:12,color:"var(--text-muted)",
+        "🧠 Suggerimento contestuale per ",React.createElement("strong",null,mod)),
+      aiLoading && React.createElement("div",{style:{fontSize:12,color:"var(--text-muted)",
         padding:"12px",textAlign:"center"}},"⏳ Analisi…"),
-      h("button",{onClick:askAI,disabled:aiLoading,
+      React.createElement("button",{onClick:askAI,disabled:aiLoading,
         style:{padding:"8px 0",borderRadius:8,border:"none",
           background:aiLoading?"var(--border)":"#534AB7",
           color:aiLoading?"var(--text-muted)":"#fff",
           fontSize:12,fontWeight:700,cursor:aiLoading?"not-allowed":"pointer"}},
         aiLoading?"⏳ Analisi…":aiMsg?"↻ Aggiorna":"✨ Chiedi a Claude"),
-      aiHistory.length>0 && h("button",{
+      aiHistory.length>0 && React.createElement("button",{
         onClick:()=>{setAiHistory([]);setAiMsg("");},
         style:{padding:"4px 0",border:"none",background:"transparent",
           fontSize:10,color:"var(--text-muted)",cursor:"pointer",textAlign:"center"}},
