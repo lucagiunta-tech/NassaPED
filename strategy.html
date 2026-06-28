@@ -2154,39 +2154,63 @@ function PEDView({ client, onChange }) {
       textAlign:'center',padding:'32px 0',color:'var(--text-muted)',fontSize:13}},
       'Nessun post pianificato in '+MESI_IT[month]+'. Clicca un giorno nel calendario.'
     ),
+    // Vista lista: zero-based density (SAI) — raggruppa per giorno, numero ultra-large
     pedVista==='lista' && allPostsMese.length>0 && h('div',{
-      style:{marginTop:8,display:'flex',flexDirection:'column',gap:8}},
-      allPostsMese.map(p=>{
-        const clr = PED_STATO_CLR[p.stato]||'#9ca3af';
-        const d = new Date(year, month, p.day);
-        const dowIt = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][d.getDay()];
-        return h('div',{key:p.dateKey+'-'+p.idx,
-          onClick:()=>setEditing({dateKey:p.dateKey,idx:p.idx}),
-          style:{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',cursor:'pointer',
-            background:'var(--surface)',border:'0.5px solid var(--border)',
-            borderLeft:'3px solid '+clr,borderRadius:8,
-            transition:'border-color .12s'}},
-          // Data
-          h('div',{style:{flexShrink:0,textAlign:'center',minWidth:36}},
-            h('div',{style:{fontSize:18,fontWeight:700,lineHeight:1,color:'var(--text-primary)'}},''+p.day),
-            h('div',{style:{fontSize:10,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'.04em'}},dowIt)
-          ),
-          h('div',{style:{width:'0.5px',background:'var(--border)',alignSelf:'stretch',flexShrink:0}}),
-          // Content
-          h('div',{style:{flex:1,minWidth:0}},
-            h('div',{style:{fontSize:13,fontWeight:600,color:'var(--text-primary)',
-              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-              textDecoration:p.stato==='pubblicato'?'line-through':'none',
-              opacity:p.stato==='pubblicato'?.65:1}},p.tema),
-            h('div',{style:{fontSize:11,color:'var(--text-muted)',marginTop:2}},
-              p.pilastro+' · '+p.formato)
-          ),
-          // Stato badge
-          h('span',{style:{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,
-            flexShrink:0,background:clr+'22',color:clr,border:'1px solid '+clr+'44'}},p.stato)
-        );
-      })
+      style:{marginTop:8,display:'flex',flexDirection:'column',gap:0}},
+      (()=>{
+        const byDay={};
+        allPostsMese.forEach(p=>{if(!byDay[p.day])byDay[p.day]=[];byDay[p.day].push(p);});
+        return Object.entries(byDay).map(([day,posts])=>{
+          const d=new Date(year,month,parseInt(day));
+          const dowIt=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][d.getDay()];
+          const isToday=parseInt(day)===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
+          return h('div',{key:day,style:{marginBottom:20}},
+            // Numero giorno ultra-large (SAI calendar pattern)
+            h('div',{style:{display:'flex',alignItems:'baseline',gap:12,marginBottom:8,
+              paddingBottom:8,borderBottom:'0.5px solid var(--border)'}},
+              h('div',{style:{fontSize:72,fontWeight:800,lineHeight:1,
+                letterSpacing:'-.04em',fontVariantNumeric:'tabular-nums',
+                color:isToday?G:'var(--text-primary)'}},
+                String(parseInt(day)).padStart(2,'0')),
+              h('div',{style:{display:'flex',flexDirection:'column',gap:1,paddingBottom:4}},
+                h('div',{style:{fontSize:13,fontWeight:700,textTransform:'uppercase',
+                  letterSpacing:'.06em',color:isToday?G:'var(--text-muted)'}},dowIt),
+                h('div',{style:{fontSize:11,color:'var(--text-muted)'}},posts.length+' post')
+              ),
+              h('button',{onClick:e=>{e.stopPropagation();setAdding(pedKey(year,month,parseInt(day)));},
+                style:{marginLeft:'auto',padding:'4px 12px',borderRadius:99,fontSize:11,
+                  border:'0.5px solid var(--border)',background:'transparent',
+                  cursor:'pointer',color:'var(--text-muted)',fontWeight:600}},'+ Aggiungi')
+            ),
+            // Post del giorno — accent line 2px stile SAI
+            h('div',{style:{display:'flex',flexDirection:'column',gap:6,paddingLeft:4}},
+              posts.map((p,i)=>{
+                const clr=PED_STATO_CLR[p.stato]||'#9ca3af';
+                return h('div',{key:i,
+                  onClick:()=>setEditing({dateKey:p.dateKey,idx:p.idx}),
+                  style:{display:'flex',alignItems:'center',gap:12,padding:'9px 12px 9px 14px',
+                    cursor:'pointer',background:'var(--surface)',
+                    border:'0.5px solid var(--border)',borderRadius:8,
+                    borderLeft:'2px solid '+clr,transition:'opacity .12s'}},
+                  h('div',{style:{flex:1,minWidth:0}},
+                    h('div',{style:{fontSize:13,fontWeight:600,
+                      color:p.stato==='pubblicato'?'var(--text-muted)':'var(--text-primary)',
+                      overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+                      textDecoration:p.stato==='pubblicato'?'line-through':'none',
+                      opacity:p.stato==='pubblicato'?.7:1}},p.tema),
+                    h('div',{style:{fontSize:11,color:'var(--text-muted)',marginTop:2}},
+                      p.pilastro+' · '+p.formato)
+                  ),
+                  h('span',{style:{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,
+                    flexShrink:0,background:clr+'18',color:clr,border:'1px solid '+clr+'33'}},p.stato)
+                );
+              })
+            )
+          );
+        });
+      })()
     ),
+
 
     // ── Vista SETTIMANA ──
     pedVista==='settimana' && h('div',{style:{marginTop:8}},

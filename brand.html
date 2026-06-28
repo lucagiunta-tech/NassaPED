@@ -214,7 +214,7 @@ textarea,input{font-family:var(--font);}
 .portal-logo{width:44px;height:44px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;}
 
 /* ── Semaforo Nassa ── */
-.semaforo-wrap{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;border-left:3px solid var(--magenta);}
+.semaforo-wrap{background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;border-left:2px solid var(--magenta);}
 .semaforo-title{font-size:var(--fs-sm);font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
 .semaforo-title svg{flex-shrink:0;}
 .semaforo-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
@@ -1877,7 +1877,7 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdat
     (client.brand?.claim||client.brand?.archetype||client.brand?.tov||(client.brand?.pillars?.length>0))&&h('div',{
       style:{background:'var(--surface)',border:'var(--bw) solid var(--border)',
         borderRadius:'var(--r)',padding:'14px 16px',marginBottom:16,
-        borderLeft:'3px solid '+pc}
+        borderLeft:'2px solid '+pc}
     },
       // Claim
       client.brand?.claim&&h('div',{style:{fontSize:18,fontStyle:'italic',fontWeight:500,
@@ -1995,7 +1995,7 @@ function PortaleCliente({client,onUpdateStatus}){
       (client.brand?.claim||client.brand?.archetype||client.brand?.tov)&&h('div',{
         style:{background:'var(--surface)',border:'var(--bw) solid var(--border)',
           borderRadius:'var(--r)',padding:'14px 16px',marginBottom:20,
-          borderLeft:'3px solid '+pc}
+          borderLeft:'2px solid '+pc}
       },
         client.brand?.claim&&h('div',{style:{fontSize:17,fontStyle:'italic',fontWeight:500,
           color:'var(--text)',marginBottom:8,lineHeight:1.4}},'"',client.brand.claim,'"'),
