@@ -1216,8 +1216,7 @@ function PDMView({
 }) {
   const [activeSec, setActiveSec] = useState(PDM_SEZIONI[0].id);
   const [savedMsg, setSavedMsg] = useState("");
-  const [hubAiOpen, setHubAiOpen] = useState(false); // P07 — pass to ClienteScheda
-  const filled = PDM_SEZIONI.filter(s => client.pdm[s.id]?.trim()).length;
+    const filled = PDM_SEZIONI.filter(s => client.pdm[s.id]?.trim()).length;
   const pct = Math.round(filled / PDM_SEZIONI.length * 100);
   const currentSec = PDM_SEZIONI.find(s => s.id === activeSec);
   const _pdmIdx = PDM_SEZIONI.indexOf(currentSec);
@@ -4870,6 +4869,7 @@ function NassaStrategyHub(){
   const [loadState,     setLoadState]     = useState("loading"); // loading | ok | error
   const [saveState,     setSaveState]     = useState("");        // "" | "saving" | "saved" | "error"
   const saveTimer = React.useRef(null);
+  const [hubAiOpen, setHubAiOpen] = useState(false); // P07 — AI panel toggle
   const h = React.createElement;
 
   // ── Load da Supabase al mount ──
