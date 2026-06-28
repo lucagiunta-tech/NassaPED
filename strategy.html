@@ -1216,6 +1216,7 @@ function PDMView({
 }) {
   const [activeSec, setActiveSec] = useState(PDM_SEZIONI[0].id);
   const [savedMsg, setSavedMsg] = useState("");
+  const [hubAiOpen, setHubAiOpen] = useState(false); // P07 — pass to ClienteScheda
   const filled = PDM_SEZIONI.filter(s => client.pdm[s.id]?.trim()).length;
   const pct = Math.round(filled / PDM_SEZIONI.length * 100);
   const currentSec = PDM_SEZIONI.find(s => s.id === activeSec);
@@ -3824,9 +3825,18 @@ function ClienteScheda({
   client,
   clients,
   setClients,
-  onBack
+  onBack,
+  defaultAiOpen,
+  onAiToggle
 }) {
   const [mod, setMod] = useState("overview");
+  // P07 — AI panel (SAI pattern)
+  const [aiOpen,    setAiOpen]    = useState(defaultAiOpen||false);
+  // Sync aiOpen back to hub
+  React.useEffect(()=>{ onAiToggle&&onAiToggle(aiOpen); },[aiOpen]);
+  const [aiMsg,     setAiMsg]     = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiHistory, setAiHistory] = useState([]);
   const c = clients.find(x => x.id === client.id);
   const pdmFilled = PDM_SEZIONI.filter(s => c.pdm[s.id]?.trim()).length;
   const pdcFilled = PDC_SEZIONI.filter(s => c.pdc[s.id]?.trim()).length;
@@ -3977,6 +3987,79 @@ function ClienteScheda({
     partial: AMB,
     empty: "var(--text-muted)"
   };
+  // ── P07: AI panel (SAI pattern) ──
+  const AI_SYSTEM = {
+    overview: "Sei un consulente marketing. Analizza il cliente e dai 3 insight sintetici sullo stato del progetto. Max 5 righe. Sii concreto.",
+    pdm:      "Sei esperto di marketing. Dai 2-3 insight su competitor o posizionamento. Max 5 righe.",
+    pdc:      "Sei copywriter strategico. Dai 2-3 suggerimenti per il piano comunicazione. Max 5 righe.",
+    brand:    "Sei brand designer. Suggerisci 3 direzioni per palette e tono visivo. Max 5 righe.",
+    strategy: "Sei brand strategist. Suggerisci claim alternativi, archetipi, 3 parole SI e 3 NO per il tov. Max 6 righe.",
+    output:   "Sei project manager. Analizza gli output e suggerisci prossimi passi concreti. Max 5 righe.",
+  };
+
+  const askAI = async () => {
+    if(aiLoading) return;
+    setAiLoading(true); setAiMsg("");
+    const sys = AI_SYSTEM[mod] || "Sei un consulente marketing. Dai un suggerimento utile per questo modulo. Max 4 righe.";
+    const pdmN = Object.values(client.pdm||{}).filter(Boolean).length;
+    const userMsg = "Cliente: " + client.name + " (" + (client.pkg||"") + ", fase: " + (client.phase||"") + "). Modulo: " + mod + ". PDM: " + pdmN + "/18. Strategy Mod5: " + (client.strategy?.mod5?.done?"completa":"in corso") + ".";
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({model:"claude-sonnet-4-6",max_tokens:400,system:sys,
+          messages:[...aiHistory.slice(-4),{role:"user",content:userMsg}]})
+      });
+      const d = await res.json();
+      const txt = d.content?.[0]?.text || "Nessuna risposta.";
+      setAiMsg(txt);
+      setAiHistory(prev=>[...prev.slice(-4),{role:"user",content:userMsg},{role:"assistant",content:txt}]);
+    } catch(e){ setAiMsg("Errore connessione. Riprova."); }
+    setAiLoading(false);
+  };
+
+  const aiPanel = h("div",{style:{
+    width:aiOpen?260:0, minWidth:aiOpen?260:0, flexShrink:0,
+    background:"var(--surface-2)", borderLeft:aiOpen?"0.5px solid var(--border)":"none",
+    overflowY:"auto", overflowX:"hidden", transition:"width .2s,min-width .2s",
+    display:"flex", flexDirection:"column"
+  }},
+    aiOpen && h("div",{style:{padding:"16px 14px",display:"flex",flexDirection:"column",gap:12,minWidth:260}},
+      h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}},
+        h("span",{style:{fontSize:11,fontWeight:700,textTransform:"uppercase",
+          letterSpacing:".07em",color:"var(--text-muted)"}},"AI Nassa"),
+        h("button",{onClick:()=>setAiOpen(false),
+          style:{border:"none",background:"transparent",cursor:"pointer",fontSize:18,
+            color:"var(--text-muted)",lineHeight:1,padding:"0 2px"}},"×")
+      ),
+      h("div",{style:{fontSize:11,color:"var(--text-muted)",padding:"7px 10px",
+        borderRadius:8,background:"var(--surface-1)",border:"0.5px solid var(--border)"}},
+        "Modulo: ",h("span",{style:{fontWeight:700,color:"var(--text-primary)"}},mod.toUpperCase())
+      ),
+      aiMsg && h("div",{style:{fontSize:12,color:"var(--text-primary)",lineHeight:1.65,
+        padding:"10px 12px",borderRadius:8,background:"var(--surface-1)",
+        border:"0.5px solid var(--border)",borderLeft:"2px solid #534AB7",
+        whiteSpace:"pre-wrap"}},aiMsg),
+      !aiMsg && !aiLoading && h("div",{style:{fontSize:12,color:"var(--text-muted)",
+        padding:"12px",borderRadius:8,border:"1.5px dashed var(--border)",
+        textAlign:"center",lineHeight:1.6}},
+        "🧠 Suggerimento contestuale per ",h("strong",null,mod)),
+      aiLoading && h("div",{style:{fontSize:12,color:"var(--text-muted)",
+        padding:"12px",textAlign:"center"}},"⏳ Analisi…"),
+      h("button",{onClick:askAI,disabled:aiLoading,
+        style:{padding:"8px 0",borderRadius:8,border:"none",
+          background:aiLoading?"var(--border)":"#534AB7",
+          color:aiLoading?"var(--text-muted)":"#fff",
+          fontSize:12,fontWeight:700,cursor:aiLoading?"not-allowed":"pointer"}},
+        aiLoading?"⏳ Analisi…":aiMsg?"↻ Aggiorna":"✨ Chiedi a Claude"),
+      aiHistory.length>0 && h("button",{
+        onClick:()=>{setAiHistory([]);setAiMsg("");},
+        style:{padding:"4px 0",border:"none",background:"transparent",
+          fontSize:10,color:"var(--text-muted)",cursor:"pointer",textAlign:"center"}},
+        "Cancella cronologia")
+    )
+  );
+
   const topSidebar = /*#__PURE__*/React.createElement("div", {
     style: {
       width: 230,
@@ -4054,20 +4137,28 @@ function ClienteScheda({
         border: "none",
         cursor: "pointer",
         fontSize: 14,
-        background: isActive ? "var(--bg-accent)" : "transparent",
-        color: isActive ? "var(--text-accent)" : "var(--text-secondary)",
-        borderLeft: `2px solid ${isActive ? G : "transparent"}`,
+        // P24 — lavanda fase corrente (Design Project Timeline)
+        background: isActive ? "#E8E8F4" : "transparent",
+        color: isActive ? "#534AB7" : "var(--text-secondary)",
+        borderLeft: `2px solid ${isActive ? "#534AB7" : "transparent"}`,
+        borderRadius: isActive ? "0 6px 6px 0" : 0,
         display: "flex",
         alignItems: "center",
         gap: 10
       }
     }, /*#__PURE__*/React.createElement("span", {
-      style: {display:"flex",alignItems:"center",flexShrink:0,opacity:isActive?1:0.65}
+      style: {display:"flex",alignItems:"center",flexShrink:0,
+        opacity:isActive?1:0.5,
+        color:isActive?"#534AB7":"var(--text-muted)"}
     }, MOD_ICONS[m.id] || m.icon), /*#__PURE__*/React.createElement("span", {
       style: {flex: 1, fontWeight: isActive ? 600 : 400}
     }, m.lbl), st && /*#__PURE__*/React.createElement("span", {
       style: {fontSize: 12, color: STATUS_COLOR[st], fontWeight: 600}
-    }, STATUS_ICON[st])));
+    }, STATUS_ICON[st]),
+    // P25 — arrow ↗ sul modulo attivo
+    isActive && /*#__PURE__*/React.createElement("span", {
+      style: {fontSize: 10, color: "#534AB7", opacity: 0.6}
+    }, "↗")));
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "0.75rem",
@@ -4145,7 +4236,7 @@ function ClienteScheda({
         height: "calc(100vh - 56px)",
         overflow: "hidden"
       }
-    }, topSidebar, mainContent());
+    }, topSidebar, mainContent(), aiPanel);
   }
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4159,7 +4250,9 @@ function ClienteScheda({
       overflowY: "auto",
       padding: "1.5rem"
     }
-  }, mainContent()));
+  }, mainContent()),
+  // P07 — AI panel terza colonna
+  aiPanel);
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -4489,9 +4582,17 @@ function Dashboard({ clients, onOpen, onAdd }) {
             )
           ),
           // Phase badge
-          h("div", { style:{ flexShrink:0, textAlign:"right" }},
-            h("div", { style:{ fontSize:11, color:"var(--text-muted)", marginBottom:4 }}, c.phase||"—"),
-            h("span", { style:{ fontSize:11, fontWeight:600, color:"var(--text-accent,#00aa00)" }}, "Apri →")
+          h("div", { style:{ flexShrink:0, textAlign:"right", display:"flex",
+              flexDirection:"column", alignItems:"flex-end", gap:6 }},
+            // P05 — micro-label pill outline (Dashlab)
+            h("span", { style:{
+              fontSize:9, fontWeight:700, padding:"2px 8px", borderRadius:99,
+              border:"0.5px solid var(--border-strong)", background:"transparent",
+              color:"var(--text-muted)", letterSpacing:".05em", textTransform:"uppercase",
+              whiteSpace:"nowrap"
+            }}, (c.phase||"—").replace("Fase ","F").replace(" — ","·")),
+            // P25 — arrow ↗ card navigabili
+            h("span", { style:{ fontSize:16, fontWeight:300, color:"var(--text-muted)", lineHeight:1 }}, "↗")
           )
         );
       })
@@ -4871,6 +4972,17 @@ function NassaStrategyHub(){
       ),
       h("div", {className:"ns-topbar-right"},
         saveIndicator,
+        // P07 — AI toggle button (visible solo in vista cliente)
+        view==="cliente" && h("button", {
+          onClick:()=>setHubAiOpen(o=>!o),
+          className:"ns-icon-btn",
+          title:"AI Suggerimenti",
+          style:{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:99,
+            border:"0.5px solid "+(hubAiOpen?"#534AB7":"var(--border)"),
+            background:hubAiOpen?"#E8E8F4":"transparent",
+            color:hubAiOpen?"#534AB7":"var(--text-muted)",cursor:"pointer",
+            transition:"all .15s"}
+        }, "✨ AI"),
         h("button", {className:"ns-icon-btn", onClick:toggleTheme, title:"Tema"}, SVG.moon),
         h("a", {href:"/", className:"hub-link"}, SVG.chevLeft, " Hub")
       )
@@ -4888,7 +5000,9 @@ function NassaStrategyHub(){
         client: selectedClient,
         clients,
         setClients: setClientsAndSave,
-        onBack: goBack
+        onBack: goBack,
+        defaultAiOpen: hubAiOpen,
+        onAiToggle: setHubAiOpen
       })
     )
   );
