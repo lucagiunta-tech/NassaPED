@@ -11482,29 +11482,48 @@ function renderMoodTab(){
   const items = currentMoodItems();
 
   // ── Header ──────────────────────────────────────────────
+  // Vista persistita in sessione
+  if(typeof window._moodVista === 'undefined') window._moodVista = 'masonry';
+
   const hdr = document.createElement('div');
-  hdr.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;';
+  hdr.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;';
 
   const titleWrap = document.createElement('div');
   titleWrap.innerHTML = `
     <h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Moodboard</h2>
     <p style="font-size:12px;color:var(--text-3);">${cl.name} — ${items.length} elementi</p>`;
 
-  const btnWrap = document.createElement('div');
-  btnWrap.style.cssText = 'display:flex;gap:8px;';
+  const rightWrap = document.createElement('div');
+  rightWrap.style.cssText = 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;';
 
-  // Type buttons
+  // ── Vista toggle ⊞ ⠿ ☰ ──
+  const vistaGroup = document.createElement('div');
+  vistaGroup.style.cssText = 'display:flex;gap:2px;background:var(--surface-lt);padding:2px;border-radius:8px;border:0.5px solid var(--border);';
+  [['masonry','⠿','Masonry'],['griglia','⊞','Griglia'],['lista','☰','Lista']].forEach(([id,icon,title]) => {
+    const vb = document.createElement('button');
+    const isAct = window._moodVista === id;
+    vb.style.cssText = `padding:4px 10px;border-radius:6px;font-size:14px;cursor:pointer;border:none;font-family:var(--font);background:${isAct?'var(--surface)':'transparent'};color:${isAct?'var(--text-1)':'var(--text-3)'};box-shadow:${isAct?'0 1px 3px rgba(0,0,0,.08)':'none'};transition:all .12s;`;
+    vb.title = title; vb.textContent = icon;
+    vb.onclick = () => { window._moodVista = id; renderMoodTab(); };
+    vistaGroup.appendChild(vb);
+  });
+  rightWrap.appendChild(vistaGroup);
+
+  // ── Type buttons ──
+  const btnWrap = document.createElement('div');
+  btnWrap.style.cssText = 'display:flex;gap:6px;';
   ['🖼 Immagine','🎨 Colore','✏ Testo'].forEach((label, i) => {
     const tipo = ['image','color','text'][i];
     const btn = document.createElement('button');
-    btn.style.cssText = 'padding:6px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-2);font-family:var(--font);';
+    btn.style.cssText = 'padding:6px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-2);font-family:var(--font);white-space:nowrap;';
     btn.textContent = label;
     btn.onclick = () => openMoodModal(tipo);
     btnWrap.appendChild(btn);
   });
+  rightWrap.appendChild(btnWrap);
 
   hdr.appendChild(titleWrap);
-  hdr.appendChild(btnWrap);
+  hdr.appendChild(rightWrap);
   body.appendChild(hdr);
 
   // ── Filter bar ──────────────────────────────────────────
@@ -11547,6 +11566,7 @@ function renderMoodTab(){
 
   const renderMasonry = (visibleItems) => {
     masonryWrap.innerHTML = '';
+    const vista = window._moodVista || 'masonry';
 
     if(!visibleItems.length){
       const em = document.createElement('div');
@@ -11558,7 +11578,14 @@ function renderMoodTab(){
     }
 
     const grid = document.createElement('div');
-    grid.className = 'nc-mood-masonry';
+    if(vista === 'masonry'){
+      grid.className = 'nc-mood-masonry';
+    } else if(vista === 'griglia'){
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;';
+    } else {
+      // lista
+      grid.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+    }
 
     visibleItems.forEach(item => {
       const tc = MOOD_TAG_COLORS[item.tag] || 'var(--text-3)';
@@ -11567,16 +11594,22 @@ function renderMoodTab(){
                 : item.tipo==='color' ? Math.round((item.height||1)*100+40) : null;
 
       const el = document.createElement('div');
+      const isLista = vista === 'lista';
+      const isGriglia = vista === 'griglia';
       el.className = 'nc-mood-item' + (isSel?' nc-mood-sel':'');
       if(isSel) el.style.borderColor = tc;
+      if(isLista) el.style.cssText = 'display:flex;align-items:center;gap:10px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface);padding:8px 12px;cursor:pointer;transition:border-color .12s;'+(isSel?'border-color:'+tc+';':'');
 
       // Visual area
+      const visH = isLista ? '36px' : (hPx ? hPx+'px' : (isGriglia ? '120px' : ''));
+      const visW = isLista ? '36px' : '100%';
       const vis = document.createElement('div');
-      vis.style.cssText = `background:${item.imageUrl?'var(--surface-lt)':item.color};${hPx?'height:'+hPx+'px;':''}display:flex;align-items:center;justify-content:center;position:relative;`;
+      vis.style.cssText = `background:${item.imageUrl?'var(--surface-lt)':item.color};${visH?'height:'+visH+';':''}${isLista?'width:36px;flex-shrink:0;border-radius:6px;overflow:hidden;':isGriglia?'width:100%;':''}display:flex;align-items:center;justify-content:center;position:relative;${isGriglia&&!hPx?'min-height:100px;':''}`;
 
       if(item.tipo==='image' && item.imageUrl){
         const img = document.createElement('img');
-        img.className = 'nc-mood-visual';
+        img.className = isLista ? '' : 'nc-mood-visual';
+        if(isLista) img.style.cssText = 'width:36px;height:36px;object-fit:cover;display:block;';
         img.src = item.imageUrl;
         img.alt = item.titolo || '';
         img.loading = 'lazy';
@@ -11608,7 +11641,8 @@ function renderMoodTab(){
       // Body
       if(item.titolo || item.tag || (item.tipo!=='text' && item.note)){
         const bodyDiv = document.createElement('div');
-        bodyDiv.className = 'nc-mood-body';
+        bodyDiv.className = isLista ? '' : 'nc-mood-body';
+        if(isLista) bodyDiv.style.cssText = 'flex:1;min-width:0;';
         if(item.titolo && item.tipo!=='text'){
           const title = document.createElement('div');
           title.className = 'nc-mood-title';
