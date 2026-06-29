@@ -10706,7 +10706,7 @@ function renderLandingTab(){
 
     const card = document.createElement('div');
     card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;';
-    if(item.status === 'live'){ card.style.borderLeft = '3px solid #1d9e75'; topRow.style.paddingLeft = '13px'; }
+    if(item.status === 'live') card.style.borderLeft = '3px solid #1d9e75';
     if(item.status === 'archiviata') card.style.opacity = '.6';
 
     // Top row: dot + info + stats + actions
@@ -10728,7 +10728,7 @@ function renderLandingTab(){
       </div>
       <div style="font-size:11px;color:var(--text-accent,#185FA5);font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;">${esc(item.url||'—')}</div>
       ${item.goal ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;">🎯 ${esc(item.goal)}</div>` : ''}`;
-    card.appendChild(info);
+    topRow.appendChild(info);
 
     // Stats
     const stats = document.createElement('div');
