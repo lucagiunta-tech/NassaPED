@@ -1852,12 +1852,30 @@ function renderFeedGrid(){
   // grid and wrappers already reset at top of renderFeedGrid
 
   items=currentFeedItems();
+  // Inject collab posts from other accounts of same client (same month)
+  if(feedClientIdx>=0 && feedMonth){
+    const myAccId=accountId(feedClientIdx,feedAccountIdx);
+    const otherAccs=(clients[feedClientIdx]?.accounts||[]).filter((_,ai)=>ai!==feedAccountIdx);
+    otherAccs.forEach(acc=>{
+      const k=accountKey(acc.id,feedMonth);
+      (feeds[k]||[]).forEach(it=>{
+        if((it.collabAccIds||[]).includes(myAccId)){
+          // Don't duplicate if already present
+          if(!items.find(x=>x._uid&&x._uid===it._uid)){
+            items=[...items,{...it,_collabFrom:acc.id,_collabFromName:acc.name,_readOnly:true}];
+          }
+        }
+      });
+    });
+  }
   const total=Math.max(items.length+1,9);
   for(let i=0;i<total;i++){
     const wrap=document.createElement('div');wrap.className='cell-wrap';const cell=document.createElement('div');cell.className='feed-cell';
     if(i<items.length){
       const item=items[i],idx=i;
       _ensureUID(item);
+      // Mark cell as collab/read-only
+      if(item._readOnly) cell.style.outline='2px solid var(--green)';
       wrap.dataset.uid=item._uid; // keyed reconciliation
       if(item.type==='pending'){
         cell.classList.add('empty-slot');cell.style.overflow='hidden';
@@ -2008,6 +2026,13 @@ function renderFeedGrid(){
         // Extra badges
         if(item.isExternalLink){const d=document.createElement('div');d.className='cell-url-dot';d.title=(item.linkSource==='dropbox'?'Dropbox':item.linkSource==='frame'?'Frame.io':'Link')+': '+(item.externalUrl||'');cell.appendChild(d);}
         if((item.linkedStories||[]).length>0){const lb=document.createElement('div');lb.className='ls-badge-cell';lb.textContent=''+item.linkedStories.length;cell.appendChild(lb);}
+        // Collab badge — shown on original post and on mirrored read-only posts
+        if((item.collabAccIds||[]).length>0||item._collabFrom){
+          const cb=document.createElement('div');
+          cb.style.cssText='position:absolute;top:30px;left:6px;background:rgba(0,168,90,.92);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:99px;z-index:4;display:flex;align-items:center;gap:3px;pointer-events:none;letter-spacing:.02em;';
+          cb.innerHTML='<svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'+(item._collabFrom?item._collabFromName:'Collab');
+          cell.appendChild(cb);
+        }
 
         // ── BOTTOM BAR: date with gradient, always at bottom ──
         const showDate=showAllDates&&item.showDate;
@@ -2043,6 +2068,8 @@ function renderFeedGrid(){
 
         // ── CONTEXT MENU: small ⋯ button, floating popup (non-intrusive) ──
         const menuActions = [];
+        // Read-only collab items: no editing
+        if(item._readOnly){ wrap.appendChild(cell); grid.appendChild(wrap); continue; }
         // Cambia media — all types except carousel (which has its own slide editor) and pending/editorial
         if(item.type!=='carousel' && item.type!=='pending' && item.type!=='editorial'){
           menuActions.push({cls:'ob-edit',svg:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',label:'Cambia media',fn:()=>openChangeMediaModal(idx)});
@@ -2050,6 +2077,11 @@ function renderFeedGrid(){
         if(item.type==='carousel') menuActions.push({cls:'ob-slide',svg:'<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M22 6h-2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2"/>',label:'Modifica slide',fn:()=>openCarouselModal(idx)});
         if(item.type==='video') menuActions.push({cls:'ob-cover',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',label:item.coverUrl?'Cover · cambia':'+ Cover reel',fn:()=>openVideoCoverModal(idx)});
         menuActions.push({cls:'ob-stories',svg:'<rect x="7" y="2" width="10" height="20" rx="2"/>',label:(item.linkedStories||[]).length>0?'Stories ('+item.linkedStories.length+')':'Collega stories',fn:()=>openLinkStoriesModal(idx)});
+        // Collab — only when client has more than one account
+        if((clients[feedClientIdx]?.accounts||[]).length>1){
+          const collabCount=(item.collabAccIds||[]).length;
+          menuActions.push({cls:'ob-collab',svg:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',label:collabCount>0?'Collab ('+collabCount+')':'+ Collaborazione',fn:()=>openCollabModal(idx)});
+        }
         menuActions.push({cls:'ob-copy',svg:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',label:'Copia da…',fn:()=>openCopyModal('feed')});
         menuActions.push({cls:'ob-delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',label:'Rimuovi',fn:()=>removeFeedItem(idx)});
 
@@ -4283,6 +4315,51 @@ async function saveHighlight(){
 }
 
 /* LINK STORIES MODAL */
+// ── Collaboration ────────────────────────────────────────────────────────────
+let collabPostIdx = null;
+
+function openCollabModal(postIdx){
+  collabPostIdx = postIdx;
+  const item = currentFeedItems()[postIdx];
+  const myAccId = accountId(feedClientIdx, feedAccountIdx);
+  const accs = (clients[feedClientIdx]?.accounts||[]).filter((_,ai)=>ai!==feedAccountIdx);
+  const list = document.getElementById('collab-acc-list');
+  if(!list) return;
+  list.innerHTML = '';
+  if(!accs.length){
+    list.innerHTML='<p style="font-size:12px;color:var(--text-3);">Nessun altro account disponibile per questo cliente.</p>';
+  } else {
+    accs.forEach(acc=>{
+      const row = document.createElement('label');
+      row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;';
+      const cb = document.createElement('input');
+      cb.type='checkbox'; cb.value=acc.id;
+      cb.checked=(item.collabAccIds||[]).includes(acc.id);
+      cb.style.cssText='width:16px;height:16px;accent-color:var(--green);cursor:pointer;';
+      const lbl = document.createElement('span');
+      lbl.textContent = acc.name + (acc.platform?' · '+acc.platform:'');
+      row.appendChild(cb); row.appendChild(lbl);
+      row.onchange=()=>{row.style.background=cb.checked?'var(--green-lt)':'';row.style.borderColor=cb.checked?'var(--green)':'var(--border)';};
+      if(cb.checked){row.style.background='var(--green-lt)';row.style.borderColor='var(--green)';}
+      list.appendChild(row);
+    });
+  }
+  openModal('collab-modal');
+}
+
+function saveCollab(){
+  if(collabPostIdx===null) return;
+  const items = currentFeedItems();
+  const item = items[collabPostIdx];
+  const checked = Array.from(document.querySelectorAll('#collab-acc-list input[type=checkbox]:checked')).map(c=>c.value);
+  item.collabAccIds = checked;
+  setFeedItems(items);
+  closeModal('collab-modal');
+  renderFeedGrid();
+  autoSave();
+  showToast(checked.length>0?'✓ Collab impostata su '+checked.length+' account':'Collab rimossa');
+}
+
 function openLinkStoriesModal(postIdx){
   linkModalPostIdx=postIdx;const post=currentFeedItems()[postIdx];linkModalSelected=new Set(post.linkedStories||[]);
   // Sync stories context to current feed context so uploads/links go to the right account+month
