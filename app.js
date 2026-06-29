@@ -2084,6 +2084,18 @@ function renderFeedGrid(){
         if(_hasClientNote) feedStateBadge.style.background='rgba(224,92,0,0.85)';
         feedStateBadge.onclick=e=>{e.stopPropagation();openApprModal(idx,currentFeedItems());};
         cell.appendChild(feedStateBadge);
+        // Pilastro badge — angolo alto sinistra, visibile se pilastro assegnato e toggle ON
+        if(showAllPilastro && item.pilastro){
+          const _pilBadge2 = document.createElement('div');
+          _pilBadge2.className = 'feed-cell-pilastro-badge';
+          const _pData2 = (_getPilastriForCurrent()||[]).find(p=>p.name===item.pilastro);
+          const _pColor2 = _pData2 ? _pData2.color : '#e8e8f4';
+          const _r=parseInt(_pColor2.slice(1,3),16),_g=parseInt(_pColor2.slice(3,5),16),_b=parseInt(_pColor2.slice(5,7),16);
+          const _pText2 = (_r*0.299+_g*0.587+_b*0.114)>150 ? '#111' : '#fff';
+          _pilBadge2.style.cssText = `position:absolute;top:8px;left:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor2};color:${_pText2};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25);`;
+          _pilBadge2.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${_pText2};opacity:.45;display:inline-block;flex-shrink:0;"></span>${esc(item.pilastro)}`;
+          cell.appendChild(_pilBadge2);
+        }
 
         const dpTrigger=document.createElement('button');dpTrigger.className='date-add-btn dp-trigger-btn';
         const calWrap2=document.createElement('span');calWrap2.innerHTML=SVG_CAL;calWrap2.style.cssText='display:flex;align-items:center;';
