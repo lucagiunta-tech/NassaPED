@@ -340,16 +340,8 @@ const CLOUD = {
     function fixDbxUrl(u) {
       if(!u || !u.startsWith('http')) return u;
       if(!u.includes('dropbox')) return u;
-      // New-style /scl/fi/ links (have rlkey= param) — keep www.dropbox.com, just flip dl=0->dl=1
-      if(u.includes('/scl/fi/') || u.includes('/scl/fo/')){
-        return u.replace(/([?&])dl=0/, '$1dl=1')
-                .replace(/([?&])dl=1(&|$)/, '$1dl=1$2') // idempotent
-                // if no dl= param at all, add it
-                .replace(/^((?!dl=).)*$/, m => m + (m.includes('?') ? '&dl=1' : '?dl=1'));
-      }
-      // Old-style /s/ /sh/ links — swap domain + ensure dl=1
       let f = u.replace('www.dropbox.com','dl.dropboxusercontent.com')
-               .replace(/[?&]dl=0/,'').replace(/[?&]dl=1/,'');
+               .replace('?dl=0','').replace('?dl=1','');
       if(!f.includes('dl=')) f += (f.includes('?') ? '&dl=1' : '?dl=1');
       return f;
     }
@@ -1096,16 +1088,8 @@ function detectType(file_or_url){
 function fixDbxUrl(u){
   if(!u||!u.startsWith('http'))return u;
   if(!u.includes('dropbox'))return u;
-  // New-style /scl/fi/ or /scl/fo/ links — keep www.dropbox.com, just ensure dl=1
-  if(u.includes('/scl/fi/')||u.includes('/scl/fo/')){
-    let f=u.replace(/([?&])dl=\d/,'$1dl=1');
-    if(!/[?&]dl=/.test(f))f+=f.includes('?')?'&dl=1':'?dl=1';
-    return f;
-  }
-  // Old-style /s/ /sh/ links — swap domain + ensure dl=1
-  let f=u.replace('www.dropbox.com','dl.dropboxusercontent.com')
-         .replace(/[?&]dl=0/,'').replace(/[?&]dl=1/,'').replace(/[?&]raw=1/,'');
-  if(!f.includes('dl='))f+=f.includes('?')?'&dl=1':'?dl=1';
+  let f=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','').replace('?raw=1','');
+  if(f.includes('dl.dropboxusercontent.com')&&!f.includes('dl='))f+=f.includes('?')?'&dl=1':'?dl=1';
   return f;
 }
 function makeMedia(url,type,opts={}){
@@ -3120,7 +3104,6 @@ function addCarouselFiles(files){
   Array.from(files).forEach(f=>{
     carouselTmp.push({url:URL.createObjectURL(f),name:f.name,copy:'',_file:f});
   });
-  // Reset input so the same file can be re-picked after add-more
   const inp=document.getElementById('c-file-input');
   if(inp) inp.value='';
   renderCThumbs();
@@ -3145,22 +3128,15 @@ function setCarouselUrlTab(tab){
   if(tf){tf.style.background=isFrame?'var(--green)':'transparent';tf.style.color=isFrame?'var(--green-text)':'var(--text-2)';tf.style.borderColor=isFrame?'var(--green)':'var(--border)';}
   if(to){to.style.background=isFrame?'transparent':'var(--green)';to.style.color=isFrame?'var(--text-2)':'var(--green-text)';to.style.borderColor=isFrame?'var(--border)':'var(--green)';}
   if(inp) inp.placeholder=isFrame?'Incolla link Frame.io…':'Incolla URL diretto immagine/video…';
-  if(hint) hint.textContent=isFrame?'Copia il link di condivisione da Frame.io.':'URL pubblico accessibile (JPG, PNG, MP4…)';
-}
-function normaliseMediaUrl(raw){
-  const url=raw.trim();
-  if(!url)return url;
-  // Dropbox — delegate to fixDbxUrl which handles both old /s/ and new /scl/fi/ formats
-  if(url.includes('dropbox.com')) return fixDbxUrl(url);
-  // Frame.io / frameio — use as-is
-  return url;
+  if(hint) hint.textContent=isFrame?'Copia il link di condivisione da Frame.io.':'URL diretto immagine/video (Dropbox, etc.)';
 }
 function addCarouselUrl(){
   const inp=document.getElementById('c-url-inp');
   if(!inp) return;
   const raw=inp.value.trim();
   if(!raw){showToast('Inserisci un URL','warn');return;}
-  const url=normaliseMediaUrl(raw);
+  // Use existing fixDbxUrl to normalise Dropbox links (handles both old /s/ and new /scl/fi/ formats)
+  const url=fixDbxUrl(raw);
   const name=raw.split('/').filter(Boolean).pop()?.split('?')[0]||'slide';
   carouselTmp.push({url:url,externalUrl:url,rawUrl:raw,name:name,copy:'',isExternalLink:true});
   inp.value='';
@@ -3240,7 +3216,7 @@ function renderCThumbs(){
     const linkBtn=document.createElement('button');
     linkBtn.textContent='✓';linkBtn.title='Usa link';
     linkBtn.style.cssText='padding:4px 8px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;';
-    linkBtn.onclick=()=>{const raw=linkInp.value.trim();if(!raw)return;const u=normaliseMediaUrl(raw);carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].rawUrl=raw;carouselTmp[i].isExternalLink=true;renderCThumbs();};
+    linkBtn.onclick=()=>{const raw=linkInp.value.trim();if(!raw)return;const u=fixDbxUrl(raw);carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].rawUrl=raw;carouselTmp[i].isExternalLink=true;renderCThumbs();};
     linkRow.appendChild(linkInp);linkRow.appendChild(linkBtn);
     right.appendChild(lbl); right.appendChild(ta); right.appendChild(linkRow);
 
