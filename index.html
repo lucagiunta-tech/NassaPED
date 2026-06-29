@@ -1,3 +1,125 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nassa Studio</title>
+<style>
+:root{
+  --green:#0dff00;--green-dk:#00aa00;--green-mid:#00cc00;--green-lt:#e6ffe4;--green-text:#003300;
+  --bg:#fff;--surface:#fff;--surface-lt:#f5f5f7;--border:#e5e7eb;--border-2:#d1d5db;
+  --text-1:#111;--text-2:#444;--text-3:#888;
+  --bw:0.5px;--shadow-md:0 4px 20px rgba(0,0,0,.08);--t:.15s;
+  --font-sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;
+}
+[data-theme="dark"]{
+  --bg:#0a0a0a;--surface:#111;--surface-lt:#1a1a1a;--border:#2a2a2a;--border-2:#333;
+  --text-1:#f5f5f5;--text-2:#aaa;--text-3:#555;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text-1);min-height:100vh;display:flex;flex-direction:column;}
+a{text-decoration:none;color:inherit;}
+
+/* Topbar */
+.topbar{
+  display:flex;align-items:center;padding:0 1.5rem;
+  height:56px;border-bottom:var(--bw) solid var(--border);
+  background:var(--surface);gap:10px;flex-shrink:0;
+}
+.brand-mark{
+  width:32px;height:32px;border-radius:8px;background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:#003300;
+}
+.brand-name{font-size:15px;font-weight:600;color:var(--text-1);}
+.topbar-spacer{flex:1;}
+.theme-btn{
+  width:32px;height:32px;border-radius:50%;border:var(--bw) solid var(--border);
+  background:var(--surface-lt);cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Hero */
+.hero{
+  text-align:center;padding:3rem 1.5rem 2rem;
+}
+.hero-tag{
+  display:inline-block;padding:3px 12px;border-radius:99px;
+  background:var(--green-lt);color:var(--green-dk);
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  margin-bottom:16px;
+}
+.hero-title{font-size:clamp(28px,5vw,48px);font-weight:700;color:var(--text-1);margin-bottom:12px;line-height:1.15;}
+.hero-title span{color:var(--green-dk);}
+.hero-sub{font-size:var(--fs-sm);color:var(--text-3);max-width:500px;margin:0 auto;line-height:1.6;}
+
+/* Cards grid */
+.apps-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;
+  padding:0 1.5rem 2rem;
+  max-width:1200px;
+  margin:0 auto;
+  width:100%;
+}
+.app-card{
+  display:block;border:var(--bw) solid var(--border);border-radius:14px;
+  padding:20px 20px 52px;background:var(--surface);
+  transition:border-color var(--t),box-shadow var(--t);position:relative;
+  cursor:pointer;
+}
+.app-card:hover{border-color:var(--green);box-shadow:var(--shadow-md);}
+.app-icon{
+  width:40px;height:40px;border-radius:10px;background:var(--surface-lt);
+  border:var(--bw) solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:var(--text-1);
+  margin-bottom:12px;
+}
+.app-name{font-size:var(--fs-base);font-weight:600;color:var(--text-1);margin-bottom:6px;}
+.app-desc{font-size:var(--fs-xs);color:var(--text-3);line-height:1.6;margin-bottom:10px;}
+.app-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.app-tag{
+  padding:2px 8px;border-radius:99px;font-size:10px;font-weight:500;
+  background:var(--surface-lt);border:var(--bw) solid var(--border);
+  color:var(--text-2);
+}
+.app-arrow{
+  position:absolute;bottom:20px;right:20px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--green-lt);border:var(--bw) solid var(--green-mid);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--green-dk);transition:all var(--t);
+}
+.app-card:hover .app-arrow{background:var(--green);color:var(--green-text);border-color:var(--green);}
+
+/* Footer */
+.footer{
+  text-align:center;padding:20px;
+  font-size:var(--fs-xs);color:var(--text-3);
+  border-top:var(--bw) solid var(--border);
+  background:var(--surface);
+  margin-top:auto;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand-mark">N</div>
+  <span class="brand-name">Nassa Studio</span>
+  <div class="topbar-spacer"></div>
+  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
+</div>
+
+<div class="hero">
+  <span class="hero-tag">Suite di strumenti</span>
+  <h1 class="hero-title">Scegli lo <span>strumento</span></h1>
+  <p class="hero-sub">Cinque strumenti integrati per gestire contenuti, clienti, brand e strategia di Nassa Studio.</p>
+</div>
+
 <div class="apps-grid">
 
   <a class="app-card" href="/strategy">
@@ -46,22 +168,22 @@
   </a>
 
   <a class="app-card" href="/tweek">
-    <div class="app-icon" style="background:var(--surface-lt);color:var(--text);border:var(--bw) solid var(--border);">NT</div>
+    <div class="app-icon" style="background:var(--surface-lt);color:var(--text-1);border:var(--bw) solid var(--border);">NT</div>
     <div class="app-body">
       <div class="app-name">NassaTime</div>
-      <div class="app-desc">Calendario team — task, settimana, mese, anno e timeline visuale condivisibile con il team.</div>
+      <div class="app-desc">Calendario team — task, settimana, mese, anno, planning settimanale e timeline visuale condivisibile.</div>
       <div class="app-tags">
         <span class="app-tag">Task</span>
         <span class="app-tag">Settimana</span>
+        <span class="app-tag">Planning</span>
         <span class="app-tag">Timeline</span>
-        <span class="app-tag">Team</span>
       </div>
     </div>
     <div class="app-arrow">→</div>
   </a>
 
   <a class="app-card" href="/app">
-    <div class="app-icon">N</div>
+    <div class="app-icon" style="background:var(--green);color:#003300;">N</div>
     <div class="app-body">
       <div class="app-name">NassaPed</div>
       <div class="app-desc">Gestione contenuti social — feed Instagram, storie, UGC, piano editoriale, clienti e documenti creativi.</div>
@@ -77,241 +199,24 @@
 
 </div>
 
-</div><!DOCTYPE html>
-<html lang="it" data-theme="light">
-<head>
-<meta charset="UTF-8"/>
-<meta name="version" content="2026-06-27-v4"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Nassa Studio Suite</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-mid:#b3ffb0;--green-text:#111;
-  --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#9ca3af;
-  --bg:#ffffff;--surface:#ffffff;--surface-lt:#f5f5f7;
-  --border:#e5e7eb;--border-lt:#f0f0f2;
-  --font:'Inter',sans-serif;
-  --r:8px;--rs:4px;--r-pill:99px;
-  --bw:.5px;
-  --fs-xs:11px;--fs-sm:13px;--fs-base:15px;--fs-md:18px;--fs-lg:28px;
-  --ls-tight:-.02em;--ls-wide:.06em;
-  --t:.18s ease;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
-  --shadow-md:0 4px 12px rgba(0,0,0,.08);
-  --topbar:56px;
-}
-[data-theme="dark"]{
-  --bg:#0f0f11;--surface:#1a1a1e;--surface-lt:#222228;
-  --border:#2a2a30;--border-lt:#222228;
-  --text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
-  --green-lt:#0d2b0c;--green-mid:#1a4d18;--green-text:#0a1a00;
-}
-
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
-a{text-decoration:none;color:inherit;}
-
-/* ── Topbar ── */
-.topbar{
-  height:var(--topbar);background:var(--surface);
-  border-bottom:var(--bw) solid var(--border);
-  display:flex;align-items:center;gap:12px;
-  padding:0 24px;position:sticky;top:0;z-index:10;
-}
-.brand-mark{
-  width:30px;height:30px;border-radius:var(--r);
-  background:var(--green);display:flex;align-items:center;
-  justify-content:center;font-size:var(--fs-base);font-weight:800;color:var(--green-text);
-  flex-shrink:0;
-}
-.brand-name{font-size:var(--fs-base);font-weight:700;color:var(--text);letter-spacing:var(--ls-tight);}
-.topbar-spacer{flex:1;}
-.theme-btn{
-  width:30px;height:30px;border-radius:var(--r);
-  border:var(--bw) solid var(--border);background:transparent;
-  cursor:pointer;font-size:14px;
-  display:flex;align-items:center;justify-content:center;color:var(--text-2);
-  transition:all var(--t);
-}
-.theme-btn:hover{background:var(--surface-lt);color:var(--text);}
-
-/* ── Hero ── */
-.hero{
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:center;
-  padding:72px 24px 48px;text-align:center;
-  background:var(--bg);
-}
-.hero-tag{
-  font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--ls-wide);
-  text-transform:uppercase;color:var(--green-dk);
-  background:var(--green-lt);border-radius:var(--r-pill);
-  border:var(--bw) solid var(--green-mid);
-  padding:4px 14px;margin-bottom:20px;display:inline-block;
-}
-[data-theme="dark"] .hero-tag{color:var(--green);}
-.hero-title{
-  font-size:clamp(32px,5vw,52px);font-weight:800;
-  letter-spacing:-.03em;color:var(--text);line-height:1.1;margin-bottom:14px;
-}
-.hero-title span{color:var(--green-dk);}
-[data-theme="dark"] .hero-title span{color:var(--green);}
-.hero-sub{
-  font-size:var(--fs-md);color:var(--text-2);
-  max-width:480px;line-height:1.6;margin-bottom:52px;
-}
-
-/* ── App grid ── */
-.apps-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:16px;max-width:1040px;width:100%;
-  margin:0 auto;padding:0 24px 80px;
-}
-.app-card{
-  background:var(--surface);
-  border:var(--bw) solid var(--border);
-  border-radius:var(--r);padding:24px 24px 52px;
-  cursor:pointer;text-decoration:none;color:inherit;
-  display:flex;flex-direction:column;gap:14px;
-  transition:border-color var(--t),box-shadow var(--t);
-  position:relative;overflow:hidden;
-}
-.app-card:hover{border-color:var(--green);box-shadow:var(--shadow-md);}
-
-.app-icon{
-  width:44px;height:44px;border-radius:var(--r);
-  background:var(--green);
-  display:flex;align-items:center;justify-content:center;
-  font-size:var(--fs-sm);font-weight:800;color:var(--green-text);
-  letter-spacing:-.02em;flex-shrink:0;
-}
-.app-body{}
-.app-name{font-size:var(--fs-md);font-weight:700;color:var(--text);letter-spacing:var(--ls-tight);margin-bottom:6px;}
-.app-desc{font-size:var(--fs-sm);color:var(--text-2);line-height:1.6;margin-bottom:14px;}
-.app-tags{display:flex;gap:5px;flex-wrap:wrap;}
-.app-tag{
-  font-size:var(--fs-xs);font-weight:500;
-  padding:2px 8px;border-radius:var(--r-pill);
-  background:var(--surface-lt);border:var(--bw) solid var(--border);
-  color:var(--text-3);
-}
-.app-arrow{
-  position:absolute;bottom:20px;right:20px;
-  width:28px;height:28px;border-radius:50%;
-  background:var(--green-lt);border:var(--bw) solid var(--green-mid);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;color:var(--green-dk);transition:all var(--t);
-}
-.app-card:hover .app-arrow{background:var(--green);color:var(--green-text);border-color:var(--green);}
-
-/* ── Footer ── */
-.footer{
-  text-align:center;padding:20px;
-  font-size:var(--fs-xs);color:var(--text-3);
-  border-top:var(--bw) solid var(--border);
-  background:var(--surface);
-}
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div class="brand-mark">N</div>
-  <span class="brand-name">Nassa Studio</span>
-  <div class="topbar-spacer"></div>
-  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
-</div>
-
-<div class="hero">
-  <span class="hero-tag">Suite di strumenti</span>
-  <h1 class="hero-title">Scegli lo <span>strumento</span></h1>
-  <p class="hero-sub">Quattro strumenti integrati per gestire contenuti, clienti, brand e strategia di Nassa Studio.</p>
-</div>
-
-<div class="apps-grid">
-
-  <a class="app-card" href="/app">
-    <div class="app-icon">N</div>
-    <div class="app-body">
-      <div class="app-name">NassaPED</div>
-      <div class="app-desc">Gestione contenuti social — feed Instagram, storie, UGC, piano editoriale, clienti e documenti creativi.</div>
-      <div class="app-tags">
-        <span class="app-tag">Feed</span>
-        <span class="app-tag">Storie</span>
-        <span class="app-tag">UGC</span>
-        <span class="app-tag">Clienti</span>
-        <span class="app-tag">Documenti</span>
-      </div>
-    </div>
-    <div class="app-arrow">→</div>
-  </a>
-
-  <a class="app-card" href="/tweek">
-    <div class="app-icon" style="background:var(--surface-lt);color:var(--text);border:var(--bw) solid var(--border);">NT</div>
-    <div class="app-body">
-      <div class="app-name">NassaTime</div>
-      <div class="app-desc">Pianificazione team e clienti — task, NPlan con gestione job, vista settimana, mese e anno.</div>
-      <div class="app-tags">
-        <span class="app-tag">Task</span>
-        <span class="app-tag">NPlan</span>
-        <span class="app-tag">Team</span>
-        <span class="app-tag">Job</span>
-        <span class="app-tag">Calendario</span>
-      </div>
-    </div>
-    <div class="app-arrow">→</div>
-  </a>
-
-  <a class="app-card" href="/brand">
-    <div class="app-icon" style="background:#1A8C3F;font-size:13px;color:#fff;">NB</div>
-    <div class="app-body">
-      <div class="app-name">NassaBrand</div>
-      <div class="app-desc">Portale brand per i clienti — palette, font, loghi, approvazioni contenuti con Semaforo Nassa e moodboard masonry.</div>
-      <div class="app-tags">
-        <span class="app-tag">Brand Assets</span>
-        <span class="app-tag">Semaforo</span>
-        <span class="app-tag">Approvazioni</span>
-        <span class="app-tag">Moodboard</span>
-      </div>
-    </div>
-    <div class="app-arrow">→</div>
-  </a>
-
-  <a class="app-card" href="/strategy">
-    <div class="app-icon" style="background:#185FA5;font-size:13px;color:#fff;">NS</div>
-    <div class="app-body">
-      <div class="app-name">NassaStrategy</div>
-      <div class="app-desc">Gestionale strategico completo — Brand Audit, PDM, PDC, Copy Strategy, PED mensile, Report KPI, QBR e Shooting Brief.</div>
-      <div class="app-tags">
-        <span class="app-tag">Staffetta Nassa</span>
-        <span class="app-tag">PDM · PDC</span>
-        <span class="app-tag">PED</span>
-        <span class="app-tag">Report</span>
-        <span class="app-tag">Supabase</span>
-      </div>
-    </div>
-    <div class="app-arrow">→</div>
-  </a>
-
-</div>
-
-<div class="footer">Nassa Studio · NassaPED + NassaTime + NassaBrand + NassaStrategy © 2026</div>
+<div class="footer">Nassa Studio · NassaStg &bull; NassaBrand &bull; NassaPlan &bull; NassaTime &bull; NassaPed &copy; 2026</div>
 
 <script>
 function toggleTheme(){
-  const html=document.documentElement;
-  const dark=html.dataset.theme==='dark';
-  html.dataset.theme=dark?'light':'dark';
-  document.getElementById('theme-btn').textContent=dark?'🌙':'☀️';
-  localStorage.setItem('nassa_home_theme',dark?'light':'dark');
+  const d=document.documentElement;
+  const t=d.getAttribute('data-theme')==='dark'?'light':'dark';
+  d.setAttribute('data-theme',t);
+  localStorage.setItem('nassa_theme',t);
+  document.getElementById('theme-btn').textContent=t==='dark'?'☀️':'🌙';
 }
 (function(){
-  const t=localStorage.getItem('nassa_home_theme')||'light';
-  document.documentElement.dataset.theme=t;
-  document.getElementById('theme-btn').textContent=t==='dark'?'☀️':'🌙';
+  const t=localStorage.getItem('nassa_theme')||'light';
+  document.documentElement.setAttribute('data-theme',t);
+  window.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('theme-btn').textContent=t==='dark'?'☀️':'🌙';
+  });
 })();
 </script>
+
 </body>
 </html>
