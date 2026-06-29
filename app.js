@@ -1469,13 +1469,27 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
     const slide = document.createElement('div');
     slide.style.cssText = 'flex:0 0 100%;width:100%;height:100%;position:relative;';
     if(sl.url){
-      const img = document.createElement('img');
-      img.src = sl.url;
-      img.alt = sl.alt || '';
-      img.draggable = false;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;';
-      img.onclick = e => { e.stopPropagation(); openLb(itemIdx, items, []); };
-      slide.appendChild(img);
+      if(sl.isVideo){
+        const v = document.createElement('video');
+        v.src = sl.url;
+        v.muted = true;
+        v.loop = true;
+        v.playsInline = true;
+        v.preload = 'metadata';
+        v.draggable = false;
+        v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;pointer-events:none;background:#111;';
+        slide.addEventListener('mouseenter', () => v.play().catch(() => {}));
+        slide.addEventListener('mouseleave', () => { v.pause(); v.currentTime = 0; });
+        slide.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        img.src = sl.url;
+        img.alt = sl.alt || '';
+        img.draggable = false;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;';
+        img.onclick = e => { e.stopPropagation(); openLb(itemIdx, items, []); };
+        slide.appendChild(img);
+      }
     } else {
       slide.innerHTML = `<div style="width:100%;height:100%;background:var(--cell-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--font);color:var(--text-3);letter-spacing:.06em;">${i+1} / ${total}</div>`;
     }
@@ -3073,7 +3087,7 @@ async function saveCarousel(){
         const file=new File([blob],s.name||('slide_'+i+ext),{type:blob.type});
         const destPath=_dbxPath(feedClientIdx, isVideo?'Video':'Immagini/Caroselli', file.name);
         const url=await DROPBOX.upload(file,destPath);
-        if(url){carouselTmp[i].url=url;carouselTmp[i].externalUrl=url;}
+        if(url){carouselTmp[i].url=url;carouselTmp[i].externalUrl=url;carouselTmp[i].isVideo=isVideo;}
         else { showToast('⚠ Slide '+(i+1)+' non caricata','warn'); }
       }catch(e){
         showToast('⚠ Errore slide '+(i+1)+': '+e.message,'warn');
@@ -3102,7 +3116,7 @@ async function saveCarousel(){
 }
 function addCarouselFiles(files){
   Array.from(files).forEach(f=>{
-    carouselTmp.push({url:URL.createObjectURL(f),name:f.name,copy:'',_file:f});
+    carouselTmp.push({url:URL.createObjectURL(f),name:f.name,copy:'',_file:f,isVideo:f.type.startsWith('video/')});
   });
   const inp=document.getElementById('c-file-input');
   if(inp) inp.value='';
@@ -3138,7 +3152,8 @@ function addCarouselUrl(){
   // Use existing fixDbxUrl to normalise Dropbox links (handles both old /s/ and new /scl/fi/ formats)
   const url=fixDbxUrl(raw);
   const name=raw.split('/').filter(Boolean).pop()?.split('?')[0]||'slide';
-  carouselTmp.push({url:url,externalUrl:url,rawUrl:raw,name:name,copy:'',isExternalLink:true});
+  const isVidUrl=/\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(raw)||/\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(url);
+  carouselTmp.push({url:url,externalUrl:url,rawUrl:raw,name:name,copy:'',isExternalLink:true,isVideo:isVidUrl});
   inp.value='';
   renderCThumbs();
   showToast('Slide aggiunta ✓');
@@ -3216,7 +3231,7 @@ function renderCThumbs(){
     const linkBtn=document.createElement('button');
     linkBtn.textContent='✓';linkBtn.title='Usa link';
     linkBtn.style.cssText='padding:4px 8px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;';
-    linkBtn.onclick=()=>{const raw=linkInp.value.trim();if(!raw)return;const u=fixDbxUrl(raw);carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].rawUrl=raw;carouselTmp[i].isExternalLink=true;renderCThumbs();};
+    linkBtn.onclick=()=>{const raw=linkInp.value.trim();if(!raw)return;const u=fixDbxUrl(raw);const iv=/\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(raw)||/\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(u);carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].rawUrl=raw;carouselTmp[i].isExternalLink=true;carouselTmp[i].isVideo=iv;renderCThumbs();};
     linkRow.appendChild(linkInp);linkRow.appendChild(linkBtn);
     right.appendChild(lbl); right.appendChild(ta); right.appendChild(linkRow);
 
