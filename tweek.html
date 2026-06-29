@@ -1770,7 +1770,7 @@ body{
         <div id="tl-clients-col" style="flex:1;"></div>
       </div>
       <!-- Right side: day header + grid stacked -->
-      <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <div id="tl-right-col" style="display:flex;flex-direction:column;flex-shrink:0;">
         <!-- Day header — sticky top -->
         <div id="tl-day-header" style="
           position:sticky;top:0;z-index:4;
@@ -2043,6 +2043,8 @@ function tlRender(){
 
   // Set grid width
   const totalW=days.length*TL_DAY_W;
+  const rightCol=document.getElementById('tl-right-col');
+  if(rightCol) rightCol.style.width=totalW+'px';
   grid.style.width=totalW+'px';
   hdr.style.width=totalW+'px';
   grid.style.position='relative';
@@ -2347,10 +2349,14 @@ function tlRender(){
   if(todayIdx>=0){
     setTimeout(()=>{
       tlBody.scrollLeft=Math.max(0,(todayIdx-3)*TL_DAY_W);
-      // Sync corner height to header height
+      // Sync corner + clients col heights
       const hdrEl=document.getElementById('tl-day-header');
       const corner=document.getElementById('tl-corner');
       if(hdrEl&&corner) corner.style.height=hdrEl.offsetHeight+'px';
+      // Set clients col height to match grid
+      const gEl=document.getElementById('tl-grid');
+      const cCol=document.getElementById('tl-clients-col');
+      if(gEl&&cCol) cCol.style.minHeight=gEl.offsetHeight+'px';
     },50);
   }
 }
