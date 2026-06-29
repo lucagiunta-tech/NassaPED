@@ -1518,10 +1518,47 @@
 
 <!-- LINK STORIES MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="link-stories-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:600px;width:95vw;">
     <div class="modal-top"><h3>Collega stories</h3><button class="btn ghost sm icon" onclick="closeModal('link-stories-modal')" aria-label="Chiudi">✕</button></div>
+
+    <!-- Add new stories directly from here -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Aggiungi stories</div>
+
+      <!-- Tab: File vs URL -->
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button id="lm-tab-file" onclick="setLinkModalTab('file')" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;border:1.5px solid var(--green);background:var(--green);color:var(--green-text);cursor:pointer;">📂 File</button>
+        <button id="lm-tab-url"  onclick="setLinkModalTab('url')"  style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;border:1.5px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;">🔗 URL / Frame.io</button>
+      </div>
+
+      <!-- File panel -->
+      <div id="lm-file-panel">
+        <div class="c-upload-zone" onclick="document.getElementById('lm-file-input').click()" style="cursor:pointer;padding:10px;">
+          <input type="file" id="lm-file-input" accept="image/*,video/*" multiple style="display:none;" onchange="linkModalAddFiles(this.files)"/>
+          <p style="margin:0;font-size:12px;">Trascina file o <strong>clicca per sfogliare</strong> <span style="font-size:10px;color:var(--text-3);">(9:16 · JPG/PNG/MP4)</span></p>
+        </div>
+      </div>
+
+      <!-- URL panel -->
+      <div id="lm-url-panel" style="display:none;">
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <button id="lm-url-tab-frame" onclick="setLinkModalUrlTab('frame')" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;border:1.5px solid var(--green);background:var(--green);color:var(--green-text);cursor:pointer;">Frame.io</button>
+          <button id="lm-url-tab-other" onclick="setLinkModalUrlTab('other')" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;border:1.5px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;">Altro link</button>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="lm-url-inp" placeholder="Incolla link Frame.io o URL diretto…"
+            onkeydown="if(event.key==='Enter')linkModalAddUrl()"
+            style="flex:1;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:var(--font);"/>
+          <button onclick="linkModalAddUrl()" style="padding:6px 14px;background:var(--green);color:var(--green-text);border:none;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;">+</button>
+        </div>
+        <p id="lm-url-hint" style="font-size:10px;color:var(--text-3);margin-top:4px;">Copia il link di condivisione da Frame.io.</p>
+      </div>
+    </div>
+
+    <!-- Existing stories to link -->
     <p class="modal-hint" id="link-modal-hint">Seleziona le stories da collegare a questo post.</p>
     <div class="link-modal-grid" id="link-modal-grid"></div>
+
     <div class="modal-actions">
       <button class="btn sm" onclick="closeModal('link-stories-modal')">Annulla</button>
       <button class="btn primary sm" onclick="saveLinkStories()">Collega</button>
