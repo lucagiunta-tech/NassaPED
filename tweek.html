@@ -1754,37 +1754,34 @@ body{
 
 <!-- ══ TIMELINE VIEW (Do. App pattern) ══ -->
 <div id="timeline-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;">
-  <div id="tl-header" style="
-    display:flex;align-items:flex-end;gap:0;
-    border-bottom:0.5px solid var(--border);
-    background:var(--bg);
-    position:relative;
-    flex-shrink:0;
-    overflow-x:auto;
-    scrollbar-width:none;
-  ">
-    <!-- sticky left label col -->
-    <div style="
-      position:sticky;left:0;z-index:4;
-      background:var(--bg);
-      border-right:0.5px solid var(--border);
-      flex-shrink:0;width:160px;
-      padding:12px 14px 8px;
-    ">
-      <div style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;
-        letter-spacing:.07em;color:var(--text-3);">Timeline</div>
+  <!-- Single scroll container — header + grid scroll together -->
+  <div id="tl-body" style="flex:1;overflow:auto;position:relative;">
+    <div style="display:flex;min-width:max-content;">
+      <!-- Sticky left column (clients + label) -->
+      <div style="position:sticky;left:0;z-index:5;background:var(--bg);
+        border-right:0.5px solid var(--border);flex-shrink:0;width:160px;display:flex;flex-direction:column;">
+        <!-- Top-left corner cell -->
+        <div id="tl-corner" style="flex-shrink:0;border-bottom:0.5px solid var(--border);
+          padding:8px 14px;background:var(--bg);">
+          <div style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;
+            letter-spacing:.07em;color:var(--text-3);">Timeline</div>
+        </div>
+        <!-- Client rows col -->
+        <div id="tl-clients-col" style="flex:1;"></div>
+      </div>
+      <!-- Right side: day header + grid stacked -->
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+        <!-- Day header — sticky top -->
+        <div id="tl-day-header" style="
+          position:sticky;top:0;z-index:4;
+          background:var(--bg);
+          border-bottom:0.5px solid var(--border);
+          flex-shrink:0;display:flex;
+        "></div>
+        <!-- Grid -->
+        <div id="tl-grid" style="position:relative;flex:1;"></div>
+      </div>
     </div>
-    <div id="tl-day-header" style="display:flex;flex:1;"></div>
-  </div>
-  <div id="tl-body" style="flex:1;overflow:auto;position:relative;display:flex;">
-    <!-- sticky client col -->
-    <div id="tl-clients-col" style="
-      position:sticky;left:0;z-index:3;
-      background:var(--bg);
-      border-right:0.5px solid var(--border);
-      flex-shrink:0;width:160px;
-    "></div>
-    <div id="tl-grid" style="flex:1;position:relative;"></div>
   </div>
   <!-- new task modal -->
   <div id="tl-modal-overlay" style="
@@ -2047,6 +2044,7 @@ function tlRender(){
   // Set grid width
   const totalW=days.length*TL_DAY_W;
   grid.style.width=totalW+'px';
+  hdr.style.width=totalW+'px';
   grid.style.position='relative';
   grid.style.minHeight=(clients.length*TL_ROW_H+40)+'px';
 
@@ -2056,22 +2054,27 @@ function tlRender(){
     const isToday=iso(d)===iso(TODAY);
     const isFirst=d.getDate()===1||i===0;
     const mn=MONTHS[d.getMonth()];
-    // Month label at first day of month
+    // Month label injected as absolute inside the day cell column
     if(isFirst||lastMonth!==mn){
-      const ml=document.createElement('div');
-      ml.style.cssText=`position:absolute;top:0;left:${i*TL_DAY_W}px;
-        font-size:11px;font-weight:700;color:var(--text-3);
-        text-transform:lowercase;letter-spacing:.04em;padding:4px 6px;`;
-      ml.textContent=mn;
-      hdr.appendChild(ml);
       lastMonth=mn;
+      // month label is added inside the cell below
     }
     const cell=document.createElement('div');
     cell.style.cssText=`
       display:inline-flex;flex-direction:column;align-items:center;justify-content:flex-end;
-      width:${TL_DAY_W}px;flex-shrink:0;padding-bottom:6px;gap:2px;
-      border-left:0.5px solid ${isFirst?'var(--border)':'transparent'};
+      width:${TL_DAY_W}px;flex-shrink:0;padding:20px 0 6px;gap:2px;
+      border-left:0.5px solid ${isFirst?'var(--border-2,var(--border))':'transparent'};
+      position:relative;
     `;
+    // Month floating label on first day of month
+    if(isFirst||i===0){
+      const ml=document.createElement('div');
+      ml.style.cssText=`position:absolute;top:4px;left:4px;
+        font-size:11px;font-weight:700;color:var(--text-3);
+        text-transform:lowercase;letter-spacing:.04em;white-space:nowrap;`;
+      ml.textContent=MONTHS[d.getMonth()];
+      cell.appendChild(ml);
+    }
     const num=document.createElement('div');
     num.style.cssText=`
       width:28px;height:28px;border-radius:50%;
@@ -2087,7 +2090,6 @@ function tlRender(){
     cell.appendChild(dow);cell.appendChild(num);
     hdr.appendChild(cell);
   });
-  hdr.style.paddingTop='20px';
 
   // ── Grid lines (vertical day separators) ──
   days.forEach((d,i)=>{
@@ -2345,6 +2347,10 @@ function tlRender(){
   if(todayIdx>=0){
     setTimeout(()=>{
       tlBody.scrollLeft=Math.max(0,(todayIdx-3)*TL_DAY_W);
+      // Sync corner height to header height
+      const hdrEl=document.getElementById('tl-day-header');
+      const corner=document.getElementById('tl-corner');
+      if(hdrEl&&corner) corner.style.height=hdrEl.offsetHeight+'px';
     },50);
   }
 }
