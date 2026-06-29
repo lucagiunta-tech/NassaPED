@@ -317,7 +317,7 @@ const CLOUD = {
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
       highlights, pedPlans, notesData, nassaDocs, pilastri, adsCampaigns, sbBozze, ugcInfluencer,
-      meta: { showAllDates, showAllCopy, pedFreqDays: Array.from(pedFreqDays) } };
+      meta: { showAllDates, showAllCopy, showAllPilastro, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
   apply(data) {
@@ -399,6 +399,7 @@ const CLOUD = {
     if (data.meta) {
       showAllDates = data.meta.showAllDates !== false;
       showAllCopy  = data.meta.showAllCopy  !== false;
+      showAllPilastro = data.meta.showAllPilastro !== false;
       if (Array.isArray(data.meta.pedFreqDays)) pedFreqDays = new Set(data.meta.pedFreqDays);
     }
   }
@@ -541,7 +542,7 @@ let notesClientIdx = -1, notesMonth = '';
 let globalClientIdx = -1;
 let previewActiveAcc = 0;
 
-let showAllDates = true, showAllCopy = true, feedViewMode = 'grid'; // showAllCopy: mostra/nasconde la sezione caption
+let showAllDates = true, showAllCopy = true, showAllPilastro = true, feedViewMode = 'grid'; // showAllCopy: mostra/nasconde la sezione caption
 let currentTab = 'studio';
 
 let feedDragSrc = null, stDragSrc = null;
@@ -1782,6 +1783,18 @@ function renderFeedGrid(){
         sb.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}`;
         sb.onclick=e=>{e.stopPropagation();feedMonth=month;feedAllMonthsMode=false;document.getElementById('feed-all-months-btn')?.classList.remove('active');renderFeedMonthPills();setTimeout(()=>openApprModal(realIdx,allMonthItems),50);};
         cell.appendChild(sb);
+        // Pilastro badge — sopra alla card (visibile solo se pilastro assegnato e toggle ON)
+        if(showAllPilastro && item.pilastro){
+          const _pilBadge = document.createElement('div');
+          _pilBadge.className = 'feed-cell-pilastro-badge';
+          // Get pilastro color
+          const _pData = (_getPilastriForCurrent()||[]).find(p=>p.name===item.pilastro);
+          const _pColor = _pData ? _pData.color : '#e8e8f4';
+          const _pText = _pData ? (parseInt(_pColor.slice(1,3),16)*0.299+parseInt(_pColor.slice(3,5),16)*0.587+parseInt(_pColor.slice(5,7),16)*0.114>150?'#111':'#fff') : '#534AB7';
+          _pilBadge.style.cssText = `position:absolute;bottom:36px;left:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor};color:${_pText};pointer-events:none;`;
+          _pilBadge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${_pText};opacity:.5;display:inline-block;"></span>${esc(item.pilastro)}`;
+          cell.appendChild(_pilBadge);
+        }
         // Tag/pilastro bar — sotto lo status badge
         const _tagBar = buildPilastrTagBar(item, allMonthItems, realIdx, true);
         wrap.appendChild(cell);
@@ -3212,6 +3225,7 @@ function getAllMonthsItems(){
   return result;
 }
 
+function toggleAllPilastro(){showAllPilastro=!showAllPilastro;const b=document.getElementById('toggle-pilastro'),c=document.getElementById('toggle-pilastro-chip');if(b)b.classList.toggle('off',!showAllPilastro);if(c){c.textContent=showAllPilastro?'ON':'OFF';c.classList.toggle('off',!showAllPilastro);}autoSave();renderFeedGrid();}
 function toggleAllDates(){showAllDates=!showAllDates;const b=document.getElementById('toggle-dates'),c=document.getElementById('toggle-dates-chip');if(b)b.classList.toggle('off',!showAllDates);if(c){c.textContent=showAllDates?'ON':'OFF';c.classList.toggle('off',!showAllDates);}renderFeedGrid();}
 function toggleAllCopy(){showAllCopy=!showAllCopy;const b=document.getElementById('toggle-copy'),c=document.getElementById('toggle-copy-chip');if(b)b.classList.toggle('off',!showAllCopy);if(c){c.textContent=showAllCopy?'ON':'OFF';c.classList.toggle('off',!showAllCopy);}renderFeedGrid();}
 
