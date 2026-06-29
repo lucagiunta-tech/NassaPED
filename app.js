@@ -4241,9 +4241,15 @@ async function saveHighlight(){
 /* LINK STORIES MODAL */
 function openLinkStoriesModal(postIdx){
   linkModalPostIdx=postIdx;const post=currentFeedItems()[postIdx];linkModalSelected=new Set(post.linkedStories||[]);
+  // Sync stories context to current feed context so uploads/links go to the right account+month
+  storiesClientIdx=feedClientIdx;storiesAccountIdx=feedAccountIdx;if(feedMonth)storiesMonth=feedMonth;
+  refreshLinkModalGrid();
+  openModal('link-stories-modal');
+}
+function refreshLinkModalGrid(){
   const grid=document.getElementById('link-modal-grid');if(!grid)return;grid.innerHTML='';
   const aid=accountId(feedClientIdx,feedAccountIdx);const key=aid&&feedMonth?accountKey(aid,feedMonth):null;const arr=key?(stories[key]||[]):[];
-  const hint=document.getElementById('link-modal-hint');if(hint)hint.textContent=arr.length?'Seleziona le stories da collegare ('+arr.length+' disponibili).':'Nessuna story per questo account/mese. Caricane dalla tab Stories.';
+  const hint=document.getElementById('link-modal-hint');if(hint)hint.textContent=arr.length?'Seleziona le stories ('+arr.length+' disponibili) o aggiungine di nuove sopra.':'Nessuna story ancora. Aggiungine tramite file o URL qui sopra.';
   arr.forEach((st,i)=>{
     const th=document.createElement('div');th.className='lm-thumb'+(linkModalSelected.has(i)?' selected':'');
     th.onclick=()=>{if(linkModalSelected.has(i))linkModalSelected.delete(i);else linkModalSelected.add(i);th.classList.toggle('selected',linkModalSelected.has(i));th.querySelector('.lm-check').style.display=linkModalSelected.has(i)?'flex':'none';};
@@ -4251,7 +4257,48 @@ function openLinkStoriesModal(postIdx){
     const coverUrl=st.isStoryboard&&st.slides?.[0]?st.slides[0].url:st.url;if(coverUrl){const img=document.createElement('img');img.src=coverUrl;img.alt='';th.appendChild(img);}
     const num=document.createElement('div');num.className='lm-num';num.textContent=i+1;th.appendChild(num);grid.appendChild(th);
   });
-  openModal('link-stories-modal');
+}
+/* Link-modal tab switchers */
+function setLinkModalTab(tab){
+  const isFile=tab==='file';
+  const fp=document.getElementById('lm-file-panel');const up=document.getElementById('lm-url-panel');
+  const tf=document.getElementById('lm-tab-file');const tu=document.getElementById('lm-tab-url');
+  if(fp)fp.style.display=isFile?'':'none';
+  if(up)up.style.display=isFile?'none':'';
+  if(tf){tf.style.background=isFile?'var(--green)':'transparent';tf.style.color=isFile?'var(--green-text)':'var(--text-2)';tf.style.borderColor=isFile?'var(--green)':'var(--border)';}
+  if(tu){tu.style.background=isFile?'transparent':'var(--green)';tu.style.color=isFile?'var(--text-2)':'var(--green-text)';tu.style.borderColor=isFile?'var(--border)':'var(--green)';}
+}
+function setLinkModalUrlTab(tab){
+  const isFrame=tab==='frame';
+  const tf=document.getElementById('lm-url-tab-frame');const to=document.getElementById('lm-url-tab-other');
+  const inp=document.getElementById('lm-url-inp');const hint=document.getElementById('lm-url-hint');
+  if(tf){tf.style.background=isFrame?'var(--green)':'transparent';tf.style.color=isFrame?'var(--green-text)':'var(--text-2)';tf.style.borderColor=isFrame?'var(--green)':'var(--border)';}
+  if(to){to.style.background=isFrame?'transparent':'var(--green)';to.style.color=isFrame?'var(--text-2)':'var(--green-text)';to.style.borderColor=isFrame?'var(--border)':'var(--green)';}
+  if(inp)inp.placeholder=isFrame?'Incolla link Frame.io…':'Incolla URL diretto (Dropbox, ecc.)…';
+  if(hint)hint.textContent=isFrame?'Copia il link di condivisione da Frame.io.':'URL pubblico immagine/video (Dropbox con dl=1, ecc.)';
+}
+function linkModalAddFiles(files){
+  if(!files||!files.length)return;
+  const inp=document.getElementById('lm-file-input');if(inp)inp.value='';
+  // queueStoryFiles uses storiesClientIdx/storiesAccountIdx/storiesMonth — already synced in openLinkStoriesModal
+  queueStoryFiles(files);
+  // Refresh grid after a short delay to allow new items to be pushed
+  setTimeout(refreshLinkModalGrid, 200);
+}
+function linkModalAddUrl(){
+  const inp=document.getElementById('lm-url-inp');if(!inp)return;
+  const raw=inp.value.trim();if(!raw){showToast('Inserisci un URL','warn');return;}
+  // addStoryLink reads from stories-link-inp element — bypass it by doing inline
+  storiesLinkTab='other';
+  const url=fixDbxUrl(raw);
+  const type=detectType(raw);
+  const name=raw.split('/').filter(Boolean).pop()?.split('?')[0]||'story';
+  const arr=currentStoryItems();
+  setStoryItems([{type,url,externalUrl:url,rawUrl:raw,isExternalLink:true,linkSource:'other',name,date:'',note:'',isStoryboard:false,slides:[]},...arr]);
+  inp.value='';
+  refreshStories();
+  refreshLinkModalGrid();
+  showToast('✓ Story aggiunta');
 }
 function saveLinkStories(){if(linkModalPostIdx===null)return;const items=currentFeedItems();items[linkModalPostIdx].linkedStories=Array.from(linkModalSelected).sort((a,b)=>a-b);setFeedItems(items);closeModal('link-stories-modal');renderFeedGrid();autoSave();}
 
