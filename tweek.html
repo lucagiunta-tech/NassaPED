@@ -1481,6 +1481,10 @@ body{
 .sjd-kb-add-btn:hover{border-color:var(--green);color:var(--green-dk);}
 [data-theme="dark"] .sjd-kb-add-btn:hover{color:var(--green);}
 </style>
+  <!-- React + Babel CDN per Planning view -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 </head>
 <body>
 
@@ -1508,6 +1512,7 @@ body{
     <button class="vt-btn" id="vt-week" onclick="setView('week')">Settimana</button>
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
     <button class="vt-btn" id="vt-anno" onclick="setView('anno')">Anno</button>
+    <button class="vt-btn" id="vt-planning" onclick="setView('planning')">Planning</button>
     <button class="vt-btn" id="vt-timeline" onclick="setView('timeline')">Timeline</button>
   </div>
 
@@ -1626,6 +1631,11 @@ body{
   <div class="bs"><div class="bs-title">Prima o poi <button class="bs-add" onclick="openModal(null,'backlog')">+</button></div><div id="backlog-list"></div></div>
   <div class="bs"><div class="bs-title">Da fare <button class="bs-add" onclick="openModal(null,'todo')">+</button></div><div id="todo-list"></div></div>
   <div class="bs"><div class="bs-title">Note <button class="bs-add" onclick="openModal(null,'cream')">+</button></div><div id="cream-list"></div></div>
+</div>
+
+<!-- ══ PLANNING VIEW (Tweek clone) ══ -->
+<div id="planning-view" style="display:none;flex:1;overflow:auto;">
+  <div id="planning-root" style="min-height:100%;"></div>
 </div>
 
 <!-- ══ TIMELINE VIEW (Do. App pattern) ══ -->
@@ -1897,10 +1907,10 @@ function setView(v){
   document.getElementById('month-view').style.display=v==='month'?'block':'none';
   document.getElementById('task-view').style.display=v==='tasks'?'flex':'none';
   document.getElementById('anno-view').style.display=v==='anno'?'flex':'none';
-  document.getElementById('bottom-sections').style.display=v==='anno'||v==='tasks'||v==='timeline'?'none':'flex';
+  document.getElementById('bottom-sections').style.display=v==='anno'||v==='tasks'||v==='timeline'||v==='planning'?'none':'flex';
   const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar',anno:'Clicca un mese per andare alla settimana',stream:'Clienti e job — il centro della pianificazione'};
   document.getElementById('hint-text').textContent=hints[v]||'';
-  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':v==='timeline'?'Timeline':'';
+  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':v==='timeline'?'Timeline':v==='planning'?'Planning Settimanale':'';
   if(v==='week'){weekOffset=0;renderWeek();}
   else if(v==='month') renderMonth();
   else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
@@ -1909,6 +1919,15 @@ function setView(v){
   document.getElementById('vt-timeline').classList.toggle('active',v==='timeline');
   document.getElementById('timeline-view').style.display=v==='timeline'?'flex':'none';
   if(v==='timeline'){tlRender();}
+  // Planning view
+  const planningBtn = document.getElementById('vt-planning');
+  if(planningBtn) planningBtn.classList.toggle('active',v==='planning');
+  const planningView = document.getElementById('planning-view');
+  if(planningView) planningView.style.display=v==='planning'?'flex':'none';
+  if(v==='planning' && !window._planningMounted){
+    // Babel transpiles the JSX script on demand
+    window._planningMounted = true;
+  }
 }
 function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else if(view==='anno'){_annoYear+=d;renderAnno();}else{monthOffset+=d;renderMonth();}}
 function goToday(){weekOffset=0;monthOffset=0;_annoYear=new Date().getFullYear();if(view==='week')renderWeek();else if(view==='anno')renderAnno();else renderMonth();}
@@ -3731,5 +3750,721 @@ function sjdBuildKanbanCard(item, phase, pi, ii, jobId){
 
 initFeedLayer();
 </script>
+<!-- ══ PLANNING COMPONENT (NassaTweek JSX transpiled by Babel) ══ -->
+<script type="text/babel" data-presets="react" id="planning-script">
+// React hooks from CDN window.React
+const { useState, useRef, useEffect, useCallback } = React;
+
+// ─── COSTANTI ────────────────────────────────────────────────────────────────
+const REPEAT_OPTIONS = [
+  { id:"vuoto",          lbl:"Vuoto" },
+  { id:"giornaliero",    lbl:"Giornaliero" },
+  { id:"settimanale",    lbl:"Settimanale" },
+  { id:"lavorativi",     lbl:"Lavorativi" },
+  { id:"due-settimane",  lbl:"Due settimane" },
+  { id:"mensile",        lbl:"Mensile" },
+  { id:"annuale",        lbl:"Annuale" },
+  { id:"personalizzata", lbl:"Personalizzata" },
+];
+
+const WEEK_COLS = [
+  { date:"29 giu", day:"Lun", today:true,  bold:false },
+  { date:"30 giu", day:"Mar", today:false, bold:false },
+  { date:"1 lug",  day:"Mer", today:false, bold:true  },
+  { date:"2 lug",  day:"Gio", today:false, bold:true  },
+  { date:"3 lug",  day:"Ven", today:false, bold:true  },
+  { date:"4 lug",  day:"Sab", today:false, bold:false, muted:true },
+  { date:"5 lug",  day:"Dom", today:false, bold:true,  special:true },
+];
+
+// Genera i giorni del mese di giugno 2026
+function buildMonth() {
+  const days = [];
+  // Prima riga: padding per Lun=0
+  const firstDow = 1; // 1 Giu 2026 = Lunedì
+  for (let i = 0; i < firstDow; i++) days.push(null);
+  for (let d = 1; d <= 30; d++) days.push(d);
+  return days;
+}
+
+const MONTH_DAYS = buildMonth();
+const MONTH_TASK_COLORS = ["#F5C842","#E8D5FF","#27AE60","#1a1a1a","#E24B4A","#DEFFCA","#FFC0CB",""];
+
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+// Task mensili mock
+const MONTH_TASKS = {
+  1:  [{text:"Riunione kick-off",color:"#E8D5FF"},{text:"Analisi mercato",color:""}],
+  3:  [{text:"Shooting Eich",color:"#F5C842"},{text:"Call Ramaddini",color:"#E24B4A"}],
+  5:  [{text:"PED Giugno",color:""}],
+  7:  [{text:"Scrivere 3",color:"#F5C842"},{text:"Svuotare la mail",color:"#1a1a1a"},{text:"Rivedere i piani",color:"#E8D5FF"},{text:"Stretching",color:""}],
+  8:  [{text:"Leggere un articolo",color:"#1a1a1a"},{text:"Fare una passeggiata",color:""},{text:"Aggiornare Streamtime",color:""},{text:"Rispondere mail",color:"#E8D5FF"},{text:"Organizzare archivio",color:""},],
+  9:  [{text:"Riordinare Dropbox",color:""},{text:"Cancellarsi newsletter",color:""},{text:"Ascoltare un podcast",color:""},{text:"Salvare i file",color:"#27AE60"}],
+  10: [{text:"Rivedere il budget",color:""},{text:"Respirazione",color:"#F5C842"},{text:"Eliminare foto doppie",color:""}],
+  11: [{text:"Contattare cliente",color:""},{text:"Meditazione",color:""},{text:"Riordinare desktop",color:""},{text:"Scrivere 3 cose",color:""}],
+  14: [{text:"Riordinare",color:""},{text:"Scrivere 3",color:"#E8D5FF"},{text:"Passeggiata",color:""},{text:"Aggiornare sito",color:""}],
+  15: [{text:"Leggere ispirazione",color:""},{text:"Eliminare notifiche",color:""},{text:"Organizzare calendario",color:""}],
+  16: [{text:"Fare una passeggiata",color:"#1a1a1a"},{text:"Riordinare",color:"#E8D5FF"},{text:"Bere più acqua",color:""}],
+  17: [{text:"Semplificare processi",color:""}],
+  18: [{text:"Rivedere obiettivi",color:""},{text:"Migliorare routine",color:"#E8D5FF"}],
+  29: [{text:"Doric Mappa",color:""},{text:"Eich Design",color:""},{text:"Kosmetikal",color:"#E24B4A"}],
+  30: [{text:"Ped Giugno",color:""},{text:"Scadenza Agosta",color:"#E24B4A"},{text:"Kosmetikal Reunion",color:"#1a1a1a"}],
+};
+
+// ─── INIT DATA ────────────────────────────────────────────────────────────────
+const INIT_TASKS = {
+  0: [
+    {id:"t1", text:"Doric Mappa",                                        style:"normal"},
+    {id:"t2", text:"Tenuta la favola",                                   style:"pill-purple"},
+    {id:"t3", text:"kk- GRAFICHE PAOLA ATTOLINO – RIF. ORDINE N. 5...", style:"red"},
+    {id:"t4", text:"Mobile app rev",                                     style:"muted"},
+    {id:"t5", text:"Catolghi KK Studio Colori",                          style:"normal"},
+    {id:"t6", text:"Eich Design",                                        style:"normal"},
+    {id:"t7", text:"Bandiere Ad Sidera",                                 style:"amber"},
+    {id:"t8", text:"ViviAgri Sito – KK sito ----- Jestosoft",           style:"normal", small:true},
+    {id:"t9", text:"Rivedere Ortonelio",                                 style:"striked"},
+    {id:"t10",text:"Volley Post Janni",                                  style:"muted"},
+    {id:"t11",text:"Start Calendario Ramaddini eventi",                  style:"normal"},
+    {id:"t12",text:"Logo Volley",                                        style:"muted"},
+    {id:"t13",text:"x il Giappone integrare NOTE NERE NERO D'AVOLA",    style:"normal", small:true},
+    {id:"t14",text:"VivaAgri vedi mail",                                 style:"normal"},
+    {id:"t15",text:"Pomonia Riprendere",                                 style:"normal"},
+    {id:"t16",text:"Yuk ripresa fustella",                               style:"muted"},
+  ],
+  1: [
+    {id:"t17",text:"Ped Giugno – EM",                                   style:"normal"},
+    {id:"t18",text:"☐ GRAFICA EXOPURE – RIF. ORDINE N. 345",            style:"normal", small:true},
+    {id:"t19",text:"09:00 Scadenza Studio Agosta – 30/06/2026",         style:"tag-red"},
+    {id:"t20",text:"10:00 Scadenza Studio Agosta – IVA I trimestre 20...",style:"tag-red"},
+    {id:"t21",text:"12:00 KOSMETIKAL REUNION",                          style:"tag-dark"},
+    {id:"t22",text:"Preventivi stand FRUTECH",                          style:"normal"},
+    {id:"t23",text:"Logo 25 Anni Raggio Verde",                         style:"normal"},
+    {id:"t24",text:"Libro Raggio Verde",                                style:"normal"},
+    {id:"t25",text:"AGGIORNAMENTO ARGADONIA – RIF. ORDINE N. 3...",     style:"normal"},
+  ],
+  2: [{id:"t26",text:"10:00 staccare metricool abbonamento",style:"tag-neutral"}],
+  3:[],4:[],5:[],6:[],
+};
+
+const INIT_BOTTOM = {
+  "Prima o poi": [
+    {id:"b1",text:"GDF – Gruppo elettrogeno",style:"muted"},
+    {id:"b2",text:"FOTO CICERO",             style:"badge-gray"},
+  ],
+  "Da Fare": [
+    {id:"b3",text:"Shooting Effegrafica",            style:"normal"},
+    {id:"b4",text:"Shooting ViviAgri",               style:"normal"},
+    {id:"b5",text:"Agenzia delle Entrate vedi mail", style:"normal"},
+  ],
+  "Colori Crema": [
+    {id:"b6",text:"KK colori Crema",style:"badge-purple"},
+  ],
+};
+
+// ─── COLOR PICKER HSB ────────────────────────────────────────────────────────
+function hsb2hex(h, s, b) {
+  const f = (n) => {
+    const k = (n + h / 60) % 6;
+    return Math.round((b - b * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255);
+  };
+  const r = f(5), g = f(3), bl = f(1);
+  return "#" + [r,g,bl].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+
+function ColorPickerHSB({ current, onSelect, onClose }) {
+  const canvasRef = useRef(null);
+  const [hue, setHue] = useState(0);
+  const [sat, setSat] = useState(0.5);
+  const [bri, setBri] = useState(0.8);
+  const [hex, setHex] = useState(current || "#E24B4A");
+  const [dragging, setDragging] = useState(false);
+
+  // Draw gradient on canvas
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv) return;
+    const ctx = cv.getContext("2d");
+    const w = cv.width, h = cv.height;
+    // Hue gradient horizontal
+    const hueGrad = ctx.createLinearGradient(0,0,w,0);
+    for (let i=0;i<=360;i+=10) hueGrad.addColorStop(i/360, `hsl(${i},100%,50%)`);
+    ctx.fillStyle = hueGrad;
+    ctx.fillRect(0,0,w,h);
+    // White overlay vertical
+    const wGrad = ctx.createLinearGradient(0,0,0,h);
+    wGrad.addColorStop(0,"rgba(255,255,255,1)");
+    wGrad.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle = wGrad;
+    ctx.fillRect(0,0,w,h);
+    // Black overlay
+    const bGrad = ctx.createLinearGradient(0,0,0,h);
+    bGrad.addColorStop(0,"rgba(0,0,0,0)");
+    bGrad.addColorStop(1,"rgba(0,0,0,1)");
+    ctx.fillStyle = bGrad;
+    ctx.fillRect(0,0,w,h);
+  }, []);
+
+  const handleCanvas = (e) => {
+    const cv = canvasRef.current;
+    const rect = cv.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+    const ctx = cv.getContext("2d");
+    const px = ctx.getImageData(Math.round(x * cv.width / rect.width), Math.round(y * cv.height / rect.height), 1, 1).data;
+    const h = "#" + [px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,"0")).join("");
+    setHex(h);
+  };
+
+  const cursorX = sat * 100;
+  const cursorY = (1 - bri) * 100;
+
+  return (
+    <div style={{position:"absolute",top:42,right:54,width:240,background:"#fff",borderRadius:14,
+      boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:300,overflow:"hidden",padding:12}}
+      onClick={e=>e.stopPropagation()}>
+      {/* Canvas */}
+      <div style={{position:"relative",borderRadius:8,overflow:"hidden",marginBottom:10,cursor:"crosshair"}}
+        onMouseDown={e=>{setDragging(true);handleCanvas(e);}}
+        onMouseMove={e=>{if(dragging)handleCanvas(e);}}
+        onMouseUp={()=>setDragging(false)}
+        onMouseLeave={()=>setDragging(false)}>
+        <canvas ref={canvasRef} width={400} height={200}
+          style={{width:"100%",height:130,display:"block"}}/>
+        <div style={{position:"absolute",left:"50%",top:"30%",
+          width:16,height:16,borderRadius:"50%",border:"2px solid #fff",
+          transform:"translate(-50%,-50%)",pointerEvents:"none",
+          boxShadow:"0 0 0 1px rgba(0,0,0,0.3)"}}/>
+      </div>
+      {/* Preset colors */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:6,marginBottom:10}}>
+        {["#E24B4A","#E67E22","#F5C842","#27AE60","#5B5BD6","#1a1a1a",
+          "#E8D5FF","#DEFFCA","#FFC0CB","#C0392B","#2C3E8C","#AAAAAA"].map(c=>(
+          <div key={c} onClick={()=>{setHex(c);}}
+            style={{width:24,height:24,borderRadius:"50%",background:c,cursor:"pointer",
+              border:hex===c?"3px solid rgba(0,0,0,0.4)":"2px solid transparent",
+              transition:"transform .1s"}}
+            onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}/>
+        ))}
+      </div>
+      {/* HEX input */}
+      <input value={hex} onChange={e=>setHex(e.target.value)}
+        style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #eee",
+          fontSize:13,fontFamily:"monospace",outline:"none",marginBottom:8,color:"#1a1a1a"}}/>
+      <button onClick={()=>{onSelect(hex);onClose();}}
+        style={{width:"100%",padding:"10px",borderRadius:20,border:"none",
+          background:"#1a1a1a",color:"#fff",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
+        Salva
+      </button>
+    </div>
+  );
+}
+
+// ─── TASK CONTENT ─────────────────────────────────────────────────────────────
+function TaskContent({ task }) {
+  const s = task.style;
+  const base = { fontSize: task.small?10:12, lineHeight:"1.4" };
+  const pill = (bg,color) => (
+    <span style={{display:"inline-flex",alignItems:"center",gap:3,padding:"2px 8px",borderRadius:12,fontSize:10,fontWeight:500,background:bg,color}}>{task.text}</span>
+  );
+  const tag = (bg) => (
+    <span style={{display:"inline-flex",alignItems:"center",gap:3,padding:"2px 9px",borderRadius:20,fontSize:10,fontWeight:500,background:bg,color:bg==="#1a1a1a"?"#fff":bg.startsWith("#E24")||bg.startsWith("#C0")||bg.startsWith("#A3")?"#fff":"#fff",overflow:"hidden",maxWidth:"100%"}}>{task.text}</span>
+  );
+  if (s==="pill-purple") return pill("#E8D5FF","#534AB7");
+  if (s==="tag-red")     return tag("#E24B4A");
+  if (s==="tag-dark")    return tag("#1a1a1a");
+  if (s==="tag-neutral") return tag("#1a1a1a");
+  if (s==="badge-purple")return pill("#E8D5FF","#534AB7");
+  if (s==="badge-gray")  return pill("#e8e5e0","#555");
+  if (task.bgColor) return (
+    <span style={{display:"inline-flex",alignItems:"center",padding:"2px 8px",borderRadius:8,fontSize:task.small?9:11,
+      background:task.bgColor,color:task.bgColor==="#1a1a1a"?"#fff":"#1a1a1a",fontWeight:500}}>
+      {task.text}
+    </span>
+  );
+  const colors={muted:"#aaa",red:"#c0392b",amber:"#7a4a00",striked:"#bbb",normal:"#1a1a1a"};
+  return <span style={{...base,color:colors[s]||"#1a1a1a",textDecoration:s==="striked"?"line-through":"none",fontWeight:s==="red"?500:400}}>{task.text}</span>;
+}
+
+// ─── REPEAT MENU ──────────────────────────────────────────────────────────────
+function RepeatMenu({ current, onSelect, onClose }) {
+  return (
+    <div style={{position:"absolute",top:42,right:100,width:200,background:"#fff",borderRadius:14,
+      boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:300,overflow:"hidden"}}
+      onClick={e=>e.stopPropagation()}>
+      {REPEAT_OPTIONS.map((o,i)=>(
+        <div key={o.id}>
+          {i===1 && <div style={{height:"0.5px",background:"#e0e0e0",margin:"2px 0"}}/>}
+          <div onClick={()=>{onSelect(o.id);onClose();}}
+            style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              padding:"10px 14px",fontSize:14,color:current===o.id?"#1a1a1a":"#888",
+              cursor:"pointer",borderBottom:i<REPEAT_OPTIONS.length-1?"0.5px solid #f5f5f5":"none"}}
+            onMouseEnter={e=>{e.currentTarget.style.background="#f8f8f8";e.currentTarget.style.color="#1a1a1a";}}
+            onMouseLeave={e=>{e.currentTarget.style.background="";e.currentTarget.style.color=current===o.id?"#1a1a1a":"#888";}}>
+            <span style={{display:"flex",alignItems:"center",gap:8}}>
+              {current===o.id && <span style={{fontSize:12}}>✓</span>}
+              {o.lbl}
+            </span>
+            {o.id==="personalizzata" && <span>›</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── TIME PICKER ─────────────────────────────────────────────────────────────
+function TimePicker({ date, onClose }) {
+  const [h,setH]=useState(9);
+  const [m,setM]=useState(0);
+  const pad=n=>String(n).padStart(2,"0");
+  const ab = {width:24,height:24,border:"none",background:"transparent",cursor:"pointer",color:"#888",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"};
+  return (
+    <div style={{position:"absolute",top:42,right:74,width:220,background:"#fff",borderRadius:14,
+      boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:300,padding:14}}
+      onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <button style={ab}>‹</button>
+        <span style={{fontSize:13,fontWeight:500,color:"#1a1a1a"}}>{date}</span>
+        <button style={ab}>›</button>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:4,alignItems:"center",margin:"8px 0"}}>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+          <button style={ab} onClick={()=>setH(v=>(v+1)%24)}>∧</button>
+          <span style={{fontSize:28,fontWeight:500,color:"#1a1a1a",minWidth:50,textAlign:"center"}}>{pad(h)}</span>
+          <button style={ab} onClick={()=>setH(v=>(v-1+24)%24)}>∨</button>
+        </div>
+        <span style={{fontSize:28,fontWeight:300,color:"#1a1a1a",padding:"0 2px"}}>:</span>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+          <button style={ab} onClick={()=>setM(v=>(v+5)%60)}>∧</button>
+          <span style={{fontSize:28,fontWeight:500,color:"#1a1a1a",minWidth:50,textAlign:"center"}}>{pad(m)}</span>
+          <button style={ab} onClick={()=>setM(v=>(v-5+60)%60)}>∨</button>
+        </div>
+      </div>
+      <button onClick={onClose} style={{width:"100%",padding:10,borderRadius:20,border:"none",background:"#1a1a1a",color:"#fff",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginTop:10}}>
+        Crea promemoria
+      </button>
+    </div>
+  );
+}
+
+// ─── MORE MENU ────────────────────────────────────────────────────────────────
+function MoreMenu({ onAction, onClose }) {
+  const items=[
+    {id:"domani",    lbl:"Domani",          icon:"→"},
+    {id:"settimana", lbl:"Pross. settim...", icon:"📅"},
+    {id:"primaopoi", lbl:"Prima o poi",      icon:"↓"},
+    {id:"duplicare", lbl:"Duplicare",        icon:"⧉"},
+    {id:"file",      lbl:"Aggiungi file",    icon:"📎"},
+  ];
+  return (
+    <div style={{position:"absolute",top:42,right:0,width:200,background:"#fff",borderRadius:14,
+      boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:300,overflow:"hidden"}}
+      onClick={e=>e.stopPropagation()}>
+      {items.map((it,i)=>(
+        <div key={it.id} onClick={()=>{onAction(it.id);onClose();}}
+          style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+            padding:"11px 14px",fontSize:14,color:"#1a1a1a",cursor:"pointer",
+            borderBottom:i<items.length-1?"0.5px solid #f0f0f0":"none"}}
+          onMouseEnter={e=>e.currentTarget.style.background="#f8f8f8"}
+          onMouseLeave={e=>e.currentTarget.style.background=""}>
+          <span>{it.lbl}</span><span style={{fontSize:16,color:"#888"}}>{it.icon}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── TASK PANEL ───────────────────────────────────────────────────────────────
+function TaskPanel({ task, date, taskMeta, onClose, onDelete, onUpdateMeta }) {
+  const [popup, setPopup] = useState(null);
+  const titleRef = useRef(null);
+  const meta = taskMeta || {notes:"",subtasks:[],color:null,repeat:"vuoto",done:false,files:[]};
+
+  useEffect(()=>{
+    if(titleRef.current){titleRef.current.style.height="auto";titleRef.current.style.height=titleRef.current.scrollHeight+"px";}
+  },[task]);
+
+  const toggle=(p)=>setPopup(prev=>prev===p?null:p);
+  const close=()=>setPopup(null);
+  const update=(patch)=>onUpdateMeta({...meta,...patch});
+  const addSubtask=()=>update({subtasks:[...meta.subtasks,{id:uid(),text:"",done:false,priority:false}]});
+  const toggleSt=(id)=>update({subtasks:meta.subtasks.map(s=>s.id===id?{...s,done:!s.done}:s)});
+  const togglePriority=(id)=>update({subtasks:meta.subtasks.map(s=>s.id===id?{...s,priority:!s.priority}:s)});
+  const updateSt=(id,text)=>update({subtasks:meta.subtasks.map(s=>s.id===id?{...s,text}:s)});
+
+  const addFile=()=>{
+    const newFile={id:uid(),name:"Documento allegato.pdf",type:"PDF",size:"2.1 MB",icon:"📄"};
+    update({files:[...(meta.files||[]),newFile]});
+  };
+
+  const BtnS=(active)=>({width:28,height:28,borderRadius:"50%",border:"none",
+    background:active?"#1a1a1a":"transparent",color:active?"#fff":"#888",
+    cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"});
+
+  return (
+    <div style={{width:400,background:"#F0EDE8",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",overflow:"hidden",position:"relative"}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px 8px"}}>
+        <div style={{fontSize:12,color:"#888",display:"flex",alignItems:"center",gap:5}}>📅 {date}</div>
+        <div style={{display:"flex",alignItems:"center",gap:5,position:"relative"}}>
+          <button style={BtnS(false)} onClick={onDelete} title="Elimina">🗑</button>
+          <div style={{position:"relative"}}>
+            <button style={BtnS(meta.repeat!=="vuoto")} onClick={()=>toggle("repeat")} title="Ripeti">↺</button>
+            {popup==="repeat" && <RepeatMenu current={meta.repeat} onSelect={r=>update({repeat:r})} onClose={close}/>}
+          </div>
+          <div style={{position:"relative"}}>
+            <button style={{...BtnS(false),color:meta.color||"#888",fontSize:18}} onClick={()=>toggle("color")}>●</button>
+            {popup==="color" && <ColorPickerHSB currentColor={meta.color} onSelect={c=>update({color:c})} onClose={close}/>}
+          </div>
+          <div style={{position:"relative"}}>
+            <button style={BtnS(false)} onClick={()=>toggle("time")}>🔔</button>
+            {popup==="time" && <TimePicker date={date} onClose={close}/>}
+          </div>
+          <div style={{position:"relative"}}>
+            <button style={BtnS(true)} onClick={()=>toggle("more")}>···</button>
+            {popup==="more" && <MoreMenu onAction={id=>{if(id==="file")addFile();}} onClose={close}/>}
+          </div>
+          <button style={{...BtnS(false),fontSize:18}} onClick={onClose}>×</button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{padding:"12px 16px 6px"}}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,paddingBottom:10,borderBottom:"0.5px solid #d0cdc8"}}>
+          <textarea ref={titleRef} defaultValue={task.text}
+            style={{fontSize:20,fontWeight:500,color:"#1a1a1a",border:"none",background:"transparent",width:"100%",fontFamily:"inherit",outline:"none",resize:"none",overflow:"hidden",lineHeight:1.3}}
+            onChange={e=>{e.target.style.height="auto";e.target.style.height=e.target.scrollHeight+"px";}}/>
+          <div onClick={()=>update({done:!meta.done})}
+            style={{width:26,height:26,borderRadius:"50%",border:`2px solid ${meta.done?"#1A8C3F":"#ccc"}`,
+              background:meta.done?"#1A8C3F":"transparent",cursor:"pointer",flexShrink:0,marginTop:4,
+              display:"flex",alignItems:"center",justifyContent:"center",color:meta.done?"#fff":"transparent",fontSize:12}}>
+            {meta.done&&"✓"}
+          </div>
+        </div>
+        <div style={{display:"flex",gap:2,margin:"8px 0 6px"}}>
+          {["H","B","≡","≡","🔗"].map((icon,i)=>(
+            <button key={i} style={{width:28,height:28,borderRadius:5,border:"none",background:"transparent",cursor:"pointer",fontSize:13,fontWeight:i<2?700:400,color:"#888",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center"}}
+              onMouseEnter={e=>{e.currentTarget.style.background="#e0ddd8";e.currentTarget.style.color="#1a1a1a";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="";e.currentTarget.style.color="#888";}}>{icon}</button>
+          ))}
+        </div>
+        <textarea placeholder="Aggiungi qualche nota extra qui..." defaultValue={meta.notes}
+          onChange={e=>update({notes:e.target.value})}
+          style={{width:"100%",border:"none",background:"transparent",fontSize:13,color:"#1a1a1a",fontFamily:"inherit",outline:"none",resize:"none",minHeight:50,lineHeight:1.6}}/>
+      </div>
+
+      {/* Files */}
+      {(meta.files||[]).length > 0 && (
+        <div style={{padding:"0 16px 8px"}}>
+          {(meta.files).map(f=>(
+            <div key={f.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:"rgba(0,0,0,0.04)",borderRadius:8,marginBottom:6}}>
+              <span style={{fontSize:22}}>{f.icon}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:500,color:"#1a1a1a"}}>{f.name}</div>
+                <div style={{fontSize:11,color:"#888"}}>{f.type} · {f.size}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Subtasks */}
+      <div style={{borderTop:"0.5px solid #d0cdc8",padding:"8px 16px 12px"}}>
+        {/* Group separator demo */}
+        {meta.subtasks.length > 2 && (
+          <div style={{height:"0.5px",background:"#d0cdc8",margin:"4px 0 4px"}}/>
+        )}
+        {meta.subtasks.map((st,idx)=>(
+          <div key={st.id}>
+            {idx===2 && meta.subtasks.length>2 && <div style={{height:"0.5px",background:"#d0cdc8",margin:"4px 0"}}/>}
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",borderBottom:"0.5px solid #ece9e4"}}>
+              <div onClick={()=>toggleSt(st.id)}
+                style={{width:16,height:16,borderRadius:"50%",border:`1.5px solid ${st.done?"#1A8C3F":"#bbb"}`,
+                  background:st.done?"#1A8C3F":"transparent",cursor:"pointer",flexShrink:0,
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:st.done?"#fff":"transparent"}}>
+                {st.done&&"✓"}
+              </div>
+              <input defaultValue={st.text} placeholder="Sottocompito..."
+                onChange={e=>updateSt(st.id,e.target.value)}
+                style={{flex:1,border:"none",background:"transparent",fontSize:12,
+                  color:"#1a1a1a",fontFamily:"inherit",outline:"none",
+                  textDecoration:st.done?"line-through":"none"}}/>
+              {/* Priorità asterisco */}
+              <span onClick={()=>togglePriority(st.id)}
+                style={{fontSize:14,cursor:"pointer",color:st.priority?"#1a1a1a":"#ddd",userSelect:"none"}}
+                title="Priorità">*</span>
+            </div>
+          </div>
+        ))}
+        <div onClick={addSubtask} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0 0",cursor:"pointer",color:"#bbb",fontSize:12}}>
+          <div style={{width:16,height:16,borderRadius:"50%",border:"1.5px dashed #bbb",flexShrink:0}}/>
+          <span>Add subtask...</span>
+          <span style={{marginLeft:"auto",color:"#bbb",fontSize:14}}>📎</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── VISTA MENSILE ────────────────────────────────────────────────────────────
+const DAY_NAMES = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+
+function MonthView({ onOpenTask }) {
+  return (
+    <div style={{padding:"0 0 1rem"}}>
+      {/* Header giorni */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",marginBottom:4}}>
+        {DAY_NAMES.map(d=>(
+          <div key={d} style={{fontSize:10,color:"#aaa",textAlign:"center",padding:"4px 0"}}>{d}</div>
+        ))}
+      </div>
+      {/* Griglia giorni */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:0,border:"1px solid #dbd8d3",borderRadius:12,overflow:"hidden"}}>
+        {MONTH_DAYS.map((day,i)=>{
+          const isToday = day===29;
+          const tasks = day ? (MONTH_TASKS[day]||[]) : [];
+          const visible = tasks.slice(0,4);
+          const extra = tasks.length - 4;
+          return (
+            <div key={i} style={{
+              minHeight:80,borderRight:(i%7!==6)?"1px solid #dbd8d3":"none",
+              borderBottom:i<MONTH_DAYS.length-7?"1px solid #dbd8d3":"none",
+              padding:"4px 3px",background:day?"#EFEDE8":"#EDEAE5",
+            }}>
+              {day && (
+                <>
+                  <div style={{width:22,height:22,borderRadius:"50%",
+                    background:isToday?"#1a1a1a":"transparent",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:12,fontWeight:isToday?700:500,
+                    color:isToday?"#fff":"#888",marginBottom:3}}>
+                    {day}
+                  </div>
+                  {visible.map((t,ti)=>(
+                    <div key={ti} onClick={()=>onOpenTask(t,`Giu ${day}`)}
+                      style={{fontSize:9,padding:"1px 4px",borderRadius:4,marginBottom:2,
+                        background:t.color||"transparent",
+                        color:t.color==="#1a1a1a"?"#fff":t.color?"#1a1a1a":"#555",
+                        fontWeight:t.color?500:400,
+                        border:t.color?"none":"0.5px solid transparent",
+                        overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer"}}>
+                      {t.text}
+                    </div>
+                  ))}
+                  {extra>0 && <div style={{fontSize:9,color:"#aaa",paddingLeft:4}}>{extra} in più</div>}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── TASK ROW (settimana) ─────────────────────────────────────────────────────
+function TaskRow({ task, onOpen, onUpdate, rowColor }) {
+  const [editing,setEditing]=useState(false);
+  const [val,setVal]=useState(task.text);
+  const inputRef=useRef(null);
+  const isEmpty=task.style==="empty";
+
+  // Colore riga: viene da taskMeta.color salvato nel pannello
+  const bg = (!isEmpty && rowColor) ? rowColor : "transparent";
+  const isLight = rowColor ? parseInt(rowColor.slice(1,3),16)*0.299+parseInt(rowColor.slice(3,5),16)*0.587+parseInt(rowColor.slice(5,7),16)*0.114 > 130 : true;
+  const textColor = (!isEmpty && rowColor) ? (isLight ? "#1a1a1a" : "#fff") : undefined;
+
+  const handleClick=()=>{ if(!isEmpty){onOpen(task);return;} setEditing(true); setTimeout(()=>inputRef.current?.focus(),10); };
+  const save=()=>{ setEditing(false); if(val.trim())onUpdate({...task,text:val.trim(),style:"normal"}); };
+
+  const rowS={
+    borderBottom:"1px solid #dbd8d3",
+    minHeight:30,cursor:"pointer",display:"flex",alignItems:"center",
+    background: bg,
+    transition:"opacity .1s",
+  };
+
+  if(editing) return (
+    <div style={{...rowS,background:"rgba(255,255,255,.8)"}}>
+      <input ref={inputRef} value={val} onChange={e=>setVal(e.target.value)}
+        onBlur={save} onKeyDown={e=>{if(e.key==="Enter"||e.key==="Tab"){e.preventDefault();save();}if(e.key==="Escape"){setEditing(false);setVal(task.text);}}}
+        placeholder="Scrivi task..."
+        style={{flex:1,padding:"5px 8px",fontSize:12,border:"none",background:"transparent",outline:"none",color:"#1a1a1a",fontFamily:"inherit"}}/>
+    </div>
+  );
+
+  return (
+    <div style={rowS}
+      onMouseEnter={e=>e.currentTarget.style.opacity="0.85"}
+      onMouseLeave={e=>e.currentTarget.style.opacity="1"}
+      onClick={handleClick}>
+      {/* Indicatore colore a sinistra se colorata */}
+      {!isEmpty && rowColor && (
+        <div style={{width:3,alignSelf:"stretch",background:rowColor,flexShrink:0,filter:"brightness(0.7)"}}/>
+      )}
+      <div style={{flex:1,padding:"5px 8px",display:"flex",alignItems:"center",gap:5,minWidth:0}}>
+        {!isEmpty && (
+          <span style={{fontSize:task.small?10:12,lineHeight:1.4,color:textColor||undefined}}>
+            {/* Per task colorati mostra testo semplice sul bg colorato */}
+            {rowColor
+              ? task.text
+              : <TaskContent task={task}/>
+            }
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BottomRow({ task, onOpen, onUpdate }) {
+  const [editing,setEditing]=useState(false);
+  const [val,setVal]=useState(task.text);
+  const inputRef=useRef(null);
+  const isEmpty=task.style==="empty";
+  const handleClick=()=>{ if(!isEmpty){onOpen(task,"Prima o poi / Da Fare");return;} setEditing(true); setTimeout(()=>inputRef.current?.focus(),10); };
+  const save=()=>{ setEditing(false); if(val.trim())onUpdate({...task,text:val.trim(),style:"normal"}); };
+  if(editing) return (
+    <div style={{borderBottom:"1px solid #dbd8d3",minHeight:26,display:"flex",alignItems:"center"}}>
+      <input ref={inputRef} value={val} onChange={e=>setVal(e.target.value)}
+        onBlur={save} onKeyDown={e=>{if(e.key==="Enter")save();if(e.key==="Escape")setEditing(false);}}
+        placeholder="Scrivi..."
+        style={{flex:1,padding:"4px 2px",fontSize:11,border:"none",background:"rgba(255,255,255,.8)",outline:"none",color:"#1a1a1a",fontFamily:"inherit"}}/>
+    </div>
+  );
+  return (
+    <div onClick={handleClick}
+      style={{borderBottom:"1px solid #dbd8d3",minHeight:26,display:"flex",alignItems:"center",cursor:"pointer"}}
+      onMouseEnter={e=>e.currentTarget.style.background="rgba(0,0,0,0.025)"}
+      onMouseLeave={e=>e.currentTarget.style.background=""}>
+      <div style={{flex:1,padding:"4px 2px",fontSize:11,color:isEmpty?"transparent":task.style==="muted"?"#bbb":"#555"}}>
+        {isEmpty?"·":<TaskContent task={task}/>}
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+function NassaTweek() {
+  const [view,setView]=useState("week"); // "week"|"month"
+  const [tasks,setTasks]=useState(INIT_TASKS);
+  const [bottom,setBottom]=useState(INIT_BOTTOM);
+  const [taskMeta,setTaskMeta]=useState({});
+  const [panel,setPanel]=useState(null);
+
+  const getColTasks=(ci)=>{
+    const t=tasks[ci]||[];
+    const filled=t.filter(x=>x.style!=="empty");
+    const empties=Array(Math.max(0,8-filled.length)).fill(null).map(()=>({id:uid(),text:"·",style:"empty"}));
+    return [...t,...empties];
+  };
+
+  const updateTask=(ci,updated)=>{
+    setTasks(prev=>{const col=[...(prev[ci]||[])];const i=col.findIndex(t=>t.id===updated.id);if(i>=0)col[i]=updated;else col.push(updated);return{...prev,[ci]:col};});
+  };
+  const deleteTask=(ci,id)=>{ setTasks(prev=>({...prev,[ci]:(prev[ci]||[]).filter(t=>t.id!==id)})); setPanel(null); };
+
+  const openPanel=(task,date,colIdx=null)=>setPanel({task,date,colIdx});
+  const openMonthTask=(t,date)=>{ const task={id:uid(),text:t.text,style:"normal",bgColor:t.color}; setPanel({task,date,colIdx:null}); };
+
+  const TabBtn=({id,lbl})=>(
+    <button onClick={()=>setView(id)}
+      style={{padding:"5px 14px",borderRadius:20,border:"none",cursor:"pointer",fontSize:12,fontWeight:500,fontFamily:"inherit",
+        background:view===id?"#1a1a1a":"transparent",color:view===id?"#fff":"#888",transition:"all .15s"}}>
+      {lbl}
+    </button>
+  );
+
+  return (
+    <div style={{fontFamily:"system-ui,-apple-system,sans-serif",background:"#EFEDE8",minHeight:"100vh",padding:"1.25rem 1.5rem",position:"relative"}}>
+
+      {/* TOPBAR */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}>
+        <div style={{fontSize:22,fontWeight:500,color:"#1a1a1a"}}>Giugno 2026</div>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          {/* Tab switcher */}
+          <div style={{display:"flex",background:"#e4e1dc",borderRadius:20,padding:3,gap:2,marginRight:8}}>
+            <TabBtn id="week" lbl="Settimana"/>
+            <TabBtn id="month" lbl="Mese"/>
+          </div>
+          <div style={{width:28,height:28,borderRadius:"50%",background:"#1A8C3F",color:"#fff",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center"}}>LG</div>
+          <div style={{width:26,height:26,borderRadius:"50%",background:"#E24B4A",color:"#fff",fontSize:10,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center"}}>!</div>
+          <button style={{width:26,height:26,borderRadius:"50%",border:"0.5px solid #ccc",background:"transparent",cursor:"pointer",color:"#666",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+          <button style={{width:26,height:26,borderRadius:"50%",border:"0.5px solid #ccc",background:"transparent",cursor:"pointer",color:"#666",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+        </div>
+      </div>
+
+      {/* OVERLAY */}
+      {panel&&<div onClick={()=>setPanel(null)} style={{position:"absolute",inset:0,background:"rgba(100,95,88,.45)",zIndex:50,borderRadius:4}}/>}
+
+      {/* PANEL */}
+      {panel&&(
+        <div style={{position:"absolute",top:56,right:32,zIndex:100}}>
+          <TaskPanel task={panel.task} date={panel.date}
+            taskMeta={taskMeta[panel.task.id]}
+            onClose={()=>setPanel(null)}
+            onDelete={()=>panel.colIdx!==null&&deleteTask(panel.colIdx,panel.task.id)}
+            onUpdateMeta={meta=>setTaskMeta(prev=>({...prev,[panel.task.id]:meta}))}/>
+        </div>
+      )}
+
+      {/* VISTA MENSILE */}
+      {view==="month" && <MonthView onOpenTask={openMonthTask}/>}
+
+      {/* VISTA SETTIMANALE */}
+      {view==="week" && <>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
+          {WEEK_COLS.map((col,ci)=>(
+            <div key={ci} style={{minHeight:500}}>
+              <div style={{paddingBottom:4}}>
+                <div style={{fontSize:13,fontWeight:500,marginBottom:2,color:col.today?"#E24B4A":col.muted?"#ccc":col.bold?"#1a1a1a":"#888"}}>
+                  {col.special?null:col.date}
+                </div>
+                <div style={{fontSize:10,color:col.today?"#E24B4A":"#aaa"}}>{col.special?null:col.day}</div>
+                <div style={{height:col.today?1.5:1,background:col.today?"#1a1a1a":"#c8c4be"}}/>
+              </div>
+              {col.special&&<div style={{padding:"6px 8px 2px"}}><div style={{fontSize:13,fontWeight:700,color:"#1a1a1a",marginBottom:2}}>{col.date}</div><div style={{fontSize:10,color:"#aaa"}}>{col.day}</div></div>}
+              <div>
+                {getColTasks(ci).map(task=>(
+                  <TaskRow key={task.id} task={task}
+                    rowColor={task.style!=="empty" ? taskMeta[task.id]?.color : undefined}
+                    onOpen={t=>openPanel(t,`${col.day}, ${col.date} 2026`,ci)}
+                    onUpdate={t=>updateTask(ci,t)}/>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* SEZIONE INFERIORE */}
+        <div style={{marginTop:"1.5rem",borderTop:"1px solid #c8c4be",paddingTop:"1rem",display:"grid",gridTemplateColumns:"1fr 1fr 1fr"}}>
+          {Object.entries(bottom).map(([sect,rows])=>(
+            <div key={sect} style={{paddingRight:"2rem"}}>
+              <div style={{fontSize:11,color:"#aaa",marginBottom:6,paddingBottom:4,borderBottom:"1px solid #c8c4be"}}>{sect}</div>
+              {[...rows,...Array(Math.max(0,3-rows.filter(r=>r.style!=="empty").length)).fill(null).map(()=>({id:uid(),text:"·",style:"empty"}))].map(task=>(
+                <BottomRow key={task.id} task={task}
+                  onOpen={(t,d)=>openPanel(t,d,null)}
+                  onUpdate={t=>setBottom(prev=>({...prev,[sect]:prev[sect].map(r=>r.id===t.id?t:r)}))}/>
+              ))}
+            </div>
+          ))}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+
+// Mount NassaTweek in planning-root
+(function() {
+  const root = document.getElementById('planning-root');
+  if (root) {
+    ReactDOM.createRoot(root).render(React.createElement(NassaTweek));
+  }
+})();
+
+</script>
+
 </body>
 </html>
