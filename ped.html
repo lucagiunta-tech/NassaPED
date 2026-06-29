@@ -1267,16 +1267,51 @@
 
 <!-- CAROUSEL MODAL -->
 <div class="modal-bg" role="dialog" aria-modal="true" id="carousel-modal">
-  <div class="modal" style="max-width:540px;width:95vw;">
+  <div class="modal" style="max-width:580px;width:95vw;">
     <div class="modal-top"><h3>Carosello</h3><button class="btn ghost sm icon" onclick="closeModal('carousel-modal')" aria-label="Chiudi">✕</button></div>
     <p class="modal-hint">La prima slide appare nella griglia. Ogni slide può avere un copy dedicato.</p>
-    <div class="c-upload-zone" id="c-upload-zone">
-      <input type="file" id="c-file-input" accept="image/*,video/*" multiple onchange="addCarouselFiles(this.files)"/>
-      <p>Trascina immagini o <strong>clicca per sfogliare</strong></p>
-      <p style="font-size:11px;color:var(--text-3);margin-top:4px;">Tieni premuto <kbd style="font-family:var(--font);background:var(--border);border-radius:3px;padding:1px 5px;">Cmd</kbd> o <kbd style="font-family:var(--font);background:var(--border);border-radius:3px;padding:1px 5px;">Ctrl</kbd> per selezionare più immagini insieme</p>
+
+    <!-- Tab: File vs URL -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px;">
+      <button id="c-tab-file" onclick="setCarouselTab('file')" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:99px;border:1.5px solid var(--green);background:var(--green);color:var(--green-text);cursor:pointer;">📂 File</button>
+      <button id="c-tab-url"  onclick="setCarouselTab('url')"  style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:99px;border:1.5px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;">🔗 URL / Frame.io</button>
     </div>
+
+    <!-- File panel -->
+    <div id="c-file-panel">
+      <div class="c-upload-zone" id="c-upload-zone" onclick="document.getElementById('c-file-input').click()" style="cursor:pointer;">
+        <input type="file" id="c-file-input" accept="image/*,video/*" multiple onchange="addCarouselFiles(this.files)" style="display:none;"/>
+        <p>Trascina immagini o <strong>clicca per sfogliare</strong></p>
+        <p style="font-size:11px;color:var(--text-3);margin-top:4px;">Tieni premuto <kbd style="font-family:var(--font);background:var(--border);border-radius:3px;padding:1px 5px;">Cmd</kbd> o <kbd style="font-family:var(--font);background:var(--border);border-radius:3px;padding:1px 5px;">Ctrl</kbd> per selezionare più immagini insieme</p>
+      </div>
+    </div>
+
+    <!-- URL panel (hidden by default) -->
+    <div id="c-url-panel" style="display:none;">
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button id="c-url-tab-frame" onclick="setCarouselUrlTab('frame')" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;border:1.5px solid var(--green);background:var(--green);color:var(--green-text);cursor:pointer;">Frame.io</button>
+        <button id="c-url-tab-other" onclick="setCarouselUrlTab('other')" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;border:1.5px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;">Altro link</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:4px;">
+        <input type="text" id="c-url-inp" placeholder="Incolla link Frame.io o URL diretto…"
+          onkeydown="if(event.key==='Enter')addCarouselUrl()"
+          style="flex:1;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:var(--font);"/>
+        <button onclick="addCarouselUrl()" style="padding:6px 14px;background:var(--green);color:var(--green-text);border:none;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;">+</button>
+      </div>
+      <p id="c-url-hint" style="font-size:10px;color:var(--text-3);margin-bottom:4px;">Copia il link di condivisione da Frame.io.</p>
+    </div>
+
+    <!-- Slides list -->
     <div class="c-thumbs" id="c-thumbs"></div>
-    <div class="modal-actions">
+
+    <!-- Add more button (shown when at least 1 slide exists) -->
+    <div id="c-add-more" style="display:none;margin-top:8px;">
+      <button onclick="carouselAddMore()" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:6px;background:transparent;color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        + Aggiungi altra slide
+      </button>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px;">
       <button class="btn sm" onclick="closeModal('carousel-modal')">Annulla</button>
       <button class="btn primary sm" onclick="saveCarousel()">Salva</button>
     </div>
