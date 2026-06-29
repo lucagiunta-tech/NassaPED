@@ -211,7 +211,7 @@ async function cvInit() {
 
   try {
     // Load project data — we use 'shared' user for client view
-    const res = await fetch(API_URL + '?user=shared', { headers: { 'x-nassa-key': API_KEY } });
+    const res = await fetch(API_URL + '?user=nassa_studio', { headers: { 'x-nassa-key': API_KEY } });
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const { data } = await res.json();
     if(!data) throw new Error('No data');
