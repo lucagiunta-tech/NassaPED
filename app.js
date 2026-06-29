@@ -1243,7 +1243,16 @@ function switchTab(tab){
   if(tab==='studio'){renderStudio();updateGlobalClientUI();}else{renderAccSwitcher();}
   if(tab==='notes'){if(notesClientIdx<0&&globalClientIdx>=0)notesClientIdx=globalClientIdx;docsInit();}
   if(tab==='feed'){if(feedClientIdx<0&&globalClientIdx>=0){feedClientIdx=globalClientIdx;feedAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}rebuildFeedSelects();renderFeedMonthPills();renderFeedGrid();updateFeedHeader();updateFeedFormat();}
-  if(tab==='stories'){if(storiesClientIdx<0){storiesClientIdx=globalClientIdx>=0?globalClientIdx:feedClientIdx;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];}rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();renderAccSwitcher();}
+  if(tab==='stories'){// Sempre sincronizza con il cliente globale se disponibile
+  const _newSCI=globalClientIdx>=0?globalClientIdx:(feedClientIdx>=0?feedClientIdx:storiesClientIdx);
+  if(_newSCI!==storiesClientIdx){
+    storiesClientIdx=_newSCI;
+    storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;
+    storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
+  } else if(storiesClientIdx<0){
+    storiesClientIdx=_newSCI;storiesAccountIdx=storiesClientIdx>=0&&clients[storiesClientIdx]?.accounts?.length>=1?0:-1;storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
+  }
+  rebuildStoriesSelects();renderStoriesMonthPills();renderStoriesGrid();updateStoriesHeader();renderAccSwitcher();}
   if(tab==='ped'){
     // BUG #1 FIX: sync feedClientIdx/Month from globalClientIdx if not set
     // UGC uses currentClientIdx (alias feedClientIdx) and currentMonth (alias feedMonth)
