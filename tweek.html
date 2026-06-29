@@ -5152,16 +5152,19 @@ function TaskRow({
   };
   const rowS = {
     borderBottom: "1px solid #dbd8d3",
+    height: 30,          // FIXED height — allinea righe tra colonne
     minHeight: 30,
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     background: bg,
-    transition: "opacity .1s"
+    transition: "opacity .1s",
+    overflow: "hidden",  // taglia testo lungo su 1 riga
   };
   if (editing) return /*#__PURE__*/React.createElement("div", {
     style: {
       ...rowS,
+      height: 30,
       background: "rgba(255,255,255,.8)"
     }
   }, /*#__PURE__*/React.createElement("input", {
@@ -5219,7 +5222,10 @@ function TaskRow({
       lineHeight: 1.4,
       color: isDone ? "#bbb" : textColor || undefined,
       textDecoration: isDone ? "line-through" : "none",
-      flex: 1
+      flex: 1,
+      overflow: "hidden",
+      whiteSpace: "nowrap",
+      textOverflow: "ellipsis"
     }
   }, rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, {
     task: task
@@ -5326,7 +5332,12 @@ function NassaTweek() {
   const getColTasks = ci => {
     const t = tasks[ci] || [];
     const filled = t.filter(x => x.style !== "empty");
-    const empties = Array(Math.max(0, 8 - filled.length)).fill(null).map(() => ({
+    // Calcola il max tra tutte le colonne per uniformare le righe
+    const maxFilled = Math.max(...WEEK_COLS.map((_,i) =>
+      (tasks[i]||[]).filter(x=>x.style!=="empty").length
+    ));
+    const targetRows = Math.max(maxFilled + 2, 8); // +2 righe vuote di margine
+    const empties = Array(Math.max(0, targetRows - filled.length)).fill(null).map(() => ({
       id: uid(),
       text: "·",
       style: "empty"
