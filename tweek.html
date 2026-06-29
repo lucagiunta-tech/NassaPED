@@ -2058,6 +2058,21 @@ function tlGetDays(){
 }
 
 function tlRender(){
+  // Se stream non ancora caricato, attendi e riprova
+  if(!_streamLoaded && streamFetchClients){
+    streamFetchClients().then(()=>tlRender()).catch(()=>{});
+    // Render con DEFAULT in attesa
+  }
+  // P07-sync: usa clienti reali da stream se disponibili, altrimenti DEFAULT_CLIENTS
+  const tlClients = (_streamClients && _streamClients.length > 0)
+    ? _streamClients.map(c => ({
+        id:    c.slug,
+        label: c.n,
+        color: c.c || '#888780',
+        pkg:   c.pkg || '',
+      }))
+    : clients.map(c => ({ id: c.id, label: c.label, color: c.color, pkg: '' }));
+
   const days=tlGetDays();
   const hdr=document.getElementById('tl-day-header');
   const clientsCol=document.getElementById('tl-clients-col');
@@ -2071,7 +2086,7 @@ function tlRender(){
   grid.style.width=totalW+'px';
   hdr.style.width=totalW+'px';
   grid.style.position='relative';
-  grid.style.minHeight=(clients.length*TL_ROW_H+40)+'px';
+  grid.style.minHeight=(tlClients.length*TL_ROW_H+40)+'px';
 
   // ── Day header ──
   let lastMonth='';
@@ -2138,7 +2153,7 @@ function tlRender(){
   // ── Client rows ──
   const dayMap={}; days.forEach((d,i)=>dayMap[iso(d)]=i);
 
-  clients.forEach((cl,ri)=>{
+  tlClients.forEach((cl,ri)=>{
     const cs=clientStyles(cl);
     // Client label
     const lbl=document.createElement('div');
@@ -2391,12 +2406,14 @@ function tlRender(){
 }
 
 function tlResetData(){
-  // Clear localStorage tasks and regenerate from seed with today's dates
-  const cl=JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
-  tasks=seedTasks(cl.map(c=>c.id));
+  // Reseed con i clienti attualmente caricati (stream o DEFAULT)
+  const activeCl = (_streamClients && _streamClients.length > 0)
+    ? _streamClients.map(c => c.slug)
+    : clients.map(c => c.id);
+  tasks=seedTasks(activeCl);
   scheduleSave();
   tlRender();
-  showToast('Dati demo aggiornati alle date correnti');
+  showToast('Dati demo aggiornati · ' + activeCl.length + ' clienti');
 }
 
 function tlOpenModal(){
