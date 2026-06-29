@@ -316,8 +316,8 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, adsCampaigns, sbBozze, ugcInfluencer,
-      meta: { showAllDates, showAllCopy, showAllPilastro, pedFreqDays: Array.from(pedFreqDays) } };
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, adsCampaigns, sbBozze, ugcInfluencer,
+      meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
   apply(data) {
@@ -393,6 +393,7 @@ const CLOUD = {
     pedPlans   = data.pedPlans   || {};
     notesData  = data.notesData  || {};
     pilastri   = data.pilastri   || {};
+    formati    = data.formati    || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -542,7 +543,7 @@ let notesClientIdx = -1, notesMonth = '';
 let globalClientIdx = -1;
 let previewActiveAcc = 0;
 
-let showAllDates = true, showAllCopy = true, showAllPilastro = true, feedViewMode = 'grid'; // showAllCopy: mostra/nasconde la sezione caption
+let showAllDates = true, showAllCopy = true, showAllPilastro = true, showAllFormato = true, feedViewMode = 'grid'; // showAllCopy: mostra/nasconde la sezione caption
 let currentTab = 'studio';
 
 let feedDragSrc = null, stDragSrc = null;
@@ -1448,6 +1449,7 @@ function refreshFeed(skipAutoSave){
   try{ renderFeedGrid(); } catch(e){ console.error('renderFeedGrid error:', e); }
   updateFeedStats();updateFeedHeader();
   renderPilastrFilterBar();
+  renderFormatoFilterBar();
   if(!skipAutoSave) autoSave();
 }
 
@@ -1635,6 +1637,7 @@ function _feedUID(){ return 'f' + Math.random().toString(36).slice(2,9) + Date.n
 function _ensureUID(item){
   if(!item._uid) item._uid = _feedUID();
   if(!item.pilastro) item.pilastro = '';
+  if(!item.formato) item.formato = '';
   if(!Array.isArray(item.tags)) item.tags = [];
   return item;
 }
@@ -1795,6 +1798,17 @@ function renderFeedGrid(){
           _pilBadge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${_pText};opacity:.5;display:inline-block;"></span>${esc(item.pilastro)}`;
           cell.appendChild(_pilBadge);
         }
+        // Formato badge — angolo alto destra
+        if(showAllFormato && item.formato){
+          const _fmtBadge = document.createElement('div');
+          const _fmtData = (_getFormatiForCurrent()||[]).find(f=>f.name===item.formato);
+          const _fmtColor = _fmtData ? _fmtData.color : '#ffd6b2';
+          const _fr=parseInt(_fmtColor.slice(1,3),16),_fg=parseInt(_fmtColor.slice(3,5),16),_fb=parseInt(_fmtColor.slice(5,7),16);
+          const _fmtText = (_fr*0.299+_fg*0.587+_fb*0.114)>150 ? '#111' : '#fff';
+          _fmtBadge.style.cssText = `position:absolute;top:8px;right:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_fmtColor};color:${_fmtText};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25);max-width:calc(100% - 60px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+          _fmtBadge.innerHTML = `<span style="width:5px;height:5px;border-radius:50%;background:${_fmtText};opacity:.45;display:inline-block;flex-shrink:0;"></span>${esc(item.formato)}`;
+          cell.appendChild(_fmtBadge);
+        }
         // Tag/pilastro bar — sotto lo status badge
         const _tagBar = buildPilastrTagBar(item, allMonthItems, realIdx, true);
         wrap.appendChild(cell);
@@ -1877,6 +1891,7 @@ function renderFeedGrid(){
   // Apply pilastro/tag filter
   if(activePilastrFilter) items=items.filter(it=>(it.pilastro||'')===activePilastrFilter);
   else if(activeTagFilter) items=items.filter(it=>(it.tags||[]).includes(activeTagFilter));
+  else if(activeFormatoFilter) items=items.filter(it=>(it.formato||'')===activeFormatoFilter);
   // Inject collab posts from other accounts of same client (same month)
   if(feedClientIdx>=0 && feedMonth){
     const myAccId=accountId(feedClientIdx,feedAccountIdx);
@@ -2095,6 +2110,17 @@ function renderFeedGrid(){
           _pilBadge2.style.cssText = `position:absolute;top:8px;left:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor2};color:${_pText2};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25);`;
           _pilBadge2.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${_pText2};opacity:.45;display:inline-block;flex-shrink:0;"></span>${esc(item.pilastro)}`;
           cell.appendChild(_pilBadge2);
+        // Formato badge — angolo alto destra (main loop)
+        if(showAllFormato && item.formato){
+          const _fmtBadge2 = document.createElement('div');
+          const _fmtData2 = (_getFormatiForCurrent()||[]).find(f=>f.name===item.formato);
+          const _fmtColor2 = _fmtData2 ? _fmtData2.color : '#ffd6b2';
+          const _fr2=parseInt(_fmtColor2.slice(1,3),16),_fg2=parseInt(_fmtColor2.slice(3,5),16),_fb2=parseInt(_fmtColor2.slice(5,7),16);
+          const _fmtText2 = (_fr2*0.299+_fg2*0.587+_fb2*0.114)>150 ? '#111' : '#fff';
+          _fmtBadge2.style.cssText = `position:absolute;top:8px;right:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_fmtColor2};color:${_fmtText2};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25);max-width:calc(100% - 50px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+          _fmtBadge2.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:'+_fmtText2+';opacity:.45;display:inline-block;flex-shrink:0;"></span>'+esc(item.formato);
+          cell.appendChild(_fmtBadge2);
+        }
         }
 
         const dpTrigger=document.createElement('button');dpTrigger.className='date-add-btn dp-trigger-btn';
@@ -2183,6 +2209,42 @@ function renderFeedGrid(){
             setTimeout(()=>tagInp.focus(),50);
             setTimeout(()=>{const cl=e=>{if(!pp.contains(e.target)){pp.remove();document.removeEventListener('click',cl);}};document.addEventListener('click',cl);},10);
           }});
+        }
+        // ── Formato ──────────────────────────────────────────
+        {
+          const _fmts2 = _getFormatiForCurrent();
+          if(_fmts2.length > 0){
+            const _fmtLabel2 = item.formato ? '▶ ' + item.formato : '+ Format';
+            menuActions.push({cls:'ob-tag', svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/>',label:_fmtLabel2, fn:()=>{
+              document.querySelectorAll('.cell-ctx-popup,.pilastro-picker-popup').forEach(p=>p.remove());
+              const pp=document.createElement('div');
+              pp.className='cell-ctx-popup pilastro-picker-popup';
+              const mbr=menuBtn.getBoundingClientRect();
+              pp.style.cssText='position:fixed;top:'+(mbr.bottom+4)+'px;right:'+(window.innerWidth-mbr.right)+'px;z-index:500;min-width:190px;';
+              const hdr=document.createElement('div');
+              hdr.style.cssText='padding:8px 12px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px;';
+              hdr.textContent='Assegna format';
+              pp.appendChild(hdr);
+              const none=document.createElement('div');
+              none.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:13px;color:#fff;cursor:pointer;font-family:var(--font);';
+              none.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);display:inline-block;flex-shrink:0;"></span>Nessuno';
+              none.onmouseenter=e=>none.style.background='rgba(255,255,255,.08)';
+              none.onmouseleave=e=>none.style.background='';
+              none.onclick=()=>{item.formato='';autoSave();refreshFeed(true);pp.remove();renderFormatoFilterBar();};
+              pp.appendChild(none);
+              _fmts2.forEach(f=>{
+                const row=document.createElement('div');
+                row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:var(--font);color:#fff;'+(item.formato===f.name?'background:rgba(255,255,255,.1);font-weight:600;':'');
+                row.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+f.color+';display:inline-block;flex-shrink:0;"></span>'+esc(f.name);
+                row.onmouseenter=e=>{if(item.formato!==f.name)row.style.background='rgba(255,255,255,.08)';};
+                row.onmouseleave=e=>{if(item.formato!==f.name)row.style.background='';};
+                row.onclick=()=>{item.formato=f.name;autoSave();refreshFeed(true);pp.remove();renderFormatoFilterBar();};
+                pp.appendChild(row);
+              });
+              document.body.appendChild(pp);
+              setTimeout(()=>{const cl=e=>{if(!pp.contains(e.target)){pp.remove();document.removeEventListener('click',cl);}};document.addEventListener('click',cl);},10);
+            }});
+          }
         }
         menuActions.push({cls:'ob-delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',label:'Rimuovi',fn:()=>removeFeedItem(idx)});
 
@@ -3197,6 +3259,8 @@ function toggleBacklogFilter(){
 // 0 = off | 1 = per mese con separatori | 2 = flusso continuo senza separatori
 let feedAllMonthsMode = 0;
 let activePilastrFilter = '';       // pilastro attivo nel feed
+let activeFormatoFilter = '';       // formato attivo nel feed
+let activeStoriesFormatoFilter = ''; // formato attivo nelle stories
 let activeTagFilter = '';            // tag libero attivo nel feed
 let activeStoriesPilastrFilter = ''; // pilastro attivo nelle stories
 
@@ -3423,7 +3487,7 @@ function renderCThumbs(){
 }
 
 /* STORIES GRID */
-function refreshStories(){renderStoriesGrid();updateStoriesStats();renderStoriesPilastrFilterBar();autoSave();}
+function refreshStories(){renderStoriesGrid();updateStoriesStats();renderStoriesPilastrFilterBar();renderStoriesFormatoFilterBar();autoSave();}
 function updateStoriesStats(){
   const s=currentStoryItems();const aid=accountId(storiesClientIdx,storiesAccountIdx);const el=id=>document.getElementById(id);
   if(el('stat-st-tot'))el('stat-st-tot').textContent=s.length;
@@ -3440,6 +3504,7 @@ function renderStoriesGrid(){
   // Apply pilastro/tag filter
   if(activeStoriesPilastrFilter) arr=arr.filter(it=>(it.pilastro||'')===activeStoriesPilastrFilter);
   else if(activeTagFilter) arr=arr.filter(it=>(it.tags||[]).includes(activeTagFilter));
+  else if(activeStoriesFormatoFilter) arr=arr.filter(it=>(it.formato||'')===activeStoriesFormatoFilter);
   // Banner collegamento Storyboard
   const sbBannerEl=document.getElementById('stories-sb-banner');
   if(sbBannerEl){
@@ -7830,6 +7895,13 @@ function saveEditorialCard(){
 // Default pillars — per client, stored in pilastri object
 // pilastri = { clientName: [{id, name, color, description, postIds:[]}] }
 let pilastri = {};
+let formati  = {};  // { clientName: [{id, name, color, description, freq}] }
+
+const FORMATI_DEFAULT = [];  // Nessun default — i format sono specifici per cliente
+const FORMATI_COLORS = [
+  '#ffd6b2','#f5b8d4','#b2d4f5','#d4f5b2','#f5f2b2',
+  '#c8b2f5','#b2f5e8','#f5c8b2','#b2b2f5','#f2b2f5',
+];
 
 const PILASTRI_COLORS = [
   '#b2ebf2', // turchese — Foto
@@ -7869,6 +7941,11 @@ function getPilastri(clientName){
     }));
   }
   return pilastri[clientName];
+}
+
+function getFormati(clientName){
+  if(!formati[clientName]) formati[clientName] = [];
+  return formati[clientName];
 }
 
 function renderPilastri(){
@@ -10163,4 +10240,307 @@ function renderStoriesPilastrFilterBar(){
       bar.appendChild(btn);
     });
   }
+}
+
+/* ══════════════════════════════════════════════════════════
+   FORMATI SYSTEM
+   Stessa architettura dei Pilastri ma per format di evento/contenuto.
+   Specifici per cliente — nessun default.
+   item.formato : stringa — nome format (es. "Sabato Spirito")
+══════════════════════════════════════════════════════════ */
+
+function _getFormatiForCurrent(){
+  const name = _clientNameFromIdx(globalClientIdx >= 0 ? globalClientIdx : feedClientIdx);
+  if(!name) return [];
+  return getFormati(name) || [];
+}
+
+function _allFormatiInItems(items){
+  const fmts = new Set();
+  items.forEach(it => it.formato && fmts.add(it.formato));
+  return [...fmts].sort();
+}
+
+// ── Toggle formato badge ON/OFF ──────────────────────────
+function toggleAllFormato(){
+  showAllFormato = !showAllFormato;
+  const b = document.getElementById('toggle-formato');
+  const c = document.getElementById('toggle-formato-chip');
+  if(b) b.classList.toggle('off', !showAllFormato);
+  if(c){ c.textContent = showAllFormato ? 'ON' : 'OFF'; c.classList.toggle('off', !showAllFormato); }
+  autoSave();
+  renderFeedGrid();
+}
+
+// ── Renderizza la sezione Formati nella pagina Pilastri ──
+function renderFormatiSection(body, ci){
+  const cl = clients[ci]; if(!cl) return;
+  const fmts = getFormati(cl.name);
+
+  // Section header
+  const secHdr = document.createElement('div');
+  secHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:24px 0 12px;border-top:0.5px solid var(--border);margin-top:8px;';
+  const secTitle = document.createElement('h2');
+  secTitle.style.cssText = 'font-size:18px;font-weight:600;color:var(--text-1);';
+  secTitle.textContent = 'Format';
+  const secSub = document.createElement('p');
+  secSub.style.cssText = 'font-size:12px;color:var(--text-3);margin-top:2px;';
+  secSub.textContent = 'Format di evento o contenuto ricorrente — specifici per questo cliente';
+  const secTitles = document.createElement('div');
+  secTitles.appendChild(secTitle); secTitles.appendChild(secSub);
+  secHdr.appendChild(secTitles);
+  body.appendChild(secHdr);
+
+  // Stats bar for formati
+  const allPosts = [];
+  Object.keys(feeds).filter(k => cl.accounts?.some(a => k.startsWith(a.id+'|||'))).forEach(k => {
+    (feeds[k]||[]).filter(it => it.type !== 'pending').forEach(it => allPosts.push(it));
+  });
+  const total = allPosts.length;
+
+  if(fmts.length > 0){
+    const statsBar = document.createElement('div');
+    statsBar.className = 'pilastri-stats-bar';
+    fmts.forEach(f => {
+      const count = allPosts.filter(it => it.formato === f.name).length;
+      const pct = total > 0 ? Math.round(count/total*100) : 0;
+      const chip = document.createElement('div');
+      chip.className = 'pilastri-stat-chip';
+      chip.innerHTML = `<span class="ps-dot" style="background:${f.color}"></span><span class="ps-name">${f.name}</span><span class="ps-count">${count} post (${pct}%)</span>`;
+      statsBar.appendChild(chip);
+    });
+    const unassigned = allPosts.filter(it => !it.formato).length;
+    if(unassigned > 0){
+      const chip = document.createElement('div'); chip.className = 'pilastri-stat-chip';
+      chip.innerHTML = `<span class="ps-dot" style="background:#aaa"></span><span class="ps-name" style="color:var(--text-3)">Senza format</span><span class="ps-count" style="color:var(--text-3)">${unassigned}</span>`;
+      statsBar.appendChild(chip);
+    }
+    body.appendChild(statsBar);
+  }
+
+  // Format cards grid
+  const grid = document.createElement('div');
+  grid.className = 'pilastri-grid';
+  grid.id = 'formati-grid';
+
+  const reRender = () => renderFormatiSection(
+    document.getElementById('pilastri-body') || body.parentElement, ci
+  );
+
+  fmts.forEach((f, fi) => {
+    const card = document.createElement('div');
+    card.className = 'pilastri-card';
+    card.style.borderTopColor = f.color;
+
+    // Card header
+    const cardHead = document.createElement('div');
+    cardHead.className = 'pilastri-card-head';
+
+    const colorDot = document.createElement('div');
+    colorDot.className = 'p-color-dot';
+    colorDot.style.background = f.color;
+
+    const nameInp = document.createElement('input');
+    nameInp.className = 'p-name-inp';
+    nameInp.value = f.name;
+    nameInp.placeholder = 'Nome format…';
+    nameInp.oninput = e => { fmts[fi].name = e.target.value; autoSave(); };
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'p-del-btn';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Elimina format';
+    delBtn.onclick = () => showConfirm({
+      title: 'Elimina format',
+      body: `Eliminare il format <strong>${esc(f.name)}</strong>? I post associati perderanno il formato.`,
+      okLabel: 'Elimina', type: 'danger',
+      onOk: () => {
+        // Clear formato on all posts
+        Object.values(feeds).forEach(arr => arr.forEach(it => { if(it.formato === f.name) it.formato = ''; }));
+        fmts.splice(fi, 1);
+        formati[cl.name] = fmts;
+        autoSave();
+        const pb = document.getElementById('pilastri-body');
+        if(pb) { pb.innerHTML = ''; renderPilastriContent(pb, ci); }
+      }
+    });
+
+    cardHead.appendChild(colorDot);
+    cardHead.appendChild(nameInp);
+    cardHead.appendChild(delBtn);
+
+    // Color selector
+    const colorSel = document.createElement('div');
+    colorSel.className = 'p-color-sel';
+    FORMATI_COLORS.forEach(col => {
+      const dot = document.createElement('div');
+      dot.className = 'p-color-opt' + (col === f.color ? ' active' : '');
+      dot.style.background = col;
+      dot.onclick = () => {
+        fmts[fi].color = col;
+        card.style.borderTopColor = col;
+        colorDot.style.background = col;
+        colorSel.querySelectorAll('.p-color-opt').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        autoSave();
+      };
+      colorSel.appendChild(dot);
+    });
+
+    // Description / frequency
+    const descInp = document.createElement('input');
+    descInp.className = 'p-desc-inp';
+    descInp.placeholder = 'Descrizione o frequenza (es. ogni sabato)…';
+    descInp.value = f.description || '';
+    descInp.oninput = e => { fmts[fi].description = e.target.value; autoSave(); };
+
+    // Posts with this format
+    const postsWrap = document.createElement('div');
+    postsWrap.className = 'p-posts-wrap';
+    const fmtPosts = allPosts.filter(it => it.formato === f.name);
+    if(fmtPosts.length){
+      const postsGrid = document.createElement('div');
+      postsGrid.className = 'p-posts-mini';
+      fmtPosts.slice(0, 6).forEach(it => {
+        const th = document.createElement('div');
+        th.className = 'p-post-th';
+        const coverUrl = it.type==='carousel' && it.slides?.[0] ? it.slides[0].url : it.url;
+        if(coverUrl){ const img = document.createElement('img'); img.src=coverUrl; img.alt=''; img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:3px;'; th.appendChild(img); }
+        else { th.style.background='#ddd'; }
+        th.title = 'Clicca per rimuovere';
+        th.onclick = () => { it.formato = ''; autoSave(); const pb = document.getElementById('pilastri-body'); if(pb){pb.innerHTML='';renderPilastriContent(pb,ci);} };
+        postsGrid.appendChild(th);
+      });
+      if(fmtPosts.length > 6){ const more = document.createElement('div'); more.className='p-post-th more'; more.innerHTML=`+${fmtPosts.length-6}`; postsGrid.appendChild(more); }
+      postsWrap.appendChild(postsGrid);
+    } else {
+      postsWrap.innerHTML = '<div class="p-posts-empty">Nessun post assegnato</div>';
+    }
+
+    // Assign posts dropdown
+    const unassignedPosts = allPosts.filter(it => !it.formato);
+    if(unassignedPosts.length){
+      const assignWrap = document.createElement('div');
+      assignWrap.className = 'p-assign-wrap';
+      const assignLbl = document.createElement('div');
+      assignLbl.className = 'p-assign-lbl';
+      assignLbl.textContent = '+ Assegna post:';
+      const assignSel = document.createElement('select');
+      assignSel.className = 'p-assign-sel';
+      assignSel.innerHTML = '<option value="">— seleziona post —</option>';
+      unassignedPosts.forEach((it, ii) => {
+        const o = document.createElement('option');
+        o.value = ii;
+        o.textContent = (it.copy ? it.copy.slice(0,30)+'…' : it.name || 'Post '+(ii+1));
+        assignSel.appendChild(o);
+      });
+      assignSel.onchange = e => {
+        if(!e.target.value) return;
+        const idx = parseInt(e.target.value);
+        unassignedPosts[idx].formato = f.name;
+        autoSave();
+        const pb = document.getElementById('pilastri-body');
+        if(pb){ pb.innerHTML=''; renderPilastriContent(pb, ci); }
+      };
+      assignWrap.appendChild(assignLbl);
+      assignWrap.appendChild(assignSel);
+      card.appendChild(cardHead);
+      card.appendChild(colorSel);
+      card.appendChild(descInp);
+      card.appendChild(postsWrap);
+      card.appendChild(assignWrap);
+    } else {
+      card.appendChild(cardHead);
+      card.appendChild(colorSel);
+      card.appendChild(descInp);
+      card.appendChild(postsWrap);
+    }
+
+    grid.appendChild(card);
+  });
+
+  // Add format button
+  const addCard = document.createElement('div');
+  addCard.className = 'pilastri-card add-pillar';
+  addCard.innerHTML = '<div style="font-size:24px;color:var(--text-3);">+</div><div style="font-size:12px;color:var(--text-3);margin-top:6px;">Aggiungi format</div>';
+  addCard.onclick = () => {
+    const newColor = FORMATI_COLORS[fmts.length % FORMATI_COLORS.length];
+    fmts.push({ id:'fmt_'+Date.now(), name:'Nuovo format', color:newColor, description:'' });
+    formati[cl.name] = fmts;
+    autoSave();
+    const pb = document.getElementById('pilastri-body');
+    if(pb){ pb.innerHTML=''; renderPilastriContent(pb, ci); }
+  };
+  grid.appendChild(addCard);
+  body.appendChild(grid);
+}
+
+// ── Patch renderPilastriContent to also render formati ──
+const _origRenderPilastriContent = renderPilastriContent;
+function renderPilastriContent(body, ci){
+  _origRenderPilastriContent(body, ci);
+  // Append formati section after pilastri
+  const pb = document.getElementById('pilastri-body');
+  if(pb) renderFormatiSection(pb, ci);
+}
+
+// ── Filter bar for formati in feed ──────────────────────
+function renderFormatoFilterBar(){
+  const bar = document.getElementById('formato-filter-bar');
+  if(!bar) return;
+  const items = currentFeedItems();
+  const fmts = _allFormatiInItems(items);
+  const clientFmts = _getFormatiForCurrent();
+  const fmtMap = {};
+  clientFmts.forEach(f => fmtMap[f.name] = f);
+
+  if(fmts.length === 0){ bar.style.display='none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="pfb-label">🎭</span>';
+
+  const all = document.createElement('button');
+  all.className = 'pfb-pill' + (activeFormatoFilter==='' ? ' active':'');
+  all.textContent = 'Tutti';
+  all.onclick = () => { activeFormatoFilter=''; renderFeedGrid(); renderFormatoFilterBar(); };
+  bar.appendChild(all);
+
+  fmts.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'pfb-pill pilastr' + (activeFormatoFilter===f ? ' active':'');
+    const fmt = fmtMap[f];
+    if(fmt) btn.style.setProperty('--pil-color', fmt.color);
+    btn.textContent = f;
+    btn.onclick = () => { activeFormatoFilter=f; renderFeedGrid(); renderFormatoFilterBar(); };
+    bar.appendChild(btn);
+  });
+}
+
+function renderStoriesFormatoFilterBar(){
+  const bar = document.getElementById('stories-formato-filter-bar');
+  if(!bar) return;
+  const items = currentStoryItems();
+  const fmts = _allFormatiInItems(items);
+  const clientFmts = _getFormatiForCurrent();
+  const fmtMap = {};
+  clientFmts.forEach(f => fmtMap[f.name] = f);
+
+  if(fmts.length === 0){ bar.style.display='none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="pfb-label">🎭</span>';
+
+  const all = document.createElement('button');
+  all.className = 'pfb-pill' + (activeStoriesFormatoFilter==='' ? ' active':'');
+  all.textContent = 'Tutti';
+  all.onclick = () => { activeStoriesFormatoFilter=''; renderStoriesGrid(); renderStoriesFormatoFilterBar(); };
+  bar.appendChild(all);
+
+  fmts.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'pfb-pill pilastr' + (activeStoriesFormatoFilter===f ? ' active':'');
+    const fmt = fmtMap[f];
+    if(fmt) btn.style.setProperty('--pil-color', fmt.color);
+    btn.textContent = f;
+    btn.onclick = () => { activeStoriesFormatoFilter=f; renderStoriesGrid(); renderStoriesFormatoFilterBar(); };
+    bar.appendChild(btn);
+  });
 }

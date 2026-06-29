@@ -422,6 +422,9 @@
           <button class="fbr2-toggle" id="toggle-pilastro" onclick="toggleAllPilastro()" aria-label="Mostra/nascondi pilastro">
             Pilastro <span class="gtoggle-chip" id="toggle-pilastro-chip">ON</span>
           </button>
+          <button class="fbr2-toggle" id="toggle-formato" onclick="toggleAllFormato()" aria-label="Mostra/nascondi format">
+            Format <span class="gtoggle-chip" id="toggle-formato-chip">ON</span>
+          </button>
         </div>
         <div class="fbr2-actions">
           <button class="fbr2-btn" id="feed-profile-toggle-btn" onclick="toggleFigProfile()" aria-label="Profilo">
@@ -447,6 +450,7 @@
 
     </div><!-- /feed-ctx-bar -->
     <div class="pilastr-filter-bar" id="pilastr-filter-bar" style="display:none;"></div>
+    <div class="pilastr-filter-bar" id="formato-filter-bar" style="display:none;"></div>
     <!-- Feed grid full width -->
     <div class="feed-grid-area">
 
@@ -576,6 +580,7 @@
       <div style="margin-top:20px;">
         <div class="stories-section-lbl">Stories del mese</div>
         <div class="pilastr-filter-bar" id="stories-pilastr-filter-bar" style="display:none;"></div>
+    <div class="pilastr-filter-bar" id="stories-formato-filter-bar" style="display:none;"></div>
     <div class="stories-grid" id="stories-grid"></div>
       </div>
     </div>
