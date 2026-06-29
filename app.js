@@ -3104,7 +3104,46 @@ function addCarouselFiles(files){
   Array.from(files).forEach(f=>{
     carouselTmp.push({url:URL.createObjectURL(f),name:f.name,copy:'',_file:f});
   });
+  // Reset input so the same file can be re-picked after add-more
+  const inp=document.getElementById('c-file-input');
+  if(inp) inp.value='';
   renderCThumbs();
+}
+function setCarouselTab(tab){
+  const isFile=tab==='file';
+  const fp=document.getElementById('c-file-panel');
+  const up=document.getElementById('c-url-panel');
+  const tf=document.getElementById('c-tab-file');
+  const tu=document.getElementById('c-tab-url');
+  if(fp) fp.style.display=isFile?'':'none';
+  if(up) up.style.display=isFile?'none':'';
+  if(tf){tf.style.background=isFile?'var(--green)':'transparent';tf.style.color=isFile?'var(--green-text)':'var(--text-2)';tf.style.borderColor=isFile?'var(--green)':'var(--border)';}
+  if(tu){tu.style.background=isFile?'transparent':'var(--green)';tu.style.color=isFile?'var(--text-2)':'var(--green-text)';tu.style.borderColor=isFile?'var(--border)':'var(--green)';}
+}
+function setCarouselUrlTab(tab){
+  const isFrame=tab==='frame';
+  const tf=document.getElementById('c-url-tab-frame');
+  const to=document.getElementById('c-url-tab-other');
+  const inp=document.getElementById('c-url-inp');
+  const hint=document.getElementById('c-url-hint');
+  if(tf){tf.style.background=isFrame?'var(--green)':'transparent';tf.style.color=isFrame?'var(--green-text)':'var(--text-2)';tf.style.borderColor=isFrame?'var(--green)':'var(--border)';}
+  if(to){to.style.background=isFrame?'transparent':'var(--green)';to.style.color=isFrame?'var(--text-2)':'var(--green-text)';to.style.borderColor=isFrame?'var(--border)':'var(--green)';}
+  if(inp) inp.placeholder=isFrame?'Incolla link Frame.io…':'Incolla URL diretto immagine/video…';
+  if(hint) hint.textContent=isFrame?'Copia il link di condivisione da Frame.io.':'URL pubblico accessibile (JPG, PNG, MP4…)';
+}
+function addCarouselUrl(){
+  const inp=document.getElementById('c-url-inp');
+  if(!inp) return;
+  const url=inp.value.trim();
+  if(!url){showToast('Inserisci un URL','warn');return;}
+  carouselTmp.push({url:url,externalUrl:url,name:url.split('/').pop()||'link',copy:'',isExternalLink:true});
+  inp.value='';
+  renderCThumbs();
+  showToast('Slide aggiunta ✓');
+}
+function carouselAddMore(){
+  setCarouselTab('file');
+  setTimeout(()=>{const inp=document.getElementById('c-file-input');if(inp){inp.value='';inp.click();}},60);
 }
 function removeCSlide(i){
   if(carouselTmp[i].url&&carouselTmp[i].url.startsWith('blob:')) URL.revokeObjectURL(carouselTmp[i].url);
@@ -3115,6 +3154,8 @@ function renderCThumbs(){
   const c=document.getElementById('c-thumbs');
   if(!c)return;
   c.innerHTML='';
+  const addMoreBtn=document.getElementById('c-add-more');
+  if(addMoreBtn) addMoreBtn.style.display=carouselTmp.length?'':'none';
   if(!carouselTmp.length) return;
   carouselTmp.forEach((s,i)=>{
     const row=document.createElement('div');
