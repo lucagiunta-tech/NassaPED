@@ -1905,11 +1905,9 @@ function setView(v){
   else if(v==='month') renderMonth();
   else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
   else if(v==='anno') renderAnno();
-  document.getElementById('vt-stream').classList.toggle('active',v==='stream');
-  document.getElementById('stream-view').style.display=v==='stream'?'flex':'none';
+
   document.getElementById('vt-timeline').classList.toggle('active',v==='timeline');
   document.getElementById('timeline-view').style.display=v==='timeline'?'flex':'none';
-  if(v==='stream'){streamInit();}
   if(v==='timeline'){tlRender();}
 }
 function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else if(view==='anno'){_annoYear+=d;renderAnno();}else{monthOffset+=d;renderMonth();}}
@@ -2536,66 +2534,6 @@ const STREAM_EMOJIS = ['🚀','📋','🎯','⚡','🔥','💡','✨','📌','�
 function streamUID(){return'str_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 
 /* ── Carica clienti da NassaPED ──────────────────────── */
-async function streamFetchClients(){
-  if(_streamLoaded) return;
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`${STREAM_API}?user=${STREAM_USER}`, {
-      headers:{'x-nassa-key': STREAM_KEY},
-      credentials:'include',
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-    if(!res.ok) throw new Error('API error '+res.status);
-    const data = await res.json();
-    const raw = data?.data || data;
-    const loaded = (raw?.clients || []).map(c => ({
-      slug: c.id || c.name?.toLowerCase().replace(/\s+/g,'_'),
-      n:    c.name || c.Nome || '',
-      c:    c.color || '#888',
-      pkg:  c.package || c.pkg || '',
-      rev:  c.revenue || 0,
-      stato: c.status || 'Attivo',
-    })).filter(c => c.n);
-    if(loaded.length > 0) {
-      _streamClients = loaded;
-    } else {
-      // DB vuoto o struttura inattesa — usa clienti NassaTime locali
-      _streamClients = clients.map(c => ({
-        slug: c.id, n: c.label, c: c.color, pkg:'', rev:0, stato:'Attivo'
-      }));
-      console.warn('[Stream] DB vuoto, uso clienti locali');
-    }
-  } catch(e) {
-    // Timeout o errore rete — usa clienti NassaTime locali
-    _streamClients = clients.map(c => ({
-      slug: c.id, n: c.label, c: c.color, pkg:'', rev:0, stato:'Attivo'
-    }));
-    console.warn('[Stream] Fallback a clienti locali:', e.message);
-  } finally {
-    _streamLoaded = true;
-  }
-}
-
-/* ── Init ── */
-async function streamInit(){
-  if(!_streamLoaded){
-    const loadEl = document.getElementById('stream-loading');
-    const clientsEl = document.getElementById('stream-clients-view');
-    const jobsEl = document.getElementById('stream-jobs-view');
-    if(loadEl) loadEl.style.display = 'flex';
-    if(clientsEl) clientsEl.style.display = 'none';
-    if(jobsEl) jobsEl.style.display = 'none';
-    try {
-      await streamFetchClients();
-    } finally {
-      if(loadEl) loadEl.style.display = 'none';
-    }
-  }
-  streamSetTab(_streamTab);
-}
-
 function streamSetTab(tab){
   _streamTab = tab;
   document.getElementById('st-clients').classList.toggle('active', tab==='clients');
