@@ -5804,10 +5804,10 @@ function pedRenderCollabPanel(){
 let _collabEditId=null;
 function pedOpenCollabNew(preselSlotId){_collabEditId=null;_renderCollabModal({stato:'contattato',slotId:preselSlotId||''});}
 function pedOpenCollabEdit(id){_collabEditId=id;const inf=_getClientCollabs().find(c=>c.id===id);if(inf)_renderCollabModal({...inf});}
-function pedCloseCollabModal(){const m=document.getElementById('collab-modal');if(m)m.style.display='none';}
+function pedCloseCollabModal(){const m=document.getElementById('ped-influencer-modal');if(m)m.style.display='none';}
 
 function _renderCollabModal(data){
-  const modal=document.getElementById('collab-modal');
+  const modal=document.getElementById('ped-influencer-modal');
   const body=document.getElementById('collab-modal-body');
   const title=document.getElementById('collab-modal-title');
   if(!modal||!body)return;
