@@ -2095,6 +2095,64 @@ function renderFeedGrid(){
           menuActions.push({cls:'ob-collab',svg:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',label:collabCount>0?'Collab ('+collabCount+')':'+ Collaborazione',fn:()=>openCollabModal(idx)});
         }
         menuActions.push({cls:'ob-copy',svg:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',label:'Copia da…',fn:()=>openCopyModal('feed')});
+        // ── Pilastro/Tag — sempre visibile ──────────────────────
+        {
+          const _pils2 = _getPilastriForCurrent();
+          const _pilLabel2 = item.pilastro ? '● ' + item.pilastro : '+ Pilastro';
+          menuActions.push({cls:'ob-tag', svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>', label:_pilLabel2, fn:()=>{
+            document.querySelectorAll('.cell-ctx-popup,.pilastro-picker-popup').forEach(p=>p.remove());
+            const pp=document.createElement('div');
+            pp.className='cell-ctx-popup pilastro-picker-popup';
+            const mbr=menuBtn.getBoundingClientRect();
+            pp.style.cssText='position:fixed;top:'+(mbr.bottom+4)+'px;right:'+(window.innerWidth-mbr.right)+'px;z-index:500;min-width:190px;';
+            const hdr=document.createElement('div');
+            hdr.style.cssText='padding:8px 12px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:0.5px solid var(--border);margin-bottom:4px;';
+            hdr.textContent='Assegna pilastro';
+            pp.appendChild(hdr);
+            // Nessuno
+            const none=document.createElement('div');
+            none.className='ctx-popup-item'+(item.pilastro===''?' ctx-popup-item-active':'');
+            none.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:var(--border);display:inline-block;margin-right:8px;"></span>Nessuno';
+            none.onclick=()=>{item.pilastro='';autoSave();refreshFeed(true);pp.remove();};
+            pp.appendChild(none);
+            // Pilastri
+            (_pils2.length>0?_pils2:getPilastri(_clientNameFromIdx(globalClientIdx>=0?globalClientIdx:feedClientIdx))).forEach(p=>{
+              const row=document.createElement('div');
+              row.className='ctx-popup-item'+(item.pilastro===p.name?' ctx-popup-item-active':'');
+              row.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+p.color+';display:inline-block;margin-right:8px;flex-shrink:0;"></span>'+esc(p.name);
+              row.onclick=()=>{item.pilastro=p.name;autoSave();refreshFeed(true);pp.remove();renderPilastrFilterBar();};
+              pp.appendChild(row);
+            });
+            // Separator + tag libero
+            const sep=document.createElement('div');sep.className='ctx-popup-divider';pp.appendChild(sep);
+            const tagRow=document.createElement('div');
+            tagRow.style.cssText='padding:6px 10px;display:flex;align-items:center;gap:6px;';
+            const tagInp=document.createElement('input');
+            tagInp.placeholder='+ tag libero (Enter)';
+            tagInp.style.cssText='flex:1;font-size:11px;border:0.5px solid var(--border);border-radius:6px;padding:4px 8px;outline:none;font-family:var(--font);background:var(--surface-lt);';
+            tagInp.onkeydown=e=>{
+              if(e.key==='Enter'){const v=tagInp.value.trim();if(v&&!(item.tags||[]).includes(v)){if(!item.tags)item.tags=[];item.tags.push(v);autoSave();refreshFeed(true);pp.remove();renderPilastrFilterBar();}
+              }if(e.key==='Escape')pp.remove();
+            };
+            tagRow.appendChild(tagInp);pp.appendChild(tagRow);
+            // Tags esistenti
+            if((item.tags||[]).length>0){
+              const tgRow=document.createElement('div');
+              tgRow.style.cssText='padding:2px 10px 6px;display:flex;flex-wrap:wrap;gap:4px;';
+              (item.tags||[]).forEach(t=>{
+                const tc=document.createElement('span');
+                tc.className='tag-chip';
+                tc.innerHTML=esc(t)+'<span class="tag-x" title="Rimuovi">×</span>';
+                tc.querySelector('.tag-x').onclick=e=>{e.stopPropagation();item.tags=item.tags.filter(x=>x!==t);autoSave();refreshFeed(true);pp.remove();};
+                tgRow.appendChild(tc);
+              });
+              pp.appendChild(tgRow);
+            }
+            document.body.appendChild(pp);
+            setTimeout(()=>tagInp.focus(),50);
+            setTimeout(()=>{const cl=e=>{if(!pp.contains(e.target)){pp.remove();document.removeEventListener('click',cl);}};document.addEventListener('click',cl);},10);
+          }});
+        }
         menuActions.push({cls:'ob-delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',label:'Rimuovi',fn:()=>removeFeedItem(idx)});
 
         // The ⋯ trigger button
