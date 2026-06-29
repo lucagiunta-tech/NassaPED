@@ -1,8 +1,4 @@
-
-      <div class="pilastr-filter-bar" id="pilastr-filter-bar" style="display:none;"></div>TYPE html>
-<html lang="it">
-<head>
-<meta cha<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
@@ -21,6 +17,23 @@
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
 <link rel="stylesheet" href="/style.css?v=1782171720"/>
+<style>
+.pilastro-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;border:1px solid rgba(0,0,0,.1);cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tag-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:500;background:var(--surface-lt);border:0.5px solid var(--border);color:var(--text-3);cursor:pointer;}
+.tag-chip .tag-x{cursor:pointer;opacity:.6;margin-left:1px;font-size:10px;}.tag-chip .tag-x:hover{opacity:1;}
+.cell-tags-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:4px 6px;min-height:24px;background:var(--surface);}
+.tag-add-btn{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:99px;font-size:9px;background:transparent;border:0.5px dashed var(--border);color:var(--text-3);cursor:pointer;font-family:var(--font);}.tag-add-btn:hover{border-color:var(--green);color:var(--text-2);}
+.tag-input-wrap{position:relative;display:inline-flex;align-items:center;}
+.tag-input{font-size:10px;border:0.5px solid var(--green);border-radius:99px;padding:1px 8px;outline:none;background:var(--surface);font-family:var(--font);color:var(--text-1);width:90px;}
+.tag-suggestions{position:absolute;top:calc(100% + 4px);left:0;z-index:200;background:var(--surface);border:0.5px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:160px;overflow:hidden;}
+.tag-sug-item{padding:7px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text-2);}.tag-sug-item:hover{background:var(--surface-lt);}
+.tag-sug-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.pilastr-filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 12px;border-top:0.5px solid var(--border);background:var(--surface);min-height:34px;}
+.pfb-label{font-size:10px;color:var(--text-3);font-weight:600;flex-shrink:0;}
+.pfb-pill{padding:2px 10px;border-radius:99px;font-size:11px;font-weight:500;border:0.5px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;font-family:var(--font);transition:all .12s;}.pfb-pill:hover{border-color:var(--green);color:var(--text-1);}
+.pfb-pill.active{background:var(--green);color:#003300;border-color:var(--green);font-weight:700;}
+.pfb-pill.pilastr{border-color:var(--pil-color,var(--border));}.pfb-pill.pilastr.active{background:var(--pil-color,var(--green));color:#111;border-color:var(--pil-color);}
+</style>
 </head>
 <body>
 <div class="app">
@@ -429,6 +442,7 @@
       </div>
 
     </div><!-- /feed-ctx-bar -->
+    <div class="pilastr-filter-bar" id="pilastr-filter-bar" style="display:none;"></div>
     <!-- Feed grid full width -->
     <div class="feed-grid-area">
 
@@ -557,7 +571,8 @@
       <div class="hl-row" id="hl-row"></div>
       <div style="margin-top:20px;">
         <div class="stories-section-lbl">Stories del mese</div>
-        <div class="stories-grid" id="stories-grid"></div>
+        <div class="pilastr-filter-bar" id="stories-pilastr-filter-bar" style="display:none;"></div>
+    <div class="stories-grid" id="stories-grid"></div>
       </div>
     </div>
   </div>
@@ -1673,4 +1688,5 @@
 <script src="/app.js?v=1782745430"></script>
 
 </body>
-</html>
+</html
+>
