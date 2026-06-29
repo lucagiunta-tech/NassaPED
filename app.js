@@ -10415,8 +10415,7 @@ function renderFormatiSection(body, ci){
         fmts.splice(fi, 1);
         formati[cl.name] = fmts;
         autoSave();
-        const pb = document.getElementById('pilastri-body');
-        if(pb) { pb.innerHTML = ''; renderPilastriContent(pb, ci); }
+        renderPilastri();
       }
     });
 
@@ -10463,7 +10462,7 @@ function renderFormatiSection(body, ci){
         if(coverUrl){ const img = document.createElement('img'); img.src=coverUrl; img.alt=''; img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:3px;'; th.appendChild(img); }
         else { th.style.background='#ddd'; }
         th.title = 'Clicca per rimuovere';
-        th.onclick = () => { it.formato = ''; autoSave(); const pb = document.getElementById('pilastri-body'); if(pb){pb.innerHTML='';renderPilastriContent(pb,ci);} };
+        th.onclick = () => { it.formato = ''; autoSave(); renderPilastri(); };
         postsGrid.appendChild(th);
       });
       if(fmtPosts.length > 6){ const more = document.createElement('div'); more.className='p-post-th more'; more.innerHTML=`+${fmtPosts.length-6}`; postsGrid.appendChild(more); }
@@ -10494,8 +10493,7 @@ function renderFormatiSection(body, ci){
         const idx = parseInt(e.target.value);
         unassignedPosts[idx].formato = f.name;
         autoSave();
-        const pb = document.getElementById('pilastri-body');
-        if(pb){ pb.innerHTML=''; renderPilastriContent(pb, ci); }
+        renderPilastri();
       };
       assignWrap.appendChild(assignLbl);
       assignWrap.appendChild(assignSel);
@@ -10523,8 +10521,7 @@ function renderFormatiSection(body, ci){
     fmts.push({ id:'fmt_'+Date.now(), name:'Nuovo format', color:newColor, description:'' });
     formati[cl.name] = fmts;
     autoSave();
-    const pb = document.getElementById('pilastri-body');
-    if(pb){ pb.innerHTML=''; renderPilastriContent(pb, ci); }
+    renderPilastri();
   };
   grid.appendChild(addCard);
   body.appendChild(grid);
