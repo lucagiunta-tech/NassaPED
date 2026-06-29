@@ -2455,10 +2455,10 @@ function renderModalTeamGrid(){const grid=document.getElementById('modal-team-gr
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 function saveTask(){const text=document.getElementById('modal-text').value.trim();if(!text){document.getElementById('modal-text').focus();return;}const time=document.getElementById('modal-time').value.trim();const id=uid();const assignee=selAssignee||null;if(_mSec){bottom[_mSec].push({id,text,client:selCl,done:false,assignee});renderBottom();}else if(_mDate){if(!tasks[_mDate])tasks[_mDate]=[];tasks[_mDate].push({id,text,time:time||null,client:selCl,done:false,assignee});rebuild();}scheduleSave();showToast('Task aggiunto');closeModal();if(view==='month'&&openDetailDate===_mDate)openDayDetail(_mDate);}
 function confirmReset(){if(confirm('Ripristinare i dati di esempio?')){localStorage.removeItem(SK);const d=loadData();Object.keys(tasks).forEach(k=>delete tasks[k]);Object.assign(tasks,d.tasks);Object.assign(bottom,d.bottom);clients.length=0;d.clients.forEach(c=>clients.push(c));selCl=clients[0]?.id||'';renderLegend();rebuild();showToast('Dati ripristinati');}}
-document.getElementById('modal-text').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();if(e.key==='Escape')closeModal();});
+document.getElementById('modal-text')?.addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();if(e.key==='Escape')closeModal();});
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeActiveEditor();closeDayDetail();}});
-document.getElementById('cp-new-name').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
+document.getElementById('cp-new-name')?.addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 
 /* ── Stream vars — hoisted prima di setView('stream') ── */
 
