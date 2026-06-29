@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -394,6 +394,8 @@ const CLOUD = {
     notesData  = data.notesData  || {};
     pilastri   = data.pilastri   || {};
     formati    = data.formati    || {};
+    landing    = data.landing    || {};
+    stampa     = data.stampa     || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -1222,7 +1224,7 @@ window.addEventListener('popstate', (e) => {
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads'];
+  const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1269,6 +1271,8 @@ function switchTab(tab){
   if(tab==='preview'){if(previewClientIdx<0&&globalClientIdx>=0){previewClientIdx=globalClientIdx;previewAccountIdx=clients[globalClientIdx]?.accounts?.length>=1?0:-1;}syncPreviewSelectors();renderPreview();}
   // FIX QA: renderAdsTab mancava dal switchTab — tab Ads non si aggiornava mai
   if(tab==='ads'){renderAdsTab();}
+  if(tab==='landing'){renderLandingTab();}
+  if(tab==='stampa'){renderStampaTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -10599,5 +10603,606 @@ function renderStoriesFormatoFilterBar(){
     btn.textContent = f;
     btn.onclick = () => { activeStoriesFormatoFilter=f; renderStoriesGrid(); renderStoriesFormatoFilterBar(); };
     bar.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   LANDING PAGE SYSTEM — NassaContent
+   landing = { clientId: [{id, name, url, goal, cta, status,
+     visite, conversioni, adsId, note, createdAt, updatedAt}] }
+   status: 'bozza' | 'live' | 'archiviata'
+══════════════════════════════════════════════════════════ */
+
+let landing = {};  // persisted in snapshot
+
+function currentLandingKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+function currentLandings(){
+  const k = currentLandingKey();
+  return k ? (landing[k] || []) : [];
+}
+function setLandings(arr){
+  const k = currentLandingKey();
+  if(k) landing[k] = arr;
+}
+
+const LANDING_STATUS = {
+  bozza:      { label:'Bozza',      dot:'#888',    bg:'rgba(100,100,100,.12)', text:'var(--text-2)' },
+  live:       { label:'Live',       dot:'#1d9e75', bg:'rgba(29,158,117,.12)',  text:'#085041' },
+  archiviata: { label:'Archiviata', dot:'#ba7517', bg:'rgba(186,117,23,.12)',  text:'#633806' },
+};
+
+function renderLandingTab(){
+  const body = document.getElementById('landing-body');
+  if(!body) return;
+  body.innerHTML = '';
+
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){
+    body.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per gestire le landing page.</div>';
+    return;
+  }
+
+  const items = currentLandings();
+
+  // ── Header ──────────────────────────────────────────────
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;';
+  const title = document.createElement('div');
+  title.innerHTML = `<h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Landing Page</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — ${items.length} landing</p>`;
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn';
+  addBtn.style.cssText = 'background:var(--green);color:#003;border-color:var(--green);font-weight:600;';
+  addBtn.innerHTML = '+ Nuova landing';
+  addBtn.onclick = () => openLandingModal(null);
+  hdr.appendChild(title);
+  hdr.appendChild(addBtn);
+  body.appendChild(hdr);
+
+  // ── KPI bar ─────────────────────────────────────────────
+  if(items.length > 0){
+    const live = items.filter(l => l.status === 'live');
+    const totVisite = live.reduce((s,l) => s+(l.visite||0), 0);
+    const totConv = live.reduce((s,l) => s+(l.conversioni||0), 0);
+    const avgCvr = totVisite > 0 ? (totConv/totVisite*100).toFixed(1) : '—';
+
+    const kpi = document.createElement('div');
+    kpi.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;';
+    [
+      {label:'Totale', val:items.length, sub:'landing'},
+      {label:'Live', val:live.length, sub:'attive', color:'#1d9e75'},
+      {label:'Visite', val:totVisite.toLocaleString('it'), sub:'totali live'},
+      {label:'CVR medio', val:avgCvr+'%', sub:'conversioni', color:parseFloat(avgCvr)>3?'#1d9e75':parseFloat(avgCvr)>1?'#ba7517':''},
+    ].forEach(k => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface-lt);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;';
+      card.innerHTML = `<div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">${k.label}</div>
+        <div style="font-size:22px;font-weight:600;color:${k.color||'var(--text-1)'};">${k.val}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px;">${k.sub}</div>`;
+      kpi.appendChild(card);
+    });
+    body.appendChild(kpi);
+  }
+
+  // ── Landing cards ────────────────────────────────────────
+  if(!items.length){
+    const em = document.createElement('div');
+    em.style.cssText = 'text-align:center;padding:60px 0;color:var(--text-3);';
+    em.innerHTML = '<div style="font-size:32px;margin-bottom:12px;">🌐</div><div style="font-size:14px;font-weight:500;margin-bottom:6px;">Nessuna landing page</div><div style="font-size:12px;">Crea la prima landing per tracciare URL, stato e conversioni.</div>';
+    body.appendChild(em);
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+  items.forEach((item, idx) => {
+    const st = LANDING_STATUS[item.status] || LANDING_STATUS.bozza;
+    const cvr = item.visite > 0 ? (item.conversioni/item.visite*100).toFixed(1) : null;
+    const cvrColor = cvr ? (parseFloat(cvr)>3?'#1d9e75':parseFloat(cvr)>1?'#ba7517':'#888') : '#888';
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:16px;';
+    if(item.status === 'live') card.style.borderLeft = '3px solid #1d9e75';
+    if(item.status === 'archiviata') card.style.opacity = '.6';
+
+    // Status dot
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${st.dot};flex-shrink:0;`;
+    card.appendChild(dot);
+
+    // Info
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
+    info.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span style="font-size:14px;font-weight:500;color:var(--text-1);">${esc(item.name)}</span>
+        <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:${st.bg};color:${st.text};">${st.label}</span>
+        ${item.adsId ? '<span style="font-size:10px;color:var(--text-3);">→ Ads collegata</span>' : ''}
+      </div>
+      <div style="font-size:11px;color:var(--text-accent,#185FA5);font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;">${esc(item.url||'—')}</div>
+      ${item.goal ? `<div style="font-size:11px;color:var(--text-3);margin-top:3px;">🎯 ${esc(item.goal)}</div>` : ''}`;
+    card.appendChild(info);
+
+    // Stats
+    const stats = document.createElement('div');
+    stats.style.cssText = 'display:flex;gap:20px;flex-shrink:0;';
+    [
+      {label:'Visite', val:(item.visite||0).toLocaleString('it')},
+      {label:'Conv.', val:(item.conversioni||0).toLocaleString('it')},
+      {label:'CVR', val:cvr ? cvr+'%' : '—', color:cvrColor},
+    ].forEach(s => {
+      const col = document.createElement('div');
+      col.style.cssText = 'text-align:right;';
+      col.innerHTML = `<div style="font-size:16px;font-weight:600;color:${s.color||'var(--text-1)'};">${s.val}</div>
+        <div style="font-size:10px;color:var(--text-3);">${s.label}</div>`;
+      stats.appendChild(col);
+    });
+    card.appendChild(stats);
+
+    // Actions
+    const acts = document.createElement('div');
+    acts.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+
+    if(item.url){
+      const extBtn = document.createElement('a');
+      extBtn.href = item.url;
+      extBtn.target = '_blank';
+      extBtn.style.cssText = 'width:28px;height:28px;border:0.5px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px;text-decoration:none;';
+      extBtn.title = 'Apri URL';
+      extBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+      acts.appendChild(extBtn);
+    }
+
+    const editBtn = document.createElement('button');
+    editBtn.style.cssText = 'padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
+    editBtn.textContent = 'Modifica';
+    editBtn.onclick = () => openLandingModal(idx);
+    acts.appendChild(editBtn);
+
+    card.appendChild(acts);
+    grid.appendChild(card);
+  });
+
+  body.appendChild(grid);
+}
+
+// ── Landing Modal ─────────────────────────────────────────
+let _landingEditIdx = null;
+
+function openLandingModal(idx){
+  _landingEditIdx = idx;
+  const items = currentLandings();
+  const item = idx !== null ? items[idx] : null;
+
+  // Remove existing modal
+  document.getElementById('landing-modal')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'landing-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = e => { if(e.target===overlay) closeLandingModal(); };
+
+  overlay.innerHTML = `
+  <div style="background:var(--surface);border-radius:14px;width:100%;max-width:520px;overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:18px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:600;color:var(--text-1);" id="lm-title">${item ? 'Modifica landing' : 'Nuova landing page'}</div>
+      <button onclick="closeLandingModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;line-height:1;">×</button>
+    </div>
+    <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome pagina</label>
+        <input id="lm-name" type="text" placeholder="es. Pergole su misura — preventivo" value="${esc(item?.name||'')}" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">URL</label>
+        <input id="lm-url" type="url" placeholder="https://..." value="${esc(item?.url||'')}" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-mono);background:var(--surface-lt);color:var(--text-1);outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Stato</label>
+          <select id="lm-status" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+            <option value="bozza" ${(item?.status||'bozza')==='bozza'?'selected':''}>Bozza</option>
+            <option value="live" ${item?.status==='live'?'selected':''}>Live</option>
+            <option value="archiviata" ${item?.status==='archiviata'?'selected':''}>Archiviata</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Obiettivo / CTA</label>
+          <input id="lm-goal" type="text" placeholder="es. Richiesta preventivo" value="${esc(item?.goal||'')}" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Visite</label>
+          <input id="lm-visite" type="number" min="0" placeholder="0" value="${item?.visite||''}" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Conversioni</label>
+          <input id="lm-conv" type="number" min="0" placeholder="0" value="${item?.conversioni||''}" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">CVR</label>
+          <div id="lm-cvr-display" style="padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;color:var(--text-3);background:var(--surface-0);">—</div>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Note interne</label>
+        <textarea id="lm-note" placeholder="Note, A/B test, considerazioni..." rows="2" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;">${esc(item?.note||'')}</textarea>
+      </div>
+    </div>
+    <div style="padding:14px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      ${item ? `<button onclick="deleteLanding(${idx})" style="padding:7px 14px;border:0.5px solid #f87171;border-radius:8px;font-size:12px;color:#f87171;cursor:pointer;background:transparent;font-family:var(--font);">Elimina</button>` : '<span></span>'}
+      <div style="display:flex;gap:8px;">
+        <button onclick="closeLandingModal()" style="padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);">Annulla</button>
+        <button onclick="saveLanding()" style="padding:7px 16px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;color:#003;cursor:pointer;background:var(--green);font-family:var(--font);">Salva</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+
+  // Live CVR calc
+  const calcCvr = () => {
+    const v = parseInt(document.getElementById('lm-visite')?.value)||0;
+    const c = parseInt(document.getElementById('lm-conv')?.value)||0;
+    const d = document.getElementById('lm-cvr-display');
+    if(d) d.textContent = v > 0 ? (c/v*100).toFixed(1)+'%' : '—';
+  };
+  document.getElementById('lm-visite')?.addEventListener('input', calcCvr);
+  document.getElementById('lm-conv')?.addEventListener('input', calcCvr);
+  calcCvr();
+}
+
+function closeLandingModal(){
+  document.getElementById('landing-modal')?.remove();
+  _landingEditIdx = null;
+}
+
+function saveLanding(){
+  const g = id => document.getElementById(id)?.value?.trim()||'';
+  const name = g('lm-name');
+  if(!name){ showToast('Inserisci un nome','warn'); return; }
+
+  const items = currentLandings();
+  const entry = {
+    id: _landingEditIdx !== null ? items[_landingEditIdx].id : 'lp_'+Date.now(),
+    name,
+    url: g('lm-url'),
+    goal: g('lm-goal'),
+    status: g('lm-status') || 'bozza',
+    visite: parseInt(document.getElementById('lm-visite')?.value)||0,
+    conversioni: parseInt(document.getElementById('lm-conv')?.value)||0,
+    note: g('lm-note'),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if(_landingEditIdx !== null){
+    items[_landingEditIdx] = {...items[_landingEditIdx], ...entry};
+  } else {
+    entry.createdAt = entry.updatedAt;
+    items.push(entry);
+  }
+  setLandings(items);
+  autoSave();
+  closeLandingModal();
+  renderLandingTab();
+  showToast(_landingEditIdx !== null ? '✓ Landing aggiornata' : '✓ Landing aggiunta');
+}
+
+function deleteLanding(idx){
+  showConfirm({
+    title: 'Elimina landing',
+    body: 'Eliminare questa landing page? I dati di conversione andranno persi.',
+    okLabel: 'Elimina', type: 'danger',
+    onOk: () => {
+      const items = currentLandings();
+      items.splice(idx, 1);
+      setLandings(items);
+      autoSave();
+      closeLandingModal();
+      renderLandingTab();
+      showToast('Landing eliminata');
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   CARTELLA STAMPA — NassaContent
+   stampa = { clientId: [{id, tipo, testata, titolo, url,
+     data, autore, tipoMedia, note, allegato, createdAt}] }
+   tipo: 'uscita' | 'comunicato'
+   tipoMedia: 'online' | 'cartaceo' | 'tv' | 'radio'
+══════════════════════════════════════════════════════════ */
+
+let stampa = {};
+
+function currentStampaKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+function currentStampaItems(){
+  const k = currentStampaKey();
+  return k ? (stampa[k] || []) : [];
+}
+function setStampaItems(arr){
+  const k = currentStampaKey();
+  if(k) stampa[k] = arr;
+}
+
+const TIPO_MEDIA_LABELS = {online:'Online',cartaceo:'Cartaceo',tv:'TV',radio:'Radio'};
+const TIPO_MEDIA_COLORS = {online:'#e6f1fb',cartaceo:'#eaf3de',tv:'#faeeda',radio:'#fbeaf0'};
+const TIPO_MEDIA_TEXT   = {online:'#0c447c',cartaceo:'#27500a',tv:'#633806',radio:'#72243e'};
+
+function renderStampaTab(){
+  const body = document.getElementById('stampa-body');
+  if(!body) return;
+  body.innerHTML = '';
+
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){
+    body.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per gestire la cartella stampa.</div>';
+    return;
+  }
+
+  const items = currentStampaItems().sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  const uscite = items.filter(i => i.tipo === 'uscita');
+  const comunicati = items.filter(i => i.tipo === 'comunicato');
+
+  // ── Header ──
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;';
+  hdr.innerHTML = `<div>
+    <h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Cartella Stampa</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — ${uscite.length} uscite · ${comunicati.length} comunicati</p>
+  </div>`;
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn';
+  addBtn.style.cssText = 'background:var(--green);color:#003;border-color:var(--green);font-weight:600;';
+  addBtn.innerHTML = '+ Aggiungi';
+  addBtn.onclick = () => openStampaModal(null);
+  hdr.appendChild(addBtn);
+  body.appendChild(hdr);
+
+  // ── KPI bar ──
+  if(items.length > 0){
+    const kpi = document.createElement('div');
+    kpi.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;';
+    const byMedia = {};
+    uscite.forEach(u => { byMedia[u.tipoMedia||'online'] = (byMedia[u.tipoMedia||'online']||0)+1; });
+    const topMedia = Object.entries(byMedia).sort((a,b)=>b[1]-a[1])[0];
+    [
+      {label:'Uscite stampa', val:uscite.length, sub:'totali'},
+      {label:'Comunicati', val:comunicati.length, sub:'inviati'},
+      {label:'Testate', val:new Set(uscite.map(u=>u.testata).filter(Boolean)).size, sub:'diverse'},
+      {label:'Media top', val:topMedia?TIPO_MEDIA_LABELS[topMedia[0]]:'—', sub:topMedia?topMedia[1]+' uscite':''},
+    ].forEach(k => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface-lt);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;';
+      card.innerHTML = `<div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">${k.label}</div>
+        <div style="font-size:22px;font-weight:600;color:var(--text-1);">${k.val}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px;">${k.sub}</div>`;
+      kpi.appendChild(card);
+    });
+    body.appendChild(kpi);
+  }
+
+  if(!items.length){
+    const em = document.createElement('div');
+    em.style.cssText = 'text-align:center;padding:60px 0;color:var(--text-3);';
+    em.innerHTML = '<div style="font-size:32px;margin-bottom:12px;">📰</div><div style="font-size:14px;font-weight:500;margin-bottom:6px;">Cartella stampa vuota</div><div style="font-size:12px;">Aggiungi uscite su testate o comunicati inviati.</div>';
+    body.appendChild(em);
+    return;
+  }
+
+  // ── Uscite stampa ──
+  if(uscite.length){
+    const secHdr = document.createElement('div');
+    secHdr.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;';
+    secHdr.textContent = 'Uscite su testate';
+    body.appendChild(secHdr);
+
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-bottom:24px;';
+
+    uscite.forEach((item, i) => {
+      const realIdx = items.indexOf(item);
+      const tm = item.tipoMedia || 'online';
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px;';
+
+      // Logo/initials
+      const logo = document.createElement('div');
+      logo.style.cssText = 'width:36px;height:36px;border-radius:7px;background:var(--surface-lt);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text-3);flex-shrink:0;text-align:center;line-height:1.2;';
+      logo.textContent = (item.testata||'?').slice(0,3).toUpperCase();
+      card.appendChild(logo);
+
+      // Info
+      const info = document.createElement('div');
+      info.style.cssText = 'flex:1;min-width:0;';
+      info.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:500;color:var(--text-1);">${esc(item.titolo||'—')}</span>
+          <span style="font-size:10px;padding:1px 6px;border-radius:99px;background:${TIPO_MEDIA_COLORS[tm]};color:${TIPO_MEDIA_TEXT[tm]};font-weight:500;">${TIPO_MEDIA_LABELS[tm]}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);">${esc(item.testata||'')}${item.autore?' · '+esc(item.autore):''}${item.data?' · '+esc(item.data):''}  </div>
+        ${item.note?`<div style="font-size:11px;color:var(--text-3);margin-top:2px;font-style:italic;">${esc(item.note)}</div>`:''}`;
+      card.appendChild(info);
+
+      // Actions
+      const acts = document.createElement('div');
+      acts.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+      if(item.url){
+        const a = document.createElement('a');
+        a.href = item.url; a.target = '_blank';
+        a.style.cssText = 'width:28px;height:28px;border:0.5px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-3);text-decoration:none;font-size:12px;';
+        a.title = 'Leggi articolo';
+        a.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+        acts.appendChild(a);
+      }
+      const editBtn = document.createElement('button');
+      editBtn.style.cssText = 'padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
+      editBtn.textContent = 'Modifica';
+      editBtn.onclick = () => openStampaModal(realIdx);
+      acts.appendChild(editBtn);
+      card.appendChild(acts);
+      list.appendChild(card);
+    });
+    body.appendChild(list);
+  }
+
+  // ── Comunicati ──
+  if(comunicati.length){
+    const secHdr2 = document.createElement('div');
+    secHdr2.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;';
+    secHdr2.textContent = 'Comunicati inviati';
+    body.appendChild(secHdr2);
+
+    const list2 = document.createElement('div');
+    list2.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+    comunicati.forEach((item) => {
+      const realIdx = items.indexOf(item);
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-left:3px solid #185FA5;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px;';
+      card.innerHTML = `<div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;color:var(--text-1);margin-bottom:3px;">${esc(item.titolo||'—')}</div>
+        <div style="font-size:11px;color:var(--text-3);">Comunicato${item.data?' · '+esc(item.data):''}${item.testata?' → '+esc(item.testata):''}</div>
+        ${item.note?`<div style="font-size:11px;color:var(--text-3);margin-top:2px;font-style:italic;">${esc(item.note)}</div>`:''}
+      </div>`;
+      const editBtn2 = document.createElement('button');
+      editBtn2.style.cssText = 'padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);flex-shrink:0;';
+      editBtn2.textContent = 'Modifica';
+      editBtn2.onclick = () => openStampaModal(realIdx);
+      card.appendChild(editBtn2);
+      list2.appendChild(card);
+    });
+    body.appendChild(list2);
+  }
+}
+
+let _stampaEditIdx = null;
+
+function openStampaModal(idx){
+  _stampaEditIdx = idx;
+  const items = currentStampaItems();
+  const item = idx !== null ? items[idx] : null;
+  document.getElementById('stampa-modal')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'stampa-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = e => { if(e.target===overlay) closeStampaModal(); };
+
+  const tipo = item?.tipo || 'uscita';
+  overlay.innerHTML = `
+  <div style="background:var(--surface);border-radius:14px;width:100%;max-width:500px;" onclick="event.stopPropagation()">
+    <div style="padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:600;color:var(--text-1);">${item?'Modifica':'Aggiungi'} alla cartella stampa</div>
+      <button onclick="closeStampaModal()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;">×</button>
+    </div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Tipo</label>
+          <select id="sm-tipo" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            <option value="uscita" ${tipo==='uscita'?'selected':''}>Uscita su testata</option>
+            <option value="comunicato" ${tipo==='comunicato'?'selected':''}>Comunicato inviato</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Tipo media</label>
+          <select id="sm-tmedia" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            <option value="online" ${(item?.tipoMedia||'online')==='online'?'selected':''}>Online</option>
+            <option value="cartaceo" ${item?.tipoMedia==='cartaceo'?'selected':''}>Cartaceo</option>
+            <option value="tv" ${item?.tipoMedia==='tv'?'selected':''}>TV</option>
+            <option value="radio" ${item?.tipoMedia==='radio'?'selected':''}>Radio</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Titolo articolo / comunicato</label>
+        <input id="sm-titolo" type="text" placeholder="Titolo dell'uscita o del comunicato" value="${esc(item?.titolo||'')}" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Testata</label>
+          <input id="sm-testata" type="text" placeholder="es. Corriere della Sera" value="${esc(item?.testata||'')}" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Data pubblicazione</label>
+          <input id="sm-data" type="date" value="${item?.data||''}" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Link articolo (se online)</label>
+        <input id="sm-url" type="url" placeholder="https://..." value="${esc(item?.url||'')}" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-mono);background:var(--surface-lt);color:var(--text-1);outline:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:4px;">Note</label>
+        <textarea id="sm-note" placeholder="Note, contesto, giornalista contattato..." rows="2" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;">${esc(item?.note||'')}</textarea>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      ${item?`<button onclick="deleteStampa(${idx})" style="padding:6px 12px;border:0.5px solid #f87171;border-radius:8px;font-size:12px;color:#f87171;cursor:pointer;background:transparent;font-family:var(--font);">Elimina</button>`:'<span></span>'}
+      <div style="display:flex;gap:8px;">
+        <button onclick="closeStampaModal()" style="padding:6px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);">Annulla</button>
+        <button onclick="saveStampa()" style="padding:6px 14px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;color:#003;cursor:pointer;background:var(--green);font-family:var(--font);">Salva</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function closeStampaModal(){ document.getElementById('stampa-modal')?.remove(); _stampaEditIdx=null; }
+
+function saveStampa(){
+  const g = id => document.getElementById(id)?.value?.trim()||'';
+  const titolo = g('sm-titolo');
+  if(!titolo){ showToast('Inserisci un titolo','warn'); return; }
+
+  const items = currentStampaItems();
+  const entry = {
+    id: _stampaEditIdx!==null ? items[_stampaEditIdx].id : 'st_'+Date.now(),
+    tipo: g('sm-tipo') || 'uscita',
+    testata: g('sm-testata'),
+    titolo,
+    url: g('sm-url'),
+    data: g('sm-data'),
+    tipoMedia: g('sm-tmedia') || 'online',
+    note: g('sm-note'),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if(_stampaEditIdx!==null){
+    items[_stampaEditIdx] = {...items[_stampaEditIdx], ...entry};
+  } else {
+    entry.createdAt = entry.updatedAt;
+    items.push(entry);
+  }
+  setStampaItems(items);
+  autoSave();
+  closeStampaModal();
+  renderStampaTab();
+  showToast(_stampaEditIdx!==null ? '✓ Aggiornato' : '✓ Aggiunto alla cartella stampa');
+}
+
+function deleteStampa(idx){
+  showConfirm({
+    title: 'Elimina voce',
+    body: 'Eliminare questa voce dalla cartella stampa?',
+    okLabel: 'Elimina', type: 'danger',
+    onOk: () => {
+      const items = currentStampaItems();
+      items.splice(idx,1);
+      setStampaItems(items);
+      autoSave();
+      closeStampaModal();
+      renderStampaTab();
+      showToast('Voce eliminata');
+    }
   });
 }

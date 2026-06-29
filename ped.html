@@ -1,4 +1,12 @@
-<!DOCTYPE html>
+
+        <div class="sb-nav-item" id="si-landing" onclick="switchTab('landing')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>Landing</span>
+        </div>
+        <div class="sb-nav-item" id="si-stampa" onclick="switchTab('stampa')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v4"/><path d="M2 13h10"/><path d="M2 17h10"/><path d="M2 9h4"/></svg>
+          <span>Stampa</span>
+        </div><!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8"/>
@@ -67,6 +75,8 @@
       <div class="sub-tab" id="sub-tab-stories"    onclick="switchTab('stories')">Stories</div>
       <div class="sub-tab" id="sub-tab-ped"        onclick="switchTab('ped')">UGC</div>
       <div class="sub-tab" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
+      <div class="sub-tab" id="sub-tab-landing"    onclick="switchTab('landing')">Landing</div>
+      <div class="sub-tab" id="sub-tab-stampa"     onclick="switchTab('stampa')">Stampa</div>
       <div class="sub-tab" id="sub-tab-cal"        onclick="switchTab('cal')">Calendario</div>
       <div class="sub-tab" id="sub-tab-anno"       onclick="switchTab('anno')">Piano annuale</div>
       <div class="sub-tab" id="sub-tab-preview"    onclick="switchTab('preview')">Preview</div>
@@ -923,6 +933,20 @@
         <div class="sec-lbl" style="margin:16px 0 8px;">Campagne</div>
         <div class="ads-camp-list" id="ads-camp-list"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- LANDING PAGE TAB -->
+  <div class="tab-page" id="page-landing">
+    <div class="studio-main" id="landing-main">
+      <div id="landing-body"></div>
+    </div>
+  </div>
+
+  <!-- CARTELLA STAMPA TAB -->
+  <div class="tab-page" id="page-stampa">
+    <div class="studio-main" id="stampa-main">
+      <div id="stampa-body"></div>
     </div>
   </div>
 </div><!-- /main -->
