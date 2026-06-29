@@ -1791,7 +1791,7 @@ function renderFeedGrid(){
           const _pData = (_getPilastriForCurrent()||[]).find(p=>p.name===item.pilastro);
           const _pColor = _pData ? _pData.color : '#e8e8f4';
           const _pText = _pData ? (parseInt(_pColor.slice(1,3),16)*0.299+parseInt(_pColor.slice(3,5),16)*0.587+parseInt(_pColor.slice(5,7),16)*0.114>150?'#111':'#fff') : '#534AB7';
-          _pilBadge.style.cssText = `position:absolute;bottom:36px;left:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor};color:${_pText};pointer-events:none;`;
+          _pilBadge.style.cssText = `position:absolute;top:8px;left:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor};color:${_pText};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.2);`;
           _pilBadge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${_pText};opacity:.5;display:inline-block;"></span>${esc(item.pilastro)}`;
           cell.appendChild(_pilBadge);
         }
