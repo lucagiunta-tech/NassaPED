@@ -645,7 +645,7 @@
     </div>
 
     <!-- Modal nuovo/modifica influencer -->
-    <div id="feed-collab-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseCollabModal()">
+    <div id="ped-influencer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;align-items:center;justify-content:center;" onclick="if(event.target===this)pedCloseCollabModal()">
       <div class="modal-box" style="width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;" role="dialog" aria-modal="true" aria-labelledby="collab-modal-title">
         <div class="modal-hd">
           <h3 id="collab-modal-title" class="modal-title">Influencer</h3>
@@ -1605,12 +1605,12 @@
   <div class="modal" style="max-width:440px;width:95vw;">
     <div class="modal-top">
       <h3>👥 Collaborazione</h3>
-      <button class="btn ghost sm icon" onclick="closeModal('collab-modal')" aria-label="Chiudi">✕</button>
+      <button class="btn ghost sm icon" onclick="closeModal('feed-collab-modal')" aria-label="Chiudi">✕</button>
     </div>
     <p class="modal-hint">Scegli gli account con cui collaborare. Il post apparirà nel loro feed come collab, in sola lettura.</p>
     <div id="feed-collab-acc-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
     <div class="modal-actions">
-      <button class="btn sm" onclick="closeModal('collab-modal')">Annulla</button>
+      <button class="btn sm" onclick="closeModal('feed-collab-modal')">Annulla</button>
       <button class="btn primary sm" onclick="saveCollab()">Salva</button>
     </div>
   </div>
@@ -1666,7 +1666,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782730331"></script>
+<script src="/app.js?v=1782745430"></script>
 
 </body>
 </html>
