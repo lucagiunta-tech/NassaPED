@@ -1469,7 +1469,8 @@ function buildCaroselloPlayer(item, itemIdx, items, stArr){
     const slide = document.createElement('div');
     slide.style.cssText = 'flex:0 0 100%;width:100%;height:100%;position:relative;';
     if(sl.url){
-      if(sl.isVideo){
+      const _slIsVideo = sl.isVideo || /\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(sl.url||'') || /\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(sl.externalUrl||'');
+      if(_slIsVideo){
         const v = document.createElement('video');
         v.src = sl.url;
         v.muted = true;
