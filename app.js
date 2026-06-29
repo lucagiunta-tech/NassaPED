@@ -8074,6 +8074,9 @@ function renderPilastriContent(body,ci){
   };
   grid.appendChild(addCard);
   content.appendChild(grid);
+
+  // Sezione Format — sotto i pilastri nella stessa pagina
+  renderFormatiSection(body, ci);
 }
 
 /* SIDEBAR TOGGLE */
@@ -10475,14 +10478,7 @@ function renderFormatiSection(body, ci){
   body.appendChild(grid);
 }
 
-// ── Patch renderPilastriContent to also render formati ──
-const _origRenderPilastriContent = renderPilastriContent;
-function renderPilastriContent(body, ci){
-  _origRenderPilastriContent(body, ci);
-  // Append formati section after pilastri
-  const pb = document.getElementById('pilastri-body');
-  if(pb) renderFormatiSection(pb, ci);
-}
+
 
 // ── Filter bar for formati in feed ──────────────────────
 function renderFormatoFilterBar(){
