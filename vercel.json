@@ -36,6 +36,10 @@
       "destination": "/ped.html"
     },
     {
+      "source": "/nplan",
+      "destination": "/nplan.html"
+    },
+    {
       "source": "/tweek",
       "destination": "/tweek.html"
     },
