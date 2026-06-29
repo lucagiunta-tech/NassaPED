@@ -2011,7 +2011,6 @@ function AdminPortaleView({client,onUpdateStatus,onAddLogo,onAddMoodItem,onUpdat
 
     tab==='assets'    &&h(BrandAssets,{client,isAdmin:true,onAddLogo,onUpdateBrand}),
     tab==='approvals' &&h(Approvals,{client,isAdmin:true,onUpdateStatus,onAddApproval,onMoveToAssets}),
-    tab==='moodboard' &&h(Moodboard,{client,isAdmin:true,onAddMoodItem,onSendToApprovals})
   );
 }
 
@@ -2020,7 +2019,7 @@ function PortaleCliente({client,onUpdateStatus}){
   const [tab,setTab]=useState('assets');
   const pc=client.brand?.colors[0]?.hex||client.color||'#1A8C3F';
   const pending=(client.approvals||[]).filter(a=>a.stato==='pending').length;
-  const TABS=[{id:'assets',lbl:'Brand Assets'},{id:'approvals',lbl:'Contenuti',n:pending},{id:'moodboard',lbl:'Moodboard'}];
+  const TABS=[{id:'assets',lbl:'Brand Kit'},{id:'approvals',lbl:'Approvazioni',n:pending}];
 
   return h('div',{style:{minHeight:'100vh',background:'var(--bg)'}},
     h('div',{className:'topbar'},
@@ -2075,7 +2074,6 @@ function PortaleCliente({client,onUpdateStatus}){
       ),
       tab==='assets'&&h(BrandAssets,{client,isAdmin:false}),
       tab==='approvals'&&h(Approvals,{client,isAdmin:false,onUpdateStatus}),
-      tab==='moodboard'&&h(Moodboard,{client,isAdmin:false})
     )
   );
 }
@@ -2084,9 +2082,8 @@ function PortaleCliente({client,onUpdateStatus}){
 function Sidebar({expanded,onToggle,currentTab,onTab}){
   const NAV_TOP=[{id:'list',label:'Tutti i clienti',icon:ICONS.grid}];
   const NAV_CLIENT=[
-    {id:'assets',    label:'Brand Assets', icon:ICONS.palette},
+    {id:'assets',    label:'Brand Kit',    icon:ICONS.palette},
     {id:'approvals', label:'Approvazioni', icon:ICONS.check},
-    {id:'moodboard', label:'Moodboard',    icon:ICONS.board},
   ];
   const navItem=(n)=>h('div',{key:n.id,
     className:'sb-nav-item'+(currentTab===n.id?' active':''),
@@ -2245,6 +2242,7 @@ function NassaBrand(){
       ),
       h('div',{className:'topbar-right'},
         selected&&view==='portal'&&h('button',{className:'btn btn-outline',style:{fontSize:11,padding:'4px 10px'},onClick:()=>window.open('/portal/'+selected.slug,'_blank')},'↗ Vista cliente'),
+        selected&&view==='portal'&&h('a',{href:'/app',target:'_blank',className:'btn btn-ghost',style:{fontSize:11,padding:'4px 10px',textDecoration:'none'}},'↗ NassaContent'),
         selected&&view==='portal'&&h('button',{className:'back-btn',onClick:()=>{setView('list');setSelected(null);setSidebarExp(false);}},ICONS.chevL,' Clienti'),
         h('button',{className:'topbar-btn',onClick:toggleTheme},'🌙')
       )
@@ -2302,7 +2300,7 @@ function NassaBrand(){
                     selected.name),
                   h('div',{style:{fontSize:28,fontWeight:700,lineHeight:1.1,
                     color:'var(--text)',letterSpacing:'-.02em'}},
-                    tab==='assets'?'Brand Assets':tab==='approvals'?'Approvazioni':'Moodboard')
+                    tab==='assets'?'Brand Kit':'Approvazioni')
                 ),
                 h('div',{className:'content-sub',style:{marginTop:4}},
                   tab==='approvals'&&pending(selected)>0?pending(selected)+' in attesa · ':''
