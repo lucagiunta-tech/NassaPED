@@ -4286,7 +4286,8 @@ async function saveHighlight(){
 function openLinkStoriesModal(postIdx){
   linkModalPostIdx=postIdx;const post=currentFeedItems()[postIdx];linkModalSelected=new Set(post.linkedStories||[]);
   // Sync stories context to current feed context so uploads/links go to the right account+month
-  storiesClientIdx=feedClientIdx;storiesAccountIdx=feedAccountIdx;if(feedMonth)storiesMonth=feedMonth;
+  storiesClientIdx=feedClientIdx;storiesAccountIdx=feedAccountIdx;
+  storiesMonth=feedMonth||storiesMonth||MONTH_OPTIONS[new Date().getMonth()];
   refreshLinkModalGrid();
   openModal('link-stories-modal');
 }
@@ -4324,10 +4325,12 @@ function setLinkModalUrlTab(tab){
 function linkModalAddFiles(files){
   if(!files||!files.length)return;
   const inp=document.getElementById('lm-file-input');if(inp)inp.value='';
-  // queueStoryFiles uses storiesClientIdx/storiesAccountIdx/storiesMonth — already synced in openLinkStoriesModal
+  // Ensure storiesMonth is set before calling queueStoryFiles
+  if(!storiesMonth) storiesMonth=feedMonth||MONTH_OPTIONS[new Date().getMonth()];
   queueStoryFiles(files);
-  // Refresh grid after a short delay to allow new items to be pushed
-  setTimeout(refreshLinkModalGrid, 200);
+  // Refresh grid at 300ms (initial blob) and 500ms (after any fast async ops)
+  setTimeout(refreshLinkModalGrid, 300);
+  setTimeout(refreshLinkModalGrid, 800);
 }
 function linkModalAddUrl(){
   const inp=document.getElementById('lm-url-inp');if(!inp)return;
@@ -9461,6 +9464,8 @@ function init(){
   const sdz=document.getElementById('stories-drop-zone');if(sdz){sdz.addEventListener('dragover',e=>{e.preventDefault();sdz.classList.add('drag-over');});sdz.addEventListener('dragleave',e=>{if(!sdz.contains(e.relatedTarget))sdz.classList.remove('drag-over');});sdz.addEventListener('drop',e=>{e.preventDefault();sdz.classList.remove('drag-over');queueStoryFiles(e.dataTransfer.files);});}
   const cuzEl=document.getElementById('c-upload-zone');if(cuzEl){cuzEl.addEventListener('dragover',e=>{e.preventDefault();cuzEl.classList.add('drag-over');});cuzEl.addEventListener('dragleave',()=>cuzEl.classList.remove('drag-over'));cuzEl.addEventListener('drop',e=>{e.preventDefault();cuzEl.classList.remove('drag-over');addCarouselFiles(e.dataTransfer.files);});}
   const hluz=document.getElementById('hl-upload-zone');if(hluz){hluz.addEventListener('dragover',e=>{e.preventDefault();hluz.classList.add('drag-over');});hluz.addEventListener('dragleave',()=>hluz.classList.remove('drag-over'));hluz.addEventListener('drop',e=>{e.preventDefault();hluz.classList.remove('drag-over');setHlCover(e.dataTransfer.files);});}
+  // Link-stories modal file upload zone drag-and-drop
+  const lmfp=document.getElementById('lm-file-panel');if(lmfp){lmfp.addEventListener('dragover',e=>{e.preventDefault();lmfp.querySelector('.c-upload-zone')?.classList.add('drag-over');});lmfp.addEventListener('dragleave',e=>{if(!lmfp.contains(e.relatedTarget))lmfp.querySelector('.c-upload-zone')?.classList.remove('drag-over');});lmfp.addEventListener('drop',e=>{e.preventDefault();lmfp.querySelector('.c-upload-zone')?.classList.remove('drag-over');if(e.dataTransfer.files.length)linkModalAddFiles(e.dataTransfer.files);});}
   const pav=document.getElementById('feed-profile-avatar');if(pav){pav.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes('Files')){e.preventDefault();pav.classList.add('drag-over');}});pav.addEventListener('dragleave',e=>{if(!pav.contains(e.relatedTarget))pav.classList.remove('drag-over');});pav.addEventListener('drop',e=>{e.preventDefault();pav.classList.remove('drag-over');if(e.dataTransfer.files.length)feedProfileImgChange(e.dataTransfer.files);});}
   renderStudio();rebuildAllSelects();renderFeedGrid();renderStoriesGrid();updateFeedHeader();updateStoriesHeader();
 }
