@@ -10705,14 +10705,17 @@ function renderLandingTab(){
     const cvrColor = cvr ? (parseFloat(cvr)>3?'#1d9e75':parseFloat(cvr)>1?'#ba7517':'#888') : '#888';
 
     const card = document.createElement('div');
-    card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:16px;';
-    if(item.status === 'live') card.style.borderLeft = '3px solid #1d9e75';
+    card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;';
+    if(item.status === 'live'){ card.style.borderLeft = '3px solid #1d9e75'; topRow.style.paddingLeft = '13px'; }
     if(item.status === 'archiviata') card.style.opacity = '.6';
 
+    // Top row: dot + info + stats + actions
+    const topRow = document.createElement('div');
+    topRow.style.cssText = 'display:flex;align-items:center;gap:16px;padding:14px 16px;';
     // Status dot
     const dot = document.createElement('div');
     dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${st.dot};flex-shrink:0;`;
-    card.appendChild(dot);
+    topRow.appendChild(dot);
 
     // Info
     const info = document.createElement('div');
@@ -10741,7 +10744,7 @@ function renderLandingTab(){
         <div style="font-size:10px;color:var(--text-3);">${s.label}</div>`;
       stats.appendChild(col);
     });
-    card.appendChild(stats);
+    topRow.appendChild(stats);
 
     // Actions
     const acts = document.createElement('div');
@@ -10763,7 +10766,8 @@ function renderLandingTab(){
     editBtn.onclick = () => openLandingModal(idx);
     acts.appendChild(editBtn);
 
-    card.appendChild(acts);
+    topRow.appendChild(acts);
+    card.appendChild(topRow);
     // Mockup masonry section
     card.dataset.landingIdx = idx;
     renderLandingMockupSection(item, idx, card);
@@ -11223,11 +11227,11 @@ function renderLandingMockupSection(item, idx, cardEl){
 
   const section = document.createElement('div');
   section.className = 'landing-mockup-section';
-  section.style.cssText = 'margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);';
+  section.style.cssText = 'padding:0 16px 14px;border-top:0.5px solid var(--border);';
 
   // Header
   const secHdr = document.createElement('div');
-  secHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+  secHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-top:12px;';
   const mockups = item.mockup || [];
   secHdr.innerHTML = `
     <span style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;">
