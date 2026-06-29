@@ -1446,6 +1446,7 @@ function onPreviewAccountChange(){const v=document.getElementById('preview-accou
 function refreshFeed(skipAutoSave){
   try{ renderFeedGrid(); } catch(e){ console.error('renderFeedGrid error:', e); }
   updateFeedStats();updateFeedHeader();
+  renderPilastrFilterBar();
   if(!skipAutoSave) autoSave();
 }
 
@@ -1630,7 +1631,12 @@ function withStorySkeleton(gridEl, count, renderFn){
 
 /* ══ FEED ITEM UID — chiave stabile per keyed reconciliation ══ */
 function _feedUID(){ return 'f' + Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
-function _ensureUID(item){ if(!item._uid) item._uid = _feedUID(); return item; }
+function _ensureUID(item){
+  if(!item._uid) item._uid = _feedUID();
+  if(!item.pilastro) item.pilastro = '';
+  if(!Array.isArray(item.tags)) item.tags = [];
+  return item;
+}
 // Assegna uid a tutti gli item di tutti i feed al boot
 function _initFeedUIDs(){
   Object.keys(feeds).forEach(k=>{
@@ -1776,7 +1782,10 @@ function renderFeedGrid(){
         sb.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${_fc.dot};flex-shrink:0;display:inline-block;"></span>${_fc.label}`;
         sb.onclick=e=>{e.stopPropagation();feedMonth=month;feedAllMonthsMode=false;document.getElementById('feed-all-months-btn')?.classList.remove('active');renderFeedMonthPills();setTimeout(()=>openApprModal(realIdx,allMonthItems),50);};
         cell.appendChild(sb);
+        // Tag/pilastro bar — sotto lo status badge
+        const _tagBar = buildPilastrTagBar(item, allMonthItems, realIdx, true);
         wrap.appendChild(cell);
+        wrap.appendChild(_tagBar);
         // Caption
         const cp=document.createElement('div');cp.className='copy-panel';cp.style.display='';
         const cph=document.createElement('div');cph.className='copy-panel-header';
@@ -1852,6 +1861,9 @@ function renderFeedGrid(){
   // grid and wrappers already reset at top of renderFeedGrid
 
   items=currentFeedItems();
+  // Apply pilastro/tag filter
+  if(activePilastrFilter) items=items.filter(it=>(it.pilastro||'')===activePilastrFilter);
+  else if(activeTagFilter) items=items.filter(it=>(it.tags||[]).includes(activeTagFilter));
   // Inject collab posts from other accounts of same client (same month)
   if(feedClientIdx>=0 && feedMonth){
     const myAccId=accountId(feedClientIdx,feedAccountIdx);
@@ -3095,6 +3107,9 @@ function toggleBacklogFilter(){
 /* ── ALL MONTHS MODE ── */
 // 0 = off | 1 = per mese con separatori | 2 = flusso continuo senza separatori
 let feedAllMonthsMode = 0;
+let activePilastrFilter = '';       // pilastro attivo nel feed
+let activeTagFilter = '';            // tag libero attivo nel feed
+let activeStoriesPilastrFilter = ''; // pilastro attivo nelle stories
 
 function toggleAllMonthsMode(){
   feedAllMonthsMode = (feedAllMonthsMode + 1) % 3;
@@ -3318,7 +3333,7 @@ function renderCThumbs(){
 }
 
 /* STORIES GRID */
-function refreshStories(){renderStoriesGrid();updateStoriesStats();autoSave();}
+function refreshStories(){renderStoriesGrid();updateStoriesStats();renderStoriesPilastrFilterBar();autoSave();}
 function updateStoriesStats(){
   const s=currentStoryItems();const aid=accountId(storiesClientIdx,storiesAccountIdx);const el=id=>document.getElementById(id);
   if(el('stat-st-tot'))el('stat-st-tot').textContent=s.length;
@@ -3331,7 +3346,10 @@ function updateStoriesHeader(){const acc=getAccount(storiesClientIdx,storiesAcco
 function renderStoriesGrid(){
   const grid=document.getElementById('stories-grid');const hlRow=document.getElementById('hl-row');
   if(!grid||!hlRow)return;grid.innerHTML='';hlRow.innerHTML='';
-  const arr=currentStoryItems();
+  let arr=currentStoryItems();
+  // Apply pilastro/tag filter
+  if(activeStoriesPilastrFilter) arr=arr.filter(it=>(it.pilastro||'')===activeStoriesPilastrFilter);
+  else if(activeTagFilter) arr=arr.filter(it=>(it.tags||[]).includes(activeTagFilter));
   // Banner collegamento Storyboard
   const sbBannerEl=document.getElementById('stories-sb-banner');
   if(sbBannerEl){
@@ -9784,3 +9802,275 @@ function toggleDarkMode(){
 }
 
 
+
+/* ══════════════════════════════════════════════════════════
+   PILASTRO + TAG SYSTEM
+   - item.pilastro : stringa — nome pilastro del cliente
+   - item.tags     : array  — tag liberi operativi
+══════════════════════════════════════════════════════════ */
+
+// ── Helpers ──────────────────────────────────────────────
+function _clientNameFromIdx(idx){
+  // Returns client name from global clients array
+  if(idx < 0 || !clients || !clients[idx]) return '';
+  return clients[idx].name || clients[idx].label || '';
+}
+
+function _getPilastriForCurrent(){
+  const name = _clientNameFromIdx(globalClientIdx >= 0 ? globalClientIdx : feedClientIdx);
+  if(!name) return [];
+  return getPilastri(name) || [];
+}
+
+function _allTagsInItems(items){
+  const tags = new Set();
+  items.forEach(it => (it.tags||[]).forEach(t => t && tags.add(t)));
+  return [...tags].sort();
+}
+
+function _allPilastriInItems(items){
+  const pils = new Set();
+  items.forEach(it => it.pilastro && pils.add(it.pilastro));
+  return [...pils].sort();
+}
+
+// ── Pilastro chip nella feed card ───────────────────────
+function buildPilastrTagBar(item, allItems, idx, isFeed){
+  const bar = document.createElement('div');
+  bar.className = 'cell-tags-bar';
+  bar.onclick = e => e.stopPropagation();
+
+  const pils = _getPilastriForCurrent();
+  const pilMap = {};
+  pils.forEach(p => pilMap[p.name] = p);
+
+  // Pilastro chip
+  const updateBar = () => {
+    bar.innerHTML = '';
+
+    // Pilastro pill
+    if(item.pilastro){
+      const pc = document.createElement('span');
+      pc.className = 'pilastro-chip';
+      const pil = pilMap[item.pilastro];
+      const bg = pil ? pil.color : '#e8e8f4';
+      const tc = _contrastColor(bg);
+      pc.style.cssText = `background:${bg};color:${tc};border-color:${bg};`;
+      pc.textContent = item.pilastro;
+      pc.title = 'Click per rimuovere';
+      pc.onclick = e => { e.stopPropagation(); item.pilastro=''; autoSave(); updateBar(); renderPilastrFilterBar(); };
+      bar.appendChild(pc);
+    } else {
+      // Dropdown pilastro
+      if(pils.length > 0){
+        const sel = document.createElement('select');
+        sel.style.cssText = 'font-size:9px;border:0.5px dashed var(--border);border-radius:99px;padding:1px 4px;background:transparent;color:var(--text-3);font-family:var(--font);cursor:pointer;';
+        const opt0 = document.createElement('option');
+        opt0.value = ''; opt0.textContent = '+ pilastro';
+        sel.appendChild(opt0);
+        pils.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.name; opt.textContent = p.name;
+          sel.appendChild(opt);
+        });
+        sel.onchange = e => {
+          e.stopPropagation();
+          item.pilastro = sel.value;
+          autoSave(); updateBar();
+          renderPilastrFilterBar();
+          if(isFeed) renderStoriesPilastrFilterBar();
+          else renderPilastrFilterBar();
+        };
+        bar.appendChild(sel);
+      }
+    }
+
+    // Tag chips
+    (item.tags||[]).forEach(tag => {
+      const tc = document.createElement('span');
+      tc.className = 'tag-chip';
+      tc.innerHTML = `${esc(tag)}<span class="tag-x" title="Rimuovi">×</span>`;
+      tc.querySelector('.tag-x').onclick = e => {
+        e.stopPropagation();
+        item.tags = (item.tags||[]).filter(t => t !== tag);
+        autoSave(); updateBar();
+        renderPilastrFilterBar();
+      };
+      bar.appendChild(tc);
+    });
+
+    // + tag button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'tag-add-btn';
+    addBtn.textContent = '+ tag';
+    addBtn.onclick = e => {
+      e.stopPropagation();
+      addBtn.style.display = 'none';
+      // Inline input
+      const wrap = document.createElement('span');
+      wrap.className = 'tag-input-wrap';
+      const inp = document.createElement('input');
+      inp.className = 'tag-input';
+      inp.placeholder = 'tag…';
+      inp.maxLength = 24;
+      const sug = document.createElement('div');
+      sug.className = 'tag-suggestions';
+      sug.style.display = 'none';
+      wrap.appendChild(inp); wrap.appendChild(sug); bar.appendChild(wrap);
+      inp.focus();
+
+      const showSug = () => {
+        const v = inp.value.toLowerCase();
+        // Collect suggestions: existing tags in feed + pilastri
+        const allTags = _allTagsInItems(allItems);
+        const pilNames = pils.map(p => ({name:p.name, color:p.color}));
+        const candidates = [
+          ...pilNames.filter(p => p.name.toLowerCase().includes(v) && p.name !== item.pilastro),
+          ...allTags.filter(t => t.toLowerCase().includes(v) && !(item.tags||[]).includes(t))
+            .map(t => ({name:t, color:''}))
+        ].slice(0,8);
+        sug.innerHTML = '';
+        if(candidates.length){
+          candidates.forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'tag-sug-item';
+            if(c.color){
+              row.innerHTML = `<span class="tag-sug-dot" style="background:${c.color}"></span>${esc(c.name)}`;
+            } else {
+              row.innerHTML = `<span class="tag-sug-dot" style="background:var(--border-strong)"></span>${esc(c.name)}`;
+            }
+            row.onmousedown = e => { e.preventDefault(); commitTag(c.name); };
+            sug.appendChild(row);
+          });
+          sug.style.display = 'block';
+        } else {
+          sug.style.display = 'none';
+        }
+      };
+
+      const commitTag = (val) => {
+        val = (val || inp.value).trim();
+        if(val && !(item.tags||[]).includes(val)){
+          if(!item.tags) item.tags = [];
+          item.tags.push(val);
+          autoSave();
+          renderPilastrFilterBar();
+        }
+        wrap.remove(); updateBar();
+      };
+
+      inp.addEventListener('input', showSug);
+      inp.addEventListener('keydown', e => {
+        if(e.key === 'Enter'){ e.preventDefault(); commitTag(); }
+        if(e.key === 'Escape'){ wrap.remove(); updateBar(); }
+      });
+      inp.addEventListener('blur', () => setTimeout(() => { wrap.remove(); updateBar(); }, 150));
+    };
+    bar.appendChild(addBtn);
+  };
+
+  updateBar();
+  return bar;
+}
+
+function _contrastColor(hex){
+  if(!hex || hex.length < 4) return '#111';
+  const r = parseInt(hex.slice(1,3)||'80',16);
+  const g = parseInt(hex.slice(3,5)||'80',16);
+  const b = parseInt(hex.slice(5,7)||'80',16);
+  return (r*0.299 + g*0.587 + b*0.114) > 150 ? '#111' : '#fff';
+}
+
+// ── Filter bar: pilastri + tag pills ────────────────────
+function renderPilastrFilterBar(){
+  const bar = document.getElementById('pilastr-filter-bar');
+  if(!bar) return;
+  const items = currentFeedItems();
+  const pils = _allPilastriInItems(items);
+  const tags = _allTagsInItems(items);
+  const clientPils = _getPilastriForCurrent();
+  const pilMap = {};
+  clientPils.forEach(p => pilMap[p.name] = p);
+
+  if(pils.length === 0 && tags.length === 0){
+    bar.style.display = 'none'; return;
+  }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="pfb-label">🏷</span>';
+
+  // Tutti pill
+  const all = document.createElement('button');
+  all.className = 'pfb-pill' + (activePilastrFilter==='' && activeTagFilter==='' ? ' active':'');
+  all.textContent = 'Tutti';
+  all.onclick = () => { activePilastrFilter=''; activeTagFilter=''; renderFeedGrid(); renderPilastrFilterBar(); };
+  bar.appendChild(all);
+
+  // Pilastro pills
+  pils.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'pfb-pill pilastr' + (activePilastrFilter===p ? ' active':'');
+    const pil = pilMap[p];
+    if(pil) btn.style.setProperty('--pil-color', pil.color);
+    btn.textContent = p;
+    btn.onclick = () => { activePilastrFilter=p; activeTagFilter=''; renderFeedGrid(); renderPilastrFilterBar(); };
+    bar.appendChild(btn);
+  });
+
+  // Tag pills (liberi)
+  if(tags.length){
+    const sep = document.createElement('span');
+    sep.style.cssText = 'width:.5px;height:14px;background:var(--border);flex-shrink:0;';
+    bar.appendChild(sep);
+    tags.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'pfb-pill' + (activeTagFilter===t ? ' active':'');
+      btn.textContent = '#'+t;
+      btn.onclick = () => { activeTagFilter=t; activePilastrFilter=''; renderFeedGrid(); renderPilastrFilterBar(); };
+      bar.appendChild(btn);
+    });
+  }
+}
+
+function renderStoriesPilastrFilterBar(){
+  const bar = document.getElementById('stories-pilastr-filter-bar');
+  if(!bar) return;
+  const items = currentStoryItems();
+  const pils = _allPilastriInItems(items);
+  const tags = _allTagsInItems(items);
+  const clientPils = _getPilastriForCurrent();
+  const pilMap = {};
+  clientPils.forEach(p => pilMap[p.name] = p);
+
+  if(pils.length === 0 && tags.length === 0){ bar.style.display='none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span class="pfb-label">🏷</span>';
+
+  const all = document.createElement('button');
+  all.className = 'pfb-pill' + (activeStoriesPilastrFilter==='' ? ' active':'');
+  all.textContent = 'Tutti';
+  all.onclick = () => { activeStoriesPilastrFilter=''; renderStoriesGrid(); renderStoriesPilastrFilterBar(); };
+  bar.appendChild(all);
+
+  pils.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'pfb-pill pilastr' + (activeStoriesPilastrFilter===p ? ' active':'');
+    const pil = pilMap[p];
+    if(pil) btn.style.setProperty('--pil-color', pil.color);
+    btn.textContent = p;
+    btn.onclick = () => { activeStoriesPilastrFilter=p; renderStoriesGrid(); renderStoriesPilastrFilterBar(); };
+    bar.appendChild(btn);
+  });
+
+  if(tags.length){
+    const sep = document.createElement('span');
+    sep.style.cssText = 'width:.5px;height:14px;background:var(--border);flex-shrink:0;';
+    bar.appendChild(sep);
+    tags.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'pfb-pill' + (activeTagFilter===t && !activeStoriesPilastrFilter ? ' active':'');
+      btn.textContent = '#'+t;
+      btn.onclick = () => { activeTagFilter=t; activeStoriesPilastrFilter=''; renderStoriesGrid(); renderStoriesPilastrFilterBar(); };
+      bar.appendChild(btn);
+    });
+  }
+}
