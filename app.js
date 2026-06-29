@@ -3131,12 +3131,36 @@ function setCarouselUrlTab(tab){
   if(inp) inp.placeholder=isFrame?'Incolla link Frame.io…':'Incolla URL diretto immagine/video…';
   if(hint) hint.textContent=isFrame?'Copia il link di condivisione da Frame.io.':'URL pubblico accessibile (JPG, PNG, MP4…)';
 }
+function normaliseMediaUrl(raw){
+  // Dropbox share links: convert to direct download
+  // www.dropbox.com/s/xxx/file.jpg?dl=0  -> https://dl.dropboxusercontent.com/s/xxx/file.jpg
+  // www.dropbox.com/scl/fi/xxx -> keep, add dl=1
+  let url=raw.trim();
+  if(/dropbox\.com/.test(url)){
+    // Remove dl=0 param and replace with dl=1 for direct download
+    url=url.replace(/[?&]dl=0/,'').replace(/dropbox\.com/,'dl.dropboxusercontent.com');
+    // strip any trailing query leftovers from dropboxusercontent
+    url=url.split('?')[0];
+    // For scl/fi links keep original but force dl=1
+    if(/dropbox\.com\/scl/.test(raw)){
+      url=raw.replace(/[?&]dl=\d/,'').replace(/\?$/,'');
+      url+=(url.includes('?')?'&':'?')+'dl=1';
+    }
+    return url;
+  }
+  // Frame.io links — use as-is (no direct media, will show as link icon)
+  if(/frame\.io|frameio/.test(url)) return url;
+  // Already a direct media URL
+  return url;
+}
 function addCarouselUrl(){
   const inp=document.getElementById('c-url-inp');
   if(!inp) return;
-  const url=inp.value.trim();
-  if(!url){showToast('Inserisci un URL','warn');return;}
-  carouselTmp.push({url:url,externalUrl:url,name:url.split('/').pop()||'link',copy:'',isExternalLink:true});
+  const raw=inp.value.trim();
+  if(!raw){showToast('Inserisci un URL','warn');return;}
+  const url=normaliseMediaUrl(raw);
+  const name=raw.split('/').filter(Boolean).pop()?.split('?')[0]||'slide';
+  carouselTmp.push({url:url,externalUrl:url,rawUrl:raw,name:name,copy:'',isExternalLink:true});
   inp.value='';
   renderCThumbs();
   showToast('Slide aggiunta ✓');
@@ -3169,6 +3193,7 @@ function renderCThumbs(){
     img.alt=s.name||'Anteprima slide';
     img.loading='lazy';
     img.style.cssText='width:56px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block;';
+    img.onerror=()=>{img.style.display='none';const fb=document.createElement('div');fb.style.cssText='width:56px;height:70px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--surface-lt);';fb.textContent=s.isExternalLink?'🔗':'🎥';left.insertBefore(fb,img.nextSibling);};
     const num=document.createElement('span');
     num.style.cssText='position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;';
     num.textContent=i+1;
@@ -3213,7 +3238,7 @@ function renderCThumbs(){
     const linkBtn=document.createElement('button');
     linkBtn.textContent='✓';linkBtn.title='Usa link';
     linkBtn.style.cssText='padding:4px 8px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;';
-    linkBtn.onclick=()=>{const u=linkInp.value.trim();if(!u)return;carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].isExternalLink=true;renderCThumbs();};
+    linkBtn.onclick=()=>{const raw=linkInp.value.trim();if(!raw)return;const u=normaliseMediaUrl(raw);carouselTmp[i].url=u;carouselTmp[i].externalUrl=u;carouselTmp[i].rawUrl=raw;carouselTmp[i].isExternalLink=true;renderCThumbs();};
     linkRow.appendChild(linkInp);linkRow.appendChild(linkBtn);
     right.appendChild(lbl); right.appendChild(ta); right.appendChild(linkRow);
 
