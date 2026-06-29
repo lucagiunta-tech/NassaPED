@@ -91,9 +91,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .cv-lb-inner{position:relative;max-width:min(420px,90vw);max-height:80dvh;border-radius:var(--r);overflow:hidden;background:#000;}
 .cv-lb-inner img,.cv-lb-inner video{max-width:100%;max-height:80dvh;object-fit:contain;display:block;}
 .cv-lb-close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;}
-.cv-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:#fff;border:none;color:#111;font-size:22px;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s;}
-.cv-lb-nav:hover{transform:translateY(-50%) scale(1.08);box-shadow:0 4px 18px rgba(0,0,0,.45);}
-.cv-lb-prev{left:12px;}.cv-lb-next{right:12px;}
+.cv-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:#fff;border:none;color:#111;font-size:20px;font-weight:700;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.28);transition:opacity .15s;}
+.cv-lb-nav:hover{opacity:.85;}
+.cv-lb-prev{left:10px;}.cv-lb-next{right:10px;}
 
 /* ANNO PANEL */
 .cv-anno-wrap{padding:16px;}
@@ -711,7 +711,7 @@ function cvLbClose() {
   document.getElementById('cv-lb').classList.remove('open');
 }
 function cvLbNav(d) { cvLbIdx=(cvLbIdx+d+cvLbItems.length)%cvLbItems.length; cvLbSlide=0; cvLbRender(); }
-let cvLbSlide = 0; // current slide index within a carousel item
+let cvLbSlide = 0; // current slide index within a carousel
 function cvLbRender() {
   const inner = document.getElementById('cv-lb-inner');
   if(!inner) return;
@@ -720,21 +720,22 @@ function cvLbRender() {
   if(!item) return;
 
   const isCarousel = item.type==='carousel' && item.slides?.length > 1;
+
   if(isCarousel) {
-    // Clamp slide index
+    // ── Carousel: show current slide + inner ‹ › arrows + counter ────────────
     cvLbSlide = Math.max(0, Math.min(cvLbSlide, item.slides.length - 1));
     const sl = item.slides[cvLbSlide];
     const url = sl?.url || sl?.externalUrl || '';
-    // Slide wrapper with inner arrows
+
     const wrap = document.createElement('div');
     wrap.className = 'cv-lb-slide-player';
-    wrap.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;';
-    // Media
+    wrap.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:100%;';
+
     const isVid = sl?.isVideo || /\.(mp4|mov|avi|webm|mkv|m4v)(\?|$)/i.test(url);
     if(isVid && url) {
       const v = document.createElement('video');
       const streamUrl = url.replace('?dl=1','?raw=1').replace('&dl=1','&raw=1');
-      v.src=streamUrl; v.controls=true; v.playsInline=true; v.muted=false;
+      v.src=streamUrl; v.controls=true; v.playsInline=true;
       v.style.cssText='max-width:100%;max-height:75dvh;display:block;border-radius:6px;';
       wrap.appendChild(v); v.play().catch(()=>{});
     } else if(url) {
@@ -742,29 +743,39 @@ function cvLbRender() {
       img.style.cssText='max-width:100%;max-height:75dvh;display:block;border-radius:6px;';
       wrap.appendChild(img);
     }
-    // Inner prev/next for slides
-    const mkBtn = (label, dir) => {
+
+    // Inner slide arrows — same solid white style, positioned over image
+    const mkSlideBtn = (label, dir) => {
       const b = document.createElement('button');
-      b.textContent = label;
-      b.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${dir<0?'left':'right'}:8px;background:#fff;color:#111;border:none;font-size:20px;font-weight:700;width:40px;height:40px;border-radius:50%;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);display:${item.slides.length>1?'flex':'none'};align-items:center;justify-content:center;`;
-      b.onclick = e => { e.stopPropagation(); cvLbSlide = Math.max(0, Math.min(item.slides.length-1, cvLbSlide+dir)); cvLbRender(); };
+      b.innerHTML = dir < 0 ? '&#8249;' : '&#8250;';
+      const side = dir < 0 ? 'left:8px' : 'right:8px';
+      b.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${side};background:#fff;color:#111;border:none;font-size:22px;font-weight:700;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.25);z-index:2;`;
+      b.onclick = e => { e.stopPropagation(); cvLbSlide=Math.max(0,Math.min(item.slides.length-1,cvLbSlide+dir)); cvLbRender(); };
+      // Hide if at boundary
+      if((dir<0 && cvLbSlide===0) || (dir>0 && cvLbSlide===item.slides.length-1)) b.style.opacity='0.3';
       return b;
     };
-    wrap.appendChild(mkBtn('‹', -1));
-    wrap.appendChild(mkBtn('›', 1));
-    // Counter pill
+    wrap.appendChild(mkSlideBtn('‹',-1));
+    wrap.appendChild(mkSlideBtn('›', 1));
+
+    // Slide counter pill at bottom
     const ctr = document.createElement('div');
-    ctr.style.cssText = 'position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;pointer-events:none;';
-    ctr.textContent = (cvLbSlide+1) + ' / ' + item.slides.length;
+    ctr.style.cssText='position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;pointer-events:none;';
+    ctr.textContent=(cvLbSlide+1)+' / '+item.slides.length;
     wrap.appendChild(ctr);
+
     inner.insertBefore(wrap, inner.querySelector('.cv-lb-close'));
-    // Show copy for this slide if present
-    const copyEl = inner.querySelector('.cv-lb-copy') || (() => { const d=document.createElement('div'); d.className='cv-lb-copy'; d.style.cssText='font-size:13px;color:#eee;text-align:center;max-width:480px;margin-top:8px;line-height:1.5;white-space:pre-wrap;'; inner.appendChild(d); return d; })();
-    copyEl.textContent = sl?.copy?.trim() || '';
-    copyEl.style.display = sl?.copy?.trim() ? 'block' : 'none';
+
+    // Per-slide copy
+    let copyEl = inner.querySelector('.cv-lb-copy');
+    if(!copyEl){ copyEl=document.createElement('div'); copyEl.className='cv-lb-copy'; copyEl.style.cssText='font-size:13px;color:#eee;text-align:center;max-width:480px;margin-top:8px;line-height:1.5;white-space:pre-wrap;'; inner.appendChild(copyEl); }
+    copyEl.textContent=sl?.copy?.trim()||''; copyEl.style.display=sl?.copy?.trim()?'block':'none';
+
   } else {
+    // ── Single image / video / single-slide carousel ──────────────────────────
     cvLbSlide = 0;
-    const url = (item.url || item.externalUrl || '');
+    inner.querySelectorAll('.cv-lb-copy').forEach(el=>el.remove());
+    const url = item.type==='carousel'&&item.slides?.length ? (item.slides[0].url||'') : (item.url||item.externalUrl||'');
     if(item.type==='video' && url) {
       const streamUrl = url.replace('?dl=1','?raw=1').replace('&dl=1','&raw=1');
       const v = document.createElement('video');
@@ -776,13 +787,11 @@ function cvLbRender() {
       img.style.cssText='max-width:100%;max-height:80dvh;display:block;border-radius:6px;';
       inner.insertBefore(img, inner.querySelector('.cv-lb-close'));
     }
-    // Remove slide copy if present
-    inner.querySelectorAll('.cv-lb-copy').forEach(el=>el.remove());
   }
-  // Outer prev/next (between posts) — hidden for carousel single-slide nav
-  const showOuter = cvLbItems.length > 1;
-  document.getElementById('cv-lb-prev').style.display = showOuter ? 'flex' : 'none';
-  document.getElementById('cv-lb-next').style.display = showOuter ? 'flex' : 'none';
+
+  // Outer arrows always navigate between posts (unchanged from original)
+  document.getElementById('cv-lb-prev').style.display=cvLbItems.length>1?'flex':'none';
+  document.getElementById('cv-lb-next').style.display=cvLbItems.length>1?'flex':'none';
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape')cvLbClose(); if(e.key==='ArrowLeft')cvLbNav(-1); if(e.key==='ArrowRight')cvLbNav(1); });
 
