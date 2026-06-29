@@ -10764,6 +10764,9 @@ function renderLandingTab(){
     acts.appendChild(editBtn);
 
     card.appendChild(acts);
+    // Mockup masonry section
+    card.dataset.landingIdx = idx;
+    renderLandingMockupSection(item, idx, card);
     grid.appendChild(card);
   });
 
@@ -11203,6 +11206,221 @@ function deleteStampa(idx){
       closeStampaModal();
       renderStampaTab();
       showToast('Voce eliminata');
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   LANDING MOCKUP — griglia masonry per ogni landing page
+   Ogni landing item ha: item.mockup = [{id, url, note}]
+   Upload via Dropbox, anteprima in griglia 3 colonne masonry
+══════════════════════════════════════════════════════════ */
+
+// ── Aggiungi sezione mockup alla card landing ──
+function renderLandingMockupSection(item, idx, cardEl){
+  // Remove existing mockup section if any
+  cardEl.querySelector('.landing-mockup-section')?.remove();
+
+  const section = document.createElement('div');
+  section.className = 'landing-mockup-section';
+  section.style.cssText = 'margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);';
+
+  // Header
+  const secHdr = document.createElement('div');
+  secHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+  const mockups = item.mockup || [];
+  secHdr.innerHTML = `
+    <span style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;">
+      Mockup <span style="font-weight:400;color:var(--text-3);">(${mockups.length})</span>
+    </span>`;
+
+  const uploadBtn = document.createElement('button');
+  uploadBtn.style.cssText = 'padding:3px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
+  uploadBtn.textContent = '+ Aggiungi';
+  uploadBtn.onclick = () => triggerMockupUpload(item, idx, section);
+  secHdr.appendChild(uploadBtn);
+  section.appendChild(secHdr);
+
+  // Masonry grid
+  if(mockups.length > 0){
+    const grid = document.createElement('div');
+    grid.className = 'mockup-masonry';
+
+    mockups.forEach((m, mi) => {
+      const card = document.createElement('div');
+      card.className = 'mockup-item';
+
+      const img = document.createElement('img');
+      img.src = m.url;
+      img.alt = m.note || 'Mockup';
+      img.loading = 'lazy';
+      card.appendChild(img);
+
+      if(m.note){
+        const note = document.createElement('div');
+        note.className = 'mockup-note';
+        note.textContent = m.note;
+        card.appendChild(note);
+      }
+
+      // Click → lightbox
+      card.onclick = () => openMockupLightbox(item, mi, idx);
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+  } else {
+    // Drop zone
+    const dz = document.createElement('div');
+    dz.className = 'mockup-dz';
+    dz.innerHTML = '<div style="font-size:24px;margin-bottom:6px;">🖼</div>Clicca "+ Aggiungi" per caricare mockup<br><span style="font-size:10px;opacity:.6;">Griglia masonry automatica</span>';
+    section.appendChild(dz);
+  }
+
+  cardEl.appendChild(section);
+}
+
+// ── Upload mockup via Dropbox ──────────────────────────
+async function triggerMockupUpload(item, idx, sectionEl){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.multiple = true;
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = async () => {
+    const files = Array.from(input.files);
+    if(!files.length){ input.remove(); return; }
+
+    // Note input for all uploaded images
+    const note = await promptMockupNote();
+
+    showToast('⟳ Caricamento '+files.length+' immagine'+(files.length>1?'i':'')+'…');
+
+    for(const file of files){
+      try{
+        const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+        const destPath = `/NassaStudio/${cl?.name||'Condiviso'}/Landing/${item.name||'mockup'}/${Date.now()}_${file.name}`;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('path', destPath);
+        const res = await fetch('/api/dropbox-upload', {
+          method: 'POST',
+          headers: {'x-nassa-key': 'NASSA_SECRET_2026'},
+          credentials: 'include',
+          body: fd
+        });
+        if(!res.ok) throw new Error('Upload fallito: '+res.status);
+        const data = await res.json();
+        const url = data.url || data.shared_link || data.link || '';
+        if(!item.mockup) item.mockup = [];
+        item.mockup.push({ id: 'mk_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), url, note });
+      } catch(e){
+        showToast('Errore upload: '+e.message, 'warn');
+      }
+    }
+
+    // Save and re-render
+    const items = currentLandings();
+    items[idx] = item;
+    setLandings(items);
+    autoSave();
+
+    // Re-render the card's mockup section
+    const cardEl = sectionEl.closest('[data-landing-idx]');
+    if(cardEl) renderLandingMockupSection(item, idx, cardEl);
+    else renderLandingTab(); // fallback
+
+    input.remove();
+    showToast('✓ '+files.length+' mockup caricato'+(files.length>1?'i':''));
+  };
+
+  document.body.appendChild(input);
+  input.click();
+}
+
+function promptMockupNote(){
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border-radius:12px;padding:20px;width:320px;">
+        <div style="font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:12px;">Nota per i mockup (opzionale)</div>
+        <input id="_mkup-note-inp" type="text" placeholder="es. Homepage v2, mobile…" 
+          style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+        <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+          <button id="_mkup-skip" style="padding:6px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;font-family:var(--font);color:var(--text-2);">Salta</button>
+          <button id="_mkup-ok" style="padding:6px 14px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--green);color:#003;font-family:var(--font);">OK</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const inp = overlay.querySelector('#_mkup-note-inp');
+    inp.focus();
+    const done = (val) => { overlay.remove(); resolve(val); };
+    overlay.querySelector('#_mkup-ok').onclick = () => done(inp.value.trim());
+    overlay.querySelector('#_mkup-skip').onclick = () => done('');
+    inp.onkeydown = e => { if(e.key==='Enter') done(inp.value.trim()); if(e.key==='Escape') done(''); };
+  });
+}
+
+// ── Lightbox mockup ──────────────────────────────────────
+function openMockupLightbox(item, mi, landingIdx){
+  document.getElementById('mockup-lightbox')?.remove();
+  const mockups = item.mockup || [];
+  let cur = mi;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'mockup-lightbox';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+
+  const render = () => {
+    const m = mockups[cur];
+    overlay.innerHTML = `
+      <div style="position:absolute;top:16px;right:16px;display:flex;gap:8px;z-index:10;">
+        <button onclick="deleteMockup(${landingIdx},${cur})" style="padding:6px 12px;border:0.5px solid rgba(248,113,113,.6);border-radius:8px;font-size:12px;color:#f87171;cursor:pointer;background:rgba(248,113,113,.1);font-family:var(--font);">Elimina</button>
+        <button onclick="document.getElementById('mockup-lightbox').remove()" style="width:32px;height:32px;border-radius:50%;border:0.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      </div>
+      <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.5);font-size:12px;">${cur+1} / ${mockups.length}${m.note ? ' · '+esc(m.note) : ''}</div>
+      ${cur>0?`<button onclick="event.stopPropagation();_lbNav(-1)" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;">‹</button>`:''}
+      ${cur<mockups.length-1?`<button onclick="event.stopPropagation();_lbNav(1)" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;">›</button>`:''}
+      <img src="${m.url}" alt="${esc(m.note||'Mockup')}" style="max-width:90%;max-height:85vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5);">`;
+  };
+
+  window._lbNav = (dir) => {
+    cur = Math.max(0, Math.min(mockups.length-1, cur+dir));
+    render();
+  };
+
+  render();
+  document.body.appendChild(overlay);
+
+  // Keyboard nav
+  const onKey = e => {
+    if(e.key==='Escape') { overlay.remove(); document.removeEventListener('keydown',onKey); }
+    if(e.key==='ArrowLeft' && cur>0) { cur--; render(); }
+    if(e.key==='ArrowRight' && cur<mockups.length-1) { cur++; render(); }
+  };
+  document.addEventListener('keydown', onKey);
+}
+
+function deleteMockup(landingIdx, mockupIdx){
+  showConfirm({
+    title: 'Elimina mockup',
+    body: 'Eliminare questa immagine dalla griglia mockup?',
+    okLabel: 'Elimina', type: 'danger',
+    onOk: () => {
+      const items = currentLandings();
+      const item = items[landingIdx];
+      if(!item?.mockup) return;
+      item.mockup.splice(mockupIdx, 1);
+      items[landingIdx] = item;
+      setLandings(items);
+      autoSave();
+      document.getElementById('mockup-lightbox')?.remove();
+      renderLandingTab();
+      showToast('Mockup eliminato');
     }
   });
 }

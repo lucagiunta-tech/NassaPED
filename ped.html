@@ -42,6 +42,15 @@
 .pfb-pill.active{background:var(--green);color:#003300;border-color:var(--green);font-weight:700;}
 .pfb-pill.pilastr{border-color:var(--pil-color,var(--border));}.pfb-pill.pilastr.active{background:var(--pil-color,var(--green));color:#111;border-color:var(--pil-color);}
 .ctx-popup-item-active{background:var(--surface-lt);font-weight:600;color:var(--text-1);}
+/* ── Landing Mockup Masonry ── */
+.mockup-masonry{columns:3;column-gap:10px;width:100%;margin-top:12px;}
+.mockup-item{break-inside:avoid;display:block;margin-bottom:10px;border-radius:8px;overflow:hidden;border:0.5px solid var(--border);background:var(--surface);cursor:pointer;transition:border-color .12s;}
+.mockup-item:hover{border-color:var(--green);}
+.mockup-item img{width:100%;display:block;object-fit:cover;}
+.mockup-item .mockup-note{padding:7px 10px;font-size:11px;color:var(--text-3);}
+.mockup-dz{border:1.5px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;color:var(--text-3);font-size:12px;transition:border-color .12s;margin-top:10px;}
+.mockup-dz:hover{border-color:var(--green);color:var(--text-2);}
+@media(max-width:700px){.mockup-masonry{columns:2;}}
 </style>
 </head>
 <body>
