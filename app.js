@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -396,6 +396,7 @@ const CLOUD = {
     formati    = data.formati    || {};
     landing    = data.landing    || {};
     stampa     = data.stampa     || {};
+    mood       = data.mood       || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -1224,7 +1225,7 @@ window.addEventListener('popstate', (e) => {
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa'];
+  const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1273,6 +1274,7 @@ function switchTab(tab){
   if(tab==='ads'){renderAdsTab();}
   if(tab==='landing'){renderLandingTab();}
   if(tab==='stampa'){renderStampaTab();}
+  if(tab==='mood'){renderMoodTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -11425,6 +11427,429 @@ function deleteMockup(landingIdx, mockupIdx){
       document.getElementById('mockup-lightbox')?.remove();
       renderLandingTab();
       showToast('Mockup eliminato');
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   MOODBOARD — NassaContent
+   Griglia masonry 3 colonne: immagini, colori, testi
+   Stesso sistema di NassaBrand ma in vanilla JS
+   mood[clientId] = [{id, tipo, titolo, note, tag, color, height, imageUrl}]
+   tipo: 'image' | 'color' | 'text'
+══════════════════════════════════════════════════════════ */
+
+let mood = {};  // persisted in snapshot
+
+const MOOD_TAG_OPTS = ['Mood','Palette','Foto','Copy','Tipo','Strategy','ToV','Riferimento','Competitor'];
+const MOOD_TAG_COLORS = {
+  Mood:'#534AB7', Palette:'#C25B2A', Foto:'#0F6E56', Copy:'#C2185B',
+  Tipo:'#185FA5', Strategy:'#6B1A2A', ToV:'#854F0B',
+  Riferimento:'#1D9E75', Competitor:'#888'
+};
+const MOOD_COLOR_OPTS = [
+  '#C25B2A','#F5EDD8','#1D9E75','#185FA5','#2C1A0E',
+  '#E8DCC8','#7A9E5A','#534AB7','#6B1A2A','#e8e0d8',
+  '#EFEDE8','#0dff00','#111111','#ffffff','#C2185B'
+];
+
+function currentMoodKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+function currentMoodItems(){
+  const k = currentMoodKey();
+  return k ? (mood[k] || []) : [];
+}
+function setMoodItems(arr){
+  const k = currentMoodKey();
+  if(k) mood[k] = arr;
+}
+
+let _moodSelId = null;
+
+function renderMoodTab(){
+  const body = document.getElementById('mood-body');
+  if(!body) return;
+  body.innerHTML = '';
+
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){
+    body.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per gestire il moodboard.</div>';
+    return;
+  }
+
+  const items = currentMoodItems();
+
+  // ── Header ──────────────────────────────────────────────
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;';
+
+  const titleWrap = document.createElement('div');
+  titleWrap.innerHTML = `
+    <h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Moodboard</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — ${items.length} elementi</p>`;
+
+  const btnWrap = document.createElement('div');
+  btnWrap.style.cssText = 'display:flex;gap:8px;';
+
+  // Type buttons
+  ['🖼 Immagine','🎨 Colore','✏ Testo'].forEach((label, i) => {
+    const tipo = ['image','color','text'][i];
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:6px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-2);font-family:var(--font);';
+    btn.textContent = label;
+    btn.onclick = () => openMoodModal(tipo);
+    btnWrap.appendChild(btn);
+  });
+
+  hdr.appendChild(titleWrap);
+  hdr.appendChild(btnWrap);
+  body.appendChild(hdr);
+
+  // ── Filter bar ──────────────────────────────────────────
+  const usedTags = [...new Set(items.map(i => i.tag).filter(Boolean))];
+  if(usedTags.length > 0){
+    const filterBar = document.createElement('div');
+    filterBar.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;';
+    filterBar.id = 'mood-filter-bar';
+
+    let activeTag = null;
+
+    const renderFilter = () => {
+      filterBar.innerHTML = '';
+      // Tutti
+      const allBtn = document.createElement('button');
+      allBtn.style.cssText = 'padding:3px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-family:var(--font);border:0.5px solid var(--border);background:'+(activeTag===null?'var(--text-1)':'transparent')+';color:'+(activeTag===null?'var(--surface)':'var(--text-2)')+';';
+      allBtn.textContent = 'Tutti ('+items.length+')';
+      allBtn.onclick = () => { activeTag=null; renderMasonry(items); renderFilter(); };
+      filterBar.appendChild(allBtn);
+
+      usedTags.forEach(tag => {
+        const tc = MOOD_TAG_COLORS[tag] || '#888';
+        const btn = document.createElement('button');
+        const isActive = activeTag === tag;
+        btn.style.cssText = `padding:3px 10px;border-radius:99px;font-size:11px;cursor:pointer;font-family:var(--font);border:0.5px solid ${tc};background:${isActive?tc:'transparent'};color:${isActive?'#fff':tc};font-weight:${isActive?'600':'400'};`;
+        const count = items.filter(i => i.tag === tag).length;
+        btn.textContent = tag+' ('+count+')';
+        btn.onclick = () => { activeTag=tag; renderMasonry(items.filter(i=>i.tag===tag)); renderFilter(); };
+        filterBar.appendChild(btn);
+      });
+    };
+    renderFilter();
+    body.appendChild(filterBar);
+  }
+
+  // ── Masonry grid ────────────────────────────────────────
+  const masonryWrap = document.createElement('div');
+  masonryWrap.id = 'mood-masonry-wrap';
+  body.appendChild(masonryWrap);
+
+  const renderMasonry = (visibleItems) => {
+    masonryWrap.innerHTML = '';
+
+    if(!visibleItems.length){
+      const em = document.createElement('div');
+      em.className = 'nc-mood-dz';
+      em.innerHTML = '<div style="font-size:36px;margin-bottom:10px;">🎨</div><div style="font-size:14px;font-weight:500;margin-bottom:6px;">Moodboard vuoto</div><div style="font-size:12px;opacity:.6;">Aggiungi immagini, colori e testi di ispirazione</div>';
+      em.onclick = () => openMoodModal('image');
+      masonryWrap.appendChild(em);
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'nc-mood-masonry';
+
+    visibleItems.forEach(item => {
+      const tc = MOOD_TAG_COLORS[item.tag] || 'var(--text-3)';
+      const isSel = _moodSelId === item.id;
+      const hPx = item.tipo==='text' ? Math.round((item.height||1)*80+60)
+                : item.tipo==='color' ? Math.round((item.height||1)*100+40) : null;
+
+      const el = document.createElement('div');
+      el.className = 'nc-mood-item' + (isSel?' nc-mood-sel':'');
+      if(isSel) el.style.borderColor = tc;
+
+      // Visual area
+      const vis = document.createElement('div');
+      vis.style.cssText = `background:${item.imageUrl?'var(--surface-lt)':item.color};${hPx?'height:'+hPx+'px;':''}display:flex;align-items:center;justify-content:center;position:relative;`;
+
+      if(item.tipo==='image' && item.imageUrl){
+        const img = document.createElement('img');
+        img.className = 'nc-mood-visual';
+        img.src = item.imageUrl;
+        img.alt = item.titolo || '';
+        img.loading = 'lazy';
+        vis.appendChild(img);
+      } else if(item.tipo==='color'){
+        // Color swatch — show hex
+        const hex = document.createElement('span');
+        hex.style.cssText = 'font-size:12px;font-weight:600;color:rgba(0,0,0,.4);font-family:var(--font-mono);';
+        hex.textContent = item.color || '';
+        vis.appendChild(hex);
+      } else if(item.tipo==='text'){
+        const txt = document.createElement('div');
+        txt.style.cssText = 'padding:16px;font-size:14px;line-height:1.6;color:var(--text-1);width:100%;';
+        txt.textContent = item.note || item.titolo || '';
+        vis.appendChild(txt);
+      }
+
+      // Delete button (visible on select)
+      if(isSel){
+        const delBtn = document.createElement('button');
+        delBtn.style.cssText = 'position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;';
+        delBtn.textContent = '×';
+        delBtn.onclick = e => { e.stopPropagation(); deleteMoodItem(item.id); };
+        vis.appendChild(delBtn);
+      }
+
+      el.appendChild(vis);
+
+      // Body
+      if(item.titolo || item.tag || (item.tipo!=='text' && item.note)){
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'nc-mood-body';
+        if(item.titolo && item.tipo!=='text'){
+          const title = document.createElement('div');
+          title.className = 'nc-mood-title';
+          title.textContent = item.titolo;
+          bodyDiv.appendChild(title);
+        }
+        if(item.note && item.tipo!=='text'){
+          const note = document.createElement('div');
+          note.className = 'nc-mood-note';
+          note.textContent = item.note;
+          bodyDiv.appendChild(note);
+        }
+        if(item.tag){
+          const tag = document.createElement('span');
+          tag.className = 'nc-mood-tag';
+          tag.style.cssText = `background:${tc}22;color:${tc};`;
+          tag.textContent = item.tag;
+          bodyDiv.appendChild(tag);
+        }
+        el.appendChild(bodyDiv);
+      }
+
+      // Click → select/deselect
+      el.onclick = () => {
+        _moodSelId = isSel ? null : item.id;
+        renderMasonry(visibleItems);
+      };
+
+      grid.appendChild(el);
+    });
+
+    // Add new item card
+    const addCard = document.createElement('div');
+    addCard.className = 'nc-mood-dz';
+    addCard.style.cssText += ';margin-bottom:12px;';
+    addCard.innerHTML = '<div style="font-size:24px;margin-bottom:6px;">+</div><div style="font-size:12px;">Aggiungi elemento</div>';
+    addCard.onclick = () => openMoodModal('image');
+    grid.appendChild(addCard);
+
+    masonryWrap.appendChild(grid);
+  };
+
+  renderMasonry(items);
+}
+
+// ── Mood Modal ────────────────────────────────────────────
+let _moodModalTipo = 'image';
+let _moodUploading = false;
+let _moodImageUrl = null;
+
+function openMoodModal(tipo){
+  _moodModalTipo = tipo;
+  _moodImageUrl = null;
+  document.getElementById('mood-modal')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'mood-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+
+  const renderModal = () => {
+    overlay.innerHTML = '';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--surface);border-radius:14px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;';
+    box.onclick = e => e.stopPropagation();
+
+    // Header
+    box.innerHTML = `
+    <div style="padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1;">
+      <div style="font-size:15px;font-weight:600;color:var(--text-1);">Aggiungi elemento</div>
+      <button onclick="document.getElementById('mood-modal').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px;line-height:1;">×</button>
+    </div>
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+      <!-- Tipo selector -->
+      <div style="display:flex;gap:8px;">
+        ${['image','color','text'].map(t => `
+          <button onclick="window._moodSetTipo('${t}')" style="flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:0.5px solid ${_moodModalTipo===t?'var(--green)':'var(--border)'};background:${_moodModalTipo===t?'#e6ffe4':'transparent'};color:${_moodModalTipo===t?'#003300':'var(--text-2)'};font-family:var(--font);">
+            ${{image:'🖼 Immagine',color:'🎨 Colore',text:'✏ Testo'}[t]}
+          </button>`).join('')}
+      </div>
+
+      <!-- Image upload -->
+      ${_moodModalTipo==='image' ? `
+      <div>
+        <input id="mood-file-inp" type="file" accept="image/*" style="display:none;" onchange="window._moodHandleFile(this)">
+        ${_moodImageUrl ? `
+          <div style="position:relative;">
+            <img src="${_moodImageUrl}" style="width:100%;border-radius:8px;display:block;max-height:200px;object-fit:cover;">
+            <button onclick="window._moodImageUrl=null;window._moodRerender()" style="position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:14px;cursor:pointer;">×</button>
+          </div>` : `
+          <div onclick="document.getElementById('mood-file-inp').click()" style="border:1.5px dashed var(--border);border-radius:8px;padding:28px;text-align:center;cursor:pointer;color:var(--text-3);">
+            ${_moodUploading ? '⟳ Caricamento…' : '<div style="font-size:28px;margin-bottom:8px;">⬆</div><div style="font-size:13px;">Clicca per caricare immagine</div><div style="font-size:11px;opacity:.6;margin-top:4px;">JPG, PNG, WebP</div>'}
+          </div>`}
+      </div>` : ''}
+
+      <!-- Color picker -->
+      ${_moodModalTipo==='color' ? `
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:8px;">Scegli colore</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          ${MOOD_COLOR_OPTS.map(c => `<div onclick="document.getElementById('mood-color-custom').value='${c}'" style="width:32px;height:32px;border-radius:6px;background:${c};cursor:pointer;border:2px solid transparent;box-sizing:border-box;" title="${c}"></div>`).join('')}
+        </div>
+        <input id="mood-color-custom" type="color" value="#C25B2A" style="width:100%;height:36px;border:0.5px solid var(--border);border-radius:8px;cursor:pointer;">
+      </div>` : ''}
+
+      <!-- Height for color/text -->
+      ${_moodModalTipo!=='image' ? `
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Altezza elemento</label>
+        <select id="mood-height" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+          <option value="0.5">Piccolo</option>
+          <option value="1" selected>Medio</option>
+          <option value="1.5">Grande</option>
+          <option value="2">Extra large</option>
+        </select>
+      </div>` : ''}
+
+      <!-- Title -->
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">${_moodModalTipo==='text'?'Testo':'Titolo (opzionale)'}</label>
+        <${_moodModalTipo==='text'?'textarea id="mood-titolo" rows="4"':'input id="mood-titolo" type="text"'} placeholder="${_moodModalTipo==='text'?'Scrivi il testo, citazione, keyword…':'es. Foto campagna estate'}" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;${_moodModalTipo==='text'?'resize:vertical;':''}box-sizing:border-box;"></${_moodModalTipo==='text'?'textarea':'input'}>
+      </div>
+
+      ${_moodModalTipo!=='text' ? `
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nota (opzionale)</label>
+        <input id="mood-note" type="text" placeholder="Note o descrizione…" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+      </div>` : ''}
+
+      <!-- Tag -->
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:8px;">Tag</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="mood-tag-btns">
+          ${MOOD_TAG_OPTS.map(t => {
+            const tc = MOOD_TAG_COLORS[t]||'#888';
+            return `<button onclick="window._moodSetTag('${t}',this)" data-tag="${t}" style="padding:3px 10px;border-radius:99px;font-size:11px;border:0.5px solid ${tc};background:transparent;color:${tc};cursor:pointer;font-family:var(--font);">${t}</button>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface);">
+      <button onclick="document.getElementById('mood-modal').remove()" style="padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);">Annulla</button>
+      <button onclick="saveMoodItem()" style="padding:7px 16px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;color:#003;cursor:pointer;background:var(--green);font-family:var(--font);">Aggiungi</button>
+    </div>`;
+
+    overlay.appendChild(box);
+  };
+
+  // Helpers for modal interactivity
+  window._moodSetTipo = (t) => { _moodModalTipo=t; renderModal(); };
+  window._moodRerender = () => renderModal();
+  window._moodSetTag = (tag, btn) => {
+    document.querySelectorAll('#mood-tag-btns button').forEach(b => {
+      const t = b.dataset.tag;
+      const tc = MOOD_TAG_COLORS[t]||'#888';
+      b.style.background = 'transparent';
+      b.style.color = tc;
+      b.style.fontWeight = '400';
+    });
+    const tc = MOOD_TAG_COLORS[tag]||'#888';
+    btn.style.background = tc;
+    btn.style.color = '#fff';
+    btn.style.fontWeight = '600';
+    btn._selected = true;
+  };
+  window._moodHandleFile = async (inp) => {
+    const file = inp.files?.[0]; if(!file) return;
+    _moodUploading = true; renderModal();
+    try {
+      const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+      const destPath = `/NassaStudio/${cl?.name||'Condiviso'}/Moodboard/${Date.now()}_${file.name}`;
+      const fd = new FormData();
+      fd.append('file', file); fd.append('path', destPath);
+      const res = await fetch('/api/dropbox-upload', {
+        method:'POST', headers:{'x-nassa-key':'NASSA_SECRET_2026'},
+        credentials:'include', body:fd
+      });
+      if(!res.ok) throw new Error('Upload fallito: '+res.status);
+      const data = await res.json();
+      _moodImageUrl = data.url || data.shared_link || data.link || '';
+    } catch(e) { showToast('Errore upload: '+e.message,'warn'); }
+    _moodUploading = false;
+    renderModal();
+  };
+
+  renderModal();
+  document.body.appendChild(overlay);
+}
+
+function saveMoodItem(){
+  const g = id => document.getElementById(id);
+  const tipo = _moodModalTipo;
+
+  // Validation
+  if(tipo==='image' && !_moodImageUrl){ showToast('Carica un\'immagine','warn'); return; }
+  if(tipo==='text' && !g('mood-titolo')?.value?.trim()){ showToast('Scrivi un testo','warn'); return; }
+
+  // Get selected tag
+  let selTag = '';
+  document.querySelectorAll('#mood-tag-btns button').forEach(b => {
+    if(b._selected) selTag = b.dataset.tag;
+  });
+
+  const color = g('mood-color-custom')?.value || '#C25B2A';
+  const height = parseFloat(g('mood-height')?.value || '1');
+
+  const item = {
+    id: 'mood_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
+    tipo,
+    titolo: (g('mood-titolo')?.value||'').trim(),
+    note: (g('mood-note')?.value||'').trim(),
+    tag: selTag,
+    color: tipo==='image' ? '#e8e0d8' : color,
+    height,
+    imageUrl: tipo==='image' ? _moodImageUrl : null,
+    createdAt: new Date().toISOString(),
+  };
+
+  const items = currentMoodItems();
+  items.push(item);
+  setMoodItems(items);
+  autoSave();
+
+  document.getElementById('mood-modal')?.remove();
+  _moodImageUrl = null;
+  renderMoodTab();
+  showToast('✓ Elemento aggiunto al moodboard');
+}
+
+function deleteMoodItem(id){
+  showConfirm({
+    title: 'Elimina elemento',
+    body: 'Eliminare questo elemento dal moodboard?',
+    okLabel: 'Elimina', type: 'danger',
+    onOk: () => {
+      const items = currentMoodItems().filter(i => i.id !== id);
+      setMoodItems(items);
+      _moodSelId = null;
+      autoSave();
+      renderMoodTab();
+      showToast('Elemento eliminato');
     }
   });
 }

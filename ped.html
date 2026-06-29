@@ -43,6 +43,20 @@
 .mockup-dz{border:1.5px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;color:var(--text-3);font-size:12px;transition:border-color .12s;margin-top:10px;}
 .mockup-dz:hover{border-color:var(--green);color:var(--text-2);}
 @media(max-width:700px){.mockup-masonry{columns:2;}}
+/* ── NassaContent Moodboard masonry ── */
+.nc-mood-masonry{columns:3;column-gap:12px;width:100%;}
+.nc-mood-item{break-inside:avoid;display:block;margin-bottom:12px;border-radius:10px;overflow:hidden;border:0.5px solid var(--border);cursor:pointer;transition:border-color .12s,box-shadow .12s;background:var(--surface);}
+.nc-mood-item:hover{border-color:var(--green);box-shadow:0 2px 12px rgba(0,0,0,.08);}
+.nc-mood-item.nc-mood-sel{border-width:2px;}
+.nc-mood-visual{width:100%;display:block;object-fit:cover;}
+.nc-mood-body{padding:10px 12px;}
+.nc-mood-title{font-size:13px;font-weight:500;color:var(--text-1);margin-bottom:3px;}
+.nc-mood-note{font-size:11px;color:var(--text-3);line-height:1.5;}
+.nc-mood-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:5px;}
+.nc-mood-dz{border:1.5px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;color:var(--text-3);font-size:13px;transition:border-color .12s;margin-top:4px;}
+.nc-mood-dz:hover{border-color:var(--green);color:var(--text-2);}
+@media(max-width:700px){.nc-mood-masonry{columns:2;}}
+@media(max-width:440px){.nc-mood-masonry{columns:1;}}
 </style>
 </head>
 <body>
@@ -78,6 +92,7 @@
       <div class="sub-tab" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
       <div class="sub-tab" id="sub-tab-landing"    onclick="switchTab('landing')">Landing</div>
       <div class="sub-tab" id="sub-tab-stampa"     onclick="switchTab('stampa')">Stampa</div>
+      <div class="sub-tab" id="sub-tab-mood"       onclick="switchTab('mood')">Moodboard</div>
       <div class="sub-tab" id="sub-tab-cal"        onclick="switchTab('cal')">Calendario</div>
       <div class="sub-tab" id="sub-tab-anno"       onclick="switchTab('anno')">Piano annuale</div>
       <div class="sub-tab" id="sub-tab-preview"    onclick="switchTab('preview')">Preview</div>
@@ -188,6 +203,10 @@
         <div class="sb-nav-item" id="si-stampa" onclick="switchTab('stampa')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v4"/><path d="M2 13h10"/><path d="M2 17h10"/><path d="M2 9h4"/></svg>
           <span>Stampa</span>
+        </div>
+        <div class="sb-nav-item" id="si-mood" onclick="switchTab('mood')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Moodboard</span>
         </div>
       <div class="sb-nav-item" id="si-preview" onclick="switchTab('preview')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -956,6 +975,13 @@
   <div class="tab-page" id="page-stampa">
     <div class="studio-main" id="stampa-main">
       <div id="stampa-body"></div>
+    </div>
+  </div>
+
+  <!-- MOODBOARD TAB -->
+  <div class="tab-page" id="page-mood">
+    <div class="studio-main" id="mood-main">
+      <div id="mood-body"></div>
     </div>
   </div>
 </div><!-- /main -->
