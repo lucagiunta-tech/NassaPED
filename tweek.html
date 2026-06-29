@@ -5152,14 +5152,14 @@ function TaskRow({
   };
   const rowS = {
     borderBottom: "1px solid #dbd8d3",
-    height: 30,          // FIXED height — allinea righe tra colonne
-    minHeight: 30,
-    cursor: "pointer",
+    height: 30,
+    cursor: isEmpty ? "default" : "pointer",
     display: "flex",
     alignItems: "center",
     background: bg,
     transition: "opacity .1s",
-    overflow: "hidden",  // taglia testo lungo su 1 riga
+    overflow: "hidden",
+    boxSizing: "border-box",
   };
   if (editing) return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -5221,15 +5221,22 @@ function TaskRow({
       fontSize: task.small ? 10 : 12,
       lineHeight: 1.4,
       color: isDone ? "#bbb" : textColor || undefined,
-      textDecoration: isDone ? "line-through" : "none",
       flex: 1,
       overflow: "hidden",
       whiteSpace: "nowrap",
-      textOverflow: "ellipsis"
+      textOverflow: "ellipsis",
+      display: "flex",
+      alignItems: "center",
     }
-  }, rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, {
-    task: task
-  })),
+  },
+    // Wrapper con strikethrough quando done
+    isDone
+      ? /*#__PURE__*/React.createElement("span", {
+          style: { textDecoration: "line-through", color: "#bbb", display: "block",
+            overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }
+        }, rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, { task: task }))
+      : (rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, { task: task }))
+    ),
   // Cerchio completamento on-hover (appare solo su righe non vuote)
   !isEmpty && (hovered || isDone) && /*#__PURE__*/React.createElement("div", {
     onClick: e => { e.stopPropagation(); onToggleDone && onToggleDone(task.id); },
