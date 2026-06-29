@@ -2143,10 +2143,102 @@ function tlRender(){
       });
     });
 
-    // Sort by date, assign lanes to avoid overlap
+    // Sort by date — milestones first (no lanes), then tasks with lane management
     clTasks.sort((a,b)=>a.date.localeCompare(b.date));
+
+    // ── Milestones e eventi speciali — dot verticale a tutta riga ──
+    clTasks.filter(t=>t.tipo==='milestone'||t.tipo==='shooting').forEach(t=>{
+      const di=dayMap[t.date];
+      if(di===undefined) return;
+      const tipo=t.tipo||'task';
+      const isShooting=tipo==='shooting';
+
+      // Linea verticale a tutta altezza riga
+      const line=document.createElement('div');
+      line.style.cssText=`position:absolute;
+        left:${di*TL_DAY_W+TL_DAY_W/2}px;
+        top:${ri*TL_ROW_H+4}px;
+        width:1.5px;height:${TL_ROW_H-8}px;
+        background:${isShooting?cs.border:cs.txt};
+        opacity:${t.done?.4:.8};
+        z-index:2;`;
+      grid.appendChild(line);
+
+      // Diamante ◆ in cima alla linea
+      const diamond=document.createElement('div');
+      diamond.title=t.text+(t.done?' ✓':'');
+      diamond.style.cssText=`position:absolute;
+        left:${di*TL_DAY_W+TL_DAY_W/2-7}px;
+        top:${ri*TL_ROW_H+2}px;
+        width:14px;height:14px;
+        background:${t.done?cs.bg+'99':isShooting?cs.bg:cs.txt};
+        border:1.5px solid ${cs.border};
+        transform:rotate(45deg);
+        z-index:3;cursor:pointer;
+        opacity:${t.done?.5:1};
+        transition:transform .15s,opacity .15s;`;
+      diamond.addEventListener('mouseenter',()=>diamond.style.transform='rotate(45deg) scale(1.2)');
+      diamond.addEventListener('mouseleave',()=>diamond.style.transform='rotate(45deg)');
+      diamond.addEventListener('click',()=>{
+        const dt=tasks[t.date];
+        if(dt){const tk=dt.find(x=>x.id===t.id);if(tk){tk.done=!tk.done;scheduleSave();tlRender();}}
+      });
+      grid.appendChild(diamond);
+
+      // Label sotto il diamante
+      const lbl=document.createElement('div');
+      lbl.style.cssText=`position:absolute;
+        left:${di*TL_DAY_W+TL_DAY_W/2}px;
+        top:${ri*TL_ROW_H+18}px;
+        transform:translateX(-50%);
+        font-size:9px;font-weight:700;
+        color:${cs.txt};white-space:nowrap;
+        max-width:${TL_DAY_W*2}px;overflow:hidden;text-overflow:ellipsis;
+        opacity:${t.done?.4:.75};
+        pointer-events:none;z-index:2;
+        text-decoration:${t.done?'line-through':'none'};`;
+      lbl.textContent=(isShooting?'○ ':'◆ ')+t.text;
+      grid.appendChild(lbl);
+    });
+
+    // ── Deadline — pill con bordo rosso tratteggiato + flag ──
+    clTasks.filter(t=>t.tipo==='deadline').forEach(t=>{
+      const di=dayMap[t.date];
+      if(di===undefined) return;
+      const pill=document.createElement('div');
+      pill.title='⚑ Deadline: '+t.text+(t.done?' ✓':'');
+      pill.style.cssText=`position:absolute;
+        left:${di*TL_DAY_W+1}px;
+        top:${ri*TL_ROW_H+TL_ROW_H-24}px;
+        width:${TL_DAY_W-2}px;height:20px;
+        border-radius:4px;
+        background:${t.done?'transparent':'#fcebeb'};
+        border:1.5px dashed ${t.done?'#ccc':'#E24B4A'};
+        z-index:2;display:flex;align-items:center;
+        padding:0 5px;gap:3px;cursor:pointer;
+        opacity:${t.done?.5:1};
+        transition:opacity .15s,transform .1s;`;
+      pill.addEventListener('mouseenter',()=>pill.style.transform='scaleY(1.04)');
+      pill.addEventListener('mouseleave',()=>pill.style.transform='');
+      pill.addEventListener('click',()=>{
+        const dt=tasks[t.date];
+        if(dt){const tk=dt.find(x=>x.id===t.id);if(tk){tk.done=!tk.done;scheduleSave();tlRender();}}
+      });
+      const flag=document.createElement('span');
+      flag.textContent='⚑';
+      flag.style.cssText=`font-size:9px;color:${t.done?'#ccc':'#E24B4A'};flex-shrink:0;`;
+      const txt=document.createElement('div');
+      txt.style.cssText=`font-size:9px;font-weight:600;color:${t.done?'#ccc':'#A32D2D'};
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        text-decoration:${t.done?'line-through':'none'};`;
+      txt.textContent=t.text;
+      pill.appendChild(flag);pill.appendChild(txt);
+      grid.appendChild(pill);
+    });
+
+    // ── Task operativi (tipo===task o undefined) — pill colorata con lane ──
     const lanes=[];
-    clTasks.forEach(t=>{
+    clTasks.filter(t=>!t.tipo||t.tipo==='task').forEach(t=>{
       const di=dayMap[t.date];
       if(di===undefined) return;
       let lane=lanes.findIndex(endDay=>endDay<di);
@@ -2175,13 +2267,10 @@ function tlRender(){
         opacity:${t.done?.7:1};
         transition:opacity .15s,transform .1s;
       `;
-      if(t.done){
-        pill.style.textDecoration='line-through';
-      }
+      if(t.done) pill.style.textDecoration='line-through';
       pill.addEventListener('mouseenter',()=>pill.style.transform='scaleY(1.04)');
       pill.addEventListener('mouseleave',()=>pill.style.transform='');
       pill.addEventListener('click',()=>{
-        // toggle done
         const dt=tasks[t.date];
         if(dt){const tk=dt.find(x=>x.id===t.id);if(tk){tk.done=!tk.done;scheduleSave();tlRender();}}
       });
@@ -2217,6 +2306,39 @@ function tlRender(){
   const old=document.getElementById('tl-new-task-btn');
   if(old) old.remove();
   document.body.appendChild(cta);
+
+  // ── Legend ──
+  let legend=document.getElementById('tl-legend');
+  if(!legend){
+    legend=document.createElement('div');
+    legend.id='tl-legend';
+    legend.style.cssText=`
+      position:sticky;bottom:0;left:0;right:0;
+      background:var(--bg);border-top:0.5px solid var(--border);
+      padding:6px 16px;display:flex;align-items:center;gap:16px;
+      font-size:10px;color:var(--text-3);flex-shrink:0;z-index:5;
+    `;
+    legend.innerHTML=`
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--bg-1);border:1px solid var(--text-3)"></span>
+        Task operativo
+      </span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="display:inline-block;width:10px;height:10px;transform:rotate(45deg);background:var(--text-2);border:1px solid var(--text-3)"></span>
+        Milestone
+      </span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="display:inline-block;width:10px;height:10px;transform:rotate(45deg);background:transparent;border:1px solid var(--text-3)"></span>
+        Shooting / evento
+      </span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:transparent;border:1.5px dashed #E24B4A"></span>
+        Deadline
+      </span>
+      <span style="margin-left:auto;opacity:.5">click = toggle done</span>
+    `;
+    document.getElementById('timeline-view').appendChild(legend);
+  }
 
   // Scroll to today
   const tlBody=document.getElementById('tl-body');
