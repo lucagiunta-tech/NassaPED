@@ -4323,7 +4323,7 @@ function openCollabModal(postIdx){
   const item = currentFeedItems()[postIdx];
   const myAccId = accountId(feedClientIdx, feedAccountIdx);
   const accs = (clients[feedClientIdx]?.accounts||[]).filter((_,ai)=>ai!==feedAccountIdx);
-  const list = document.getElementById('collab-acc-list');
+  const list = document.getElementById('feed-collab-acc-list');
   if(!list) return;
   list.innerHTML = '';
   if(!accs.length){
@@ -4344,17 +4344,17 @@ function openCollabModal(postIdx){
       list.appendChild(row);
     });
   }
-  openModal('collab-modal');
+  openModal('feed-collab-modal');
 }
 
 function saveCollab(){
   if(collabPostIdx===null) return;
   const items = currentFeedItems();
   const item = items[collabPostIdx];
-  const checked = Array.from(document.querySelectorAll('#collab-acc-list input[type=checkbox]:checked')).map(c=>c.value);
+  const checked = Array.from(document.querySelectorAll('#feed-collab-acc-list input[type=checkbox]:checked')).map(c=>c.value);
   item.collabAccIds = checked;
   setFeedItems(items);
-  closeModal('collab-modal');
+  closeModal('feed-collab-modal');
   renderFeedGrid();
   autoSave();
   showToast(checked.length>0?'✓ Collab impostata su '+checked.length+' account':'Collab rimossa');
