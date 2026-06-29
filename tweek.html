@@ -5120,10 +5120,13 @@ function TaskRow({
   task,
   onOpen,
   onUpdate,
-  rowColor
+  rowColor,
+  isDone,
+  onToggleDone
 }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(task.text);
+  const [hovered, setHovered] = useState(false);
   const inputRef = useRef(null);
   const isEmpty = task.style === "empty";
 
@@ -5190,8 +5193,8 @@ function TaskRow({
   }));
   return /*#__PURE__*/React.createElement("div", {
     style: rowS,
-    onMouseEnter: e => e.currentTarget.style.opacity = "0.85",
-    onMouseLeave: e => e.currentTarget.style.opacity = "1",
+    onMouseEnter: e => { e.currentTarget.style.opacity = "0.85"; setHovered(true); },
+    onMouseLeave: e => { e.currentTarget.style.opacity = "1"; setHovered(false); },
     onClick: handleClick
   }, !isEmpty && rowColor && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -5214,11 +5217,28 @@ function TaskRow({
     style: {
       fontSize: task.small ? 10 : 12,
       lineHeight: 1.4,
-      color: textColor || undefined
+      color: isDone ? "#bbb" : textColor || undefined,
+      textDecoration: isDone ? "line-through" : "none",
+      flex: 1
     }
   }, rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, {
     task: task
-  }))));
+  })),
+  // Cerchio completamento on-hover (appare solo su righe non vuote)
+  !isEmpty && (hovered || isDone) && /*#__PURE__*/React.createElement("div", {
+    onClick: e => { e.stopPropagation(); onToggleDone && onToggleDone(task.id); },
+    style: {
+      width: 18, height: 18, borderRadius: "50%",
+      border: isDone ? "2px solid #1A8C3F" : "1.5px solid #bbb",
+      background: isDone ? "#1A8C3F" : "transparent",
+      flexShrink: 0, marginRight: 6,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      color: isDone ? "#fff" : "transparent",
+      fontSize: 10, cursor: "pointer",
+      transition: "all .15s"
+    }
+  }, isDone ? "✓" : "")
+  ));
 }
 function BottomRow({
   task,
@@ -5542,6 +5562,11 @@ function NassaTweek() {
     key: task.id,
     task: task,
     rowColor: task.style !== "empty" ? taskMeta[task.id]?.color : undefined,
+    isDone: !!taskMeta[task.id]?.done,
+    onToggleDone: id => setTaskMeta(prev => ({
+      ...prev,
+      [id]: { ...(prev[id]||{}), done: !prev[id]?.done }
+    })),
     onOpen: t => openPanel(t, `${col.day}, ${col.date} 2026`, ci),
     onUpdate: t => updateTask(ci, t)
   })))))), /*#__PURE__*/React.createElement("div", {
