@@ -3026,7 +3026,6 @@ function streamRenderPanel(id){
 }
 
 // ── Init ──────────────────────────────────────────────────
-streamLoad();
 
 
 /* ══ JOB DETAIL PAGE — stile Streamtime ══ */
@@ -4304,8 +4303,16 @@ function ColorPickerHSB({
 
 // ─── TASK CONTENT ─────────────────────────────────────────────────────────────
 function TaskContent({
-  task
+  task,
+  isDone
 }) {
+  // Se completato: override totale con stile striked
+  if (isDone) return /*#__PURE__*/React.createElement("span", {
+    style: { fontSize: task.small?10:12, lineHeight:"1.4",
+      color:"#bbb", textDecoration:"line-through",
+      overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis",
+      display:"inline-block", maxWidth:"100%" }
+  }, task.text);
   const s = task.style;
   const base = {
     fontSize: task.small ? 10 : 12,
@@ -5229,13 +5236,15 @@ function TaskRow({
       alignItems: "center",
     }
   },
-    // Wrapper con strikethrough quando done
-    isDone
-      ? /*#__PURE__*/React.createElement("span", {
-          style: { textDecoration: "line-through", color: "#bbb", display: "block",
-            overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }
-        }, rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, { task: task }))
-      : (rowColor ? task.text : /*#__PURE__*/React.createElement(TaskContent, { task: task }))
+    // Testo — TaskContent gestisce isDone internamente (grigio + strikethrough)
+    rowColor
+      ? isDone
+        ? /*#__PURE__*/React.createElement("span", {
+            style: { textDecoration:"line-through", color:"#bbb",
+              overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis" }
+          }, task.text)
+        : task.text
+      : /*#__PURE__*/React.createElement(TaskContent, { task: task, isDone: isDone })
     ),
   // Cerchio completamento on-hover (appare solo su righe non vuote)
   !isEmpty && (hovered || isDone) && /*#__PURE__*/React.createElement("div", {
