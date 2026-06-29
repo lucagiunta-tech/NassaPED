@@ -2546,6 +2546,11 @@ function streamPersist(){
   try{const raw=localStorage.getItem(SK);const p=raw?JSON.parse(raw):{};p.stream_v1=stream_v1;localStorage.setItem(SK,JSON.stringify(p));flashSave();}catch(e){}
 }
 
+// STREAM API — before setView
+const STREAM_API  = '/api/project';
+const STREAM_KEY  = 'NASSA_SECRET_2026';
+const STREAM_USER = 'nassa_studio';
+
 renderLegend();renderBottom();initTeamFilter();setView('stream');
 tvLoad();
 streamLoad();
@@ -3382,9 +3387,6 @@ jvSetupCalendarDrop();
    Jobs: localStorage nassaped_tweek_v8.stream_v1
 ══════════════════════════════════════════════════════════ */
 
-const STREAM_API  = '/api/project';
-const STREAM_KEY  = 'NASSA_SECRET_2026';
-const STREAM_USER = 'nassa_studio';
 
 /* ══ FEED NASSAPED — Phase 2 ══════════════════════════════ */
 var _feedLoaded=false,_feedData=[],_showFeed=false;
