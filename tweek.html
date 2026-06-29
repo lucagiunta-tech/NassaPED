@@ -4772,10 +4772,8 @@ function TaskPanel({
     },
     onClick: () => toggle("color")
   }, "●"), popup === "color" && /*#__PURE__*/React.createElement(ColorPickerHSB, {
-    currentColor: meta.color,
-    onSelect: c => update({
-      color: c
-    }),
+    current: meta.color,
+    onSelect: c => { update({ color: c }); setTimeout(() => setPanel(null), 150); },
     onClose: close
   })), /*#__PURE__*/React.createElement("div", {
     style: {
