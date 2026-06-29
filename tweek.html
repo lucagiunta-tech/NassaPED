@@ -1935,10 +1935,33 @@ function uid(){return'id'+Date.now().toString(36)+Math.random().toString(36).sli
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 function seedTasks(ids){
-  const ws=getMonday(TODAY);const d=i=>{const x=new Date(ws);x.setDate(ws.getDate()+i);return iso(x);};
+  const day=n=>{const x=new Date(TODAY);x.setDate(TODAY.getDate()+n);return iso(x);};
   const pick=i=>ids[i%ids.length];
-  const s=[{date:d(0),text:'Pianificazione settimana',time:'9:00',client:pick(4),done:false},{date:d(1),text:'Story reel ingredienti',time:'9:00',client:pick(0),done:false},{date:d(1),text:'Approvazione palette colori',time:'11:00',client:pick(1),done:false},{date:d(2),text:'Review feed',time:'10:00',client:pick(2),done:false},{date:d(2),text:'Storyboard campagna',time:'14:00',client:pick(0),done:true},{date:d(3),text:'Brief contenuti',time:'9:00',client:pick(3),done:false},{date:d(3),text:'UGC selezione batch',time:'15:00',client:pick(1),done:false},{date:d(4),text:'Calendario editoriale',time:'10:00',client:pick(4),done:false},{date:d(4),text:'Revisione caption',time:'12:00',client:pick(2),done:false},{date:d(5),text:'Export PDF report',time:'11:00',client:pick(0),done:false}];
-  const t={};s.forEach(x=>{const id=uid();if(!t[x.date])t[x.date]=[];t[x.date].push({id,...x});});return t;
+  const entries=[
+    {date:day(-6),text:'Review mese precedente',time:'10:00',client:pick(4),done:true},
+    {date:day(-5),text:'Storyboard campagna',time:'14:00',client:pick(0),done:true},
+    {date:day(-5),text:'UGC selezione batch',time:'15:00',client:pick(1),done:true},
+    {date:day(-3),text:'Export PDF report',time:'11:00',client:pick(0),done:true},
+    {date:day(-3),text:'Revisione caption',time:'12:00',client:pick(2),done:true},
+    {date:day(-2),text:'Check analytics',time:'9:00',client:pick(3),done:true},
+    {date:day(0),text:'Pianificazione settimana',time:'9:00',client:pick(4),done:false},
+    {date:day(0),text:'Story reel ingredienti',time:'11:00',client:pick(0),done:false},
+    {date:day(1),text:'Approvazione palette colori',time:'11:00',client:pick(1),done:false,tipo:'milestone'},
+    {date:day(1),text:'Review feed',time:'10:00',client:pick(2),done:false},
+    {date:day(2),text:'Brief contenuti Q3',time:'9:00',client:pick(3),done:false,tipo:'deadline'},
+    {date:day(3),text:'Calendario editoriale luglio',time:'10:00',client:pick(4),done:false},
+    {date:day(3),text:'Shooting prodotti',time:'9:00',client:pick(0),done:false,tipo:'shooting'},
+    {date:day(4),text:'Revisione bozze',time:'14:00',client:pick(2),done:false},
+    {date:day(7),text:'Lancio campagna estate',time:'10:00',client:pick(1),done:false,tipo:'milestone'},
+    {date:day(7),text:'Consegna report mensile',time:'18:00',client:pick(4),done:false,tipo:'deadline'},
+    {date:day(8),text:'Shooting lifestyle',time:'9:00',client:pick(0),done:false,tipo:'shooting'},
+    {date:day(9),text:'Review contenuti',time:'11:00',client:pick(2),done:false},
+    {date:day(10),text:'Brief agosto',time:'10:00',client:pick(3),done:false},
+    {date:day(14),text:'Kick-off Q3',time:'9:00',client:pick(4),done:false,tipo:'milestone'},
+    {date:day(15),text:'Shooting autunnale',time:'8:00',client:pick(0),done:false,tipo:'shooting'},
+    {date:day(17),text:'Scadenza contratto',time:'18:00',client:pick(2),done:false,tipo:'deadline'},
+  ];
+  const t={};entries.forEach(x=>{const id=uid();if(!t[x.date])t[x.date]=[];t[x.date].push({id,...x});});return t;
 }
 function seedBottom(){return{backlog:[{id:'b1',text:'Integrare Google Calendar',client:'nassa',done:false},{id:'b2',text:'PWA manifest',client:'nassa',done:false}],todo:[{id:'t1',text:'Fix contrasto testi',client:'generale',done:false},{id:'t2',text:'Date picker feed',client:'nassa',done:false}],cream:[{id:'c1',text:'Ispirazione palette estate',client:'kosmetikal',done:false}]};}
 function loadData(){try{const raw=localStorage.getItem(SK);if(raw){const p=JSON.parse(raw);return{tasks:p.tasks||{},bottom:p.bottom||seedBottom(),clients:p.clients||JSON.parse(JSON.stringify(DEFAULT_CLIENTS))};}}catch(e){}const cl=JSON.parse(JSON.stringify(DEFAULT_CLIENTS));return{tasks:seedTasks(cl.map(c=>c.id)),bottom:seedBottom(),clients:cl};}
@@ -2339,7 +2362,13 @@ function tlRender(){
         <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:transparent;border:1.5px dashed #E24B4A"></span>
         Deadline
       </span>
-      <span style="margin-left:auto;opacity:.5">click = toggle done</span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:12px">
+        <span style="opacity:.5">click = toggle done</span>
+        <button onclick="tlResetData()" style="font-size:10px;padding:2px 8px;border-radius:4px;
+          border:0.5px solid var(--border);background:transparent;cursor:pointer;color:var(--text-3)">
+          ↺ Reset demo
+        </button>
+      </span>
     `;
     document.getElementById('timeline-view').appendChild(legend);
   }
@@ -2359,6 +2388,15 @@ function tlRender(){
       if(gEl&&cCol) cCol.style.minHeight=gEl.offsetHeight+'px';
     },50);
   }
+}
+
+function tlResetData(){
+  // Clear localStorage tasks and regenerate from seed with today's dates
+  const cl=JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
+  tasks=seedTasks(cl.map(c=>c.id));
+  scheduleSave();
+  tlRender();
+  showToast('Dati demo aggiornati alle date correnti');
 }
 
 function tlOpenModal(){
