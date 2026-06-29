@@ -8119,7 +8119,9 @@ function renderPilastriContent(body,ci){
   content.appendChild(grid);
 
   // Sezione Format — sotto i pilastri nella stessa pagina
-  renderFormatiSection(body, ci);
+  // Rimuovi eventuali sezioni formato precedenti prima di riaggiungere
+  body.querySelectorAll('.formati-section').forEach(el => el.remove());
+  try { renderFormatiSection(body, ci); } catch(e) { console.error('[Formati] renderFormatiSection error:', e); }
 }
 
 /* SIDEBAR TOGGLE */
@@ -10323,6 +10325,13 @@ function renderFormatiSection(body, ci){
   const cl = clients[ci]; if(!cl) return;
   const fmts = getFormati(cl.name);
 
+  // Wrapper per identificare e rimuovere la sezione prima di ri-renderizzare
+  const wrapper = document.createElement('div');
+  wrapper.className = 'formati-section';
+  // We'll append everything to wrapper, then wrapper to body
+  const origBody = body;
+  body = wrapper;  // Redirect appends to wrapper
+
   // Section header
   const secHdr = document.createElement('div');
   secHdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:24px 0 12px;border-top:0.5px solid var(--border);margin-top:8px;';
@@ -10519,6 +10528,9 @@ function renderFormatiSection(body, ci){
   };
   grid.appendChild(addCard);
   body.appendChild(grid);
+
+  // Append wrapper to real body
+  origBody.appendChild(wrapper);
 }
 
 
