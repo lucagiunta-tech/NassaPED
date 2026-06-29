@@ -1509,6 +1509,7 @@ body{
     <button class="vt-btn" id="vt-week" onclick="setView('week')">Settimana</button>
     <button class="vt-btn" id="vt-month" onclick="setView('month')">Mese</button>
     <button class="vt-btn" id="vt-anno" onclick="setView('anno')">Anno</button>
+    <button class="vt-btn" id="vt-timeline" onclick="setView('timeline')">Timeline</button>
   </div>
 
   <div class="topbar-spacer"></div>
@@ -1751,6 +1752,120 @@ body{
   <div class="bs"><div class="bs-title">Note <button class="bs-add" onclick="openModal(null,'cream')">+</button></div><div id="cream-list"></div></div>
 </div>
 
+<!-- ══ TIMELINE VIEW (Do. App pattern) ══ -->
+<div id="timeline-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;">
+  <div id="tl-header" style="
+    display:flex;align-items:flex-end;gap:0;
+    border-bottom:0.5px solid var(--border);
+    background:var(--bg);
+    position:relative;
+    flex-shrink:0;
+    overflow-x:auto;
+    scrollbar-width:none;
+  ">
+    <!-- sticky left label col -->
+    <div style="
+      position:sticky;left:0;z-index:4;
+      background:var(--bg);
+      border-right:0.5px solid var(--border);
+      flex-shrink:0;width:160px;
+      padding:12px 14px 8px;
+    ">
+      <div style="font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;
+        letter-spacing:.07em;color:var(--text-3);">Timeline</div>
+    </div>
+    <div id="tl-day-header" style="display:flex;flex:1;"></div>
+  </div>
+  <div id="tl-body" style="flex:1;overflow:auto;position:relative;display:flex;">
+    <!-- sticky client col -->
+    <div id="tl-clients-col" style="
+      position:sticky;left:0;z-index:3;
+      background:var(--bg);
+      border-right:0.5px solid var(--border);
+      flex-shrink:0;width:160px;
+    "></div>
+    <div id="tl-grid" style="flex:1;position:relative;"></div>
+  </div>
+  <!-- new task modal -->
+  <div id="tl-modal-overlay" style="
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,.35);z-index:9000;
+    align-items:center;justify-content:center;
+  " onclick="if(event.target===this)tlCloseModal()">
+    <div style="
+      background:var(--bg);border-radius:18px;
+      padding:28px 28px 24px;width:360px;
+      box-shadow:0 16px 48px rgba(0,0,0,.18);
+    " onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="font-size:22px;font-weight:700;color:var(--text-1);">Nuovo task</h2>
+        <button onclick="tlCloseModal()" style="
+          width:28px;height:28px;border-radius:50%;border:none;
+          background:var(--bg-1);color:var(--text-2);
+          font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+        ">×</button>
+      </div>
+      <!-- Name field -->
+      <input id="tl-task-name" type="text" placeholder="Nome task"
+        style="
+          width:100%;padding:14px 16px;border-radius:12px;
+          border:none;background:var(--bg-1);
+          font-size:15px;color:var(--text-1);
+          outline:none;margin-bottom:12px;
+          font-family:inherit;
+        ">
+      <!-- Date range pills -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <input id="tl-task-date-start" type="date"
+          style="
+            flex:1;padding:12px 14px;border-radius:12px;
+            border:none;background:var(--bg-1);
+            font-size:13px;color:var(--text-1);
+            outline:none;font-family:inherit;cursor:pointer;
+          ">
+        <span style="font-size:13px;color:var(--text-3);font-weight:600;">—</span>
+        <input id="tl-task-date-end" type="date"
+          style="
+            flex:1;padding:12px 14px;border-radius:12px;
+            border:none;background:var(--bg-1);
+            font-size:13px;color:var(--text-1);
+            outline:none;font-family:inherit;cursor:pointer;
+          ">
+      </div>
+      <!-- Client select -->
+      <select id="tl-task-client" style="
+        width:100%;padding:12px 14px;border-radius:12px;
+        border:none;background:var(--bg-1);
+        font-size:13px;color:var(--text-1);
+        outline:none;font-family:inherit;
+        margin-bottom:20px;cursor:pointer;
+      "></select>
+      <!-- Auto complete toggle -->
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:24px;cursor:pointer;">
+        <input type="checkbox" id="tl-task-autocomplete" checked
+          style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;">
+        <span style="font-size:14px;color:var(--text-2);">auto complete</span>
+      </label>
+      <!-- Actions -->
+      <div style="display:flex;gap:10px;">
+        <button onclick="tlCloseModal()" style="
+          flex:1;padding:14px;border-radius:12px;
+          border:none;background:var(--bg-1);
+          color:var(--text-2);font-size:14px;font-weight:500;
+          cursor:pointer;font-family:inherit;
+        ">nevermind</button>
+        <button onclick="tlSaveTask()" style="
+          flex:1;padding:14px;border-radius:12px;
+          border:none;background:var(--text-1);
+          color:var(--bg);font-size:14px;font-weight:700;
+          cursor:pointer;font-family:inherit;
+          letter-spacing:.02em;
+        ">save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ ANNO VIEW ══ -->
 <div id="anno-view" style="display:none;flex:1;overflow-y:auto;padding:24px;">
   <div id="anno-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:900px;margin:0 auto;"></div>
@@ -1886,23 +2001,261 @@ function setView(v){
   document.getElementById('month-view').style.display=v==='month'?'block':'none';
   document.getElementById('task-view').style.display=v==='tasks'?'flex':'none';
   document.getElementById('anno-view').style.display=v==='anno'?'flex':'none';
-  document.getElementById('bottom-sections').style.display=v==='anno'||v==='tasks'||v==='stream'?'none':'flex';
+  document.getElementById('bottom-sections').style.display=v==='anno'||v==='tasks'||v==='stream'||v==='timeline'?'none':'flex';
   const hints={week:'Trascina per spostare · Doppio click per modificare',month:'Clicca un giorno per i task · Doppio click per la settimana',tasks:'Clicca una card per aprire i dettagli · + Nuova task dalla toolbar',anno:'Clicca un mese per andare alla settimana',stream:'Clienti e job — il centro della pianificazione'};
   document.getElementById('hint-text').textContent=hints[v]||'';
-  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':v==='stream'?'NPlan':'';
+  document.getElementById('period-label').textContent=v==='tasks'?'Gestione Task':v==='anno'?'Vista Annuale':v==='stream'?'NPlan':v==='timeline'?'Timeline':'';
   if(v==='week'){weekOffset=0;renderWeek();}
   else if(v==='month') renderMonth();
   else if(v==='tasks'){tvPopulateClientFilter();tvRender();}
   else if(v==='anno') renderAnno();
   document.getElementById('vt-stream').classList.toggle('active',v==='stream');
   document.getElementById('stream-view').style.display=v==='stream'?'flex':'none';
+  document.getElementById('vt-timeline').classList.toggle('active',v==='timeline');
+  document.getElementById('timeline-view').style.display=v==='timeline'?'flex':'none';
   if(v==='stream'){streamInit();}
+  if(v==='timeline'){tlRender();}
 }
 function shiftPeriod(d){if(view==='week'){weekOffset+=d;renderWeek();}else if(view==='anno'){_annoYear+=d;renderAnno();}else{monthOffset+=d;renderMonth();}}
 function goToday(){weekOffset=0;monthOffset=0;_annoYear=new Date().getFullYear();if(view==='week')renderWeek();else if(view==='anno')renderAnno();else renderMonth();}
 function rebuild(){if(view==='week')renderWeek();else if(view==='anno')renderAnno();else renderMonth();}
 
 var _annoYear = new Date().getFullYear();
+// ── TIMELINE VIEW (Do. App pattern) ─────────────────────────────────────────
+const TL_DAY_W = 52;   // px per giorno
+const TL_ROW_H = 52;   // px per riga cliente
+const TL_DAYS  = 90;   // giorni mostrati
+
+function tlGetDays(){
+  const days=[];
+  const start=new Date(TODAY);
+  start.setDate(start.getDate()-14); // 2 settimane fa
+  for(let i=0;i<TL_DAYS;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    days.push(d);
+  }
+  return days;
+}
+
+function tlRender(){
+  const days=tlGetDays();
+  const hdr=document.getElementById('tl-day-header');
+  const clientsCol=document.getElementById('tl-clients-col');
+  const grid=document.getElementById('tl-grid');
+  hdr.innerHTML='';clientsCol.innerHTML='';grid.innerHTML='';
+
+  // Set grid width
+  const totalW=days.length*TL_DAY_W;
+  grid.style.width=totalW+'px';
+  grid.style.position='relative';
+  grid.style.minHeight=(clients.length*TL_ROW_H+40)+'px';
+
+  // ── Day header ──
+  let lastMonth='';
+  days.forEach((d,i)=>{
+    const isToday=iso(d)===iso(TODAY);
+    const isFirst=d.getDate()===1||i===0;
+    const mn=MONTHS[d.getMonth()];
+    // Month label at first day of month
+    if(isFirst||lastMonth!==mn){
+      const ml=document.createElement('div');
+      ml.style.cssText=`position:absolute;top:0;left:${i*TL_DAY_W}px;
+        font-size:11px;font-weight:700;color:var(--text-3);
+        text-transform:lowercase;letter-spacing:.04em;padding:4px 6px;`;
+      ml.textContent=mn;
+      hdr.appendChild(ml);
+      lastMonth=mn;
+    }
+    const cell=document.createElement('div');
+    cell.style.cssText=`
+      display:inline-flex;flex-direction:column;align-items:center;justify-content:flex-end;
+      width:${TL_DAY_W}px;flex-shrink:0;padding-bottom:6px;gap:2px;
+      border-left:0.5px solid ${isFirst?'var(--border)':'transparent'};
+    `;
+    const num=document.createElement('div');
+    num.style.cssText=`
+      width:28px;height:28px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:${isToday?800:400};
+      background:${isToday?'var(--text-1)':'transparent'};
+      color:${isToday?'var(--bg)':'var(--text-2)'};
+    `;
+    num.textContent=d.getDate();
+    const dow=document.createElement('div');
+    dow.style.cssText=`font-size:9px;color:var(--text-3);text-transform:uppercase;`;
+    dow.textContent=['dom','lun','mar','mer','gio','ven','sab'][d.getDay()];
+    cell.appendChild(dow);cell.appendChild(num);
+    hdr.appendChild(cell);
+  });
+  hdr.style.paddingTop='20px';
+
+  // ── Grid lines (vertical day separators) ──
+  days.forEach((d,i)=>{
+    if(i===0) return;
+    const line=document.createElement('div');
+    line.style.cssText=`position:absolute;top:0;left:${i*TL_DAY_W}px;
+      width:0.5px;bottom:0;background:var(--border);z-index:0;
+      ${d.getDay()===1?'background:var(--border-2);':''}`;
+    grid.appendChild(line);
+  });
+
+  // Today marker
+  const todayIdx=days.findIndex(d=>iso(d)===iso(TODAY));
+  if(todayIdx>=0){
+    const tm=document.createElement('div');
+    tm.style.cssText=`position:absolute;top:0;left:${todayIdx*TL_DAY_W+TL_DAY_W/2}px;
+      width:1.5px;bottom:0;background:var(--green);z-index:2;`;
+    grid.appendChild(tm);
+  }
+
+  // ── Client rows ──
+  const dayMap={}; days.forEach((d,i)=>dayMap[iso(d)]=i);
+
+  clients.forEach((cl,ri)=>{
+    const cs=clientStyles(cl);
+    // Client label
+    const lbl=document.createElement('div');
+    lbl.style.cssText=`
+      height:${TL_ROW_H}px;display:flex;align-items:center;
+      padding:0 14px;gap:8px;
+      border-bottom:0.5px solid var(--border);
+    `;
+    const dot=document.createElement('div');
+    dot.style.cssText=`width:8px;height:8px;border-radius:50%;background:${cl.color};flex-shrink:0;`;
+    const lname=document.createElement('div');
+    lname.style.cssText=`font-size:12px;font-weight:600;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+    lname.textContent=cl.label;
+    lbl.appendChild(dot);lbl.appendChild(lname);
+    clientsCol.appendChild(lbl);
+
+    // Row bg stripe
+    const stripe=document.createElement('div');
+    stripe.style.cssText=`position:absolute;top:${ri*TL_ROW_H}px;left:0;right:0;
+      height:${TL_ROW_H}px;border-bottom:0.5px solid var(--border);z-index:0;`;
+    grid.appendChild(stripe);
+
+    // Tasks for this client
+    const clTasks=[];
+    Object.entries(tasks).forEach(([date,tlist])=>{
+      if(!dayMap.hasOwnProperty(date)) return;
+      (tlist||[]).forEach(t=>{
+        if(t.client===cl.id) clTasks.push({...t, date});
+      });
+    });
+
+    // Sort by date, assign lanes to avoid overlap
+    clTasks.sort((a,b)=>a.date.localeCompare(b.date));
+    const lanes=[];
+    clTasks.forEach(t=>{
+      const di=dayMap[t.date];
+      if(di===undefined) return;
+      let lane=lanes.findIndex(endDay=>endDay<di);
+      if(lane<0){lane=lanes.length;lanes.push(0);}
+      lanes[lane]=di+1;
+
+      const LANE_H=20, LANE_PAD=4;
+      const top=ri*TL_ROW_H+LANE_PAD+lane*(LANE_H+2);
+      const pill=document.createElement('div');
+      pill.title=t.text+(t.done?' ✓':'');
+      pill.style.cssText=`
+        position:absolute;
+        left:${di*TL_DAY_W+3}px;
+        top:${top}px;
+        width:${TL_DAY_W-6}px;
+        height:${LANE_H}px;
+        border-radius:6px;
+        background:${t.done?cs.bg+'99':cs.bg};
+        border:1px solid ${cs.border};
+        z-index:1;
+        display:flex;align-items:center;
+        padding:0 6px;
+        gap:4px;
+        cursor:pointer;
+        overflow:hidden;
+        opacity:${t.done?.7:1};
+        transition:opacity .15s,transform .1s;
+      `;
+      if(t.done){
+        pill.style.textDecoration='line-through';
+      }
+      pill.addEventListener('mouseenter',()=>pill.style.transform='scaleY(1.04)');
+      pill.addEventListener('mouseleave',()=>pill.style.transform='');
+      pill.addEventListener('click',()=>{
+        // toggle done
+        const dt=tasks[t.date];
+        if(dt){const tk=dt.find(x=>x.id===t.id);if(tk){tk.done=!tk.done;scheduleSave();tlRender();}}
+      });
+      const dot2=document.createElement('div');
+      dot2.style.cssText=`width:5px;height:5px;border-radius:50%;background:${cs.txt};flex-shrink:0;opacity:.7;`;
+      const txt=document.createElement('div');
+      txt.style.cssText=`font-size:10px;font-weight:600;color:${cs.txt};
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+      txt.textContent=t.text;
+      pill.appendChild(dot2);pill.appendChild(txt);
+      grid.appendChild(pill);
+    });
+  });
+
+  // ── New task CTA ──
+  const cta=document.createElement('button');
+  cta.style.cssText=`
+    position:fixed;bottom:24px;right:24px;
+    background:var(--text-1);color:var(--bg);
+    border:none;border-radius:14px;
+    padding:12px 20px;font-size:14px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;gap:8px;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+    z-index:100;
+    display:${document.getElementById('timeline-view').style.display==='flex'?'flex':'none'};
+  `;
+  cta.id='tl-new-task-btn';
+  cta.innerHTML='<span style="font-size:18px;line-height:1">+</span> Nuovo task';
+  cta.addEventListener('click',tlOpenModal);
+
+  // Remove old btn if exists
+  const old=document.getElementById('tl-new-task-btn');
+  if(old) old.remove();
+  document.body.appendChild(cta);
+
+  // Scroll to today
+  const tlBody=document.getElementById('tl-body');
+  if(todayIdx>=0){
+    setTimeout(()=>{
+      tlBody.scrollLeft=Math.max(0,(todayIdx-3)*TL_DAY_W);
+    },50);
+  }
+}
+
+function tlOpenModal(){
+  const today=iso(TODAY);
+  document.getElementById('tl-task-name').value='';
+  document.getElementById('tl-task-date-start').value=today;
+  document.getElementById('tl-task-date-end').value=today;
+  // Populate client select
+  const sel=document.getElementById('tl-task-client');
+  sel.innerHTML=clients.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  document.getElementById('tl-modal-overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('tl-task-name').focus(),50);
+}
+
+function tlCloseModal(){
+  document.getElementById('tl-modal-overlay').style.display='none';
+}
+
+function tlSaveTask(){
+  const name=document.getElementById('tl-task-name').value.trim();
+  if(!name) return;
+  const date=document.getElementById('tl-task-date-start').value||iso(TODAY);
+  const client=document.getElementById('tl-task-client').value;
+  if(!tasks[date]) tasks[date]=[];
+  tasks[date].push({id:uid(),text:name,time:'',client,done:false});
+  scheduleSave();
+  tlCloseModal();
+  tlRender();
+  showToast('Task aggiunto');
+}
+
 function renderAnno(){
   const grid=document.getElementById('anno-grid');
   grid.innerHTML='';
