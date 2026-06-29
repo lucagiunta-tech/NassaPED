@@ -91,9 +91,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .cv-lb-inner{position:relative;max-width:min(420px,90vw);max-height:80dvh;border-radius:var(--r);overflow:hidden;background:#000;}
 .cv-lb-inner img,.cv-lb-inner video{max-width:100%;max-height:80dvh;object-fit:contain;display:block;}
 .cv-lb-close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;}
-.cv-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:#fff;border:none;color:#111;font-size:20px;font-weight:700;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s;}
-.cv-lb-nav:hover{opacity:.8;}
-.cv-lb-prev{left:10px;}.cv-lb-next{right:10px;}
+/* cv-lb-nav removed — outer post nav arrows removed per design */
 
 /* ANNO PANEL */
 .cv-anno-wrap{padding:16px;}
@@ -164,8 +162,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div class="cv-lb" id="cv-lb" onclick="if(event.target===this)cvLbClose()">
   <div class="cv-lb-inner" id="cv-lb-inner">
     <button class="cv-lb-close" onclick="cvLbClose()">×</button>
-    <button class="cv-lb-nav cv-lb-prev" id="cv-lb-prev" onclick="cvLbNav(-1)">‹</button>
-    <button class="cv-lb-nav cv-lb-next" id="cv-lb-next" onclick="cvLbNav(1)">›</button>
   </div>
 </div>
 
@@ -710,7 +706,7 @@ function cvLbClose() {
   if(inner){ inner.querySelectorAll('video').forEach(v=>{ v.pause(); v.src=''; v.remove(); }); }
   document.getElementById('cv-lb').classList.remove('open');
 }
-function cvLbNav(d) { cvLbIdx=(cvLbIdx+d+cvLbItems.length)%cvLbItems.length; cvLbSlide=0; cvLbRender(); }
+// cvLbNav removed — no post-to-post navigation in lightbox
 let cvLbSlide = 0; // current slide index within a carousel
 function cvLbRender() {
   const inner = document.getElementById('cv-lb-inner');
@@ -751,8 +747,8 @@ function cvLbRender() {
       const side = dir < 0 ? 'left:8px' : 'right:8px';
       b.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${side};background:#fff;color:#111;border:none;font-size:22px;font-weight:700;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;`;
       b.onclick = e => { e.stopPropagation(); cvLbSlide=Math.max(0,Math.min(item.slides.length-1,cvLbSlide+dir)); cvLbRender(); };
-      // Hide if at boundary
-      if((dir<0 && cvLbSlide===0) || (dir>0 && cvLbSlide===item.slides.length-1)) b.style.opacity='0.3';
+      // Hide completely at boundary — no ghost button
+      if((dir<0 && cvLbSlide===0) || (dir>0 && cvLbSlide===item.slides.length-1)) b.style.display='none';
       return b;
     };
     wrap.appendChild(mkSlideBtn('‹',-1));
@@ -789,11 +785,9 @@ function cvLbRender() {
     }
   }
 
-  // Outer arrows always navigate between posts (unchanged from original)
-  document.getElementById('cv-lb-prev').style.display=cvLbItems.length>1?'flex':'none';
-  document.getElementById('cv-lb-next').style.display=cvLbItems.length>1?'flex':'none';
+  // No outer post-navigation arrows — only inner carousel slide arrows are used
 }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape')cvLbClose(); if(e.key==='ArrowLeft')cvLbNav(-1); if(e.key==='ArrowRight')cvLbNav(1); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')cvLbClose(); });
 
 // TOAST
 function cvShowToast(msg) {
