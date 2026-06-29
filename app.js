@@ -340,8 +340,16 @@ const CLOUD = {
     function fixDbxUrl(u) {
       if(!u || !u.startsWith('http')) return u;
       if(!u.includes('dropbox')) return u;
+      // New-style /scl/fi/ links (have rlkey= param) — keep www.dropbox.com, just flip dl=0->dl=1
+      if(u.includes('/scl/fi/') || u.includes('/scl/fo/')){
+        return u.replace(/([?&])dl=0/, '$1dl=1')
+                .replace(/([?&])dl=1(&|$)/, '$1dl=1$2') // idempotent
+                // if no dl= param at all, add it
+                .replace(/^((?!dl=).)*$/, m => m + (m.includes('?') ? '&dl=1' : '?dl=1'));
+      }
+      // Old-style /s/ /sh/ links — swap domain + ensure dl=1
       let f = u.replace('www.dropbox.com','dl.dropboxusercontent.com')
-               .replace('?dl=0','').replace('?dl=1','');
+               .replace(/[?&]dl=0/,'').replace(/[?&]dl=1/,'');
       if(!f.includes('dl=')) f += (f.includes('?') ? '&dl=1' : '?dl=1');
       return f;
     }
@@ -1088,8 +1096,16 @@ function detectType(file_or_url){
 function fixDbxUrl(u){
   if(!u||!u.startsWith('http'))return u;
   if(!u.includes('dropbox'))return u;
-  let f=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','').replace('?raw=1','');
-  if(f.includes('dl.dropboxusercontent.com')&&!f.includes('dl='))f+=f.includes('?')?'&dl=1':'?dl=1';
+  // New-style /scl/fi/ or /scl/fo/ links — keep www.dropbox.com, just ensure dl=1
+  if(u.includes('/scl/fi/')||u.includes('/scl/fo/')){
+    let f=u.replace(/([?&])dl=\d/,'$1dl=1');
+    if(!/[?&]dl=/.test(f))f+=f.includes('?')?'&dl=1':'?dl=1';
+    return f;
+  }
+  // Old-style /s/ /sh/ links — swap domain + ensure dl=1
+  let f=u.replace('www.dropbox.com','dl.dropboxusercontent.com')
+         .replace(/[?&]dl=0/,'').replace(/[?&]dl=1/,'').replace(/[?&]raw=1/,'');
+  if(!f.includes('dl='))f+=f.includes('?')?'&dl=1':'?dl=1';
   return f;
 }
 function makeMedia(url,type,opts={}){
@@ -3132,25 +3148,11 @@ function setCarouselUrlTab(tab){
   if(hint) hint.textContent=isFrame?'Copia il link di condivisione da Frame.io.':'URL pubblico accessibile (JPG, PNG, MP4…)';
 }
 function normaliseMediaUrl(raw){
-  // Dropbox share links: convert to direct download
-  // www.dropbox.com/s/xxx/file.jpg?dl=0  -> https://dl.dropboxusercontent.com/s/xxx/file.jpg
-  // www.dropbox.com/scl/fi/xxx -> keep, add dl=1
-  let url=raw.trim();
-  if(/dropbox\.com/.test(url)){
-    // Remove dl=0 param and replace with dl=1 for direct download
-    url=url.replace(/[?&]dl=0/,'').replace(/dropbox\.com/,'dl.dropboxusercontent.com');
-    // strip any trailing query leftovers from dropboxusercontent
-    url=url.split('?')[0];
-    // For scl/fi links keep original but force dl=1
-    if(/dropbox\.com\/scl/.test(raw)){
-      url=raw.replace(/[?&]dl=\d/,'').replace(/\?$/,'');
-      url+=(url.includes('?')?'&':'?')+'dl=1';
-    }
-    return url;
-  }
-  // Frame.io links — use as-is (no direct media, will show as link icon)
-  if(/frame\.io|frameio/.test(url)) return url;
-  // Already a direct media URL
+  const url=raw.trim();
+  if(!url)return url;
+  // Dropbox — delegate to fixDbxUrl which handles both old /s/ and new /scl/fi/ formats
+  if(url.includes('dropbox.com')) return fixDbxUrl(url);
+  // Frame.io / frameio — use as-is
   return url;
 }
 function addCarouselUrl(){
