@@ -2106,20 +2106,26 @@ function renderFeedGrid(){
             const mbr=menuBtn.getBoundingClientRect();
             pp.style.cssText='position:fixed;top:'+(mbr.bottom+4)+'px;right:'+(window.innerWidth-mbr.right)+'px;z-index:500;min-width:190px;';
             const hdr=document.createElement('div');
-            hdr.style.cssText='padding:8px 12px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:0.5px solid var(--border);margin-bottom:4px;';
+            hdr.style.cssText='padding:8px 12px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px;';
             hdr.textContent='Assegna pilastro';
             pp.appendChild(hdr);
             // Nessuno
-            const none=document.createElement('div');
-            none.className='ctx-popup-item'+(item.pilastro===''?' ctx-popup-item-active':'');
-            none.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:var(--border);display:inline-block;margin-right:8px;"></span>Nessuno';
-            none.onclick=()=>{item.pilastro='';autoSave();refreshFeed(true);pp.remove();};
+            const none=document.createElement('button');
+            none.className='ctx-popup-btn'+(item.pilastro===''?' active':'');
+            none.style.cssText='display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;border:none;background:none;font-size:13px;color:#fff;cursor:pointer;font-family:var(--font);';
+            none.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);display:inline-block;flex-shrink:0;"></span>Nessuno';
+            none.onmouseenter=e=>none.style.background='rgba(255,255,255,.08)';
+            none.onmouseleave=e=>none.style.background='none';
+            none.onclick=()=>{item.pilastro='';autoSave();refreshFeed(true);pp.remove();renderPilastrFilterBar();};
             pp.appendChild(none);
             // Pilastri
             (_pils2.length>0?_pils2:getPilastri(_clientNameFromIdx(globalClientIdx>=0?globalClientIdx:feedClientIdx))).forEach(p=>{
-              const row=document.createElement('div');
-              row.className='ctx-popup-item'+(item.pilastro===p.name?' ctx-popup-item-active':'');
-              row.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+p.color+';display:inline-block;margin-right:8px;flex-shrink:0;"></span>'+esc(p.name);
+              const row=document.createElement('button');
+              row.className='ctx-popup-btn';
+              row.style.cssText='display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;border:none;background:none;font-size:13px;cursor:pointer;font-family:var(--font);color:#fff;'+(item.pilastro===p.name?'background:rgba(255,255,255,.1);font-weight:600;':'');
+              row.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+p.color+';display:inline-block;flex-shrink:0;"></span>'+esc(p.name);
+              row.onmouseenter=e=>{if(item.pilastro!==p.name)row.style.background='rgba(255,255,255,.08)';};
+              row.onmouseleave=e=>{if(item.pilastro!==p.name)row.style.background='none';};
               row.onclick=()=>{item.pilastro=p.name;autoSave();refreshFeed(true);pp.remove();renderPilastrFilterBar();};
               pp.appendChild(row);
             });
@@ -2129,7 +2135,7 @@ function renderFeedGrid(){
             tagRow.style.cssText='padding:6px 10px;display:flex;align-items:center;gap:6px;';
             const tagInp=document.createElement('input');
             tagInp.placeholder='+ tag libero (Enter)';
-            tagInp.style.cssText='flex:1;font-size:11px;border:0.5px solid var(--border);border-radius:6px;padding:4px 8px;outline:none;font-family:var(--font);background:var(--surface-lt);';
+            tagInp.style.cssText='flex:1;font-size:11px;border:0.5px solid rgba(255,255,255,.15);border-radius:6px;padding:4px 8px;outline:none;font-family:var(--font);background:rgba(255,255,255,.08);color:#fff;';
             tagInp.onkeydown=e=>{
               if(e.key==='Enter'){const v=tagInp.value.trim();if(v&&!(item.tags||[]).includes(v)){if(!item.tags)item.tags=[];item.tags.push(v);autoSave();refreshFeed(true);pp.remove();renderPilastrFilterBar();}
               }if(e.key==='Escape')pp.remove();
