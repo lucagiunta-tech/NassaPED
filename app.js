@@ -2108,28 +2108,37 @@ function renderFeedGrid(){
         if(_hasClientNote) feedStateBadge.style.background='rgba(224,92,0,0.85)';
         feedStateBadge.onclick=e=>{e.stopPropagation();openApprModal(idx,currentFeedItems());};
         cell.appendChild(feedStateBadge);
-        // Pilastro badge — angolo alto sinistra, visibile se pilastro assegnato e toggle ON
-        if(showAllPilastro && item.pilastro){
-          const _pilBadge2 = document.createElement('div');
-          _pilBadge2.className = 'feed-cell-pilastro-badge';
-          const _pData2 = (_getPilastriForCurrent()||[]).find(p=>p.name===item.pilastro);
-          const _pColor2 = _pData2 ? _pData2.color : '#e8e8f4';
-          const _r=parseInt(_pColor2.slice(1,3),16),_g=parseInt(_pColor2.slice(3,5),16),_b=parseInt(_pColor2.slice(5,7),16);
-          const _pText2 = (_r*0.299+_g*0.587+_b*0.114)>150 ? '#111' : '#fff';
-          _pilBadge2.style.cssText = `position:absolute;top:8px;left:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor2};color:${_pText2};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25);`;
-          _pilBadge2.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${_pText2};opacity:.45;display:inline-block;flex-shrink:0;"></span>${esc(item.pilastro)}`;
-          cell.appendChild(_pilBadge2);
-        // Formato badge — angolo alto destra (main loop)
-        if(showAllFormato && item.formato){
-          const _fmtBadge2 = document.createElement('div');
-          const _fmtData2 = (_getFormatiForCurrent()||[]).find(f=>f.name===item.formato);
-          const _fmtColor2 = _fmtData2 ? _fmtData2.color : '#ffd6b2';
-          const _fr2=parseInt(_fmtColor2.slice(1,3),16),_fg2=parseInt(_fmtColor2.slice(3,5),16),_fb2=parseInt(_fmtColor2.slice(5,7),16);
-          const _fmtText2 = (_fr2*0.299+_fg2*0.587+_fb2*0.114)>150 ? '#111' : '#fff';
-          _fmtBadge2.style.cssText = `position:absolute;top:8px;right:8px;z-index:5;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_fmtColor2};color:${_fmtText2};pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25);max-width:calc(100% - 50px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
-          _fmtBadge2.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:'+_fmtText2+';opacity:.45;display:inline-block;flex-shrink:0;"></span>'+esc(item.formato);
-          cell.appendChild(_fmtBadge2);
-        }
+        // Badge pilastro + formato — sulla stessa riga di Bozza, in basso
+        if((showAllPilastro && item.pilastro) || (showAllFormato && item.formato)){
+          const _tagRow = document.createElement('div');
+          _tagRow.style.cssText = 'position:absolute;bottom:38px;left:8px;right:8px;z-index:5;display:flex;align-items:center;gap:4px;pointer-events:none;flex-wrap:nowrap;overflow:hidden;';
+          // Spacer per allineare dopo il badge stato (Bozza ~60px)
+          const _spacer = document.createElement('span');
+          _spacer.style.cssText = 'display:inline-block;width:68px;flex-shrink:0;';
+          _tagRow.appendChild(_spacer);
+          // Pilastro badge
+          if(showAllPilastro && item.pilastro){
+            const _pData2 = (_getPilastriForCurrent()||[]).find(p=>p.name===item.pilastro);
+            const _pColor2 = _pData2 ? _pData2.color : '#e8e8f4';
+            const _r=parseInt(_pColor2.slice(1,3),16),_g=parseInt(_pColor2.slice(3,5),16),_b=parseInt(_pColor2.slice(5,7),16);
+            const _pText2 = (_r*0.299+_g*0.587+_b*0.114)>150 ? '#111' : '#fff';
+            const _pilBadge2 = document.createElement('span');
+            _pilBadge2.style.cssText = `display:inline-flex;align-items:center;gap:3px;padding:2px 7px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_pColor2};color:${_pText2};max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;`;
+            _pilBadge2.innerHTML = `<span style="width:5px;height:5px;border-radius:50%;background:${_pText2};opacity:.5;display:inline-block;flex-shrink:0;"></span>${esc(item.pilastro)}`;
+            _tagRow.appendChild(_pilBadge2);
+          }
+          // Formato badge
+          if(showAllFormato && item.formato){
+            const _fmtData2 = (_getFormatiForCurrent()||[]).find(f=>f.name===item.formato);
+            const _fmtColor2 = _fmtData2 ? _fmtData2.color : '#ffd6b2';
+            const _fr2=parseInt(_fmtColor2.slice(1,3),16),_fg2=parseInt(_fmtColor2.slice(3,5),16),_fb2=parseInt(_fmtColor2.slice(5,7),16);
+            const _fmtText2 = (_fr2*0.299+_fg2*0.587+_fb2*0.114)>150 ? '#111' : '#fff';
+            const _fmtBadge2 = document.createElement('span');
+            _fmtBadge2.style.cssText = `display:inline-flex;align-items:center;gap:3px;padding:2px 7px 2px 5px;border-radius:99px;font-size:10px;font-weight:700;background:${_fmtColor2};color:${_fmtText2};max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;`;
+            _fmtBadge2.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:'+_fmtText2+';opacity:.5;display:inline-block;flex-shrink:0;"></span>'+esc(item.formato);
+            _tagRow.appendChild(_fmtBadge2);
+          }
+          cell.appendChild(_tagRow);
         }
 
         const dpTrigger=document.createElement('button');dpTrigger.className='date-add-btn dp-trigger-btn';
