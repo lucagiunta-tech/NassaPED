@@ -76,6 +76,15 @@
 .bk-asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
 .bk-asset-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .12s;}
 .bk-asset-card:hover{border-color:var(--green);}
+/* ── Macro nav (2 livelli) ── */
+.macro-nav{display:flex;flex-direction:column;}
+.macro-tabs{display:flex;gap:0;border-bottom:0.5px solid var(--border);padding:0 8px;}
+.macro-tab{padding:6px 14px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s,border-color .12s;white-space:nowrap;}
+.macro-tab:hover{color:var(--text-2);}
+.macro-tab.active{color:var(--text-1);border-bottom-color:var(--green);}
+.macro-sub{display:none !important;}
+.macro-sub.macro-visible{display:inline-flex !important;}
+.macro-sub-studio{display:inline-flex !important;} /* default visible on load */
 </style>
 </head>
 <body>
@@ -101,8 +110,34 @@
     <div class="acc-switcher" id="acc-switcher" style="display:none;">
       <div id="acc-btns" style="display:flex;gap:4px;"></div>
     </div>
-    <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
-      <div class="sub-tab" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
+        <!-- Macro-aree (livello 1) + Sub-tab (livello 2) -->
+    <div class="macro-nav" id="macro-nav">
+      <div class="macro-tabs">
+        <div class="macro-tab active" id="macro-studio"       onclick="switchMacro('studio')">Studio</div>
+        <div class="macro-tab"        id="macro-pianificazione" onclick="switchMacro('pianificazione')">Pianificazione</div>
+        <div class="macro-tab"        id="macro-lancio"       onclick="switchMacro('lancio')">Lancio</div>
+      </div>
+      <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
+        <!-- Studio -->
+        <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
+        <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-shooting"   onclick="switchTab('shooting')">Shooting</div>
+        <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-brand"      onclick="switchTab('brand')">Brand Kit</div>
+        <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-pilastri"   onclick="switchTab('pilastri')">Pilastri</div>
+        <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-mood"       onclick="switchTab('mood')">Moodboard</div>
+        <!-- Pianificazione -->
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-feed"       onclick="switchTab('feed')">Feed</div>
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-stories"    onclick="switchTab('stories')">Stories</div>
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-ped"        onclick="switchTab('ped')">UGC</div>
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-cal"        onclick="switchTab('cal')">Calendario</div>
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-anno"       onclick="switchTab('anno')">Piano annuale</div>
+        <div class="sub-tab macro-sub macro-sub-pianificazione" id="sub-tab-preview"    onclick="switchTab('preview')">Preview</div>
+        <!-- Lancio -->
+        <div class="sub-tab macro-sub macro-sub-lancio" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
+        <div class="sub-tab macro-sub macro-sub-lancio" id="sub-tab-landing"    onclick="switchTab('landing')">Landing</div>
+        <div class="sub-tab macro-sub macro-sub-lancio" id="sub-tab-stampa"     onclick="switchTab('stampa')">Stampa</div>
+      </div>
+    </div>
       <div class="sub-tab" id="sub-tab-shooting"   onclick="switchTab('shooting')">Shooting</div>
       <div class="sub-tab" id="sub-tab-brand"      onclick="switchTab('brand')">Brand Kit</div>
       <div class="sub-tab" id="sub-tab-pilastri"   onclick="switchTab('pilastri')">Pilastri</div>
@@ -1797,7 +1832,14 @@
 <div class="toast" id="toast"></div>
 
 <script src="/app.js?v=1782745430"></script>
+<script>
+// Init macro nav dopo che app.js carica
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    if(typeof switchMacro==='function') switchMacro('studio', true);
+  }, 200);
+});
+</script>
 
 </body>
-</html
->
+</html>

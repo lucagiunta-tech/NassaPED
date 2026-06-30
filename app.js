@@ -1224,6 +1224,35 @@ window.addEventListener('popstate', (e) => {
 });
 
 /* TAB SWITCHING */
+
+// ── Macro navigation (Studio / Pianificazione / Lancio) ──
+const TAB_TO_MACRO = {
+  notes:'studio',shooting:'studio',brand:'studio',pilastri:'studio',mood:'studio',
+  storyboard:'pianificazione',feed:'pianificazione',stories:'pianificazione',
+  ped:'pianificazione',cal:'pianificazione',anno:'pianificazione',preview:'pianificazione',
+  ads:'lancio',landing:'lancio',stampa:'lancio',
+};
+
+let currentMacro = 'studio';
+
+function switchMacro(macro, skipTabSwitch){
+  currentMacro = macro;
+  // Update macro tab active state
+  ['studio','pianificazione','lancio'].forEach(m => {
+    const el = document.getElementById('macro-'+m);
+    if(el) el.classList.toggle('active', m===macro);
+  });
+  // Show only sub-tabs for this macro
+  document.querySelectorAll('.macro-sub').forEach(el => {
+    el.classList.toggle('macro-visible', el.classList.contains('macro-sub-'+macro));
+  });
+  // Switch to first tab of macro if not already in it
+  if(!skipTabSwitch){
+    const firstTab = Object.entries(TAB_TO_MACRO).find(([t,m])=>m===macro)?.[0];
+    if(firstTab && TAB_TO_MACRO[currentTab] !== macro) switchTab(firstTab);
+  }
+}
+
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
@@ -1235,6 +1264,9 @@ function switchTab(tab){
     // FIX: si and sn were identical — deduplicated to one call
     const si=document.getElementById('si-'+t);if(si)si.classList.toggle('active',t===tab);
   });
+  // Sync macro nav — show correct macro for this tab
+  const tabMacro = TAB_TO_MACRO[tab] || 'studio';
+  if(tabMacro !== currentMacro) switchMacro(tabMacro, true);
   // Topbar unificata: mostra/nascondi sezione cliente
   const clientSection=document.getElementById('topbar-client-section');
   if(clientSection) clientSection.style.display = (tab!=='studio') ? 'contents' : 'none';
