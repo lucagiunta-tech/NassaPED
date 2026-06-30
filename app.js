@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -397,6 +397,7 @@ const CLOUD = {
     landing    = data.landing    || {};
     stampa     = data.stampa     || {};
     mood       = data.mood       || {};
+    shooting   = data.shooting   || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -1225,7 +1226,7 @@ window.addEventListener('popstate', (e) => {
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood'];
+  const allTabs=['studio','notes','shooting','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1275,6 +1276,7 @@ function switchTab(tab){
   if(tab==='landing'){renderLandingTab();}
   if(tab==='stampa'){renderStampaTab();}
   if(tab==='mood'){renderMoodTab();}
+  if(tab==='shooting'){renderShootingTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -11884,6 +11886,306 @@ function deleteMoodItem(id){
       autoSave();
       renderMoodTab();
       showToast('Elemento eliminato');
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   SHOOTING BRIEF — NassaContent
+   shooting[clientId] = [{
+     id, nome, data, location, obiettivo, mood_ref,
+     soggetti, formato, non_fare, output, note,
+     stato: 'bozza'|'confermato'|'completato',
+     createdAt, updatedAt
+   }]
+══════════════════════════════════════════════════════════ */
+
+let shooting = {};
+
+function currentShootingKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+function currentShootings(){
+  const k = currentShootingKey();
+  return k ? (shooting[k] || []) : [];
+}
+function setShootings(arr){
+  const k = currentShootingKey();
+  if(k) shooting[k] = arr;
+}
+
+const SHOOTING_STATI = {
+  bozza:      {label:'Bozza',      color:'#888',   bg:'rgba(100,100,100,.1)'},
+  confermato: {label:'Confermato', color:'#185FA5', bg:'rgba(24,95,165,.1)'},
+  completato: {label:'Completato', color:'#1d9e75', bg:'rgba(29,158,117,.1)'},
+};
+
+const SHOOTING_SEZIONI = [
+  {key:'obiettivo', lbl:'Obiettivo dello shooting',
+   hint:'Cosa deve comunicare questo set di immagini. A cosa serviranno.',
+   ph:'Es. Feed Instagram per il lancio estivo. 15 scatti per caroselli + storie. Mood caldo, territoriale.'},
+  {key:'mood_ref',  lbl:'Mood & Reference visivi',
+   hint:'Descrivi lo stile visivo desiderato.',
+   ph:'Es. Luce naturale golden hour. Textures naturali (legno, pietra, lino). No studio, no sfondi bianchi.'},
+  {key:'soggetti',  lbl:'Soggetti e scene da riprendere',
+   hint:'Lista dettagliata di cosa fotografare. Più specifico è, meglio è.',
+   ph:'1. Prodotto su piano in legno\n2. Mani che lavorano\n3. Vista del paesaggio'},
+  {key:'formato',   lbl:'Formati e specifiche tecniche',
+   hint:'Orientamento, proporzioni, numero scatti per soggetto.',
+   ph:'- Feed: 1:1 e 4:5 (30 scatti)\n- Stories: 9:16 (10 scatti)\n- RAW + JPEG'},
+  {key:'location',  lbl:'Location e logistica',
+   hint:'Dove, quando, con chi. Note pratiche per il fotografo.',
+   ph:'Location: Via del Carrubo 12, Ragusa\nData: sabato 12 luglio, ore 7:00-13:00\nPresenti: Luca (fotografo), Mario (AD)'},
+  {key:'non_fare',  lbl:'Visual do / don\'t',
+   hint:'Cosa evitare assolutamente in questo shooting.',
+   ph:'NON usare: filtri HDR, colori saturi, sfondi bianchi\nEvitare: riprese frontali simmetriche, loghi visibili'},
+  {key:'output',    lbl:'Deliverable attesi',
+   hint:'Cosa consegna il fotografo, in che formato, entro quando.',
+   ph:'- 60 scatti selezionati, ritoccati in Lightroom\n- sRGB per social\n- Consegna WeTransfer entro 7 giorni'},
+];
+
+function renderShootingTab(){
+  const body = document.getElementById('shooting-body');
+  if(!body) return;
+  body.innerHTML = '';
+
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){
+    body.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per gestire gli shooting brief.</div>';
+    return;
+  }
+
+  const items = currentShootings();
+
+  // ── Header ──
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;';
+  hdr.innerHTML = `<div>
+    <h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Shooting Brief</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — ${items.length} brief</p>
+  </div>`;
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn';
+  addBtn.style.cssText = 'background:var(--green);color:#003;border-color:var(--green);font-weight:600;';
+  addBtn.textContent = '+ Nuovo brief';
+  addBtn.onclick = () => openShootingDetail(null);
+  hdr.appendChild(addBtn);
+  body.appendChild(hdr);
+
+  // ── KPI ──
+  if(items.length){
+    const kpi = document.createElement('div');
+    kpi.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;';
+    const byStato = (s) => items.filter(i => i.stato===s).length;
+    [
+      {label:'Totale', val:items.length, sub:'brief'},
+      {label:'Confermati', val:byStato('confermato'), sub:'in agenda', color:'#185FA5'},
+      {label:'Completati', val:byStato('completato'), sub:'consegnati', color:'#1d9e75'},
+    ].forEach(k => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface-lt);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;';
+      card.innerHTML = `<div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">${k.label}</div>
+        <div style="font-size:22px;font-weight:600;color:${k.color||'var(--text-1)'};">${k.val}</div>
+        <div style="font-size:10px;color:var(--text-3);">${k.sub}</div>`;
+      kpi.appendChild(card);
+    });
+    body.appendChild(kpi);
+  }
+
+  // ── Brief list ──
+  if(!items.length){
+    const em = document.createElement('div');
+    em.style.cssText = 'text-align:center;padding:60px 0;color:var(--text-3);';
+    em.innerHTML = '<div style="font-size:36px;margin-bottom:12px;">📷</div><div style="font-size:14px;font-weight:500;margin-bottom:6px;">Nessun shooting brief</div><div style="font-size:12px;">Crea il primo brief per documentare obiettivi, mood e shotlist.</div>';
+    body.appendChild(em);
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+  items.forEach((item, idx) => {
+    const st = SHOOTING_STATI[item.stato] || SHOOTING_STATI.bozza;
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:border-color .12s;';
+    card.onmouseenter = () => card.style.borderColor = 'var(--border-strong)';
+    card.onmouseleave = () => card.style.borderColor = 'var(--border)';
+
+    // Dot
+    const dot = document.createElement('div');
+    dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${st.color};flex-shrink:0;`;
+    card.appendChild(dot);
+
+    // Info
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0;';
+    info.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span style="font-size:14px;font-weight:500;color:var(--text-1);">${esc(item.nome||'Shooting senza titolo')}</span>
+        <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:${st.bg};color:${st.color};">${st.label}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);">
+        ${item.data?'📅 '+esc(item.data)+' · ':''}
+        ${item.location?'📍 '+esc(item.location.split('\n')[0]):''}
+      </div>
+      ${item.obiettivo?`<div style="font-size:11px;color:var(--text-3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:500px;">${esc(item.obiettivo.slice(0,120))}${item.obiettivo.length>120?'…':''}</div>`:''}`;
+    card.appendChild(info);
+
+    // Actions
+    const acts = document.createElement('div');
+    acts.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+    const editBtn = document.createElement('button');
+    editBtn.style.cssText = 'padding:5px 12px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
+    editBtn.textContent = 'Apri';
+    editBtn.onclick = e => { e.stopPropagation(); openShootingDetail(idx); };
+    acts.appendChild(editBtn);
+    card.appendChild(acts);
+
+    card.onclick = () => openShootingDetail(idx);
+    list.appendChild(card);
+  });
+
+  body.appendChild(list);
+}
+
+// ── Shooting Detail (full-page modal) ──────────────────
+let _shootingEditIdx = null;
+
+function openShootingDetail(idx){
+  _shootingEditIdx = idx;
+  const items = currentShootings();
+  const item = idx !== null ? items[idx] : {};
+  document.getElementById('shooting-detail')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'shooting-detail';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border-radius:14px;width:100%;max-width:680px;margin:auto;';
+  box.onclick = e => e.stopPropagation();
+
+  // Header
+  const hdrEl = document.createElement('div');
+  hdrEl.style.cssText = 'padding:18px 24px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1;border-radius:14px 14px 0 0;';
+  hdrEl.innerHTML = `
+    <div>
+      <div style="font-size:16px;font-weight:600;color:var(--text-1);">${idx!==null?'Modifica':'Nuovo'} Shooting Brief</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:2px;">Mod. 10 — Brief fotografico + shotlist</div>
+    </div>
+    <button onclick="document.getElementById('shooting-detail').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:22px;line-height:1;">×</button>`;
+  box.appendChild(hdrEl);
+
+  // Body
+  const bodyEl = document.createElement('div');
+  bodyEl.style.cssText = 'padding:20px 24px;display:flex;flex-direction:column;gap:16px;';
+
+  // Top fields: nome, data, stato
+  const topRow = document.createElement('div');
+  topRow.style.cssText = 'display:grid;grid-template-columns:1fr 160px 140px;gap:12px;';
+  topRow.innerHTML = `
+    <div>
+      <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome shooting</label>
+      <input id="sh-nome" type="text" placeholder="Es. Shooting estate 2026 — Pergole" value="${esc(item.nome||'')}"
+        style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Data shooting</label>
+      <input id="sh-data" type="date" value="${item.data||''}"
+        style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Stato</label>
+      <select id="sh-stato" style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;">
+        <option value="bozza" ${(item.stato||'bozza')==='bozza'?'selected':''}>Bozza</option>
+        <option value="confermato" ${item.stato==='confermato'?'selected':''}>Confermato</option>
+        <option value="completato" ${item.stato==='completato'?'selected':''}>Completato</option>
+      </select>
+    </div>`;
+  bodyEl.appendChild(topRow);
+
+  // Sezioni textarea
+  SHOOTING_SEZIONI.forEach(sec => {
+    const fieldEl = document.createElement('div');
+    fieldEl.innerHTML = `
+      <label style="font-size:12px;font-weight:500;color:var(--text-1);display:block;margin-bottom:3px;">${esc(sec.lbl)}</label>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;">${esc(sec.hint)}</div>
+      <textarea id="sh-${sec.key}" rows="3" placeholder="${esc(sec.ph)}"
+        style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;box-sizing:border-box;line-height:1.6;">${esc(item[sec.key]||'')}</textarea>`;
+    bodyEl.appendChild(fieldEl);
+  });
+
+  // Note extra
+  const noteEl = document.createElement('div');
+  noteEl.innerHTML = `
+    <label style="font-size:12px;font-weight:500;color:var(--text-1);display:block;margin-bottom:6px;">Note aggiuntive</label>
+    <textarea id="sh-note" rows="2" placeholder="Qualsiasi altra nota per il team…"
+      style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;box-sizing:border-box;">${esc(item.note||'')}</textarea>`;
+  bodyEl.appendChild(noteEl);
+
+  box.appendChild(bodyEl);
+
+  // Footer
+  const footerEl = document.createElement('div');
+  footerEl.style.cssText = 'padding:14px 24px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;bottom:0;background:var(--surface);border-radius:0 0 14px 14px;';
+  footerEl.innerHTML = `
+    ${idx!==null?`<button onclick="deleteShooting(${idx})" style="padding:7px 14px;border:0.5px solid #f87171;border-radius:8px;font-size:12px;color:#f87171;cursor:pointer;background:transparent;font-family:var(--font);">Elimina</button>`:'<span></span>'}
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('shooting-detail').remove()" style="padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);">Annulla</button>
+      <button onclick="saveShooting()" style="padding:7px 16px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;color:#003;cursor:pointer;background:var(--green);font-family:var(--font);">Salva</button>
+    </div>`;
+  box.appendChild(footerEl);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  document.getElementById('sh-nome')?.focus();
+}
+
+function saveShooting(){
+  const g = id => (document.getElementById(id)?.value||'').trim();
+  const nome = g('sh-nome');
+  if(!nome){ showToast('Inserisci un nome per lo shooting','warn'); return; }
+
+  const items = currentShootings();
+  const entry = {
+    id: _shootingEditIdx!==null ? items[_shootingEditIdx].id : 'sh_'+Date.now(),
+    nome,
+    data: g('sh-data'),
+    stato: g('sh-stato')||'bozza',
+    ...Object.fromEntries(SHOOTING_SEZIONI.map(s => [s.key, g('sh-'+s.key)])),
+    note: g('sh-note'),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if(_shootingEditIdx!==null){
+    items[_shootingEditIdx] = {...items[_shootingEditIdx], ...entry};
+  } else {
+    entry.createdAt = entry.updatedAt;
+    items.push(entry);
+  }
+
+  setShootings(items);
+  autoSave();
+  document.getElementById('shooting-detail')?.remove();
+  renderShootingTab();
+  showToast(_shootingEditIdx!==null?'✓ Brief aggiornato':'✓ Brief creato');
+}
+
+function deleteShooting(idx){
+  showConfirm({
+    title:'Elimina shooting brief',
+    body:'Eliminare questo shooting brief? I dati andranno persi.',
+    okLabel:'Elimina', type:'danger',
+    onOk:()=>{
+      const items = currentShootings();
+      items.splice(idx,1);
+      setShootings(items);
+      autoSave();
+      document.getElementById('shooting-detail')?.remove();
+      renderShootingTab();
+      showToast('Brief eliminato');
     }
   });
 }

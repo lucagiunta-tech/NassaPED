@@ -43,6 +43,11 @@ export default async function handler(req, res) {
       const brandMap = {};
       (brandRows || []).forEach(r => { brandMap[r.client_id] = r.data || {}; });
 
+      // Also load feeds from main snapshot
+      const allFeeds = proj?.data?.feeds || {};
+      const allPilastri = proj?.data?.pilastri || {};
+      const allFormati = proj?.data?.formati || {};
+
       // Merge
       // Generate consistent color from name if not set
       const nameColor = (name) => {
@@ -67,6 +72,10 @@ export default async function handler(req, res) {
           brand: bd.brand || { colors: [], fonts: [], logos: [], templates: [] },
           approvals: bd.approvals || [],
           moodboard: bd.moodboard || [],
+          accounts: c.accounts || [],
+          feeds: allFeeds,
+          pilastri: allPilastri[c.name] || [],
+          formati: allFormati[c.name] || [],
         };
       });
 
