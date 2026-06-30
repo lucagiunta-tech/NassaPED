@@ -1312,9 +1312,11 @@ function switchMacro(macro, skipTabSwitch, userClick){
   });
   const backLbl = document.getElementById('macro-back-label');
   if(backLbl) backLbl.textContent = MACRO_LABELS[macro] || macro;
-  if(nav && userClick){
-    nav.classList.add('in-sub');
-  }
+  // in-sub va aggiunto sempre quando si attiva una macro (non solo su userClick):
+  // anche il routing automatico al boot deve mostrare i sub-tab, non solo
+  // i click manuali dell'utente. switchTab() gestisce la rimozione di in-sub
+  // quando si torna a 'studio' (lista clienti).
+  if(nav) nav.classList.add('in-sub');
   if(!skipTabSwitch){
     const firstTab = Object.entries(TAB_TO_MACRO).find(([t,m])=>m===macro)?.[0];
     if(firstTab && TAB_TO_MACRO[currentTab] !== macro) switchTab(firstTab, true);
