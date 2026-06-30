@@ -13772,26 +13772,4 @@ function renderStratOverviewTab(){
     body.appendChild(idCard);
   }
 
-  // Quick links
-  const linksHdr = document.createElement('div');
-  linksHdr.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;';
-  linksHdr.textContent = 'Vai a';
-  body.appendChild(linksHdr);
-
-  const linksRow = document.createElement('div');
-  linksRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
-  [
-    {lbl:'📋 Brand Audit', tab:'audit'},
-    {lbl:'📊 Piano Marketing', tab:'pdm'},
-    {lbl:'💬 Piano Comunicazione', tab:'pdc'},
-    {lbl:'⭐ Strategy Builder', tab:'stratbuild'},
-    {lbl:'◈ Brand Portal', tab:'brandportal'},
-  ].forEach(l => {
-    const btn = document.createElement('button');
-    btn.style.cssText = 'padding:8px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
-    btn.textContent = l.lbl;
-    btn.onclick = () => switchTab(l.tab);
-    linksRow.appendChild(btn);
-  });
-  body.appendChild(linksRow);
 }
