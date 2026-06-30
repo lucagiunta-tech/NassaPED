@@ -1243,32 +1243,40 @@ const TAB_TO_MACRO = {
 
 let currentMacro = 'studio';
 
+const MACRO_LABELS = {strategia:'Strategia',studio:'Studio',produzione:'Produzione',pianificazione:'Pianificazione',lancio:'Lancio',monitoraggio:'Monitoraggio'};
+
 function switchMacro(macro, skipTabSwitch, userClick){
   const nav = document.getElementById('macro-nav');
-  const isCurrentlyExpanded = nav?.classList.contains('expanded') || false;
   currentMacro = macro;
-  // Update macro tab active state
   ['strategia','studio','produzione','pianificazione','lancio','monitoraggio'].forEach(m => {
     const el = document.getElementById('macro-'+m);
     if(el) el.classList.toggle('active', m===macro);
   });
-  // Show only sub-tabs for this macro
   document.querySelectorAll('.macro-sub').forEach(el => {
     el.classList.toggle('macro-visible', el.classList.contains('macro-sub-'+macro));
   });
-  // Sub-tabs row: click su macro-tab apre/chiude in base allo stato VISIBILE al momento del click
-  if(nav){
-    if(userClick){
-      nav.classList.toggle('expanded', !isCurrentlyExpanded);
-    } else {
-      nav.classList.remove('expanded');
-    }
+  const backLbl = document.getElementById('macro-back-label');
+  if(backLbl) backLbl.textContent = MACRO_LABELS[macro] || macro;
+  if(nav && userClick){
+    nav.classList.add('in-sub');
   }
-  // Switch to first tab of macro if not already in it
   if(!skipTabSwitch){
     const firstTab = Object.entries(TAB_TO_MACRO).find(([t,m])=>m===macro)?.[0];
-    if(firstTab && TAB_TO_MACRO[currentTab] !== macro) switchTab(firstTab);
+    if(firstTab && TAB_TO_MACRO[currentTab] !== macro) switchTab(firstTab, true);
   }
+  updateSubTabActiveHighlight();
+}
+
+function closeSubNav(){
+  const nav = document.getElementById('macro-nav');
+  if(nav) nav.classList.remove('in-sub');
+}
+
+function updateSubTabActiveHighlight(){
+  document.querySelectorAll('.macro-sub').forEach(el => {
+    const tabId = el.id.replace('sub-tab-','');
+    el.classList.toggle('sub-active', tabId === currentTab);
+  });
 }
 
 function switchTab(tab, preserveExpanded){
@@ -1285,7 +1293,7 @@ function switchTab(tab, preserveExpanded){
   // Sync macro nav — show correct macro for this tab
   const tabMacro = TAB_TO_MACRO[tab] || 'studio';
   if(tabMacro !== currentMacro) switchMacro(tabMacro, true);
-  else if(!preserveExpanded) document.getElementById('macro-nav')?.classList.remove('expanded');
+  updateSubTabActiveHighlight();
   // Topbar unificata: mostra/nascondi sezione cliente
   const clientSection=document.getElementById('topbar-client-section');
   if(clientSection) clientSection.style.display = (tab!=='studio') ? 'contents' : 'none';
