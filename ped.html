@@ -57,6 +57,25 @@
 .nc-mood-dz:hover{border-color:var(--green);color:var(--text-2);}
 @media(max-width:700px){.nc-mood-masonry{columns:2;}}
 @media(max-width:440px){.nc-mood-masonry{columns:1;}}
+/* ── Brand Kit ── */
+.bk-section{margin-bottom:28px;}
+.bk-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid var(--border);}
+.bk-section-title{font-size:13px;font-weight:600;color:var(--text-1);text-transform:uppercase;letter-spacing:.06em;}
+.bk-color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;}
+.bk-color-card{border-radius:8px;overflow:hidden;border:0.5px solid var(--border);cursor:pointer;transition:border-color .12s;}
+.bk-color-card:hover{border-color:var(--border-strong);}
+.bk-color-swatch{height:60px;width:100%;}
+.bk-color-info{padding:6px 8px;background:var(--surface);}
+.bk-font-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px;}
+.bk-logo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.bk-logo-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .12s;}
+.bk-logo-card:hover{border-color:var(--green);}
+.bk-logo-preview{height:100px;display:flex;align-items:center;justify-content:center;background:var(--surface-lt);padding:12px;}
+.bk-logo-preview img{max-width:100%;max-height:76px;object-fit:contain;}
+.bk-logo-info{padding:8px 10px;border-top:0.5px solid var(--border);}
+.bk-asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+.bk-asset-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .12s;}
+.bk-asset-card:hover{border-color:var(--green);}
 </style>
 </head>
 <body>
@@ -85,6 +104,7 @@
     <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
       <div class="sub-tab" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
       <div class="sub-tab" id="sub-tab-shooting"   onclick="switchTab('shooting')">Shooting</div>
+      <div class="sub-tab" id="sub-tab-brand"      onclick="switchTab('brand')">Brand Kit</div>
       <div class="sub-tab" id="sub-tab-pilastri"   onclick="switchTab('pilastri')">Pilastri</div>
       <div class="sub-tab" id="sub-tab-mood"       onclick="switchTab('mood')">Moodboard</div>
       <div class="sub-tab" id="sub-tab-storyboard" onclick="switchTab('storyboard')">Storyboard</div>
@@ -158,6 +178,10 @@
         <div class="sb-nav-item" id="si-shooting" onclick="switchTab('shooting')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 9a2 2 0 0 1 2-2h1l2-3h4l2 3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           <span>Shooting</span>
+        </div>
+        <div class="sb-nav-item" id="si-brand" onclick="switchTab('brand')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <span>Brand Kit</span>
         </div>
       <div class="sb-nav-item" id="si-pilastri" onclick="switchTab('pilastri')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -634,6 +658,13 @@
   <div class="tab-page" id="page-shooting">
     <div class="studio-main" id="shooting-main">
       <div id="shooting-body"></div>
+    </div>
+  </div>
+
+  <!-- BRAND KIT TAB -->
+  <div class="tab-page" id="page-brand">
+    <div class="studio-main" id="brand-kit-main">
+      <div id="brand-kit-body"></div>
     </div>
   </div>
 

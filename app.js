@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, brandKit, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -398,6 +398,7 @@ const CLOUD = {
     stampa     = data.stampa     || {};
     mood       = data.mood       || {};
     shooting   = data.shooting   || {};
+    brandKit   = data.brandKit   || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -1226,7 +1227,7 @@ window.addEventListener('popstate', (e) => {
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','shooting','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood'];
+  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1277,6 +1278,7 @@ function switchTab(tab){
   if(tab==='stampa'){renderStampaTab();}
   if(tab==='mood'){renderMoodTab();}
   if(tab==='shooting'){renderShootingTab();}
+  if(tab==='brand'){renderBrandKitTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -12188,4 +12190,547 @@ function deleteShooting(idx){
       showToast('Brief eliminato');
     }
   });
+}
+
+/* ══════════════════════════════════════════════════════════
+   BRAND KIT — NassaContent
+   brandKit[clientId] = {
+     colors: [{id, name, hex, role, usage}],
+     fonts:  [{id, name, role, weight, url}],
+     logos:  [{id, name, url, variant, format, note}],
+     assets: [{id, name, url, format, categoria, note, data}]
+   }
+   Stessa struttura di NassaBrand per compatibilità futura.
+══════════════════════════════════════════════════════════ */
+
+let brandKit = {};
+
+const BK_ASSET_CATS = [
+  {id:'company_profile',  lbl:'Company Profile',      icon:'📋'},
+  {id:'corporate_id',     lbl:'Corporate Identity',   icon:'🏢'},
+  {id:'packaging',        lbl:'Packaging & Etichette', icon:'📦'},
+  {id:'comunicazione',    lbl:'Comunicazione',        icon:'📢'},
+  {id:'social_templates', lbl:'Social Templates',     icon:'📱'},
+  {id:'fotografia',       lbl:'Fotografia',           icon:'📸'},
+];
+const BK_COLOR_ROLES  = ['Primario','Secondario','Accento','Neutro','Background','Testo'];
+const BK_FONT_ROLES   = ['Display','Body','Mono','Accent'];
+const BK_LOGO_VARIANTS= ['colore','bianco','nero','ridotto'];
+
+function currentBrandKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+function currentBrandKit(){
+  const k = currentBrandKey();
+  const def = {colors:[],fonts:[],logos:[],assets:[]};
+  return k ? (brandKit[k] || def) : def;
+}
+function setBrandKit(data){
+  const k = currentBrandKey();
+  if(k) brandKit[k] = data;
+}
+function updateBrandKit(updater){
+  const k = currentBrandKey();
+  if(!k) return;
+  const current = brandKit[k] || {colors:[],fonts:[],logos:[],assets:[]};
+  brandKit[k] = updater(current);
+  autoSave();
+}
+
+function renderBrandKitTab(){
+  const body = document.getElementById('brand-kit-body');
+  if(!body) return;
+  body.innerHTML = '';
+
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){
+    body.innerHTML = '<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per gestire il Brand Kit.</div>';
+    return;
+  }
+
+  const bk = currentBrandKit();
+  const pc = bk.colors[0]?.hex || cl.color || '#1d9e75';
+
+  // ── Header ──
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;';
+  hdr.innerHTML = `<div>
+    <h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Brand Kit</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — identità visiva</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <div style="width:14px;height:14px;border-radius:3px;background:${pc};"></div>
+    <span style="font-size:12px;color:var(--text-3);">${pc}</span>
+  </div>`;
+  body.appendChild(hdr);
+
+  // ── PALETTE ──
+  _bkRenderColors(body, bk, pc);
+
+  // ── FONT ──
+  _bkRenderFonts(body, bk);
+
+  // ── LOGHI ──
+  _bkRenderLogos(body, bk);
+
+  // ── ASSET GRAFICI ──
+  _bkRenderAssets(body, bk);
+}
+
+// ── Palette ──────────────────────────────────────────────
+function _bkRenderColors(body, bk, pc){
+  const sec = _bkSection(body, 'Palette colori', '+ Colore', () => _bkOpenColorModal(null));
+  const grid = document.createElement('div');
+  grid.className = 'bk-color-grid';
+
+  if(!bk.colors.length){
+    grid.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 0;">Nessun colore. Aggiungi la palette del brand.</div>';
+  }
+
+  bk.colors.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'bk-color-card';
+    card.onclick = () => _bkOpenColorModal(i);
+    const r=parseInt(c.hex.slice(1,3),16),g=parseInt(c.hex.slice(3,5),16),bl=parseInt(c.hex.slice(5,7),16);
+    const textClr = (r*0.299+g*0.587+bl*0.114)>150?'#111':'#fff';
+    card.innerHTML = `
+      <div class="bk-color-swatch" style="background:${c.hex};display:flex;align-items:flex-end;padding:6px 8px;">
+        <span style="font-size:9px;font-weight:700;color:${textClr};opacity:.7;font-family:var(--font-mono);">${c.hex}</span>
+      </div>
+      <div class="bk-color-info">
+        <div style="font-size:11px;font-weight:500;color:var(--text-1);margin-bottom:1px;">${esc(c.name||c.role||'Colore')}</div>
+        <div style="font-size:10px;color:var(--text-3);">${esc(c.role||'')}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  sec.appendChild(grid);
+}
+
+function _bkOpenColorModal(idx){
+  const bk = currentBrandKit();
+  const c = idx!==null ? bk.colors[idx] : {name:'',hex:'#C25B2A',role:'Primario',usage:''};
+  _bkModal('Colore brand', `
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:12px;align-items:start;">
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Colore</label>
+        <input id="bk-hex" type="color" value="${c.hex}" style="width:100%;height:48px;border:0.5px solid var(--border);border-radius:8px;cursor:pointer;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome</label>
+          <input id="bk-cname" type="text" value="${esc(c.name)}" placeholder="es. Terra di Siena"
+            style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Ruolo</label>
+          <select id="bk-crole" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            ${BK_COLOR_ROLES.map(r=>`<option ${c.role===r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Utilizzo (opzionale)</label>
+      <input id="bk-cusage" type="text" value="${esc(c.usage||'')}" placeholder="es. CTA, headline, bottoni primari"
+        style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+    </div>`,
+    () => {
+      const hex = document.getElementById('bk-hex')?.value || '#C25B2A';
+      const name = document.getElementById('bk-cname')?.value?.trim() || '';
+      const role = document.getElementById('bk-crole')?.value || 'Primario';
+      const usage = document.getElementById('bk-cusage')?.value?.trim() || '';
+      updateBrandKit(bk => {
+        const colors = [...bk.colors];
+        const entry = {id: idx!==null?colors[idx].id:'c_'+Date.now(), name, hex, role, usage};
+        if(idx!==null) colors[idx]=entry; else colors.push(entry);
+        return {...bk, colors};
+      });
+      renderBrandKitTab();
+    },
+    idx!==null ? ()=>{
+      updateBrandKit(bk=>({...bk,colors:bk.colors.filter((_,i)=>i!==idx)}));
+      renderBrandKitTab();
+    } : null
+  );
+}
+
+// ── Font ─────────────────────────────────────────────────
+function _bkRenderFonts(body, bk){
+  const sec = _bkSection(body, 'Tipografia', '+ Font', () => _bkOpenFontModal(null));
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+  if(!bk.fonts.length){
+    list.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 0;">Nessun font. Aggiungi i font del brand.</div>';
+  }
+
+  bk.fonts.forEach((f, i) => {
+    const card = document.createElement('div');
+    card.className = 'bk-font-card';
+    card.style.cursor = 'pointer';
+    card.onclick = () => _bkOpenFontModal(i);
+    if(f.url) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet'; link.href = f.url;
+      document.head.appendChild(link);
+    }
+    card.innerHTML = `
+      <div style="width:56px;height:56px;border-radius:8px;background:var(--surface-lt);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-size:28px;font-weight:${f.weight||700};font-family:'${f.name}',sans-serif;color:var(--text-1);">Aa</span>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:500;color:var(--text-1);margin-bottom:2px;">${esc(f.name)}</div>
+        <div style="font-size:11px;color:var(--text-3);">${esc(f.role||'')} ${f.weight?'· Weight '+f.weight:''}</div>
+        ${f.url?`<div style="font-size:10px;color:var(--text-accent,#185FA5);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.url)}</div>`:''}
+      </div>`;
+    list.appendChild(card);
+  });
+
+  sec.appendChild(list);
+}
+
+function _bkOpenFontModal(idx){
+  const bk = currentBrandKit();
+  const f = idx!==null ? bk.fonts[idx] : {name:'',role:'Display',weight:'700',url:''};
+  _bkModal('Font brand', `
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome font</label>
+        <input id="bk-fname" type="text" value="${esc(f.name)}" placeholder="es. Playfair Display, Inter"
+          style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Ruolo</label>
+          <select id="bk-frole" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            ${BK_FONT_ROLES.map(r=>`<option ${f.role===r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Weight</label>
+          <select id="bk-fweight" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            ${['300','400','500','600','700','800','900'].map(w=>`<option ${f.weight===w?'selected':''}>${w}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Google Fonts URL (opzionale)</label>
+        <input id="bk-furl" type="url" value="${esc(f.url||'')}" placeholder="https://fonts.googleapis.com/css2?family=..."
+          style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font-mono);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+      </div>
+    </div>`,
+    () => {
+      const name = document.getElementById('bk-fname')?.value?.trim() || '';
+      if(!name){ showToast('Inserisci il nome del font','warn'); return false; }
+      const role = document.getElementById('bk-frole')?.value || 'Display';
+      const weight = document.getElementById('bk-fweight')?.value || '700';
+      const url = document.getElementById('bk-furl')?.value?.trim() || '';
+      updateBrandKit(bk => {
+        const fonts = [...bk.fonts];
+        const entry = {id:idx!==null?fonts[idx].id:'f_'+Date.now(), name, role, weight, url};
+        if(idx!==null) fonts[idx]=entry; else fonts.push(entry);
+        return {...bk, fonts};
+      });
+      renderBrandKitTab();
+    },
+    idx!==null ? ()=>{
+      updateBrandKit(bk=>({...bk,fonts:bk.fonts.filter((_,i)=>i!==idx)}));
+      renderBrandKitTab();
+    } : null
+  );
+}
+
+// ── Loghi ─────────────────────────────────────────────────
+function _bkRenderLogos(body, bk){
+  const sec = _bkSection(body, 'Loghi', '+ Logo', () => _bkOpenLogoModal(null));
+  const grid = document.createElement('div');
+  grid.className = 'bk-logo-grid';
+
+  if(!bk.logos.length){
+    grid.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 0;">Nessun logo. Carica le varianti del logo.</div>';
+  }
+
+  bk.logos.forEach((logo, i) => {
+    const card = document.createElement('div');
+    card.className = 'bk-logo-card';
+
+    const bg = logo.variant==='bianco'?'#111':logo.variant==='nero'?'#fff':'var(--surface-lt)';
+    card.innerHTML = `
+      <div class="bk-logo-preview" style="background:${bg};">
+        ${logo.url?`<img src="${logo.url}" alt="${esc(logo.name||'')}">`:
+          '<div style="font-size:28px;opacity:.3;">🏷</div>'}
+      </div>
+      <div class="bk-logo-info">
+        <div style="font-size:11px;font-weight:500;color:var(--text-1);margin-bottom:2px;">${esc(logo.name||logo.variant||'Logo')}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:10px;color:var(--text-3);">${esc(logo.variant||'')} ${logo.format?'· '+logo.format:''}</span>
+          ${logo.url?`<a href="${logo.url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--text-accent,#185FA5);text-decoration:none;">↓</a>`:''}
+        </div>
+      </div>`;
+    card.onclick = () => _bkOpenLogoModal(i);
+    grid.appendChild(card);
+  });
+
+  sec.appendChild(grid);
+}
+
+function _bkOpenLogoModal(idx){
+  const bk = currentBrandKit();
+  const logo = idx!==null ? bk.logos[idx] : {name:'',variant:'colore',format:'SVG',url:'',note:''};
+  let _logoUrl = logo.url || '';
+
+  const modalEl = _bkModal('Logo', `
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome</label>
+          <input id="bk-lname" type="text" value="${esc(logo.name)}" placeholder="es. Logo principale"
+            style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Variante</label>
+          <select id="bk-lvariant" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            ${BK_LOGO_VARIANTS.map(v=>`<option ${logo.variant===v?'selected':''}>${v}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">File logo</label>
+        <input id="bk-logo-file" type="file" accept="image/*,.svg,.pdf,.ai,.eps" style="display:none;">
+        <div id="bk-logo-preview" style="border:0.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface-lt);min-height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;" onclick="document.getElementById('bk-logo-file').click()">
+          ${_logoUrl?`<img src="${_logoUrl}" style="max-width:100%;max-height:80px;object-fit:contain;">`:
+            '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px;">⬆ Clicca per caricare</div>'}
+          ${_logoUrl?`<button onclick="event.stopPropagation();window._bkClearLogo()" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;font-size:12px;">×</button>`:''}
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Note</label>
+        <input id="bk-lnote" type="text" value="${esc(logo.note||'')}" placeholder="es. Uso su sfondi chiari"
+          style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+      </div>
+    </div>`,
+    async () => {
+      // Upload if new file selected
+      const fileInp = document.getElementById('bk-logo-file');
+      const file = fileInp?.files?.[0];
+      if(file){
+        showToast('⟳ Upload logo…');
+        try{
+          const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+          const fd = new FormData();
+          fd.append('file',file);
+          fd.append('path',`/NassaStudio/${cl?.name||'Condiviso'}/BrandKit/Loghi/${file.name}`);
+          const res = await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':'NASSA_SECRET_2026'},credentials:'include',body:fd});
+          if(!res.ok) throw new Error('Upload '+res.status);
+          const d = await res.json();
+          _logoUrl = d.url||d.shared_link||d.link||'';
+        }catch(e){ showToast('Errore upload: '+e.message,'warn'); return false; }
+      }
+      const name = document.getElementById('bk-lname')?.value?.trim()||'';
+      const variant = document.getElementById('bk-lvariant')?.value||'colore';
+      const note = document.getElementById('bk-lnote')?.value?.trim()||'';
+      const ext = _logoUrl?.split('?')[0]?.split('.').pop()?.toUpperCase()||'';
+      updateBrandKit(bk=>{
+        const logos=[...bk.logos];
+        const entry={id:idx!==null?logos[idx].id:'l_'+Date.now(),name,variant,format:ext,url:_logoUrl,note};
+        if(idx!==null)logos[idx]=entry; else logos.push(entry);
+        return {...bk,logos};
+      });
+      renderBrandKitTab();
+    },
+    idx!==null ? ()=>{
+      updateBrandKit(bk=>({...bk,logos:bk.logos.filter((_,i)=>i!==idx)}));
+      renderBrandKitTab();
+    } : null
+  );
+
+  // File change handler
+  const fileInp = document.getElementById('bk-logo-file');
+  if(fileInp) fileInp.onchange = (e) => {
+    const f = e.target.files?.[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      _logoUrl = ev.target.result; // temp preview — will be replaced by Dropbox URL on save
+      const prev = document.getElementById('bk-logo-preview');
+      if(prev) prev.innerHTML = `<img src="${_logoUrl}" style="max-width:100%;max-height:80px;object-fit:contain;">`;
+    };
+    reader.readAsDataURL(f);
+  };
+  window._bkClearLogo = () => {
+    _logoUrl = '';
+    const prev = document.getElementById('bk-logo-preview');
+    if(prev) prev.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px;">⬆ Clicca per caricare</div>';
+  };
+}
+
+// ── Asset grafici ─────────────────────────────────────────
+function _bkRenderAssets(body, bk){
+  BK_ASSET_CATS.forEach(cat => {
+    const catAssets = (bk.assets||[]).filter(a=>a.categoria===cat.id);
+    const sec = _bkSection(body, cat.icon+' '+cat.lbl, '+ Aggiungi', ()=>_bkOpenAssetModal(null,cat.id));
+    if(!catAssets.length) return;
+
+    const grid = document.createElement('div');
+    grid.className = 'bk-asset-grid';
+    catAssets.forEach((a,i)=>{
+      const realIdx = (bk.assets||[]).indexOf(a);
+      const card = document.createElement('div');
+      card.className = 'bk-asset-card';
+      card.onclick = ()=>_bkOpenAssetModal(realIdx, cat.id);
+      card.innerHTML = `
+        <div style="font-size:22px;flex-shrink:0;">${cat.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:500;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.name||'Asset')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">${a.format||''} ${a.data?'· '+a.data:''}</div>
+          ${a.url?`<a href="${a.url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--text-accent,#185FA5);text-decoration:none;">↓ Scarica</a>`:''}
+        </div>`;
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+  });
+}
+
+function _bkOpenAssetModal(idx, catId){
+  const bk = currentBrandKit();
+  const a = idx!==null ? (bk.assets||[])[idx] : {name:'',categoria:catId||'company_profile',format:'PDF',note:'',data:new Date().toLocaleDateString('it-IT',{month:'short',year:'numeric'})};
+  let _assetUrl = a.url||'';
+
+  _bkModal('Asset grafico', `
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome file</label>
+        <input id="bk-aname" type="text" value="${esc(a.name)}" placeholder="es. Brochure Aziendale 2026"
+          style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Categoria</label>
+          <select id="bk-acat" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+            ${BK_ASSET_CATS.map(c=>`<option value="${c.id}" ${(a.categoria||catId)===c.id?'selected':''}>${c.icon} ${c.lbl}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Data</label>
+          <input id="bk-adata" type="text" value="${esc(a.data||'')}" placeholder="es. Giu 2026"
+            style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">File</label>
+        <input id="bk-asset-file" type="file" style="display:none;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="document.getElementById('bk-asset-file').click()" style="padding:6px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-2);font-family:var(--font);">⬆ Carica file</button>
+          <span id="bk-asset-fname" style="font-size:11px;color:var(--text-3);">${_assetUrl?'File caricato':'Nessun file'}</span>
+        </div>
+        ${_assetUrl?`<a href="${_assetUrl}" target="_blank" style="font-size:11px;color:var(--text-accent,#185FA5);display:block;margin-top:4px;">↓ Scarica attuale</a>`:''}
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Note</label>
+        <input id="bk-anote" type="text" value="${esc(a.note||'')}" placeholder="Note interne"
+          style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">
+      </div>
+    </div>`,
+    async () => {
+      const fileInp = document.getElementById('bk-asset-file');
+      const file = fileInp?.files?.[0];
+      if(file){
+        showToast('⟳ Upload asset…');
+        try{
+          const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+          const fd = new FormData();
+          fd.append('file',file);
+          fd.append('path',`/NassaStudio/${cl?.name||'Condiviso'}/BrandKit/Assets/${file.name}`);
+          const res = await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':'NASSA_SECRET_2026'},credentials:'include',body:fd});
+          if(!res.ok) throw new Error('Upload '+res.status);
+          const d = await res.json();
+          _assetUrl = d.url||d.shared_link||d.link||'';
+          const ext = file.name.split('.').pop().toUpperCase();
+          document.getElementById('bk-asset-fname').textContent = file.name;
+          // Auto-fill name
+          const nameInp = document.getElementById('bk-aname');
+          if(nameInp&&!nameInp.value) nameInp.value = file.name.replace(/\.[^.]+$/,'').replace(/_+/g,' ').trim();
+        }catch(e){ showToast('Errore upload: '+e.message,'warn'); return false; }
+      }
+      const name = document.getElementById('bk-aname')?.value?.trim()||'';
+      if(!name){ showToast('Inserisci un nome','warn'); return false; }
+      const cat = document.getElementById('bk-acat')?.value||catId;
+      const data = document.getElementById('bk-adata')?.value?.trim()||'';
+      const note = document.getElementById('bk-anote')?.value?.trim()||'';
+      const ext = _assetUrl?.split('?')[0]?.split('.').pop()?.toUpperCase()||a.format||'';
+      updateBrandKit(bk=>{
+        const assets=[...(bk.assets||[])];
+        const entry={id:idx!==null?assets[idx].id:'a_'+Date.now(),name,categoria:cat,format:ext,url:_assetUrl,data,note};
+        if(idx!==null)assets[idx]=entry; else assets.push(entry);
+        return {...bk,assets};
+      });
+      renderBrandKitTab();
+    },
+    idx!==null ? ()=>{
+      updateBrandKit(bk=>({...bk,assets:(bk.assets||[]).filter((_,i)=>i!==idx)}));
+      renderBrandKitTab();
+    } : null
+  );
+
+  const fileInp = document.getElementById('bk-asset-file');
+  if(fileInp) fileInp.onchange = e => {
+    const f = e.target.files?.[0]; if(!f) return;
+    document.getElementById('bk-asset-fname').textContent = f.name;
+  };
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function _bkSection(parent, title, btnLabel, btnFn){
+  const sec = document.createElement('div');
+  sec.className = 'bk-section';
+  const hdr = document.createElement('div');
+  hdr.className = 'bk-section-hdr';
+  hdr.innerHTML = `<span class="bk-section-title">${title}</span>`;
+  if(btnLabel){
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:4px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
+    btn.textContent = btnLabel;
+    btn.onclick = btnFn;
+    hdr.appendChild(btn);
+  }
+  sec.appendChild(hdr);
+  parent.appendChild(sec);
+  return sec;
+}
+
+function _bkModal(title, bodyHtml, onSave, onDelete){
+  document.getElementById('bk-modal')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'bk-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML = `
+  <div style="background:var(--surface);border-radius:14px;width:100%;max-width:460px;overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:600;color:var(--text-1);">${title}</div>
+      <button onclick="document.getElementById('bk-modal').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px;">×</button>
+    </div>
+    <div style="padding:16px 20px;">${bodyHtml}</div>
+    <div style="padding:12px 20px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      ${onDelete?`<button id="bk-modal-del" style="padding:6px 12px;border:0.5px solid #f87171;border-radius:8px;font-size:12px;color:#f87171;cursor:pointer;background:transparent;font-family:var(--font);">Elimina</button>`:'<span></span>'}
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('bk-modal').remove()" style="padding:6px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);">Annulla</button>
+        <button id="bk-modal-save" style="padding:6px 14px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;color:#003;cursor:pointer;background:var(--green);font-family:var(--font);">Salva</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('bk-modal-save').onclick = async () => {
+    const result = await onSave();
+    if(result !== false) overlay.remove();
+  };
+  if(onDelete){
+    document.getElementById('bk-modal-del').onclick = () => {
+      showConfirm({title:'Elimina',body:'Eliminare questo elemento?',okLabel:'Elimina',type:'danger',
+        onOk:()=>{ onDelete(); overlay.remove(); }});
+    };
+  }
+  return overlay;
 }
