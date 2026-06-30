@@ -1271,7 +1271,7 @@ function switchMacro(macro, skipTabSwitch, userClick){
   }
 }
 
-function switchTab(tab){
+function switchTab(tab, preserveExpanded){
   currentTab=tab;
   routerPush(tab);
   const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr','audit','pdm','pdc','stratbuild','brandportal'];
@@ -1285,7 +1285,7 @@ function switchTab(tab){
   // Sync macro nav — show correct macro for this tab
   const tabMacro = TAB_TO_MACRO[tab] || 'studio';
   if(tabMacro !== currentMacro) switchMacro(tabMacro, true);
-  else document.getElementById('macro-nav')?.classList.remove('expanded');
+  else if(!preserveExpanded) document.getElementById('macro-nav')?.classList.remove('expanded');
   // Topbar unificata: mostra/nascondi sezione cliente
   const clientSection=document.getElementById('topbar-client-section');
   if(clientSection) clientSection.style.display = (tab!=='studio') ? 'contents' : 'none';
