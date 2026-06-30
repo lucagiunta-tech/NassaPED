@@ -84,7 +84,7 @@
 .macro-tab.active{color:var(--text-1);border-bottom-color:var(--green);}
 .macro-sub{display:none !important;}
 .macro-sub.macro-visible{display:inline-flex !important;}
-.macro-sub-studio{display:inline-flex !important;} /* default visible on load */
+.macro-sub-strategia{display:inline-flex !important;} /* default visible on load */
 </style>
 </head>
 <body>
@@ -113,13 +113,18 @@
         <!-- Macro-aree (livello 1) + Sub-tab (livello 2) -->
     <div class="macro-nav" id="macro-nav">
       <div class="macro-tabs">
-        <div class="macro-tab active" id="macro-studio"          onclick="switchMacro('studio')">Studio</div>
+        <div class="macro-tab active" id="macro-strategia"      onclick="switchMacro('strategia')">Strategia</div>
+        <div class="macro-tab" id="macro-studio"          onclick="switchMacro('studio')">Studio</div>
         <div class="macro-tab"        id="macro-produzione"      onclick="switchMacro('produzione')">Produzione</div>
         <div class="macro-tab"        id="macro-pianificazione"  onclick="switchMacro('pianificazione')">Pianificazione</div>
         <div class="macro-tab"        id="macro-lancio"          onclick="switchMacro('lancio')">Lancio</div>
         <div class="macro-tab"        id="macro-monitoraggio"    onclick="switchMacro('monitoraggio')">Monitoraggio</div>
       </div>
       <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
+        <!-- Strategia -->
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-audit" onclick="switchTab('audit')">Brand Audit</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-pdm"   onclick="switchTab('pdm')">Piano Marketing</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-pdc"   onclick="switchTab('pdc')">Piano Comunicazione</div>
         <!-- Studio -->
         <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
         <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-shooting"   onclick="switchTab('shooting')">Shooting</div>
@@ -695,6 +700,27 @@
   </div>
 
   <!-- UGC -->
+  <!-- BRAND AUDIT TAB -->
+  <div class="tab-page" id="page-audit">
+    <div class="studio-main" id="audit-main">
+      <div id="audit-body"></div>
+    </div>
+  </div>
+
+  <!-- PIANO DI MARKETING TAB -->
+  <div class="tab-page" id="page-pdm">
+    <div class="studio-main" id="pdm-main">
+      <div id="pdm-body"></div>
+    </div>
+  </div>
+
+  <!-- PIANO DI COMUNICAZIONE TAB -->
+  <div class="tab-page" id="page-pdc">
+    <div class="studio-main" id="pdc-main">
+      <div id="pdc-body"></div>
+    </div>
+  </div>
+
   <!-- SHOOTING BRIEF TAB -->
   <div class="tab-page" id="page-shooting">
     <div class="studio-main" id="shooting-main">
@@ -1856,7 +1882,7 @@
 // Init macro nav dopo che app.js carica
 window.addEventListener('load', function(){
   setTimeout(function(){
-    if(typeof switchMacro==='function') switchMacro('studio', true);
+    if(typeof switchMacro==='function') switchMacro('strategia', true);
   }, 200);
 });
 </script>

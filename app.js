@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, brandKit, reportData, qbrData, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, brandKit, reportData, qbrData, auditData, pdmData, pdcData, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -401,6 +401,9 @@ const CLOUD = {
     brandKit   = data.brandKit   || {};
     reportData = data.reportData || {};
     qbrData    = data.qbrData    || {};
+    auditData  = data.auditData  || {};
+    pdmData    = data.pdmData    || {};
+    pdcData    = data.pdcData    || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -1229,6 +1232,7 @@ window.addEventListener('popstate', (e) => {
 
 // ── Macro navigation (Studio / Pianificazione / Lancio) ──
 const TAB_TO_MACRO = {
+  audit:'strategia',pdm:'strategia',pdc:'strategia',
   notes:'studio',shooting:'studio',brand:'studio',pilastri:'studio',mood:'studio',
   storyboard:'produzione',feed:'produzione',stories:'produzione',ped:'produzione',
   cal:'pianificazione',anno:'pianificazione',preview:'pianificazione',
@@ -1241,7 +1245,7 @@ let currentMacro = 'studio';
 function switchMacro(macro, skipTabSwitch){
   currentMacro = macro;
   // Update macro tab active state
-  ['studio','produzione','pianificazione','lancio','monitoraggio'].forEach(m => {
+  ['strategia','studio','produzione','pianificazione','lancio','monitoraggio'].forEach(m => {
     const el = document.getElementById('macro-'+m);
     if(el) el.classList.toggle('active', m===macro);
   });
@@ -1259,7 +1263,7 @@ function switchMacro(macro, skipTabSwitch){
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr'];
+  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr','audit','pdm','pdc'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1316,6 +1320,9 @@ function switchTab(tab){
   if(tab==='brand'){renderBrandKitTab();}
   if(tab==='report'){renderReportTab();}
   if(tab==='qbr'){renderQBRTab();}
+  if(tab==='audit'){renderAuditTab();}
+  if(tab==='pdm'){renderPdmTab();}
+  if(tab==='pdc'){renderPdcTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -13111,4 +13118,234 @@ function renderQBRTab(){
       autoSave();
     };
   });
+}
+
+/* ══════════════════════════════════════════════════════════
+   STRATEGIA — Brand Audit, Piano di Marketing, Piano di Comunicazione
+   audit[clientId] = {brand_attuale, percezione, brand_gap, benchmark, note}
+   pdm[clientId]   = {executive_summary, analisi_interna, ... 18 sezioni}
+   pdc[clientId]   = {obiettivi_comunicativi, stakeholder_map, ... 15 sezioni}
+══════════════════════════════════════════════════════════ */
+
+let auditData = {};
+let pdmData = {};
+let pdcData = {};
+
+function _stratKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+
+// ── Brand Audit ───────────────────────────────────────────
+const AUDIT_SEZIONI = [
+  {key:'brand_attuale', lbl:'Brand esistente',
+   hint:'Logo, colori, tono, presenza online, materiali attuali.',
+   ph:'Es. Logo anni \'90, colori terracotta e bianco, tono istituzionale, sito non aggiornato...'},
+  {key:'percezione', lbl:'Come è percepito ora',
+   hint:'Come lo vedono clienti, concorrenti e mercato. Percezione esterna reale.',
+   ph:'Es. "Affidabile ma un po\' vecchio", forte nel passaparola locale, poca presenza digitale...'},
+  {key:'brand_gap', lbl:'Brand gap',
+   hint:'Differenza tra come è percepito oggi e come vorrebbe essere percepito dopo il lavoro strategico.',
+   ph:'Es. Da "azienda locale artigianale" a "brand territoriale premium con identità moderna"...'},
+  {key:'benchmark', lbl:'Benchmark — brand di riferimento',
+   hint:'2-3 brand che il cliente ammira o vuole avvicinarsi per stile, tono o posizionamento.',
+   ph:'Es. Slow Food (valori), Mulino Bianco (calore), Eataly (territorio + premium)...'},
+  {key:'note', lbl:'Note audit',
+   hint:'Qualsiasi altra osservazione emersa durante la fase di analisi iniziale.',
+   ph:'Es. Il cliente ha già un logo ridisegnato non ancora pubblicato...'},
+];
+
+function renderAuditTab(){
+  const body = document.getElementById('audit-body');
+  if(!body) return;
+  body.innerHTML = '';
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){ body.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per il Brand Audit.</div>'; return; }
+
+  const k = _stratKey();
+  const a = auditData[k] || {};
+  const filled = AUDIT_SEZIONI.filter(s=>a[s.key]?.trim()).length;
+
+  body.style.cssText = 'max-width:760px;';
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;';
+  hdr.innerHTML = `<div>
+    <h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Brand Audit</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — Fase 0, analisi iniziale</p>
+  </div>
+  <span style="font-size:11px;color:var(--text-3);">${filled}/${AUDIT_SEZIONI.length} sezioni compilate</span>`;
+  body.appendChild(hdr);
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:16px;';
+
+  AUDIT_SEZIONI.forEach(sec => {
+    const fieldEl = document.createElement('div');
+    fieldEl.innerHTML = `
+      <label style="font-size:13px;font-weight:500;color:var(--text-1);display:block;margin-bottom:3px;">${sec.lbl}</label>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;">${sec.hint}</div>
+      <textarea data-key="${sec.key}" rows="3" placeholder="${esc(sec.ph)}"
+        style="width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;box-sizing:border-box;line-height:1.6;">${esc(a[sec.key]||'')}</textarea>`;
+    wrap.appendChild(fieldEl);
+  });
+
+  body.appendChild(wrap);
+
+  wrap.querySelectorAll('textarea').forEach(ta => {
+    ta.onchange = () => {
+      const data = auditData[k] || {};
+      data[ta.dataset.key] = ta.value;
+      auditData[k] = data;
+      autoSave();
+      renderAuditTab();
+    };
+  });
+}
+
+// ── Piano di Marketing (PDM) — 18 sezioni in 5 gruppi ──────
+const PDM_SEZIONI = [
+  {id:'executive_summary', lbl:'Executive summary', grp:'Fondamenta', hint:'Sintesi strategica: contesto, obiettivi principali, linee guida.', ph:'Il brand X opera nel mercato Y con l\'obiettivo di Z...'},
+  {id:'analisi_interna', lbl:'Analisi interna', grp:'Fondamenta', hint:'Punti di forza, debolezze, risorse, capacità produttiva.', ph:'Punti di forza: qualità del prodotto, rete locale...\nDebolezze: scarsa visibilità digitale...'},
+  {id:'analisi_esterna', lbl:'Analisi esterna + PEST', grp:'Fondamenta', hint:'Opportunità e minacce. Fattori politici, economici, sociali, tecnologici.', ph:'Opportunità: mercato in crescita del 12%...\nFattori PEST: trend sostenibilità...'},
+  {id:'swot', lbl:'SWOT & matrice', grp:'Fondamenta', hint:'Forze, debolezze, opportunità, minacce. Strategie SO/ST/WO/WT.', ph:'S: qualità artigianale certificata\nW: budget marketing limitato\nO: turismo locale in crescita\nT: ingresso competitor GDO'},
+  {id:'segmentazione', lbl:'Segmentazione', grp:'Target', hint:'Criteri di segmentazione (geo, demo, psico, comportamentale). Quale segmento si serve.', ph:'Segmento primario: famiglie 30-50 anni, reddito medio-alto, sensibili alla qualità...'},
+  {id:'personas', lbl:'Buyer personas', grp:'Target', hint:'2-3 personas con nome, background, obiettivi, frustrazioni, canali preferiti.', ph:'Persona 1 — Marco, 42 anni, manager, cerca autenticità nel cibo...\nPersona 2 — Sofia, 35 anni...'},
+  {id:'posizionamento', lbl:'Posizionamento + USP', grp:'Target', hint:'Come il brand si differenzia. Unique Selling Proposition verificabile.', ph:'Posizionamento: fascia premium locale vs competitor industriale\nUSP: unico laboratorio km 0 certificato in città'},
+  {id:'obiettivi_smart', lbl:'Obiettivi SMART', grp:'Strategia', hint:'Obiettivi Specifici, Misurabili, Raggiungibili, Rilevanti, Temporali.', ph:'OS1: aumentare il fatturato mensile del 20% entro dicembre 2026\nOS2: acquisire 50 nuovi clienti nei prossimi 6 mesi...'},
+  {id:'marketing_mix_7p', lbl:'Marketing mix 7P', grp:'Strategia', hint:'Prodotto, Prezzo, Posto, Promozione, Persone, Processo, Prove fisiche.', ph:'Prodotto: linea premium estiva\nPrezzo: fascia 8-15€\nPosto: negozio + delivery locale\nPromozione: social + eventi...'},
+  {id:'canali_media_mix', lbl:'Canali & media mix', grp:'Strategia', hint:'Canali attivi, budget allocato per canale, priorità.', ph:'Instagram: 40% budget · Local SEO: 20% · Events: 25% · Print locale: 15%'},
+  {id:'value_proposition', lbl:'Value proposition', grp:'Strategia', hint:'Benefici funzionali + emotivi. Canvas value proposition.', ph:'Per [target] che vuole [obiettivo], [brand] offre [beneficio] grazie a [differenziatore].'},
+  {id:'funnel_strategy', lbl:'Funnel strategy', grp:'Strategia', hint:'ToFu/MoFu/BoFu. Tattiche per ogni fase e KPI per ciascuna.', ph:'ToFu: contenuti organici + ADV awareness\nMoFu: email nurturing + social proof\nBoFu: offerta + retargeting'},
+  {id:'pricing_strategy', lbl:'Pricing strategy', grp:'Strategia', hint:'Strategia di pricing. Confronto con competitor. Elasticità.', ph:'Prezzo premium del 15% rispetto alla media locale. Giustificato da...'},
+  {id:'cac_ltv', lbl:'CAC & LTV / unit economics', grp:'Strategia', hint:'Costo acquisizione cliente, valore nel tempo, margine per cliente.', ph:'CAC stimato: €35\nLTV medio cliente: €420 (12 mesi)\nPayback period: ~1 mese'},
+  {id:'piano_azione', lbl:'Piano d\'azione', grp:'Esecuzione', hint:'Attività per trimestre con responsabile, scadenza, budget.', ph:'Q1: lancio social + setup newsletter\nQ2: shooting + ADV estate\nQ3: evento locale\nQ4: review strategica'},
+  {id:'budget', lbl:'Budget marketing', grp:'Esecuzione', hint:'Allocazione budget totale per categoria e mese.', ph:'Budget totale 2026: €6.000\nADV Meta: €2.400 | Content: €1.200 | Events: €1.800 | Tools: €600'},
+  {id:'monitoraggio_kpi', lbl:'KPI & monitoraggio', grp:'Monitoraggio', hint:'Dashboard KPI, frequenza di monitoraggio, soglie di alert.', ph:'KPI primari: fatturato, nuovi clienti, ROAS\nKPI secondari: reach, engagement, traffico web\nReview: mensile'},
+  {id:'review_qbr', lbl:'Review & QBR', grp:'Monitoraggio', hint:'Cadenza revisione strategica, format del QBR, output attesi.', ph:'QBR ogni 3 mesi con team + cliente\nOutput: aggiornamento obiettivi SMART + piano Q+1'},
+];
+
+let _pdmActiveSec = PDM_SEZIONI[0].id;
+
+function renderPdmTab(){
+  const body = document.getElementById('pdm-body');
+  if(!body) return;
+  body.innerHTML = '';
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){ body.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per il Piano di Marketing.</div>'; return; }
+  _renderStrategySezioniLayout(body, 'pdm', PDM_SEZIONI, pdmData, cl.name, '_pdmActiveSec');
+}
+
+// ── Piano di Comunicazione (PDC) — 15 sezioni in 4 gruppi ──
+const PDC_SEZIONI = [
+  {id:'obiettivi_comunicativi', lbl:'Obiettivi comunicativi', grp:'Fondamenta', hint:'Cosa deve ottenere la comunicazione: awareness, conversione, retention.', ph:'Obiettivo primario: aumentare awareness locale del 30% in 6 mesi...'},
+  {id:'stakeholder_map', lbl:'Stakeholder map', grp:'Fondamenta', hint:'Chi influenza o è influenzato dalla comunicazione: clienti, partner, media, dipendenti.', ph:'Clienti finali · Fornitori locali · Stampa di settore · Community online...'},
+  {id:'creative_territory', lbl:'Creative territory', grp:'Fondamenta', hint:'Il territorio creativo che guida tutta la comunicazione visiva e verbale.', ph:'Es. "Tradizione che innova" — mix di artigianalità e linguaggio contemporaneo...'},
+  {id:'tov_regole', lbl:'Tone of voice — 10 regole', grp:'Identità', hint:'10 regole concrete su come scrivere/parlare nel tono del brand.', ph:'1. Mai formale, sempre cordiale\n2. No tecnicismi senza spiegazione\n3. Usa il "tu", mai il "lei"...'},
+  {id:'brand_taboos', lbl:'Brand taboos & parole vietate', grp:'Identità', hint:'Cosa non dire, non mostrare, non fare mai.', ph:'Mai: paragoni diretti con competitor, superlativi assoluti, promesse non verificabili...'},
+  {id:'message_house', lbl:'Message house', grp:'Identità', hint:'Messaggio centrale + 3 pilastri di supporto con prove.', ph:'Messaggio centrale: "Qualità autentica a km 0"\nPilastro 1: materie prime locali\nPilastro 2: lavorazione artigianale...'},
+  {id:'buyer_insights', lbl:'Buyer insights', grp:'Identità', hint:'Cosa pensa, teme, desidera davvero il target — oltre i dati demografici.', ph:'Teme di essere ingannato da prodotti "finti artigianali"\nDesidera sentirsi parte di una storia autentica...'},
+  {id:'content_repurposing', lbl:'Content repurposing matrix', grp:'Operativo', hint:'Come un contenuto si trasforma in formati diversi per canali diversi.', ph:'Video lungo → 3 reel + 5 storie + 1 articolo blog + newsletter...'},
+  {id:'architettura_canali', lbl:'Architettura canali', grp:'Operativo', hint:'Ruolo di ogni canale nel funnel comunicativo.', ph:'Instagram: awareness + community\nWhatsApp: conversione diretta\nNewsletter: retention...'},
+  {id:'calendario_comunicazione', lbl:'Calendario comunicazione', grp:'Operativo', hint:'Cadenze, ricorrenze, momenti chiave dell\'anno per la comunicazione.', ph:'Settimanale: 3 post + 5 storie\nMensile: 1 evento/promo\nAnnuale: festività locali + stagionalità...'},
+  {id:'campaign_moments', lbl:'Campaign moments', grp:'Operativo', hint:'Momenti specifici dell\'anno con campagne dedicate.', ph:'Estate: campagna turistica\nNatale: regali artigianali\nApertura stagione: evento inaugurale...'},
+  {id:'crisis_communication', lbl:'Protocollo crisi', grp:'Operativo', hint:'Come comportarsi in caso di crisi reputazionale o recensioni negative.', ph:'1. Rispondere entro 2h\n2. Mai cancellare commenti negativi reali\n3. Escalation a responsabile entro 24h...'},
+  {id:'visual_identity_base', lbl:'Visual identity base', grp:'Visual', hint:'Linee guida visive sintetiche per la comunicazione quotidiana.', ph:'Palette: terracotta + crema + verde oliva\nFont: serif per titoli, sans per corpo\nStile foto: luce naturale, no studio...'},
+  {id:'format_library', lbl:'Format library', grp:'Visual', hint:'I formati ricorrenti di contenuto che si ripetono nel tempo.', ph:'"Dietro le quinte" — venerdì\n"Cliente del mese" — primo lunedì\n"Tip veloce" — ogni mercoledì...'},
+  {id:'do_dont', lbl:'Visual do / don\'t', grp:'Visual', hint:'Esempi visivi concreti di cosa fare e cosa evitare.', ph:'DO: foto naturali, luce calda, persone reali\nDON\'T: stock photo generiche, filtri eccessivi, sfondi bianchi...'},
+];
+
+let _pdcActiveSec = PDC_SEZIONI[0].id;
+
+function renderPdcTab(){
+  const body = document.getElementById('pdc-body');
+  if(!body) return;
+  body.innerHTML = '';
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){ body.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per il Piano di Comunicazione.</div>'; return; }
+  _renderStrategySezioniLayout(body, 'pdc', PDC_SEZIONI, pdcData, cl.name, '_pdcActiveSec');
+}
+
+// ── Shared layout: sidebar sezioni + editor (per PDM e PDC) ──
+function _renderStrategySezioniLayout(body, modKey, sezioni, dataStore, clientName, activeVarName){
+  const k = _stratKey();
+  const d = dataStore[k] || {};
+  const filled = sezioni.filter(s=>d[s.id]?.trim()).length;
+  let activeSec = window[activeVarName] || sezioni[0].id;
+
+  // Group sezioni by grp
+  const groups = {};
+  sezioni.forEach(s => { (groups[s.grp]=groups[s.grp]||[]).push(s); });
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:0;height:calc(100vh - 220px);min-height:500px;border:0.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);';
+
+  // ── Sidebar sezioni ──
+  const sidebar = document.createElement('div');
+  sidebar.style.cssText = 'width:240px;flex-shrink:0;border-right:0.5px solid var(--border);overflow-y:auto;background:var(--surface-lt);';
+
+  const sbHdr = document.createElement('div');
+  sbHdr.style.cssText = 'padding:14px 16px 10px;border-bottom:0.5px solid var(--border);';
+  sbHdr.innerHTML = `<div style="font-size:14px;font-weight:600;color:var(--text-1);">${modKey==='pdm'?'Piano di Marketing':'Piano di Comunicazione'}</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${clientName} — ${filled}/${sezioni.length} sezioni</div>`;
+  sidebar.appendChild(sbHdr);
+
+  Object.entries(groups).forEach(([grpName, secs]) => {
+    const grpHdr = document.createElement('div');
+    grpHdr.style.cssText = 'padding:10px 16px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);';
+    grpHdr.textContent = grpName;
+    sidebar.appendChild(grpHdr);
+
+    secs.forEach(sec => {
+      const done = d[sec.id]?.trim();
+      const isAct = activeSec === sec.id;
+      const item = document.createElement('div');
+      item.style.cssText = `display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;font-size:12px;color:${isAct?'var(--text-1)':'var(--text-2)'};background:${isAct?'rgba(29,158,117,.08)':'transparent'};border-left:2px solid ${isAct?'#1d9e75':'transparent'};font-weight:${isAct?'600':'400'};`;
+      item.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${done?'#1d9e75':'var(--border-strong)'};flex-shrink:0;"></span>${sec.lbl}`;
+      item.onclick = () => {
+        window[activeVarName] = sec.id;
+        if(modKey==='pdm') renderPdmTab(); else renderPdcTab();
+      };
+      sidebar.appendChild(item);
+    });
+  });
+
+  wrap.appendChild(sidebar);
+
+  // ── Editor area ──
+  const editor = document.createElement('div');
+  editor.style.cssText = 'flex:1;overflow-y:auto;padding:24px 28px;';
+
+  const currentSec = sezioni.find(s => s.id === activeSec) || sezioni[0];
+  const idx = sezioni.indexOf(currentSec);
+
+  editor.innerHTML = `
+    <div style="margin-bottom:6px;font-size:11px;color:var(--text-3);">${currentSec.grp} · ${idx+1}/${sezioni.length}</div>
+    <h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:8px;">${currentSec.lbl}</h3>
+    <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5;">${currentSec.hint}</p>
+    <textarea id="strat-editor-ta" rows="12" placeholder="${esc(currentSec.ph)}"
+      style="width:100%;padding:14px 16px;border:0.5px solid var(--border);border-radius:10px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;box-sizing:border-box;line-height:1.7;">${esc(d[currentSec.id]||'')}</textarea>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;">
+      <button id="strat-prev" ${idx===0?'disabled':''} style="padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:${idx===0?'var(--text-3)':'var(--text-2)'};cursor:${idx===0?'default':'pointer'};background:transparent;font-family:var(--font);opacity:${idx===0?'.4':'1'};">← Precedente</button>
+      <button id="strat-next" ${idx===sezioni.length-1?'disabled':''} style="padding:7px 14px;border:0.5px solid var(--green);border-radius:8px;font-size:12px;font-weight:600;color:${idx===sezioni.length-1?'var(--text-3)':'#003'};cursor:${idx===sezioni.length-1?'default':'pointer'};background:${idx===sezioni.length-1?'transparent':'var(--green)'};font-family:var(--font);opacity:${idx===sezioni.length-1?'.4':'1'};">Successivo →</button>
+    </div>`;
+
+  wrap.appendChild(editor);
+  body.appendChild(wrap);
+
+  // Auto-save on change
+  const ta = editor.querySelector('#strat-editor-ta');
+  ta.onchange = () => {
+    const data = dataStore[k] || {};
+    data[currentSec.id] = ta.value;
+    dataStore[k] = data;
+    autoSave();
+    if(modKey==='pdm') renderPdmTab(); else renderPdcTab();
+  };
+
+  editor.querySelector('#strat-prev').onclick = () => {
+    if(idx > 0){ window[activeVarName] = sezioni[idx-1].id; if(modKey==='pdm') renderPdmTab(); else renderPdcTab(); }
+  };
+  editor.querySelector('#strat-next').onclick = () => {
+    if(idx < sezioni.length-1){ window[activeVarName] = sezioni[idx+1].id; if(modKey==='pdm') renderPdmTab(); else renderPdcTab(); }
+  };
 }
