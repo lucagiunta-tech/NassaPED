@@ -1290,9 +1290,18 @@ function switchTab(tab, preserveExpanded){
     // FIX: si and sn were identical — deduplicated to one call
     const si=document.getElementById('si-'+t);if(si)si.classList.toggle('active',t===tab);
   });
-  // Sync macro nav — show correct macro for this tab
+  // Sync macro nav — show correct macro for this tab (sempre, non solo se cambia)
   const tabMacro = TAB_TO_MACRO[tab] || 'studio';
-  if(tabMacro !== currentMacro) switchMacro(tabMacro, true);
+  currentMacro = tabMacro;
+  document.querySelectorAll('.macro-sub').forEach(el => {
+    el.classList.toggle('macro-visible', el.classList.contains('macro-sub-'+tabMacro));
+  });
+  ['strategia','studio','produzione','pianificazione','lancio','monitoraggio'].forEach(m => {
+    const mEl = document.getElementById('macro-'+m);
+    if(mEl) mEl.classList.toggle('active', m===tabMacro);
+  });
+  const backLbl = document.getElementById('macro-back-label');
+  if(backLbl) backLbl.textContent = MACRO_LABELS[tabMacro] || tabMacro;
   updateSubTabActiveHighlight();
   // Topbar unificata: mostra/nascondi sezione cliente
   const clientSection=document.getElementById('topbar-client-section');
