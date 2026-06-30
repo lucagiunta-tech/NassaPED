@@ -1171,6 +1171,15 @@ function routerUpdate() {
   routerPush(currentTab, true);
 }
 
+// Consolida le 4 chiamate di refresh della UI feed, ripetute identiche in due
+// rami diversi di routerRestore (tab==='feed' e fallback su tab sconosciuto).
+// Tenerle duplicate è il tipo di cosa che diverge nel tempo: chi aggiunge una
+// quinta chiamata in un ramo dimentica facilmente l'altro, ed entrambi i rami
+// smettono di essere equivalenti senza che nessun errore lo segnali.
+function refreshFeedUI() {
+  renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge();
+}
+
 function routerRestore() {
   const path = window.location.pathname;
   if(path === '/' || path === '') return;
@@ -1198,42 +1207,52 @@ function routerRestore() {
     const ci = clients.findIndex(c => c.id === clientId || encodeURIComponent(c.name) === clientId);
     if(ci >= 0) {
       _routerSilent = true;
-      openClientFeed(ci);
-      // Restore month from URL slug
-      if(monthSlug) {
-        const parts = monthSlug.split('-');
-        if(parts.length >= 2) {
-          const yearStr = parts[parts.length - 1];
-          const monthPart = parts.slice(0, -1).join(' ');
-          const MONTH_IT = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
-                            'luglio','agosto','settembre','ottobre','novembre','dicembre'];
-          const mi = MONTH_IT.indexOf(monthPart.toLowerCase());
-          if(mi >= 0) {
-            feedMonth = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
-                         'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][mi] + ' ' + yearStr;
-            storiesMonth = feedMonth;
+      // try/finally: openClientFeed() o le funzioni di rendering sottostanti
+      // potrebbero lanciare su un cliente con dati malformati (es. accounts
+      // mancante). Senza il finally, un'eccezione qui dentro lascia
+      // _routerSilent bloccato a true per il resto della sessione — ogni
+      // routerPush() successivo verrebbe silenziosamente ignorato (vedi guard
+      // in cima a routerPush più sopra), e la URL smetterebbe di aggiornarsi
+      // a ogni navigazione senza nessun errore visibile oltre quello originale.
+      try {
+        openClientFeed(ci);
+        // Restore month from URL slug
+        if(monthSlug) {
+          const parts = monthSlug.split('-');
+          if(parts.length >= 2) {
+            const yearStr = parts[parts.length - 1];
+            const monthPart = parts.slice(0, -1).join(' ');
+            const MONTH_IT = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
+                              'luglio','agosto','settembre','ottobre','novembre','dicembre'];
+            const mi = MONTH_IT.indexOf(monthPart.toLowerCase());
+            if(mi >= 0) {
+              feedMonth = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                           'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'][mi] + ' ' + yearStr;
+              storiesMonth = feedMonth;
+            }
           }
         }
+        // Restore account index
+        if(accIdxStr) {
+          const ai = parseInt(accIdxStr);
+          if(!isNaN(ai) && ai >= 0) { feedAccountIdx = ai; storiesAccountIdx = ai; }
+        }
+        // VALIDAZIONE: chiama switchTab solo se il tab (dopo sanificazione) è
+        // uno dei tab noti dell'app (KNOWN_TABS, vedi sezione TAB SWITCHING
+        // più sotto). Un tab arbitrario o malformato non manda più l'app in
+        // uno stato vuoto silenzioso: resta sulla pagina Feed già aperta da
+        // openClientFeed, con un warning in console per il debug.
+        if(tab === 'feed') {
+          refreshFeedUI();
+        } else if(tab && KNOWN_TABS.hasOwnProperty(tab)) {
+          switchTab(tab);
+        } else {
+          console.warn('[router] Tab sconosciuto nell\'URL ("'+tabRaw+'"), resto su Feed.');
+          refreshFeedUI();
+        }
+      } finally {
+        _routerSilent = false;
       }
-      // Restore account index
-      if(accIdxStr) {
-        const ai = parseInt(accIdxStr);
-        if(!isNaN(ai) && ai >= 0) { feedAccountIdx = ai; storiesAccountIdx = ai; }
-      }
-      // VALIDAZIONE: chiama switchTab solo se il tab (dopo sanificazione) è uno
-      // dei tab noti dell'app. Un tab arbitrario o malformato non manda più
-      // l'app in uno stato vuoto silenzioso: resta sulla pagina Feed già aperta
-      // da openClientFeed, con un warning in console per il debug.
-      const KNOWN_TABS = Object.assign({feed:1,stories:1,notes:1,shooting:1,brand:1,pilastri:1,storyboard:1,ped:1,cal:1,anno:1,preview:1,ads:1}, TAB_TO_MACRO);
-      if(tab === 'feed') {
-        renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge();
-      } else if(tab && KNOWN_TABS.hasOwnProperty(tab)) {
-        switchTab(tab);
-      } else {
-        console.warn('[router] Tab sconosciuto nell\'URL ("'+tabRaw+'"), resto su Feed.');
-        renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge();
-      }
-      _routerSilent = false;
     }
     return;
   }
@@ -1265,6 +1284,17 @@ const TAB_TO_MACRO = {
   ads:'lancio',landing:'lancio',stampa:'lancio',
   report:'monitoraggio',qbr:'monitoraggio',
 };
+
+// Unione di tutti i tab validi dell'app: quelli senza macro associata (lista
+// esplicita qui sotto) + quelli con macro (TAB_TO_MACRO sopra). Le chiavi che
+// compaiono in entrambi gli oggetti (feed, stories, notes) sono intenzionalmente
+// ridondanti — Object.assign le sovrascrive senza danno, non è un errore.
+// Usata da routerRestore() (sezione URL ROUTER, più sopra in questo file) per
+// validare il segmento {tab} estratto dall'URL prima di chiamare switchTab():
+// un tab che non è chiave di questo oggetto non viene mai passato a switchTab,
+// evitando lo stato vuoto silenzioso che si verificava con URL malformati
+// (es. virgola finale incollata da copia-incolla impreciso).
+const KNOWN_TABS = Object.assign({feed:1,stories:1,notes:1,shooting:1,brand:1,pilastri:1,storyboard:1,ped:1,cal:1,anno:1,preview:1,ads:1}, TAB_TO_MACRO);
 
 let currentMacro = 'studio';
 
