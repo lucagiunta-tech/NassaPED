@@ -316,7 +316,7 @@ const CLOUD = {
     }
     return { version:'2.0', exportedAt: new Date().toISOString(),
       clients, feeds: cleanFeeds(feeds), stories: cleanStories(stories),
-      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, brandKit, reportData, qbrData, auditData, pdmData, pdcData, adsCampaigns, sbBozze, ugcInfluencer,
+      highlights, pedPlans, notesData, nassaDocs, pilastri, formati, landing, stampa, mood, shooting, brandKit, reportData, qbrData, auditData, pdmData, pdcData, stratBuildData, adsCampaigns, sbBozze, ugcInfluencer,
       meta: { showAllDates, showAllCopy, showAllPilastro, showAllFormato, pedFreqDays: Array.from(pedFreqDays) } };
   },
 
@@ -404,6 +404,7 @@ const CLOUD = {
     auditData  = data.auditData  || {};
     pdmData    = data.pdmData    || {};
     pdcData    = data.pdcData    || {};
+    stratBuildData = data.stratBuildData || {};
     sbBozze    = data.sbBozze    || {};
     nassaDocs  = data.nassaDocs  || {};
     ugcInfluencer = data.ugcInfluencer || {};
@@ -1273,7 +1274,7 @@ function switchMacro(macro, skipTabSwitch, userClick){
 function switchTab(tab){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr','audit','pdm','pdc'];
+  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr','audit','pdm','pdc','stratbuild','brandportal'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1334,6 +1335,8 @@ function switchTab(tab){
   if(tab==='audit'){renderAuditTab();}
   if(tab==='pdm'){renderPdmTab();}
   if(tab==='pdc'){renderPdcTab();}
+  if(tab==='stratbuild'){renderStratBuildTab();}
+  if(tab==='brandportal'){renderBrandPortalTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -13359,4 +13362,310 @@ function _renderStrategySezioniLayout(body, modKey, sezioni, dataStore, clientNa
   editor.querySelector('#strat-next').onclick = () => {
     if(idx < sezioni.length-1){ window[activeVarName] = sezioni[idx+1].id; if(modKey==='pdm') renderPdmTab(); else renderPdcTab(); }
   };
+}
+
+/* ══════════════════════════════════════════════════════════
+   STRATEGY BUILDER — workshop creativo (Mod.4A + Mod.5)
+   stratBuildData[clientId] = {mod4a:{...,done}, mod5:{...,done}}
+   Mod.5 completato → auto-popola Brand Kit (archetipo, claim, tov)
+══════════════════════════════════════════════════════════ */
+
+let stratBuildData = {};
+
+const SB_Q4A = [
+  {key:'target_primario', label:'Chi è il target primario?', hint:'Età, livello culturale, comportamenti, pain point', ph:'Es. Imprenditori locali 40-60 anni, settore food...'},
+  {key:'problema_reale', label:'Qual è il problema reale?', hint:'Non il problema dichiarato — quello che emerge dall\'analisi', ph:'Es. Non mancano clienti — non sanno raccontare perché sceglierli'},
+  {key:'differenziatore', label:'Cos\'è unico e provabile?', hint:'Un fatto verificabile da chi non li conosce', ph:'Es. Unico laboratorio km 0 certificato in città'},
+  {key:'frase_guida', label:'Frase guida del concept', hint:'Non è lo slogan — è la bussola interna del progetto', ph:'Es. L\'imperfezione autentica batte la perfezione finta'},
+  {key:'mood_emotivo', label:'Mood emotivo', hint:'3-5 aggettivi che descrivono come deve far sentire il brand', ph:'Es. Caldo, diretto, rassicurante, artigianale'},
+  {key:'esclusioni', label:'Cosa escludiamo?', hint:'Direzioni creative e toni che NON vogliamo', ph:'Es. No lusso patinato, no foto stock'},
+  {key:'note_sessione', label:'Note sessione', hint:'Insight emersi, citazioni del cliente, intuizioni', ph:'Note libere...'},
+];
+
+const SB_Q5 = [
+  {key:'insight', label:'Insight', hint:'Una verità sul consumatore che il brand può far propria', ph:'Es. Chi compra pane artigianale cerca normalità in una giornata caotica'},
+  {key:'problema', label:'Problema del mercato', hint:'Il vuoto che questo brand può riempire', ph:'Es. Il mercato è pieno di brand che promettono autenticità senza averla'},
+  {key:'reason_why', label:'Reason Why', hint:'Perché questo brand può fare quella promessa? Provabile.', ph:'Es. Ricette dal 1978, ingredienti freschi ogni mattina'},
+  {key:'promessa', label:'Promessa del brand', hint:'Cosa garantisce il brand ogni volta che interagisce', ph:'Es. Ogni volta che entri, trovi qualcosa fatto oggi'},
+  {key:'key_message', label:'Key Message', hint:'Il messaggio unico. Una frase. Due = un problema', ph:'Es. Il pane buono non ha bisogno di packaging'},
+  {key:'archetipo', label:'Archetipo brand', hint:'Quale archetipo di Jung rappresenta questo brand?', type:'select',
+   opts:['Il Creatore','Il Ribelle','Il Mago','L\'Eroe','L\'Amante','Il Giullare','L\'Orfano / Everyman','Il Custode','Il Sovrano','Il Saggio','L\'Innocente','L\'Esploratore']},
+  {key:'tov_parole_si', label:'Tono di voce — Parole SÌ', hint:'10-15 parole del vocabolario del brand', ph:'Es. autentico, territorio, mani, cura, radici...'},
+  {key:'tov_parole_no', label:'Tono di voce — Parole NO', hint:'Parole vietate — quelle che tutti usano', ph:'Es. qualità, eccellenza, tradizione, professionalità...'},
+  {key:'claim', label:'Claim', hint:'Corta, memorabile, vera', ph:'Es. Fatto oggi. Finito oggi.'},
+  {key:'payoff', label:'Payoff', hint:'La tagline che accompagna il logo', ph:'Es. Artigianale fino all\'ultimo gusto'},
+];
+
+function _sbKey(){
+  if(globalClientIdx < 0) return null;
+  return clients[globalClientIdx]?.id || null;
+}
+
+let _sbStep = 'mod4a';
+
+function renderStratBuildTab(){
+  const body = document.getElementById('stratbuild-body');
+  if(!body) return;
+  body.innerHTML = '';
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){ body.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per lo Strategy Builder.</div>'; return; }
+
+  const k = _sbKey();
+  const data = stratBuildData[k] || {mod4a:{}, mod5:{}};
+  const c4 = SB_Q4A.filter(q => data.mod4a?.[q.key]?.trim()).length;
+  const c5 = SB_Q5.filter(q => data.mod5?.[q.key]?.trim()).length;
+
+  body.style.cssText = 'max-width:720px;';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'margin-bottom:18px;';
+  hdr.innerHTML = `<h2 style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:3px;">Strategy Builder</h2>
+    <p style="font-size:12px;color:var(--text-3);">${cl.name} — workshop creativo, alimenta il Brand Kit</p>`;
+  body.appendChild(hdr);
+
+  // Step tabs
+  const stepTabs = document.createElement('div');
+  stepTabs.style.cssText = 'display:flex;gap:8px;margin-bottom:20px;';
+  [
+    {id:'mod4a', lbl:'Mod.4A — Brief sessione', count:c4, tot:SB_Q4A.length, done:data.mod4a?.done},
+    {id:'mod5',  lbl:'Mod.5 — Identità brand',  count:c5, tot:SB_Q5.length,  done:data.mod5?.done},
+  ].forEach(m => {
+    const isAct = _sbStep === m.id;
+    const btn = document.createElement('button');
+    btn.style.cssText = `flex:1;padding:10px 14px;border-radius:10px;border:0.5px solid ${isAct?'var(--green)':'var(--border)'};background:${isAct?'#e6ffe4':'var(--surface-lt)'};cursor:pointer;text-align:left;font-family:var(--font);`;
+    btn.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+        ${m.done?'<span style="color:#1d9e75;">✓</span>':''}
+        <span style="font-size:12px;font-weight:600;color:${isAct?'#003300':'var(--text-1)'};">${m.lbl}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);">${m.count}/${m.tot} compilate</div>`;
+    btn.onclick = () => { _sbStep = m.id; renderStratBuildTab(); };
+    stepTabs.appendChild(btn);
+  });
+  body.appendChild(stepTabs);
+
+  // Questions for active step
+  const sezioni = _sbStep === 'mod4a' ? SB_Q4A : SB_Q5;
+  const stepData = data[_sbStep] || {};
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:16px;';
+
+  sezioni.forEach(q => {
+    const fieldEl = document.createElement('div');
+    const val = stepData[q.key] || '';
+
+    if(q.type === 'select'){
+      fieldEl.innerHTML = `
+        <label style="font-size:13px;font-weight:500;color:var(--text-1);display:block;margin-bottom:3px;">${q.label}</label>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;">${q.hint}</div>
+        <select data-key="${q.key}" style="width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
+          <option value="">— Seleziona —</option>
+          ${q.opts.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}
+        </select>`;
+    } else {
+      const isInline = q.t === 'in';
+      fieldEl.innerHTML = `
+        <label style="font-size:13px;font-weight:500;color:var(--text-1);display:block;margin-bottom:3px;">${q.label}</label>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;">${q.hint}</div>
+        ${isInline
+          ? `<input data-key="${q.key}" type="text" value="${esc(val)}" placeholder="${esc(q.ph||'')}" style="width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;">`
+          : `<textarea data-key="${q.key}" rows="3" placeholder="${esc(q.ph||'')}" style="width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;resize:vertical;box-sizing:border-box;line-height:1.6;">${esc(val)}</textarea>`}`;
+    }
+    wrap.appendChild(fieldEl);
+  });
+
+  body.appendChild(wrap);
+
+  // Complete button
+  const footer = document.createElement('div');
+  footer.style.cssText = 'margin-top:20px;display:flex;justify-content:flex-end;';
+  const completeBtn = document.createElement('button');
+  completeBtn.style.cssText = 'padding:9px 18px;border:0.5px solid var(--green);border-radius:8px;font-size:13px;font-weight:600;color:#003;cursor:pointer;background:var(--green);font-family:var(--font);';
+  completeBtn.textContent = stepData.done ? '✓ Completato — Aggiorna' : 'Completa modulo';
+  completeBtn.onclick = () => completeStratBuildStep(_sbStep);
+  footer.appendChild(completeBtn);
+  body.appendChild(footer);
+
+  // Auto-save on change
+  wrap.querySelectorAll('[data-key]').forEach(el => {
+    el.onchange = () => {
+      const k2 = _sbKey();
+      const d = stratBuildData[k2] || {mod4a:{}, mod5:{}};
+      d[_sbStep] = {...(d[_sbStep]||{}), [el.dataset.key]: el.value};
+      stratBuildData[k2] = d;
+      autoSave();
+      renderStratBuildTab();
+    };
+  });
+}
+
+function completeStratBuildStep(step){
+  const k = _sbKey();
+  const d = stratBuildData[k] || {mod4a:{}, mod5:{}};
+  d[step] = {...(d[step]||{}), done:true};
+  stratBuildData[k] = d;
+
+  // Mod.5 → auto-popola Brand Kit
+  if(step === 'mod5'){
+    const m5 = d.mod5;
+    const bk = currentBrandKit();
+    let changed = false;
+
+    if(m5.claim?.trim() || m5.archetipo?.trim()){
+      // Store as a special "identity" note inside brandKit — extend structure minimally
+      bk.identity = bk.identity || {};
+      if(m5.archetipo) bk.identity.archetipo = m5.archetipo;
+      if(m5.claim) bk.identity.claim = m5.claim;
+      if(m5.payoff) bk.identity.payoff = m5.payoff;
+      if(m5.tov_parole_si || m5.tov_parole_no){
+        bk.identity.tov = (m5.tov_parole_si?'Parole SÌ: '+m5.tov_parole_si:'') +
+          (m5.tov_parole_no?'\\nParole NO: '+m5.tov_parole_no:'');
+      }
+      changed = true;
+    }
+    if(changed){
+      setBrandKit(bk);
+      showToast('✓ Mod.5 completato — Brand Kit aggiornato');
+    } else {
+      showToast('✓ Modulo completato');
+    }
+  } else {
+    showToast('✓ Modulo completato');
+  }
+
+  autoSave();
+  renderStratBuildTab();
+}
+
+/* ══════════════════════════════════════════════════════════
+   BRAND PORTAL — overview identità + brand kit
+   Combina dati da brandKit[] e stratBuildData[].mod5.identity
+   Sezioni: Overview, Colori, Font, Loghi, Immagini, Pilastri
+══════════════════════════════════════════════════════════ */
+
+let _bpSection = 'overview';
+
+const BP_SECTIONS = [
+  {id:'overview', icon:'◈', lbl:'Overview'},
+  {id:'colors',   icon:'🎨', lbl:'Colori'},
+  {id:'fonts',    icon:'🔤', lbl:'Font'},
+  {id:'logos',    icon:'📐', lbl:'Loghi'},
+  {id:'images',   icon:'🖼', lbl:'Immagini'},
+  {id:'pillars',  icon:'📊', lbl:'Pilastri'},
+];
+
+function renderBrandPortalTab(){
+  const body = document.getElementById('brandportal-body');
+  if(!body) return;
+  body.innerHTML = '';
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){ body.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per il Brand Portal.</div>'; return; }
+
+  const bk = currentBrandKit();
+  const k = _sbKey();
+  const identity = (stratBuildData[k]?.mod5?.identity) || bk.identity || {};
+  const pc = bk.colors[0]?.hex || cl.color || '#1d9e75';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:0;height:calc(100vh - 220px);min-height:500px;border:0.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);';
+
+  // Sidebar
+  const sidebar = document.createElement('div');
+  sidebar.style.cssText = 'width:220px;flex-shrink:0;border-right:0.5px solid var(--border);overflow-y:auto;background:var(--surface-lt);';
+  sidebar.innerHTML = `<div style="padding:14px 16px;border-bottom:0.5px solid var(--border);">
+    <div style="font-size:14px;font-weight:600;color:var(--text-1);">Brand Portal</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${cl.name}</div>
+  </div>`;
+
+  BP_SECTIONS.forEach(sec => {
+    const isAct = _bpSection === sec.id;
+    const item = document.createElement('div');
+    item.style.cssText = `display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;font-size:13px;color:${isAct?'var(--text-1)':'var(--text-2)'};background:${isAct?'rgba(29,158,117,.08)':'transparent'};border-left:2px solid ${isAct?'#1d9e75':'transparent'};font-weight:${isAct?'600':'400'};`;
+    item.innerHTML = `<span>${sec.icon}</span>${sec.lbl}`;
+    item.onclick = () => { _bpSection = sec.id; renderBrandPortalTab(); };
+    sidebar.appendChild(item);
+  });
+  wrap.appendChild(sidebar);
+
+  // Content area
+  const content = document.createElement('div');
+  content.style.cssText = 'flex:1;overflow-y:auto;padding:24px 28px;';
+
+  if(_bpSection === 'overview'){
+    content.innerHTML = `
+      <h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:16px;">Overview identità</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+        ${[
+          {lbl:'Archetipo', val:identity.archetipo},
+          {lbl:'Claim', val:identity.claim},
+          {lbl:'Payoff', val:identity.payoff},
+          {lbl:'Tone of Voice', val:identity.tov},
+        ].map(f => `<div style="background:var(--surface-lt);border:0.5px solid var(--border);border-radius:8px;padding:12px 14px;">
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">${f.lbl}</div>
+          <div style="font-size:13px;color:var(--text-1);white-space:pre-line;">${f.val?esc(f.val):'<span style="color:var(--text-3);font-style:italic;">— non ancora definito —</span>'}</div>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:12px;color:var(--text-3);">Questi dati vengono popolati automaticamente completando il Mod.5 in Strategy Builder.</div>`;
+  }
+  else if(_bpSection === 'colors'){
+    content.innerHTML = `<h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:16px;">Palette colori</h3>`;
+    const grid = document.createElement('div');
+    grid.className = 'bk-color-grid';
+    if(!bk.colors.length) grid.innerHTML = '<div style="color:var(--text-3);font-size:12px;">Nessun colore — vai su Brand Kit per aggiungerli.</div>';
+    bk.colors.forEach(c => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border-radius:8px;overflow:hidden;border:0.5px solid var(--border);';
+      card.innerHTML = `<div style="height:60px;background:${c.hex};"></div>
+        <div style="padding:6px 8px;background:var(--surface);">
+          <div style="font-size:11px;font-weight:500;color:var(--text-1);">${esc(c.name||c.role)}</div>
+          <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);">${c.hex}</div>
+        </div>`;
+      grid.appendChild(card);
+    });
+    content.appendChild(grid);
+  }
+  else if(_bpSection === 'fonts'){
+    content.innerHTML = `<h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:16px;">Tipografia</h3>`;
+    if(!bk.fonts.length){
+      content.innerHTML += '<div style="color:var(--text-3);font-size:12px;">Nessun font — vai su Brand Kit per aggiungerli.</div>';
+    } else {
+      bk.fonts.forEach(f => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:var(--surface-lt);border:0.5px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px;';
+        card.innerHTML = `<div style="font-size:24px;font-weight:${f.weight||700};color:var(--text-1);margin-bottom:4px;">${esc(f.name)}</div>
+          <div style="font-size:11px;color:var(--text-3);">${esc(f.role||'')}</div>`;
+        content.appendChild(card);
+      });
+    }
+  }
+  else if(_bpSection === 'logos'){
+    content.innerHTML = `<h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:16px;">Loghi</h3>`;
+    const grid = document.createElement('div');
+    grid.className = 'bk-logo-grid';
+    if(!bk.logos.length) grid.innerHTML = '<div style="color:var(--text-3);font-size:12px;">Nessun logo — vai su Brand Kit per caricarli.</div>';
+    bk.logos.forEach(logo => {
+      const bg = logo.variant==='bianco'?'#111':logo.variant==='nero'?'#fff':'var(--surface-lt)';
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--surface);border:0.5px solid var(--border);border-radius:8px;overflow:hidden;';
+      card.innerHTML = `<div style="height:90px;background:${bg};display:flex;align-items:center;justify-content:center;padding:10px;">
+          ${logo.url?`<img src="${logo.url}" style="max-width:100%;max-height:70px;object-fit:contain;">`:''}
+        </div>
+        <div style="padding:6px 8px;font-size:11px;color:var(--text-2);">${esc(logo.name||logo.variant)}</div>`;
+      grid.appendChild(card);
+    });
+    content.appendChild(grid);
+  }
+  else if(_bpSection === 'images'){
+    content.innerHTML = `<h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:16px;">Immagini</h3>
+      <div style="color:var(--text-3);font-size:12px;">Le immagini di riferimento sono gestite nel Moodboard di Produzione.</div>
+      <button onclick="switchTab('mood')" style="margin-top:12px;padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-2);font-family:var(--font);">→ Vai al Moodboard</button>`;
+  }
+  else if(_bpSection === 'pillars'){
+    content.innerHTML = `<h3 style="font-size:18px;font-weight:600;color:var(--text-1);margin-bottom:16px;">Pilastri contenuto</h3>
+      <div style="color:var(--text-3);font-size:12px;">I pilastri editoriali sono gestiti nella sezione Studio.</div>
+      <button onclick="switchTab('pilastri')" style="margin-top:12px;padding:7px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-2);font-family:var(--font);">→ Vai ai Pilastri</button>`;
+  }
+
+  wrap.appendChild(content);
+  body.appendChild(wrap);
 }

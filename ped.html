@@ -16,7 +16,7 @@
   <!-- Sicurezza: disabilita detection automatica numeri/email -->
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="/style.css?v=1782815464"/>
+<link rel="stylesheet" href="/style.css?v=1782816046"/>
 <style>
 .pilastro-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;border:1px solid rgba(0,0,0,.1);cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tag-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:500;background:var(--surface-lt);border:0.5px solid var(--border);color:var(--text-3);cursor:pointer;}
@@ -123,9 +123,11 @@
       </div>
       <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
         <!-- Strategia -->
-        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-audit" onclick="switchTab('audit')">Brand Audit</div>
-        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-pdm"   onclick="switchTab('pdm')">Piano Marketing</div>
-        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-pdc"   onclick="switchTab('pdc')">Piano Comunicazione</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-audit"    onclick="switchTab('audit')">Brand Audit</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-pdm"      onclick="switchTab('pdm')">Piano Marketing</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-pdc"      onclick="switchTab('pdc')">Piano Comunicazione</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-stratbuild" onclick="switchTab('stratbuild')">Strategy Builder</div>
+        <div class="sub-tab macro-sub macro-sub-strategia" id="sub-tab-brandportal" onclick="switchTab('brandportal')">Brand Portal</div>
         <!-- Studio -->
         <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-notes"      onclick="switchTab('notes')">Piano</div>
         <div class="sub-tab macro-sub macro-sub-studio" id="sub-tab-shooting"   onclick="switchTab('shooting')">Shooting</div>
@@ -704,6 +706,20 @@
   <div class="tab-page" id="page-pdc">
     <div class="studio-main" id="pdc-main">
       <div id="pdc-body"></div>
+    </div>
+  </div>
+
+  <!-- STRATEGY BUILDER TAB -->
+  <div class="tab-page" id="page-stratbuild">
+    <div class="studio-main" id="stratbuild-main">
+      <div id="stratbuild-body"></div>
+    </div>
+  </div>
+
+  <!-- BRAND PORTAL TAB -->
+  <div class="tab-page" id="page-brandportal">
+    <div class="studio-main" id="brandportal-main">
+      <div id="brandportal-body"></div>
     </div>
   </div>
 
@@ -1863,7 +1879,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782815464"></script>
+<script src="/app.js?v=1782816046"></script>
 <script>
 // Init macro nav dopo che app.js carica
 window.addEventListener('load', function(){
