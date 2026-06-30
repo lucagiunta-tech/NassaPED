@@ -264,7 +264,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
 /* TOPBAR */
-.topbar{height:56px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;z-index:200;}
+.topbar{height:72px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;z-index:200;}
 .subtopbar{display:none;} /* fusa nella topbar — mostrata via topbar-client-section */
 .subtopbar.visible{display:flex;}
 .subtopbar-client{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid var(--border);min-width:180px;max-width:220px;cursor:pointer;transition:background var(--t-fast);}
@@ -297,7 +297,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .cloud-badge.cloud-saving,.cloud-badge.cloud-loading{border-color:var(--blue-lt);background:var(--blue-lt);color:var(--blue-dk);}
 .cloud-badge.cloud-pending{border-color:var(--warning-border);background:var(--warning-bg);color:var(--warning-text);}
 .cloud-badge.cloud-error{border-color:#fca5a5;background:var(--danger-bg);color:var(--red);}
-.avatar{width:30px;height:30px;border-radius:50%;background:var(--text);display:flex;align-items:center;justify-content:center;color:var(--surface);font-size:var(--fs-sm);font-weight:700;cursor:pointer;flex-shrink:0;}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--text);display:flex;align-items:center;justify-content:center;color:var(--surface);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;}
 .user-switcher{position:fixed;top:58px;right:12px;background:var(--surface);border:var(--bw) solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-md);z-index:850;padding:8px;min-width:180px;display:none;flex-direction:column;gap:3px;}
 .user-switcher.open{display:flex;}
 .user-switcher-title{font-size:var(--fs-xs);font-weight:700;letter-spacing:var(--ls-wide);text-transform:uppercase;color:var(--text-3);padding:2px 6px 6px;border-bottom:1px solid var(--border-lt);margin-bottom:2px;}
