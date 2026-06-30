@@ -1178,7 +1178,21 @@ function routerRestore() {
   const clientTabMatch = path.match(/^\/a\/([^/]+)\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?/);
   if(clientTabMatch) {
     const clientId = decodeURIComponent(clientTabMatch[1]);
-    const tab = clientTabMatch[2];
+    // SANIFICAZIONE: link copiati/incollati a mano possono accumulare caratteri
+    // spuri a fine path (virgole, spazi anche percent-encoded come %20, altra
+    // punteggiatura) che [^/]+ accetta perché non sono slash. Senza questo trim,
+    // un tab come "stratoverview," o "stratoverview%20" non combacia con nessuna
+    // entry di TAB_TO_MACRO né con nessun id nel DOM: switchTab() prosegue
+    // silenziosamente senza attivare nessuna pagina, lasciando schermo vuoto e
+    // breadcrumb bloccato sul valore precedente — bug difficile da diagnosticare
+    // perché non lancia eccezioni e i log non segnalano nulla.
+    // decodeURIComponent prima del trim: senza, "stratoverview%20" non perde
+    // mai lo spazio (il simbolo % stesso non è nel charset rimosso, e dopo
+    // averlo tolto resterebbe comunque "20" appiccicato in coda).
+    const tabRaw = clientTabMatch[2];
+    let tabDecoded = tabRaw;
+    try { tabDecoded = decodeURIComponent(tabRaw); } catch(_) { /* sequenza percent malformata: procede col raw */ }
+    const tab = tabDecoded.replace(/[^a-zA-Z0-9_-]+$/, '').trim();
     const monthSlug = clientTabMatch[3] || ''; // e.g. "giugno-2026"
     const accIdxStr = clientTabMatch[4] || '';
     const ci = clients.findIndex(c => c.id === clientId || encodeURIComponent(c.name) === clientId);
@@ -1206,8 +1220,19 @@ function routerRestore() {
         const ai = parseInt(accIdxStr);
         if(!isNaN(ai) && ai >= 0) { feedAccountIdx = ai; storiesAccountIdx = ai; }
       }
-      if(tab !== 'feed') switchTab(tab);
-      else { renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge(); }
+      // VALIDAZIONE: chiama switchTab solo se il tab (dopo sanificazione) è uno
+      // dei tab noti dell'app. Un tab arbitrario o malformato non manda più
+      // l'app in uno stato vuoto silenzioso: resta sulla pagina Feed già aperta
+      // da openClientFeed, con un warning in console per il debug.
+      const KNOWN_TABS = Object.assign({feed:1,stories:1,notes:1,shooting:1,brand:1,pilastri:1,storyboard:1,ped:1,cal:1,anno:1,preview:1,ads:1}, TAB_TO_MACRO);
+      if(tab === 'feed') {
+        renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge();
+      } else if(tab && KNOWN_TABS.hasOwnProperty(tab)) {
+        switchTab(tab);
+      } else {
+        console.warn('[router] Tab sconosciuto nell\'URL ("'+tabRaw+'"), resto su Feed.');
+        renderFeedMonthPills(); renderFeedGrid(); updateFeedHeader(); updateFmtBadge();
+      }
       _routerSilent = false;
     }
     return;
