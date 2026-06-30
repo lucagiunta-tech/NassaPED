@@ -1242,7 +1242,10 @@ const TAB_TO_MACRO = {
 
 let currentMacro = 'studio';
 
-function switchMacro(macro, skipTabSwitch){
+function switchMacro(macro, skipTabSwitch, userClick){
+  const nav = document.getElementById('macro-nav');
+  const wasExpanded = nav?.classList.contains('expanded');
+  const wasSameMacro = currentMacro === macro;
   currentMacro = macro;
   // Update macro tab active state
   ['strategia','studio','produzione','pianificazione','lancio','monitoraggio'].forEach(m => {
@@ -1253,6 +1256,15 @@ function switchMacro(macro, skipTabSwitch){
   document.querySelectorAll('.macro-sub').forEach(el => {
     el.classList.toggle('macro-visible', el.classList.contains('macro-sub-'+macro));
   });
+  // Sub-tabs row: expand on user click of macro tab, collapse if clicking same active macro again
+  if(nav){
+    if(userClick){
+      if(wasSameMacro && wasExpanded) nav.classList.remove('expanded');
+      else nav.classList.add('expanded');
+    } else {
+      nav.classList.remove('expanded');
+    }
+  }
   // Switch to first tab of macro if not already in it
   if(!skipTabSwitch){
     const firstTab = Object.entries(TAB_TO_MACRO).find(([t,m])=>m===macro)?.[0];
@@ -1274,6 +1286,7 @@ function switchTab(tab){
   // Sync macro nav — show correct macro for this tab
   const tabMacro = TAB_TO_MACRO[tab] || 'studio';
   if(tabMacro !== currentMacro) switchMacro(tabMacro, true);
+  else document.getElementById('macro-nav')?.classList.remove('expanded');
   // Topbar unificata: mostra/nascondi sezione cliente
   const clientSection=document.getElementById('topbar-client-section');
   if(clientSection) clientSection.style.display = (tab!=='studio') ? 'contents' : 'none';

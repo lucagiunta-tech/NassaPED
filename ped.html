@@ -16,7 +16,7 @@
   <!-- Sicurezza: disabilita detection automatica numeri/email -->
   <meta name="format-detection" content="telephone=no, email=no, address=no">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230dff00'/><text y='.9em' font-size='70' x='15' fill='%23111111' font-family='Arial' font-weight='bold'>N</text></svg>"/>
-<link rel="stylesheet" href="/style.css?v=1782814632"/>
+<link rel="stylesheet" href="/style.css?v=1782815243"/>
 <style>
 .pilastro-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:600;border:1px solid rgba(0,0,0,.1);cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tag-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:99px;font-size:9px;font-weight:500;background:var(--surface-lt);border:0.5px solid var(--border);color:var(--text-3);cursor:pointer;}
@@ -84,7 +84,8 @@
 .macro-tab.active{color:var(--text-1);border-bottom-color:var(--green);}
 .macro-sub{display:none !important;}
 .macro-sub.macro-visible{display:inline-flex !important;}
-.macro-sub-strategia{display:inline-flex !important;} /* default visible on load */
+.macro-nav .subtopbar-tabs{max-height:0;overflow:hidden;transition:max-height .18s ease;}
+.macro-nav.expanded .subtopbar-tabs{max-height:44px;overflow-x:auto;}
 </style>
 </head>
 <body>
@@ -113,12 +114,12 @@
         <!-- Macro-aree (livello 1) + Sub-tab (livello 2) -->
     <div class="macro-nav" id="macro-nav">
       <div class="macro-tabs">
-        <div class="macro-tab active" id="macro-strategia"      onclick="switchMacro('strategia')">Strategia</div>
-        <div class="macro-tab" id="macro-studio"          onclick="switchMacro('studio')">Studio</div>
-        <div class="macro-tab"        id="macro-produzione"      onclick="switchMacro('produzione')">Produzione</div>
-        <div class="macro-tab"        id="macro-pianificazione"  onclick="switchMacro('pianificazione')">Pianificazione</div>
-        <div class="macro-tab"        id="macro-lancio"          onclick="switchMacro('lancio')">Lancio</div>
-        <div class="macro-tab"        id="macro-monitoraggio"    onclick="switchMacro('monitoraggio')">Monitoraggio</div>
+        <div class="macro-tab active" id="macro-strategia"      onclick="switchMacro('strategia', false, true)">Strategia</div>
+        <div class="macro-tab" id="macro-studio"          onclick="switchMacro('studio', false, true)">Studio</div>
+        <div class="macro-tab"        id="macro-produzione"      onclick="switchMacro('produzione', false, true)">Produzione</div>
+        <div class="macro-tab"        id="macro-pianificazione"  onclick="switchMacro('pianificazione', false, true)">Pianificazione</div>
+        <div class="macro-tab"        id="macro-lancio"          onclick="switchMacro('lancio', false, true)">Lancio</div>
+        <div class="macro-tab"        id="macro-monitoraggio"    onclick="switchMacro('monitoraggio', false, true)">Monitoraggio</div>
       </div>
       <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
         <!-- Strategia -->
@@ -1862,13 +1863,20 @@
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="/app.js?v=1782814632"></script>
+<script src="/app.js?v=1782815243"></script>
 <script>
 // Init macro nav dopo che app.js carica
 window.addEventListener('load', function(){
   setTimeout(function(){
     if(typeof switchMacro==='function') switchMacro('strategia', true);
   }, 200);
+});
+// Chiudi il menu macro-nav cliccando fuori
+document.addEventListener('click', function(e){
+  const nav = document.getElementById('macro-nav');
+  if(nav && nav.classList.contains('expanded') && !nav.contains(e.target)){
+    nav.classList.remove('expanded');
+  }
 });
 </script>
 
