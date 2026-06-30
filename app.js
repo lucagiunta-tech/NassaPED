@@ -1228,8 +1228,8 @@ window.addEventListener('popstate', (e) => {
 // ── Macro navigation (Studio / Pianificazione / Lancio) ──
 const TAB_TO_MACRO = {
   notes:'studio',shooting:'studio',brand:'studio',pilastri:'studio',mood:'studio',
-  storyboard:'pianificazione',feed:'pianificazione',stories:'pianificazione',
-  ped:'pianificazione',cal:'pianificazione',anno:'pianificazione',preview:'pianificazione',
+  storyboard:'produzione',feed:'produzione',stories:'produzione',ped:'produzione',
+  cal:'pianificazione',anno:'pianificazione',preview:'pianificazione',
   ads:'lancio',landing:'lancio',stampa:'lancio',
 };
 
@@ -1238,7 +1238,7 @@ let currentMacro = 'studio';
 function switchMacro(macro, skipTabSwitch){
   currentMacro = macro;
   // Update macro tab active state
-  ['studio','pianificazione','lancio'].forEach(m => {
+  ['studio','produzione','pianificazione','lancio'].forEach(m => {
     const el = document.getElementById('macro-'+m);
     if(el) el.classList.toggle('active', m===macro);
   });
