@@ -267,7 +267,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .topbar{height:72px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0;z-index:200;}
 .subtopbar{display:none;} /* fusa nella topbar — mostrata via topbar-client-section */
 .subtopbar.visible{display:flex;}
-.subtopbar-client{display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid var(--border);min-width:180px;max-width:220px;cursor:pointer;transition:background var(--t-fast);}
+.subtopbar-client{display:flex;align-items:center;gap:10px;padding:0 20px;border-right:1px solid var(--border);min-width:180px;max-width:240px;cursor:pointer;transition:background var(--t-fast);}
 .subtopbar-client:hover{background:var(--surface);}
 .subtopbar-back{font-size:var(--fs-base);color:var(--text-3);}
 .subtopbar-name{font-size:var(--fs-base);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -3794,9 +3794,10 @@ tbody tr:hover .tr-actions{opacity:1;}
 }
 .topbar-client-section .subtopbar-client:hover{background:var(--bg);}
 .topbar-client-section .subtopbar-tabs{
-  display:flex;align-items:stretch;
+  display:flex;align-items:center;
   flex:1;overflow-x:auto;scrollbar-width:none;
-  padding:0 4px;
+  padding:0 20px;
+  gap:2px;
 }
 .topbar-client-section .subtopbar-tabs::-webkit-scrollbar{display:none;}
 .topbar-client-section .acc-switcher{
