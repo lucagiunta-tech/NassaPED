@@ -117,6 +117,7 @@
         <div class="macro-tab"        id="macro-produzione"      onclick="switchMacro('produzione')">Produzione</div>
         <div class="macro-tab"        id="macro-pianificazione"  onclick="switchMacro('pianificazione')">Pianificazione</div>
         <div class="macro-tab"        id="macro-lancio"          onclick="switchMacro('lancio')">Lancio</div>
+        <div class="macro-tab"        id="macro-monitoraggio"    onclick="switchMacro('monitoraggio')">Monitoraggio</div>
       </div>
       <div class="subtopbar-tabs" style="touch-action:pan-x;overflow-x:auto;scrollbar-width:none;">
         <!-- Studio -->
@@ -138,6 +139,9 @@
         <div class="sub-tab macro-sub macro-sub-lancio" id="sub-tab-ads"        onclick="switchTab('ads')">Ads</div>
         <div class="sub-tab macro-sub macro-sub-lancio" id="sub-tab-landing"    onclick="switchTab('landing')">Landing</div>
         <div class="sub-tab macro-sub macro-sub-lancio" id="sub-tab-stampa"     onclick="switchTab('stampa')">Stampa</div>
+        <!-- Monitoraggio -->
+        <div class="sub-tab macro-sub macro-sub-monitoraggio" id="sub-tab-report" onclick="switchTab('report')">Report mensile</div>
+        <div class="sub-tab macro-sub macro-sub-monitoraggio" id="sub-tab-qbr"    onclick="switchTab('qbr')">QBR Trimestrale</div>
       </div>
     </div>
       <div class="sub-tab" id="sub-tab-shooting"   onclick="switchTab('shooting')">Shooting</div>
@@ -1041,6 +1045,20 @@
         <div class="sec-lbl" style="margin:16px 0 8px;">Campagne</div>
         <div class="ads-camp-list" id="ads-camp-list"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- REPORT MENSILE TAB -->
+  <div class="tab-page" id="page-report">
+    <div class="studio-main" id="report-main">
+      <div id="report-body"></div>
+    </div>
+  </div>
+
+  <!-- QBR TAB -->
+  <div class="tab-page" id="page-qbr">
+    <div class="studio-main" id="qbr-main">
+      <div id="qbr-body"></div>
     </div>
   </div>
 
