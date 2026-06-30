@@ -1244,8 +1244,7 @@ let currentMacro = 'studio';
 
 function switchMacro(macro, skipTabSwitch, userClick){
   const nav = document.getElementById('macro-nav');
-  const wasExpanded = nav?.classList.contains('expanded');
-  const wasSameMacro = currentMacro === macro;
+  const isCurrentlyExpanded = nav?.classList.contains('expanded') || false;
   currentMacro = macro;
   // Update macro tab active state
   ['strategia','studio','produzione','pianificazione','lancio','monitoraggio'].forEach(m => {
@@ -1256,11 +1255,10 @@ function switchMacro(macro, skipTabSwitch, userClick){
   document.querySelectorAll('.macro-sub').forEach(el => {
     el.classList.toggle('macro-visible', el.classList.contains('macro-sub-'+macro));
   });
-  // Sub-tabs row: expand on user click of macro tab, collapse if clicking same active macro again
+  // Sub-tabs row: click su macro-tab apre/chiude in base allo stato VISIBILE al momento del click
   if(nav){
     if(userClick){
-      if(wasSameMacro && wasExpanded) nav.classList.remove('expanded');
-      else nav.classList.add('expanded');
+      nav.classList.toggle('expanded', !isCurrentlyExpanded);
     } else {
       nav.classList.remove('expanded');
     }
