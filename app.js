@@ -1233,7 +1233,7 @@ window.addEventListener('popstate', (e) => {
 
 // ── Macro navigation (Studio / Pianificazione / Lancio) ──
 const TAB_TO_MACRO = {
-  audit:'strategia',pdm:'strategia',pdc:'strategia',
+  stratoverview:'strategia',audit:'strategia',pdm:'strategia',pdc:'strategia',stratbuild:'strategia',brandportal:'strategia',
   notes:'studio',shooting:'studio',brand:'studio',pilastri:'studio',mood:'studio',
   storyboard:'produzione',feed:'produzione',stories:'produzione',ped:'produzione',
   cal:'pianificazione',anno:'pianificazione',preview:'pianificazione',
@@ -1274,7 +1274,7 @@ function switchMacro(macro, skipTabSwitch, userClick){
 function switchTab(tab, preserveExpanded){
   currentTab=tab;
   routerPush(tab);
-  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr','audit','pdm','pdc','stratbuild','brandportal'];
+  const allTabs=['studio','notes','shooting','brand','pilastri','storyboard','feed','stories','ped','cal','anno','preview','ads','landing','stampa','mood','report','qbr','audit','pdm','pdc','stratbuild','brandportal','stratoverview'];
   allTabs.forEach(t=>{
     const te=document.getElementById('tab-'+t);if(te)te.classList.toggle('active',t===tab);
     const st=document.getElementById('sub-tab-'+t);if(st)st.classList.toggle('active',t===tab);
@@ -1337,6 +1337,7 @@ function switchTab(tab, preserveExpanded){
   if(tab==='pdc'){renderPdcTab();}
   if(tab==='stratbuild'){renderStratBuildTab();}
   if(tab==='brandportal'){renderBrandPortalTab();}
+  if(tab==='stratoverview'){renderStratOverviewTab();}
   if(tab==='storyboard'){renderSbTab();}
 }
 function showStudioAdd(){openModal('add-client-modal');setTimeout(()=>document.getElementById('nc-name')?.focus(),80);}
@@ -13668,4 +13669,121 @@ function renderBrandPortalTab(){
 
   wrap.appendChild(content);
   body.appendChild(wrap);
+}
+
+/* ══════════════════════════════════════════════════════════
+   STRATEGIA OVERVIEW — dashboard di riepilogo
+   Aggrega lo stato di compilazione di tutti i moduli Strategia
+══════════════════════════════════════════════════════════ */
+
+function renderStratOverviewTab(){
+  const body = document.getElementById('stratoverview-body');
+  if(!body) return;
+  body.innerHTML = '';
+  const cl = globalClientIdx >= 0 ? clients[globalClientIdx] : null;
+  if(!cl){ body.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text-3);font-size:13px;">Seleziona un cliente per la panoramica strategica.</div>'; return; }
+
+  const k = _stratKey();
+  const a = auditData[k] || {};
+  const pdm = pdmData[k] || {};
+  const pdc = pdcData[k] || {};
+  const sb = stratBuildData[k] || {mod4a:{}, mod5:{}};
+  const bk = currentBrandKit();
+
+  const auditFilled = AUDIT_SEZIONI.filter(s=>a[s.key]?.trim()).length;
+  const pdmFilled = PDM_SEZIONI.filter(s=>pdm[s.id]?.trim()).length;
+  const pdcFilled = PDC_SEZIONI.filter(s=>pdc[s.id]?.trim()).length;
+  const bpFilled = (bk.colors.length>0?1:0)+(bk.fonts.length>0?1:0)+(bk.logos.length>0?1:0)+
+                   (bk.identity?.archetipo?1:0)+(bk.identity?.claim?1:0)+(bk.identity?.tov?1:0);
+  const sbFilled = (sb.mod4a?.done?1:0)+(sb.mod5?.done?1:0);
+
+  const identity = sb.mod5?.identity || bk.identity || {};
+
+  body.style.cssText = 'max-width:1000px;';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'margin-bottom:20px;';
+  hdr.innerHTML = `<h2 style="font-size:24px;font-weight:600;color:var(--text-1);margin-bottom:3px;">${esc(cl.name)}</h2>
+    <p style="font-size:13px;color:var(--text-3);">Panoramica strategica</p>`;
+  body.appendChild(hdr);
+
+  // KPI cards row
+  const kpiRow = document.createElement('div');
+  kpiRow.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px;';
+  [
+    {lbl:'Brand Audit', n:auditFilled, tot:AUDIT_SEZIONI.length, tab:'audit'},
+    {lbl:'Piano Marketing', n:pdmFilled, tot:PDM_SEZIONI.length, tab:'pdm'},
+    {lbl:'Piano Comunicazione', n:pdcFilled, tot:PDC_SEZIONI.length, tab:'pdc'},
+    {lbl:'Brand Portal', n:bpFilled, tot:6, tab:'brandportal'},
+    {lbl:'Strategy Builder', n:sbFilled, tot:2, tab:'stratbuild'},
+  ].forEach(card => {
+    const pct = card.tot>0 ? Math.round(card.n/card.tot*100) : 0;
+    const el = document.createElement('div');
+    el.style.cssText = 'background:var(--surface-lt);border:0.5px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .12s;';
+    el.onmouseenter = () => el.style.borderColor = 'var(--green)';
+    el.onmouseleave = () => el.style.borderColor = 'var(--border)';
+    el.innerHTML = `
+      <div style="font-size:20px;font-weight:600;color:var(--text-1);margin-bottom:2px;">${card.n}/${card.tot}</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;">${card.lbl}</div>
+      <div style="height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:6px;">
+        <div style="height:100%;width:${pct}%;background:${pct>0?'#1d9e75':'transparent'};"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-3);">${pct}% · clicca per aprire</div>`;
+    el.onclick = () => switchTab(card.tab);
+    kpiRow.appendChild(el);
+  });
+  body.appendChild(kpiRow);
+
+  // Identity card (claim/archetipo/tov/palette)
+  const pc = bk.colors[0]?.hex || cl.color || '#1d9e75';
+  if(identity.claim || identity.archetipo || bk.colors.length){
+    const idCard = document.createElement('div');
+    idCard.style.cssText = `background:var(--surface);border:0.5px solid var(--border);border-left:3px solid ${pc};border-radius:10px;padding:20px 24px;margin-bottom:24px;`;
+    idCard.innerHTML = `
+      ${identity.claim ? `<div style="font-size:20px;font-weight:600;color:var(--text-1);font-style:italic;margin-bottom:16px;">"${esc(identity.claim)}"</div>` : ''}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Archetipo</div>
+          <div style="font-size:13px;font-weight:500;color:var(--text-1);">${identity.archetipo?esc(identity.archetipo):'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">ToV</div>
+          <div style="font-size:13px;color:var(--text-1);">${identity.tov?esc(identity.tov.split('\\n')[0]):'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Fase</div>
+          <div style="font-size:13px;color:var(--text-1);">Strategia</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Palette</div>
+          <div style="display:flex;gap:5px;margin-top:2px;">
+            ${bk.colors.slice(0,5).map(c=>`<div style="width:18px;height:18px;border-radius:4px;background:${c.hex};"></div>`).join('') || '<span style="font-size:11px;color:var(--text-3);">—</span>'}
+          </div>
+        </div>
+      </div>`;
+    body.appendChild(idCard);
+  }
+
+  // Quick links
+  const linksHdr = document.createElement('div');
+  linksHdr.style.cssText = 'font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;';
+  linksHdr.textContent = 'Vai a';
+  body.appendChild(linksHdr);
+
+  const linksRow = document.createElement('div');
+  linksRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+  [
+    {lbl:'📋 Brand Audit', tab:'audit'},
+    {lbl:'📊 Piano Marketing', tab:'pdm'},
+    {lbl:'💬 Piano Comunicazione', tab:'pdc'},
+    {lbl:'⭐ Strategy Builder', tab:'stratbuild'},
+    {lbl:'◈ Brand Portal', tab:'brandportal'},
+  ].forEach(l => {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:8px 14px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-2);cursor:pointer;background:transparent;font-family:var(--font);';
+    btn.textContent = l.lbl;
+    btn.onclick = () => switchTab(l.tab);
+    linksRow.appendChild(btn);
+  });
+  body.appendChild(linksRow);
 }
