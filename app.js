@@ -1302,6 +1302,13 @@ function switchTab(tab, preserveExpanded){
   });
   const backLbl = document.getElementById('macro-back-label');
   if(backLbl) backLbl.textContent = MACRO_LABELS[tabMacro] || tabMacro;
+  // Se c'è un cliente attivo E il tab non è la pagina lista-clienti, mostra i sub-tab
+  // (entra in modalità in-sub) — copre sia click utente che navigazione diretta/deep-link
+  const navEl = document.getElementById('macro-nav');
+  if(navEl){
+    if(tab !== 'studio' && globalClientIdx >= 0) navEl.classList.add('in-sub');
+    else navEl.classList.remove('in-sub');
+  }
   updateSubTabActiveHighlight();
   // Topbar unificata: mostra/nascondi sezione cliente
   const clientSection=document.getElementById('topbar-client-section');
