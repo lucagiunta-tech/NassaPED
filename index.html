@@ -768,14 +768,30 @@ const TIPO_CFG = {
   urgente: { lbl:"Urgente",  bg:"var(--red-lt)", border:"var(--red-dk)", color:"var(--red-dk)" },
 };
 
-const UTENTI = {
-  LG: { nome:"Luca Giunta",          color:"#1a1a1a", bg:"#F5C842" },
-  AA: { nome:"Alberto Arcidiacono",  color:"#fff",    bg:"#3B5BDB" },
-  GC: { nome:"Giacomo Cannizzaro",   color:"#fff",    bg:"#0F6E56" },
-  PF: { nome:"Paolone (Paolo F.)",   color:"#fff",    bg:"#7C3AED" },
-  AK: { nome:"Akash",                color:"#fff",    bg:"#C2185B" },
-  PC: { nome:"Paoletto (Paolo C.)",  color:"#fff",    bg:"#E65100" },
+// UTENTI — populated from /api/team at load time (see loadTeam below)
+// Fallback keeps the app functional if /api/team is slow or fails
+let UTENTI = {
+  LG: { nome:"Luca Giunta",         color:"#1a1a1a", bg:"#F5C842" },
+  AA: { nome:"Alberto Arcidiacono", color:"#fff",    bg:"#3B5BDB" },
+  GC: { nome:"Giacomo Cannizzaro",  color:"#fff",    bg:"#0F6E56" },
+  PF: { nome:"Paolone (Paolo F.)",  color:"#fff",    bg:"#7C3AED" },
+  AK: { nome:"Akash",               color:"#fff",    bg:"#C2185B" },
+  PC: { nome:"Paoletto (Paolo C.)", color:"#fff",    bg:"#E65100" },
 };
+
+async function loadTeam() {
+  try {
+    const r = await fetch('/api/team', { credentials: 'include' });
+    if (!r.ok) return;
+    const { team } = await r.json();
+    // Map canonical team → UTENTI format used by this app
+    const fresh = {};
+    team.forEach(m => { fresh[m.initials] = { nome: m.nome, color: m.color, bg: m.bg }; });
+    Object.assign(UTENTI, fresh);
+  } catch(e) {
+    console.warn('[team] fallback to hardcoded UTENTI', e.message);
+  }
+}
 
 const CLIENTI_DEFAULT = [
   { id:"kk",          nome:"KK Conto Terzi" },
@@ -925,6 +941,7 @@ async function save() {
 }
 
 async function loadFromSupabase() {
+  await loadTeam(); // sync canonical team before rendering
   try {
     const res = await fetch('/api/planning', { credentials: 'include' });
     if (!res.ok) return;
