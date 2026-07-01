@@ -10100,11 +10100,104 @@ function NassaPlan() {
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
+      flexDirection: "column",
       height: "100vh",
       fontFamily: DS.font,
       background: DS.bg
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  },
+
+  /* ── Topbar ── */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 56,
+      flexShrink: 0,
+      background: "#15151a",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "0 16px 0 20px",
+      borderBottom: "0.5px solid rgba(255,255,255,.08)",
+      zIndex: 200,
+      position: "sticky",
+      top: 0
+    }
+  },
+    /* Brand */
+    /*#__PURE__*/React.createElement("div", {
+      style: { display:"flex", alignItems:"center", gap:9 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { width:28, height:28, borderRadius:DS.r, background:"#0dff00",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          fontSize:12, fontWeight:800, color:"#111", flexShrink:0 }
+      }, "N"),
+      /*#__PURE__*/React.createElement("span", {
+        style: { fontSize:DS.fsSm, fontWeight:700, color:"#fff",
+          letterSpacing:DS.lsTight, whiteSpace:"nowrap" }
+      }, "Nassa Plan")
+    ),
+    /* App nav */
+    /*#__PURE__*/React.createElement("nav", {
+      style: { display:"flex", alignItems:"center", gap:2,
+        marginLeft:16, paddingLeft:16,
+        borderLeft:"0.5px solid rgba(255,255,255,.1)" }
+    },
+      [
+        { href:"/",         label:"Week",    bg:"#0dff00", color:"#111", icon:"N"  },
+        { href:"/app",      label:"Content", bg:"#0dff00", color:"#111", icon:"N"  },
+        { href:"/marketing",label:"Market",  bg:"#C2185B", color:"#fff", icon:"NM" },
+      ].map(app => /*#__PURE__*/React.createElement("a", {
+        key: app.href, href: app.href,
+        style: { display:"flex", flexDirection:"column", alignItems:"center", gap:2,
+          padding:"4px 8px", borderRadius:DS.r, textDecoration:"none",
+          transition:"background .15s" },
+        onMouseEnter: e => e.currentTarget.style.background = "rgba(255,255,255,.08)",
+        onMouseLeave: e => e.currentTarget.style.background = "transparent"
+      },
+        /*#__PURE__*/React.createElement("div", {
+          style: { width:26, height:26, borderRadius:6, background:app.bg,
+            color:app.color, display:"flex", alignItems:"center",
+            justifyContent:"center", fontSize:9, fontWeight:800 }
+        }, app.icon),
+        /*#__PURE__*/React.createElement("span", {
+          style: { fontSize:9, fontWeight:500, color:"rgba(255,255,255,.4)",
+            letterSpacing:".01em" }
+        }, app.label)
+      ))
+    ),
+    /* Spacer */
+    /*#__PURE__*/React.createElement("div", { style:{ flex:1 } }),
+    /* Storage indicator */
+    /*#__PURE__*/React.createElement(StorageIndicator, { status: storageStatus }),
+    /* Avatar */
+    /*#__PURE__*/React.createElement("div", {
+      style: { width:32, height:32, borderRadius:"50%", background:"#F5C842",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        fontSize:11, fontWeight:700, color:"#1a1a1a", cursor:"pointer",
+        flexShrink:0 },
+      id: "nplan-avatar",
+      title: "Utente"
+    }, window.__nassaUser?.username?.slice(0,2).toUpperCase() || "LG"),
+    /* Logout */
+    /*#__PURE__*/React.createElement("button", {
+      onClick: () => { if(typeof nassaLogout!=="undefined") nassaLogout();
+        else fetch("/api/auth",{method:"DELETE",credentials:"include"})
+          .finally(()=>window.location.replace("/app")); },
+      style: { background:"transparent", border:"none", cursor:"pointer",
+        color:"rgba(255,255,255,.4)", fontSize:12, padding:"4px 6px",
+        borderRadius:DS.r, display:"flex", alignItems:"center", gap:4 },
+      onMouseEnter: e => e.currentTarget.style.color = "rgba(255,255,255,.8)",
+      onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,.4)",
+      title: "Esci"
+    }, "⏻ Esci")
+  ),
+
+  /* ── Body row: sidebar + content ── */
+  /*#__PURE__*/React.createElement("div", {
+    style: { display:"flex", flex:1, overflow:"hidden" }
+  },
+  /*#__PURE__*/React.createElement("div", {
     style: {
       width: DS.sidebarExpanded,
       flexShrink: 0,
@@ -10145,51 +10238,7 @@ function NassaPlan() {
     }
   }, "Nassa Plan")), 
 
-  /* ── App nav ── */
-  /*#__PURE__*/React.createElement("div", {
-    style: { padding: "8px 8px 4px", borderTop: "0.5px solid rgba(255,255,255,.08)", marginTop: 4 }
-  },
-    [
-      { href: "/",         label: "Week",    bg: "#0dff00", color: "#111",    icon: "N"  },
-      { href: "/app",      label: "Content", bg: "#0dff00", color: "#111",    icon: "N"  },
-      { href: "/marketing",label: "Market",  bg: "#C2185B", color: "#fff",    icon: "NM" },
-    ].map(app => /*#__PURE__*/React.createElement("a", {
-      key: app.href,
-      href: app.href,
-      style: {
-        display: "flex", alignItems: "center", gap: 8,
-        padding: "5px 8px", borderRadius: 6, textDecoration: "none",
-        transition: "background .15s", marginBottom: 2
-      },
-      onMouseEnter: e => e.currentTarget.style.background = "rgba(255,255,255,.08)",
-      onMouseLeave: e => e.currentTarget.style.background = "transparent"
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: {
-          width: 20, height: 20, borderRadius: 5,
-          background: app.bg, color: app.color,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 8, fontWeight: 800, flexShrink: 0
-        }
-      }, app.icon),
-      /*#__PURE__*/React.createElement("span", {
-        style: { fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 500 }
-      }, app.label)
-    ))
-  ),
-
-  /*#__PURE__*/React.createElement("button", {
-    onClick: () => { if(typeof nassaLogout !== 'undefined') nassaLogout(); else { fetch('/api/auth',{method:'DELETE',credentials:'include'}).finally(()=>window.location.replace('/app')); } },
-    title: "Esci",
-    style: {
-      display: "flex", alignItems: "center", gap: 6,
-      background: "transparent", border: "none", cursor: "pointer",
-      color: "rgba(255,255,255,0.35)", fontSize: 11, padding: "2px 12px",
-      textDecoration: "none", marginTop: 2
-    },
-    onMouseEnter: e => e.currentTarget.style.color = "rgba(255,255,255,0.8)",
-    onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"
-  }, "⏻ Esci"), /*#__PURE__*/React.createElement("p", {
+  , /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: DS.fsXs,
       color: "rgba(255,255,255,0.35)",
@@ -10350,7 +10399,7 @@ function NassaPlan() {
       justifyContent: "center",
       gap: 6
     }
-  }, "+ Nuovo task"))), /*#__PURE__*/React.createElement("div", {
+  }, "+ Nuovo task")),  /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflow: "hidden",
@@ -10386,8 +10435,8 @@ function NassaPlan() {
       borderRadius: "50%",
       border: "none",
       cursor: "pointer",
-      background: DS.blueDk,
-      color: "#fff",
+      background: "#0dff00",
+      color: "#111",
       fontSize: 17,
       fontWeight: 400,
       display: "flex",
@@ -10484,9 +10533,7 @@ function NassaPlan() {
     onUpdate: selectedTask.kind === "ped" ? updateContenuto : updateTask,
     onLogTime: logTime,
     logged: logged
-  }), /*#__PURE__*/React.createElement(StorageIndicator, {
-    status: storageStatus
-  }));
+  }), ));
 }
 const __root = ReactDOM.createRoot(document.getElementById("root"));
 __root.render(React.createElement(NassaPlan));
