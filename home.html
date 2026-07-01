@@ -668,24 +668,8 @@ const TASK_MOCK = {
   "art-main":  [{ id:"t7", titolo:"PED luglio L'Artigianale", stato:"planned" }],
 };
 
-// ─── STATO ────────────────────────────────────────────────────────────────
-const SK = 'nassa_home_v1';
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(SK);
-    if (raw) {
-      const p = JSON.parse(raw);
-      return {
-        tasks: p.tasks || seedTasks(),
-        clienti: p.clienti || [...CLIENTI_DEFAULT],
-        progetti: p.progetti || JSON.parse(JSON.stringify(PROGETTI_DEFAULT)),
-        weekOffset: 0,
-      };
-    }
-  } catch(e){}
-  return { tasks: seedTasks(), clienti: [...CLIENTI_DEFAULT], progetti: JSON.parse(JSON.stringify(PROGETTI_DEFAULT)), weekOffset: 0 };
-}
+// ─── STATO & SUPABASE ───────────────────────────────────────────────────────
+let _saveTimer = null;
 
 function seedTasks() {
   return {
@@ -721,9 +705,40 @@ function seedTasks() {
   };
 }
 
-let state = loadState();
-function save() {
-  try { localStorage.setItem(SK, JSON.stringify({ tasks: state.tasks, clienti: state.clienti, progetti: state.progetti })); } catch(e){}
+// Seed state immediately (will be overwritten by Supabase data)
+let state = {
+  tasks: seedTasks(),
+  clienti: [...CLIENTI_DEFAULT],
+  progetti: JSON.parse(JSON.stringify(PROGETTI_DEFAULT)),
+  weekOffset: 0,
+};
+async function save() {
+  // Debounce — save 800ms after last change
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    try {
+      await fetch('/api/planning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tasks: state.tasks, clienti: state.clienti, progetti: state.progetti }),
+      });
+    } catch(e) { console.warn('Planning save error:', e); }
+  }, 800);
+}
+
+async function loadFromSupabase() {
+  try {
+    const res = await fetch('/api/planning', { credentials: 'include' });
+    if (!res.ok) return;
+    const { data } = await res.json();
+    if (data && data.tasks) {
+      state.tasks = data.tasks;
+      state.clienti = data.clienti || [...CLIENTI_DEFAULT];
+      state.progetti = data.progetti || JSON.parse(JSON.stringify(PROGETTI_DEFAULT));
+      renderGrid();
+    }
+  } catch(e) { console.warn('Planning load error:', e); }
 }
 
 // ─── SETTIMANA ────────────────────────────────────────────────────────────
@@ -1282,7 +1297,8 @@ function toggleTheme() {
 })();
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
-renderGrid();
+renderGrid(); // render with seed data immediately
+loadFromSupabase(); // then overwrite with real Supabase data
 </script>
 </body>
 </html>
