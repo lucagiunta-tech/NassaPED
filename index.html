@@ -1794,19 +1794,47 @@ function renderPanel(task, giorno) {
     <button class="tp-close" onclick="closePanel()">✕</button>
     <span class="tp-tipo" style="background:${cfg.bg};border:0.5px solid ${cfg.border};color:${cfg.color};">${cfg.lbl}</span>
     <div class="tp-testo">${esc(task.testo)}</div>
-    ${task.ref ? `<div class="tp-ref">→ ${esc(task.ref)}</div>` : ''}
-    <div class="tp-user">
-      ${u ? `<span style="width:18px;height:18px;border-radius:50%;background:${u.bg};color:${u.color};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;">${task.utente}</span> ${esc(u.nome)}` : ''}
+    ${task.ref ? `<a href="/nplan" class="tp-ref" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;cursor:pointer;" title="Vai a Nassa Plan">→ <span style="text-decoration:underline;text-underline-offset:2px;">${esc(task.ref)}</span> <span style="font-size:9px;opacity:.6;">↗</span></a>` : ''}
+    <div style="margin-top:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Assegnato a</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        <button onclick="panelAssign('${task.id}',${gStr},'')"
+          style="padding:3px 9px;border-radius:var(--r-pill);border:0.5px solid ${!task.utente?'var(--text-2)':'var(--border)'};background:${!task.utente?'var(--surface-2)':'transparent'};font-size:11px;font-weight:600;cursor:pointer;color:var(--text-2);">—</button>
+        ${Object.entries(UTENTI).map(([key,u]) => `
+          <button onclick="panelAssign('${task.id}',${gStr},'${key}')"
+            style="padding:3px 9px;border-radius:var(--r-pill);border:0.5px solid ${task.utente===key?u.bg:'var(--border)'};background:${task.utente===key?u.bg:'transparent'};color:${task.utente===key?u.color:'var(--text)'};font-size:11px;font-weight:600;cursor:pointer;" title="${u.nome}">${key}</button>
+        `).join('')}
+      </div>
     </div>
-    <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">
+    <div style="display:flex;gap:10px;margin-top:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">
+      <div style="flex:1;">
+        <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Data</label>
+        <input id="tp-data-input" type="date"
+          style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:6px 8px;outline:none;cursor:pointer;"
+          value="${task.data||''}"
+          onchange="tpAutoSave('data',this.value,'${task.id}',${gStr})"
+        />
+      </div>
+      <div style="width:90px;">
+        <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Durata</label>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input id="tp-durata-input" type="number" min="0.25" max="24" step="0.25"
+            style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:6px 8px;outline:none;"
+            value="${task.durata||''}"
+            placeholder="ore"
+            onchange="tpAutoSave('durata',parseFloat(this.value)||null,'${task.id}',${gStr})"
+          />
+          <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">h</span>
+        </div>
+      </div>
     </div>
     ${promoteHtml}
     <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
-      <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">Cambia tipo</div>
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Cambia tipo</div>
       <div style="display:flex;flex-wrap:wrap;gap:0;">${typeButtons}</div>
     </div>
     <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">
-      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:5px;">Note</label>
+      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Note</label>
       <textarea id="tp-note-input"
         style="width:100%;min-height:64px;resize:vertical;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:7px 9px;outline:none;line-height:1.5;"
         placeholder="Aggiungi una nota..."
@@ -1814,7 +1842,7 @@ function renderPanel(task, giorno) {
       >${esc(task.nota||'')}</textarea>
     </div>
     <div style="margin-top:10px;">
-      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:5px;">URL</label>
+      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">URL</label>
       <input id="tp-url-input" type="url"
         style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:7px 9px;outline:none;"
         placeholder="https://..."
@@ -1823,8 +1851,15 @@ function renderPanel(task, giorno) {
       />
       ${task.url ? `<a href="${esc(task.url)}" target="_blank" rel="noopener" style="font-size:10px;color:var(--blue-dk);display:block;margin-top:4px;word-break:break-all;">↗ ${esc(task.url)}</a>` : ''}
     </div>
-    <div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);">
-      <button onclick="deleteTask('${task.id}',${gStr});closePanel();" style="width:100%;padding:6px;border-radius:var(--rs);border:0.5px solid var(--red-lt);background:transparent;color:var(--red-dk);font-size:12px;cursor:pointer;">✕ Rimuovi task</button>
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <button onclick="panelSave('${task.id}',${gStr})"
+        style="flex:1;padding:8px;border-radius:var(--rs);border:none;background:var(--green);color:var(--green-text);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+        ✓ Salva
+      </button>
+      <button onclick="deleteTask('${task.id}',${gStr});closePanel();"
+        style="padding:8px 12px;border-radius:var(--rs);border:0.5px solid var(--red-lt);background:transparent;color:var(--red-dk);font-size:12px;cursor:pointer;">
+        ✕
+      </button>
     </div>
   `;
 }
@@ -1845,6 +1880,33 @@ function changeTaskType(id, giorno, nuovoTipo) {
   } else {
     renderPanel(task, giorno);
   }
+}
+
+function panelAssign(taskId, giorno, utente) {
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
+  const task = (state.tasks[key] || []).find(t => t.id === taskId);
+  if (!task) return;
+  task.utente = utente || null;
+  save();
+  renderGrid();
+  renderPanel(task, giorno);
+}
+
+function panelSave(taskId, giorno) {
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
+  const task = (state.tasks[key] || []).find(t => t.id === taskId);
+  if (!task) return;
+  const noteEl = document.getElementById('tp-note-input');
+  const urlEl  = document.getElementById('tp-url-input');
+  const dataEl = document.getElementById('tp-data-input');
+  const durataEl = document.getElementById('tp-durata-input');
+  if (noteEl)   task.nota   = noteEl.value;
+  if (urlEl)    task.url    = urlEl.value.trim();
+  if (dataEl)   task.data   = dataEl.value;
+  if (durataEl) task.durata = parseFloat(durataEl.value) || null;
+  save();
+  renderGrid();
+  closePanel();
 }
 
 function changeTaskAssignee(id, giorno, newUtente) {
@@ -1886,6 +1948,8 @@ function tpAutoSave(field, value, taskId, giorno) {
   if (!task) return;
   task[field] = value;
   save();
+  // Aggiorna anche la griglia per riflettere data/durata
+  if (field === 'data' || field === 'durata') renderGrid();
 }
 
 function promoteTask(id, giorno) {
@@ -1930,6 +1994,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
