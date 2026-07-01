@@ -693,6 +693,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   <div class="form-box" id="form-box">
     <div class="form-header">
       <div class="form-title-row">
+        <button id="form-back-btn" onclick="formGoBack()"
+          style="display:none;background:transparent;border:none;cursor:pointer;
+                 font-size:12px;color:var(--text-3);padding:0 8px 0 0;
+                 display:none;align-items:center;gap:3px;font-family:var(--font);"
+          onmouseenter="this.style.color='var(--text)'"
+          onmouseleave="this.style.color='var(--text-3)'">‹ Tipo</button>
         <span class="form-tag" id="form-tag">T task</span>
         <span class="form-testo" id="form-testo"></span>
       </div>
@@ -1375,6 +1381,9 @@ function openForm(testo, tipo, giorno) {
   document.getElementById('form-tag').style.color = tipo === 'T' ? 'var(--green-text)' : (tipo === 'F' ? 'var(--blue-dk)' : 'var(--pink-dk)');
   document.getElementById('form-testo').textContent = testo;
   document.getElementById('form-overlay').style.display = 'flex';
+  // Show back button only for F/S (T has internal back navigation per step)
+  const backBtn = document.getElementById('form-back-btn');
+  if (backBtn) backBtn.style.display = (tipo === 'F' || tipo === 'S') ? 'inline-flex' : 'none';
   renderForm();
 }
 
@@ -1388,6 +1397,13 @@ function closeForm() {
   const btn = document.getElementById('btn-confirm');
   if (btn) btn._bound = false;
   formState = {};
+}
+
+function formGoBack() {
+  // Close the form and reopen the type picker with the same text/giorno
+  const { testo, giorno } = formState;
+  closeForm();
+  if (testo) showTypePicker(testo, giorno);
 }
 
 function confirmTask() {
@@ -1825,6 +1841,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
