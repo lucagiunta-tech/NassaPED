@@ -304,6 +304,56 @@ const {useState,useEffect,useCallback,useRef} = React;
 const h = React.createElement;
 const API_KEY = ''; // auth via HttpOnly cookie — no client-side key needed
 
+// ── Team (loaded from /api/team at boot, fallback hardcoded) ──────────────
+let TEAM_BY_NAME = {
+  'Luca':     { initials:'LG', bg:'#F5C842', color:'#1a1a1a' },
+  'Alberto':  { initials:'AA', bg:'#3B5BDB', color:'#ffffff' },
+  'Giacomo':  { initials:'GC', bg:'#0F6E56', color:'#ffffff' },
+  'Paolone':  { initials:'PF', bg:'#7C3AED', color:'#ffffff' },
+  'Akash':    { initials:'AK', bg:'#C2185B', color:'#ffffff' },
+  'Paoletto': { initials:'PC', bg:'#E65100', color:'#ffffff' },
+};
+
+(async () => {
+  try {
+    const r = await fetch('/api/team', { credentials: 'include' });
+    if (!r.ok) return;
+    const { team } = await r.json();
+    const fresh = {};
+    team.forEach(m => { fresh[m.label] = { initials: m.initials, bg: m.bg, color: m.color }; });
+    Object.assign(TEAM_BY_NAME, fresh);
+  } catch(e) { console.warn('[brand] team fallback', e.message); }
+})();
+
+// Helper: return { initials, bg, color } for a manager name string
+function teamMember(managerName) {
+  if (!managerName) return null;
+  // Try exact match first, then first-name match
+  return TEAM_BY_NAME[managerName] ||
+    TEAM_BY_NAME[Object.keys(TEAM_BY_NAME).find(k => managerName.startsWith(k))] ||
+    null;
+}
+
+// Render a manager avatar pill: colored circle + name
+function ManagerPill(managerName) {
+  if (!managerName) return null;
+  const m = teamMember(managerName);
+  const bg     = m?.bg    || '#888';
+  const color  = m?.color || '#fff';
+  const initials = m?.initials || managerName.slice(0,2).toUpperCase();
+  return h('div', { style: { display:'flex', alignItems:'center', gap:5 } },
+    h('div', {
+      style: {
+        width:20, height:20, borderRadius:'50%',
+        background: bg, color: color,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:9, fontWeight:800, flexShrink:0,
+      }
+    }, initials),
+    h('span', { style:{ fontSize:12, fontWeight:600, color:'var(--text)' } }, managerName)
+  );
+}
+
 // ── Utils ──
 function contrast(hex){
   if(!hex||hex.length<4) return '#fff';
@@ -2047,9 +2097,9 @@ function PortaleCliente({client,onUpdateStatus}){
           h('div',{style:{fontSize:13,fontWeight:700,color:'var(--text)',letterSpacing:'var(--ls-tight)'}},client.name),
           h('div',{style:{fontSize:11,color:'var(--text-3)'}},client.claim?'"'+client.claim+'"':'Portale cliente')
         ),
-        client.manager&&h('div',{style:{marginLeft:'auto',textAlign:'right'}},
+        client.manager&&h('div',{style:{marginLeft:'auto',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}},
           h('div',{style:{fontSize:10,color:'var(--text-3)'}},'Manager'),
-          h('div',{style:{fontSize:12,fontWeight:600,color:'var(--text)'}},client.manager)
+          ManagerPill(client.manager)
         )
       ),
       h('div',{className:'topbar-right'},
@@ -2489,6 +2539,7 @@ function NassaBrand(){
                       h('span',{className:'badge-active'},'Attivo')
                     ),
                     h('div',{className:'client-row-meta'},
+                      c.manager && ManagerPill(c.manager),
                       h('span',{className:'client-row-slug'},c.slug),
                       p>0&&h('span',{className:'client-row-dot'},'·'),
                       p>0&&h('span',{style:{fontSize:11,color:'var(--magenta)',fontWeight:600}},p+' in attesa')
