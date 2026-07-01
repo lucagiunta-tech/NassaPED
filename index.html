@@ -156,6 +156,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   font-size:7px;font-weight:700;flex-shrink:0;
 }
 .chip-promoted{font-size:8px;color:var(--green-dk);font-weight:600;flex-shrink:0;}
+.chip-del{
+  font-size:9px;opacity:0;flex-shrink:0;cursor:pointer;
+  padding:0 2px;border-radius:2px;line-height:1;
+  transition:opacity .1s;margin-left:1px;
+}
+.chip:hover .chip-del{opacity:.6;}
+.chip-del:hover{opacity:1 !important;}
 .add-chip{
   font-size:10px;padding:3px 6px;border-radius:var(--rs);
   color:var(--text-3);border:var(--bw) dashed var(--border);
@@ -212,6 +219,46 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .qa-tag-btn.N{border-color:var(--border);color:var(--text-3);}
 .qa-tag-btn.N:hover{background:var(--bg);}
 .qa-hint{font-size:10px;color:var(--text-3);white-space:nowrap;}
+
+/* ── Type Picker overlay ── */
+.type-picker-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;
+  display:flex;align-items:flex-start;justify-content:center;padding-top:120px;
+}
+.type-picker-box{
+  background:var(--surface);border-radius:12px;
+  box-shadow:0 20px 40px rgba(0,0,0,.15);
+  padding:20px;width:360px;
+}
+.tp-tit{font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:4px;}
+.tp-testo-preview{
+  font-size:15px;font-weight:600;color:var(--text);
+  margin-bottom:16px;line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tp-row{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:8px;}
+.tp-types{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;}
+.tp-type-btn{
+  padding:10px 12px;border-radius:var(--r);border:var(--bw) solid var(--border);
+  background:transparent;cursor:pointer;text-align:left;transition:all var(--t);
+}
+.tp-type-btn:hover{border-color:var(--text-2);}
+.tp-type-btn.sel{border-width:2px;}
+.tp-type-btn .tp-label{font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:2px;}
+.tp-type-btn .tp-sublabel{font-size:10px;color:var(--text-3);}
+.tp-actions{display:flex;gap:8px;justify-content:flex-end;}
+.tp-cancel{
+  height:32px;padding:0 14px;border-radius:var(--rs);
+  border:var(--bw) solid var(--border);background:transparent;
+  color:var(--text-2);font-size:13px;cursor:pointer;
+}
+.tp-confirm{
+  height:32px;padding:0 16px;border-radius:var(--rs);border:none;
+  background:var(--green);color:var(--green-text);
+  font-size:13px;font-weight:700;cursor:pointer;
+}
+.tp-confirm:disabled{background:var(--border);color:var(--text-3);cursor:default;}
 
 /* ── Task Form T (cascata) ── */
 .form-overlay{
@@ -872,9 +919,11 @@ function chipHtml(task, giorno) {
   const u = UTENTI[task.utente];
   const avHtml = u ? `<span class="chip-av" style="background:${u.bg};color:${u.color};">${task.utente}</span>` : '';
   const promoHtml = task.promoted ? `<span class="chip-promoted">✓</span>` : '';
-  return `<div class="chip tipo-${task.tipo}" data-id="${task.id}" data-g="${giorno}" onclick="openPanel('${task.id}',${giorno})" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};">
-    <span class="chip-text">${esc(task.testo)}</span>
+  const gStr = typeof giorno === 'number' ? giorno : `'${giorno}'`;
+  return `<div class="chip tipo-${task.tipo}" data-id="${task.id}" data-g="${giorno}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};">
+    <span class="chip-text" onclick="openPanel('${task.id}',${gStr})" style="cursor:pointer;">${esc(task.testo)}</span>
     ${promoHtml}${avHtml}
+    <span class="chip-del" onclick="deleteTask('${task.id}',${gStr})" title="Rimuovi">✕</span>
   </div>`;
 }
 
@@ -959,7 +1008,13 @@ function inlineAdd(gi) {
 }
 
 function inlineKeydown(e) {
-  if (e.key === 'Enter') { inlineCommit('N'); }
+  if (e.key === 'Enter') {
+    // Show type picker overlay instead of silently saving as N
+    const inp = document.querySelector('.add-input');
+    if (!inp || !inp.value.trim()) { closeInlineInput(); renderGrid(); return; }
+    showTypePicker(inp.value.trim(), inlineGiorno);
+    closeInlineInput();
+  }
   if (e.key === 'Escape') { closeInlineInput(); renderGrid(); }
 }
 
@@ -997,7 +1052,14 @@ function inlineCommit(tipo) {
 
 // ─── QUICK ADD BAR ────────────────────────────────────────────────────────
 function qaKeydown(e) {
-  if (e.key === 'Enter') qaCommit('N');
+  if (e.key === 'Enter') {
+    const inp = document.getElementById('qa-input');
+    const testo = inp.value.trim();
+    if (!testo) { inp.focus(); return; }
+    // Show type picker — don't silently save as N
+    showTypePicker(testo, 'today');
+    inp.value = '';
+  }
 }
 
 function qaCommit(tipo) {
@@ -1018,6 +1080,94 @@ function addTask(task, giorno) {
   state.tasks[key].push(task);
   save();
   renderGrid();
+}
+
+function deleteTask(id, giorno) {
+  const key = giorno === 'later' ? 'later' : Number(giorno);
+  if (state.tasks[key]) {
+    state.tasks[key] = state.tasks[key].filter(t => t.id !== id);
+  }
+  // Also close panel if it was showing this task
+  const panel = document.getElementById('task-panel');
+  if (panel && panel.dataset.taskId === id) closePanel();
+  save();
+  renderGrid();
+}
+
+// ─── TYPE PICKER ─────────────────────────────────────────────────────────────
+let typePickerState = {};
+
+function showTypePicker(testo, giorno) {
+  typePickerState = { testo, giorno, selected: null };
+  const overlay = document.createElement('div');
+  overlay.className = 'type-picker-overlay';
+  overlay.id = 'type-picker';
+  overlay.onclick = (e) => { if (e.target === overlay) closeTypePicker(); };
+  overlay.innerHTML = renderTypePickerHtml(testo, null);
+  document.body.appendChild(overlay);
+}
+
+function renderTypePickerHtml(testo, selected) {
+  const types = [
+    { id:'T', label:'T — Task',     sub:'Collega a cliente, progetto e fase', bg:'var(--green-lt)',   border:'var(--green-dk)',  selBg:'var(--green-lt)'  },
+    { id:'F', label:'F — Feed',     sub:'Contenuto social → storyboard PED', bg:'var(--blue-lt)',    border:'var(--blue-dk)',   selBg:'var(--blue-lt)'   },
+    { id:'S', label:'S — Stories',  sub:'Story → storyboard PED',            bg:'var(--pink-lt)',    border:'var(--pink-dk)',   selBg:'var(--pink-lt)'   },
+    { id:'N', label:'N — Nota',     sub:'Promemoria personale',               bg:'var(--surface-2)',  border:'var(--border)',    selBg:'var(--surface-2)' },
+    { id:'meeting', label:'Meeting', sub:'Appuntamento o call',               bg:'var(--amber-lt)',  border:'var(--amber-dk)',  selBg:'var(--amber-lt)'  },
+    { id:'urgente', label:'Urgente', sub:'Alta priorità — azione immediata',  bg:'var(--red-lt)',    border:'var(--red-dk)',    selBg:'var(--red-lt)'    },
+  ];
+  return `<div class="type-picker-box" onclick="event.stopPropagation()">
+    <div class="tp-tit">Tipo di elemento</div>
+    <div class="tp-testo-preview">${esc(testo)}</div>
+    <div class="tp-row">Che tipo è?</div>
+    <div class="tp-types">
+      ${types.map(t => `
+        <button class="tp-type-btn ${selected===t.id?'sel':''}"
+          style="${selected===t.id ? `background:${t.selBg};border-color:${t.border};border-width:2px;` : ''}"
+          onclick="selectType('${t.id}')">
+          <span class="tp-label">${t.label}</span>
+          <span class="tp-sublabel">${t.sub}</span>
+        </button>`).join('')}
+    </div>
+    <div class="tp-actions">
+      <button class="tp-cancel" onclick="closeTypePicker()">Annulla</button>
+      <button class="tp-confirm" id="tp-confirm-btn" onclick="confirmTypePicker()" ${!selected?'disabled':''}>
+        ${selected==='T'?'Continua →' : selected==='F'||selected==='S'?'Continua →' : 'Salva'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function selectType(id) {
+  typePickerState.selected = id;
+  const overlay = document.getElementById('type-picker');
+  if (overlay) overlay.innerHTML = renderTypePickerHtml(typePickerState.testo, id);
+  overlay.onclick = (e) => { if (e.target === overlay) closeTypePicker(); };
+}
+
+function closeTypePicker() {
+  const el = document.getElementById('type-picker');
+  if (el) el.remove();
+}
+
+function confirmTypePicker() {
+  const { testo, giorno, selected } = typePickerState;
+  if (!selected) return;
+  closeTypePicker();
+  const realGiorno = giorno === 'today' ? getTodayIndex() : giorno;
+  if (selected === 'T' || selected === 'F' || selected === 'S') {
+    openForm(testo, selected, realGiorno);
+  } else {
+    addTask({ id: uid(), tipo: selected, testo, utente: 'LG' }, realGiorno);
+  }
+}
+
+function getTodayIndex() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const mon = getCurrentMonday();
+  const diff = Math.round((today - mon) / 86400000);
+  return (diff >= 0 && diff < 7) ? diff : 1;
 }
 
 // ─── FORM T / F CASCATA ──────────────────────────────────────────────────
@@ -1295,13 +1445,58 @@ function fsCloseNuovoCliente() { formState.newClienteOpen = false; formState.new
 
 // ─── TASK PANEL ──────────────────────────────────────────────────────────
 function openPanel(id, giorno) {
-  const key = giorno === 'later' || giorno === -1 ? 'later' : Number(giorno);
-  const tasks = state.tasks[key] || [];
-  const task = tasks.find(t => t.id === id);
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : Number(giorno);
+  const taskList = state.tasks[key] || [];
+  const task = taskList.find(t => t.id === id);
   if (!task) return;
+  const panel = document.getElementById('task-panel');
+  panel.dataset.taskId = id;
+  renderPanel(task, giorno);
+  panel.style.display = 'block';
+}
+
+function renderPanel(task, giorno) {
   const panel = document.getElementById('task-panel');
   const cfg = TIPO_CFG[task.tipo] || TIPO_CFG.N;
   const u = UTENTI[task.utente];
+  const gStr = typeof giorno === 'number' ? giorno : `'${giorno}'`;
+
+  // Type-change buttons (compact)
+  const typeButtons = Object.entries(TIPO_CFG)
+    .filter(([k]) => k !== 'all' && k !== task.tipo)
+    .map(([k, c]) => `<button onclick="changeTaskType('${task.id}',${gStr},'${k}')"
+      style="padding:3px 8px;border-radius:var(--r-pill);border:0.5px solid ${c.border};
+             background:${c.bg};color:${c.color};font-size:10px;font-weight:600;cursor:pointer;
+             margin:2px;">
+      ${c.lbl}
+    </button>`).join('');
+
+  // Promote section — depends on current type
+  let promoteHtml = '';
+  if (task.promoted) {
+    promoteHtml = `<div class="tp-promote"><div class="tp-promote-lbl" style="color:var(--green-dk);">✓ Già promosso</div></div>`;
+  } else if (task.tipo === 'T') {
+    promoteHtml = `<div class="tp-promote">
+      <div class="tp-promote-lbl">Propaga a Nassa Plan</div>
+      <button class="tp-promote-btn" onclick="promoteTask('${task.id}',${gStr})">→ Crea task in Plan</button>
+    </div>`;
+  } else if (task.tipo === 'F' || task.tipo === 'S') {
+    promoteHtml = `<div class="tp-promote">
+      <div class="tp-promote-lbl">Propaga a NassaPED storyboard</div>
+      <button class="tp-promote-btn" onclick="promoteTask('${task.id}',${gStr})">→ Aggiungi a storyboard</button>
+    </div>`;
+  } else {
+    // N / meeting / urgente — offer to convert to T, F or S
+    promoteHtml = `<div class="tp-promote">
+      <div class="tp-promote-lbl">Converti in task o contenuto</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">
+        <button class="tp-promote-btn" onclick="changeTaskType('${task.id}',${gStr},'T')" style="background:var(--green-lt);border-color:var(--green-dk);color:var(--green-text);">→ T task</button>
+        <button class="tp-promote-btn" onclick="changeTaskType('${task.id}',${gStr},'F')" style="background:var(--blue-lt);border-color:var(--blue-dk);color:var(--blue-dk);">→ F feed</button>
+        <button class="tp-promote-btn" onclick="changeTaskType('${task.id}',${gStr},'S')" style="background:var(--pink-lt);border-color:var(--pink-dk);color:var(--pink-dk);">→ S stories</button>
+      </div>
+    </div>`;
+  }
+
   panel.innerHTML = `
     <button class="tp-close" onclick="closePanel()">✕</button>
     <span class="tp-tipo" style="background:${cfg.bg};border:0.5px solid ${cfg.border};color:${cfg.color};">${cfg.lbl}</span>
@@ -1310,16 +1505,33 @@ function openPanel(id, giorno) {
     <div class="tp-user">
       ${u ? `<span style="width:18px;height:18px;border-radius:50%;background:${u.bg};color:${u.color};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;">${task.utente}</span> ${esc(u.nome)}` : ''}
     </div>
-    ${task.promoted ? `<div class="tp-promote"><div class="tp-promote-lbl" style="color:var(--green-dk);">✓ Già promosso</div></div>` :
-      (task.tipo === 'T' || task.tipo === 'F' || task.tipo === 'S') ? `
-      <div class="tp-promote">
-        <div class="tp-promote-lbl">Propaga a ${task.tipo === 'T' ? 'Nassa Plan' : 'NassaPED storyboard'}</div>
-        <button class="tp-promote-btn" onclick="promoteTask('${id}',${giorno})">
-          ${task.tipo === 'T' ? '→ Crea task in Plan' : '→ Aggiungi a storyboard'}
-        </button>
-      </div>` : ''}
+    ${promoteHtml}
+    <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">Cambia tipo</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0;">${typeButtons}</div>
+    </div>
+    <div style="margin-top:10px;">
+      <button onclick="deleteTask('${task.id}',${gStr});closePanel();" style="width:100%;padding:6px;border-radius:var(--rs);border:0.5px solid var(--red-lt);background:transparent;color:var(--red-dk);font-size:12px;cursor:pointer;">✕ Rimuovi task</button>
+    </div>
   `;
-  panel.style.display = 'block';
+}
+
+function changeTaskType(id, giorno, nuovoTipo) {
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : Number(giorno);
+  const taskList = state.tasks[key] || [];
+  const task = taskList.find(t => t.id === id);
+  if (!task) return;
+  task.tipo = nuovoTipo;
+  task.promoted = false;
+  save();
+  renderGrid();
+  // If it's T, F, S — open the cascade form to add context
+  if (nuovoTipo === 'T' || nuovoTipo === 'F' || nuovoTipo === 'S') {
+    closePanel();
+    openForm(task.testo, nuovoTipo, giorno);
+  } else {
+    renderPanel(task, giorno);
+  }
 }
 
 function closePanel() { document.getElementById('task-panel').style.display = 'none'; }
