@@ -1356,6 +1356,9 @@ function getTodayKey() {
 let formState = {};
 
 function openForm(testo, tipo, giorno) {
+  // Reset btn binding so the right handler is wired for this form type
+  const _btnReset = document.getElementById('btn-confirm');
+  if (_btnReset) _btnReset._bound = false;
   formState = {
     testo, tipo, giorno,
     step: 1,
@@ -1381,6 +1384,10 @@ function overlayClick(e) {
 
 function closeForm() {
   document.getElementById('form-overlay').style.display = 'none';
+  // Reset _bound so next openForm() wires onclick fresh
+  const btn = document.getElementById('btn-confirm');
+  if (btn) btn._bound = false;
+  formState = {};
 }
 
 function confirmTask() {
@@ -1597,6 +1604,16 @@ function renderForm() {
         </div>` : ''}
     `;
   }
+  // ── Universal focus restore: after any renderForm rebuild ──────────────
+  setTimeout(() => {
+    const inp = document.getElementById('nc-inp')
+      || document.getElementById('np-inp')
+      || document.getElementById('fase-new-inp');
+    if (inp) {
+      inp.focus();
+      try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch(e) {}
+    }
+  }, 0);
 }
 
 // Handlers form T
@@ -1808,6 +1825,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
