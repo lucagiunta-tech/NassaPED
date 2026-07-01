@@ -56,6 +56,31 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   justify-content:center;font-size:11px;font-weight:700;color:#1a1a1a;cursor:pointer;
 }
 
+/* ── App nav icons in topbar ── */
+.topbar-apps{
+  display:flex;align-items:center;gap:2px;
+  margin-left:16px;padding-left:16px;
+  border-left:0.5px solid rgba(255,255,255,.1);
+}
+.app-nav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 8px;border-radius:var(--r);text-decoration:none;
+  transition:background var(--t-fast);cursor:pointer;
+}
+.app-nav-btn:hover{background:rgba(255,255,255,.08);}
+.app-nav-btn.active{background:rgba(255,255,255,.1);}
+.app-nav-icon{
+  width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;flex-shrink:0;
+}
+.app-nav-label{
+  font-size:9px;font-weight:500;
+  color:rgba(255,255,255,.4);white-space:nowrap;
+  letter-spacing:.01em;
+}
+.app-nav-btn:hover .app-nav-label{color:rgba(255,255,255,.7);}
+
 /* ── Planning section header ─────────────────────────────── */
 .planning-section{
   background:var(--surface);
@@ -572,15 +597,42 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <!-- TOPBAR -->
 <div class="topbar">
+  <!-- Brand -->
   <div class="brand-wrap">
     <div class="brand-mark">N</div>
     <span class="brand-name">Nassa Week</span>
   </div>
+
+  <!-- App nav icons -->
+  <nav class="topbar-apps">
+    <a class="app-nav-btn" href="/app" title="NassaContent">
+      <div class="app-nav-icon" style="background:var(--green);color:var(--green-text);">N</div>
+      <span class="app-nav-label">Content</span>
+    </a>
+    <a class="app-nav-btn" href="/nplan" title="Nassa Plan">
+      <div class="app-nav-icon" style="background:#5B4FD9;color:#fff;">NP</div>
+      <span class="app-nav-label">Plan</span>
+    </a>
+    <a class="app-nav-btn" href="/tweek" title="NassaTime">
+      <div class="app-nav-icon" style="background:#0F6E56;color:#fff;">NT</div>
+      <span class="app-nav-label">Time</span>
+    </a>
+    <a class="app-nav-btn" href="/brand" title="NassaBrand">
+      <div class="app-nav-icon" style="background:#C2185B;color:#fff;">NB</div>
+      <span class="app-nav-label">Brand</span>
+    </a>
+    <a class="app-nav-btn" href="/strategy" title="NassaStrategy">
+      <div class="app-nav-icon" style="background:#7C3AED;color:#fff;">NS</div>
+      <span class="app-nav-label">Strategy</span>
+    </a>
+  </nav>
+
   <div class="topbar-spacer"></div>
-  <button class="tb-btn" title="Cerca">🔍</button>
+
+  <!-- Right controls -->
   <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="Tema">🌙</button>
   <div class="av" id="topbar-avatar" title="Luca Giunta">LG</div>
-  <button class="tb-btn" onclick="nassaLogout()" title="Esci" style="font-size:12px;color:var(--text-2);">⏻</button>
+  <button class="tb-btn" onclick="nassaLogout()" title="Esci" style="font-size:12px;color:rgba(255,255,255,.4);">⏻</button>
 </div>
 
 <!-- PLANNING SECTION -->
