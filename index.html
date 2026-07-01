@@ -891,7 +891,7 @@ async function save() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ tasks: state.tasks, clienti: state.clienti, progetti: state.progetti, planTasks: state.planTasks || {} }),
+        body: JSON.stringify({ homeTasks: state.tasks, clienti: state.clienti, progetti: state.progetti, planTasks: state.planTasks || {} }),
       });
     } catch(e) { console.warn('Planning save error:', e); }
   }, 800);
@@ -907,7 +907,9 @@ async function loadFromSupabase() {
       const keys = Object.keys(data.tasks);
       const hasRealTasks = keys.some(k => k === 'later' || /^\d{4}-\d{2}-\d{2}$/.test(k));
       if (hasRealTasks) {
-        state.tasks = data.tasks;
+        // homeTasks is the correct key. Fall back to data.tasks for backward compat
+        // with any existing Supabase data saved before this migration.
+        state.tasks = data.homeTasks || data.tasks || state.tasks;
         state.clienti = data.clienti || [...CLIENTI_DEFAULT];
         state.progetti = data.progetti || JSON.parse(JSON.stringify(PROGETTI_DEFAULT));
         if (data.logged) state.logged = data.logged;
@@ -2015,6 +2017,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
