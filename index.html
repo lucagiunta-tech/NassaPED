@@ -141,15 +141,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .week-grid.no-weekend .day-col.weekend-col{display:none;}
 .day-col{
   border-top:2px solid var(--border);
-  padding-top:12px;min-height:520px;
+  padding-top:12px;min-height:calc(100vh - 220px);
   background-image: repeating-linear-gradient(
     to bottom,
     transparent,
-    transparent 50px,
-    var(--border) 50px,
-    var(--border) 51px
+    transparent 48px,
+    #e5e7eb 48px,
+    #e5e7eb 49px
   );
-  background-position: 0 63px; /* offset: padding-top + day-head height */
+  background-position: 0 57px;
 }
 .day-col.today{border-top-color:var(--green);}
 .day-col.weekend{opacity:.55;}
