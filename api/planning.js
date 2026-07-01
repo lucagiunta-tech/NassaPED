@@ -40,7 +40,7 @@ async function getUser(req) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    return payload.user || 'default';
+    return payload.username || payload.user || 'shared'; // username is canonical, user is legacy fallback
   } catch { return null; }
 }
 
