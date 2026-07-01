@@ -27,7 +27,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* ── Topbar ─────────────────────────────────────────────── */
 .topbar{
-  height:var(--topbar);background:#15151a;
+  height:var(--topbar);background:#15151a !important;
   display:flex;align-items:center;gap:8px;
   padding:0 16px 0 20px;position:sticky;top:0;z-index:200;
   border-bottom:0.5px solid rgba(255,255,255,.08);
@@ -113,14 +113,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   transition:grid-template-columns .2s ease;
 }
 .week-grid.no-weekend{grid-template-columns:repeat(5,1fr);}
-.week-grid .day-col.weekend-col{display:none;}
+.week-grid.no-weekend .day-col.weekend-col{display:none;}
 .day-col{
   border-top:2px solid var(--border);
   padding-top:10px;min-height:80px;
 }
 .day-col.today{border-top-color:var(--green);}
 .day-col.weekend{opacity:.55;}
-.day-col.hidden{display:none;}
 .day-head{text-align:center;margin-bottom:10px;}
 .day-name{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
 .day-num{
@@ -1088,7 +1087,6 @@ function renderGrid() {
       day.isToday ? 'today' : '',
       day.isWeekend ? 'weekend' : '',
       day.isWeekend ? 'weekend-col' : '',
-      (!state.showWeekend && day.isWeekend) ? 'hidden' : ''
     ].filter(Boolean).join(' ');
     const dropAttrs = `ondragover="dragOver(event,'${dk}')" ondragleave="dragLeave(event)" ondrop="dragDrop(event,'${dk}')"`;
     const numHtml = day.isToday
