@@ -58,6 +58,8 @@
 @media(max-width:700px){.nc-mood-masonry{columns:2;}}
 @media(max-width:440px){.nc-mood-masonry{columns:1;}}
 /* ── Brand Kit ── */
+.topbar{display:flex;align-items:center;}
+.topbar-right{margin-left:auto;flex-shrink:0;}
 .bk-section{margin-bottom:28px;}
 .bk-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid var(--border);}
 .bk-section-title{font-size:13px;font-weight:600;color:var(--text-1);text-transform:uppercase;letter-spacing:.06em;}
@@ -77,7 +79,7 @@
 .bk-asset-card{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .12s;}
 .bk-asset-card:hover{border-color:var(--green);}
 /* ── Macro nav (2 livelli, riga singola con swap) ── */
-.macro-nav{display:flex;flex-direction:row;align-items:center;position:relative;height:100%;}
+.macro-nav{display:flex;flex-direction:row;align-items:center;position:relative;height:100%;flex:1;min-width:0;}
 .macro-tabs{display:flex;align-items:center;height:100%;gap:2px;padding:0 20px;}
 .macro-nav.in-sub .macro-tabs{display:none;}
 .macro-tab{padding:8px 18px;font-size:15px;font-weight:600;color:var(--text-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s,border-color .12s;white-space:nowrap;}
@@ -92,6 +94,16 @@
 .macro-back:hover{color:var(--green);}
 .macro-back svg{width:14px;height:14px;}
 .sub-tab.macro-sub.macro-visible.sub-active{color:#003300;background:var(--green);border-radius:99px;font-weight:600;border-bottom-color:transparent !important;padding-top:7px !important;padding-bottom:7px !important;margin:0 6px 0 0;}
+
+/* Sidebar hidden — main content takes full width */
+.sidebar{display:none!important;}
+.app-body,.main-area,[class*="main-content"]{margin-left:0!important;width:100%!important;}
+/* Feed/stories/other views full width */
+#page-feed,#page-stories,#page-storyboard,#page-brand,#page-pilastri,
+#page-notes,#page-shooting,#page-cal,#page-anno,#page-ads,#page-landing,
+#page-stampa,#page-ped,#page-studio,#page-stratoverview,#page-audit,
+#page-pdm,#page-pdc,#page-stratbuild,#page-brandportal,#page-mood,
+#page-preview{margin-left:0!important;}
 </style>
 </head>
 <body>
@@ -100,7 +112,7 @@
 <!-- TOPBAR -->
 <div class="topbar" id="subtopbar">
   <!-- Brand — sempre visibile, click → lista clienti -->
-  <div class="topbar-brand" id="topbar-brand" onclick="switchTab('studio')" title="Torna ai clienti" role="button" aria-label="Torna alla lista clienti">
+  <div class="topbar-brand" id="topbar-brand" onclick="nassaGoHome()" title="Hub Nassa Studio" role="button" aria-label="Vai all'hub Nassa Studio">
     <div class="brand-mark">N</div>
     <div class="brand-name" id="brand-name-text">Nassa Studio</div>
   </div>
@@ -201,7 +213,7 @@
 <div class="body">
 
 <!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar" style="display:none;">
   <!-- Main icon sidebar — always visible -->
   <div class="sb-main-nav" id="sb-main-nav">
     <div class="sb-nav-top">
@@ -1899,6 +1911,16 @@
 
 <script src="/app.js?v=1782851422"></script>
 <script>
+// Nassa Studio logo → hub if at studio, else back to clients first
+function nassaGoHome(){
+  if(typeof globalClientIdx !== 'undefined' && globalClientIdx >= 0){
+    // Inside a client — go back to studio level first, then hub
+    window.location.href = '/';
+  } else {
+    window.location.href = '/';
+  }
+}
+
 // Init macro nav dopo che app.js carica
 window.addEventListener('load', function(){
   setTimeout(function(){
