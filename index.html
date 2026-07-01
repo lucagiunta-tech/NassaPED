@@ -170,6 +170,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   font-size:9px;opacity:0;flex-shrink:0;cursor:pointer;
   padding:0 2px;border-radius:2px;line-height:1;
   transition:opacity .1s;margin-left:1px;
+  pointer-events:all;position:relative;z-index:2;
 }
 .chip:hover .chip-del{opacity:.6;}
 .chip-del:hover{opacity:1 !important;}
@@ -1009,7 +1010,7 @@ function chipHtml(task, giorno) {
     style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};">
     <span class="chip-text" onclick="openPanel('${task.id}',${gStr})" style="cursor:pointer;">${esc(task.testo)}</span>
     ${promoHtml}${avHtml}
-    <span class="chip-del" onclick="event.stopPropagation();deleteTask('${task.id}',${gStr})" title="Rimuovi">✕</span>
+    <span class="chip-del" onclick="event.stopPropagation();event.preventDefault();deleteTask('${task.id}',${gStr})" ondragstart="event.stopPropagation();event.preventDefault();" title="Rimuovi">✕</span>
   </div>`;
 }
 
@@ -1841,6 +1842,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
