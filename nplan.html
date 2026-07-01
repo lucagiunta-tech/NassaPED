@@ -4903,7 +4903,69 @@ function TimeReportsSection({
   onBack
 }) {
   const [val, setVal] = useState("");
+  const [elapsed, setElapsed] = useState(0);       // seconds running
+  const [running, setRunning] = useState(false);    // timer active
+  const intervalRef = useRef(null);
+  const startRef = useRef(null);                    // Date.now() when started
+
   const hours = logged[taskId] || 0;
+
+  // ── Restore timer from localStorage on mount (survives page refresh) ──
+  useEffect(() => {
+    const saved = localStorage.getItem('nassa_timer_' + taskId);
+    if (saved) {
+      try {
+        const { startedAt } = JSON.parse(saved);
+        const secs = Math.floor((Date.now() - startedAt) / 1000);
+        startRef.current = startedAt;
+        setElapsed(secs);
+        setRunning(true);
+      } catch(e) { localStorage.removeItem('nassa_timer_' + taskId); }
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [taskId]);
+
+  // ── Tick every second while running ───────────────────────────────────
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [running]);
+
+  // ── Format seconds → HH:MM:SS ─────────────────────────────────────────
+  const fmtTime = (secs) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  };
+
+  // ── Start ──────────────────────────────────────────────────────────────
+  const startTimer = () => {
+    const now = Date.now();
+    startRef.current = now;
+    setElapsed(0);
+    setRunning(true);
+    localStorage.setItem('nassa_timer_' + taskId, JSON.stringify({ startedAt: now }));
+  };
+
+  // ── Stop + log hours ───────────────────────────────────────────────────
+  const stopTimer = () => {
+    setRunning(false);
+    localStorage.removeItem('nassa_timer_' + taskId);
+    const totalHours = Math.round((elapsed / 3600) * 100) / 100;
+    if (totalHours >= 0.01) {
+      onLog(taskId, totalHours);
+    }
+    setElapsed(0);
+  };
+
+  // ── Manual submit ──────────────────────────────────────────────────────
   const submit = () => {
     const h = parseFloat(val.replace(",", "."));
     if (!isNaN(h) && h > 0) {
@@ -4911,110 +4973,96 @@ function TimeReportsSection({
       setVal("");
     }
   };
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-    onClick: onBack,
-    style: {
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      color: DS.blueDk,
-      fontSize: DS.fsBase,
-      fontWeight: 600,
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      padding: 0,
-      marginBottom: DS.sp5
-    }
-  }, "← Time Reports"), hours > 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: `${DS.sp3}px 0`,
-      borderBottom: `0.5px solid ${DS.border}`,
-      marginBottom: DS.sp4
-    }
-  }, /*#__PURE__*/React.createElement("p", {
-    style: {
-      fontSize: DS.fsSm,
-      color: DS.text3,
-      margin: "0 0 2px"
-    }
-  }, "Totale registrato"), /*#__PURE__*/React.createElement("p", {
-    style: {
-      fontSize: DS.fsLg,
-      fontWeight: 600,
-      color: DS.text,
-      margin: 0
-    }
-  }, hours, "h")) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: `${DS.sp8}px 0`
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 48,
-      marginBottom: DS.sp3,
-      opacity: 0.5
-    }
-  }, "📊"), /*#__PURE__*/React.createElement("p", {
-    style: {
-      fontSize: DS.fsBase,
-      color: DS.text3,
-      margin: `0 0 ${DS.sp4}px`
-    }
-  }, "No time reports found")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: DS.sp2,
-      alignItems: "flex-start"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      color: DS.greenDk,
-      fontSize: DS.fsBase,
-      fontWeight: 500,
-      padding: 0
-    }
-  }, "▶ Start timer"), val !== null && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: DS.sp2,
-      marginTop: DS.sp2
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    value: val,
-    onChange: e => setVal(e.target.value),
-    onKeyDown: e => e.key === "Enter" && submit(),
-    placeholder: "es. 2.5",
-    style: {
-      width: 70,
-      padding: `${DS.sp1}px ${DS.sp2}px`,
-      fontSize: DS.fsSm,
-      border: `1px solid ${DS.border}`,
-      borderRadius: DS.rs,
-      outline: "none"
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: submit,
-    style: {
-      padding: `${DS.sp1}px ${DS.sp3}px`,
-      borderRadius: DS.rs,
-      border: "none",
-      background: DS.green,
-      color: DS.greenText,
-      fontSize: DS.fsSm,
-      fontWeight: 600,
-      cursor: "pointer"
-    }
-  }, "+ Add time report"))));
+
+  // ── Render ─────────────────────────────────────────────────────────────
+  return /*#__PURE__*/React.createElement("div", null,
+    // ← Back button
+    /*#__PURE__*/React.createElement("button", {
+      onClick: onBack,
+      style: { background:"transparent", border:"none", cursor:"pointer",
+        color:DS.blueDk, fontSize:DS.fsBase, fontWeight:600,
+        display:"flex", alignItems:"center", gap:6, padding:0, marginBottom:DS.sp5 }
+    }, "← Time Reports"),
+
+    // Total logged
+    hours > 0 && /*#__PURE__*/React.createElement("div", {
+      style: { padding:`${DS.sp3}px 0`, borderBottom:`0.5px solid ${DS.border}`, marginBottom:DS.sp4 }
+    },
+      /*#__PURE__*/React.createElement("p", { style:{ fontSize:DS.fsSm, color:DS.text3, margin:"0 0 2px" } }, "Totale registrato"),
+      /*#__PURE__*/React.createElement("p", { style:{ fontSize:DS.fsLg, fontWeight:600, color:DS.text, margin:0 } }, hours, "h")
+    ),
+
+    // Live timer display when running
+    running && /*#__PURE__*/React.createElement("div", {
+      style: { background:DS.greenLt, border:`1.5px solid ${DS.greenDk}`,
+        borderRadius:DS.r, padding:`${DS.sp4}px ${DS.sp5}px`,
+        marginBottom:DS.sp4, display:"flex", alignItems:"center",
+        justifyContent:"space-between" }
+    },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", {
+          style: { fontSize:DS.fsSm, color:DS.greenDk, fontWeight:600,
+            textTransform:"uppercase", letterSpacing:DS.lsWide, marginBottom:4 }
+        }, "⏱ In corso"),
+        /*#__PURE__*/React.createElement("div", {
+          style: { fontSize:28, fontWeight:700, color:DS.text,
+            fontVariantNumeric:"tabular-nums", letterSpacing:".04em" }
+        }, fmtTime(elapsed))
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        onClick: stopTimer,
+        style: { padding:`${DS.sp2}px ${DS.sp4}px`, borderRadius:DS.rs,
+          border:"none", background:DS.red, color:"#fff",
+          fontSize:DS.fsSm, fontWeight:700, cursor:"pointer",
+          display:"flex", alignItems:"center", gap:6 }
+      }, "⏹ Stop + Salva")
+    ),
+
+    // Empty state when no hours and not running
+    !hours && !running && /*#__PURE__*/React.createElement("div", {
+      style: { textAlign:"center", padding:`${DS.sp8}px 0` }
+    },
+      /*#__PURE__*/React.createElement("div", { style:{ fontSize:48, marginBottom:DS.sp3, opacity:0.5 } }, "📊"),
+      /*#__PURE__*/React.createElement("p", {
+        style:{ fontSize:DS.fsBase, color:DS.text3, margin:`0 0 ${DS.sp4}px` }
+      }, "Nessun report")
+    ),
+
+    // Controls: start timer + manual input
+    /*#__PURE__*/React.createElement("div", {
+      style:{ display:"flex", flexDirection:"column", gap:DS.sp2, alignItems:"flex-start" }
+    },
+      // Start button (only when not running)
+      !running && /*#__PURE__*/React.createElement("button", {
+        onClick: startTimer,
+        style: { display:"flex", alignItems:"center", gap:6,
+          background:"transparent", border:`0.5px solid ${DS.greenDk}`,
+          borderRadius:DS.rs, cursor:"pointer", color:DS.greenDk,
+          fontSize:DS.fsBase, fontWeight:600, padding:`${DS.sp2}px ${DS.sp3}px` }
+      }, "▶ Start timer"),
+
+      // Manual input row
+      /*#__PURE__*/React.createElement("div", {
+        style:{ display:"flex", alignItems:"center", gap:DS.sp2, marginTop:DS.sp1 }
+      },
+        /*#__PURE__*/React.createElement("input", {
+          value: val,
+          onChange: e => setVal(e.target.value),
+          onKeyDown: e => e.key === "Enter" && submit(),
+          placeholder: "es. 2.5h",
+          style: { width:75, padding:`${DS.sp1}px ${DS.sp2}px`,
+            fontSize:DS.fsSm, border:`1px solid ${DS.border}`,
+            borderRadius:DS.rs, outline:"none" }
+        }),
+        /*#__PURE__*/React.createElement("button", {
+          onClick: submit,
+          style: { padding:`${DS.sp1}px ${DS.sp3}px`, borderRadius:DS.rs,
+            border:"none", background:DS.green, color:DS.greenText,
+            fontSize:DS.fsSm, fontWeight:600, cursor:"pointer" }
+        }, "+ Aggiungi")
+      )
+    )
+  );
 }
 function StatusBigButton({
   stato,
