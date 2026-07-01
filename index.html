@@ -553,13 +553,17 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     if(!r.ok) throw new Error('unauth');
     const d=await r.json();
     if(!d.ok) throw new Error('unauth');
-    // Store user for the app to use
     window.__nassaUser=d;
   }catch(e){
-    // Not logged in — redirect to NassaContent login
     window.location.replace('/app?redirect='+encodeURIComponent(window.location.pathname));
   }
 })();
+
+/* ── Logout globale — disponibile in tutte le app ── */
+async function nassaLogout(){
+  try{ await fetch('/api/auth',{method:'DELETE',credentials:'include'}); }catch(_){}
+  window.location.replace('/app');
+}
 </script>
 <div id="nassa-auth-loading" style="position:fixed;inset:0;background:var(--bg,#fff);z-index:9999;display:flex;align-items:center;justify-content:center;">
   <div style="font-family:system-ui,sans-serif;font-size:13px;color:#888;">Nassa Studio…</div>
@@ -582,7 +586,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="topbar-spacer"></div>
   <button class="tb-btn" title="Cerca">🔍</button>
   <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="Tema">🌙</button>
-  <div class="av" title="Luca Giunta">LG</div>
+  <div class="av" id="topbar-avatar" title="Luca Giunta">LG</div>
+  <button class="tb-btn" onclick="nassaLogout()" title="Esci" style="font-size:12px;color:var(--text-2);">⏻</button>
 </div>
 
 <!-- PLANNING SECTION -->
@@ -927,7 +932,13 @@ async function save() {
 }
 
 async function loadFromSupabase() {
-  await loadTeam(); // sync canonical team before rendering
+  await loadTeam();
+  // Update avatar with logged-in user initials
+  const av = document.getElementById('topbar-avatar');
+  if (av && window.__nassaUser?.username) {
+    av.textContent = window.__nassaUser.username.slice(0,2).toUpperCase();
+    av.title = window.__nassaUser.username;
+  }
   try {
     const res = await fetch('/api/planning', { credentials: 'include' });
     if (!res.ok) return;
