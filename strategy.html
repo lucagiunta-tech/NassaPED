@@ -79,13 +79,17 @@ textarea,input,select{font-family:var(--font);}
     if(!r.ok) throw new Error('unauth');
     const d=await r.json();
     if(!d.ok) throw new Error('unauth');
-    // Store user for the app to use
     window.__nassaUser=d;
   }catch(e){
-    // Not logged in — redirect to NassaContent login
     window.location.replace('/app?redirect='+encodeURIComponent(window.location.pathname));
   }
 })();
+
+/* ── Logout globale — disponibile in tutte le app ── */
+async function nassaLogout(){
+  try{ await fetch('/api/auth',{method:'DELETE',credentials:'include'}); }catch(_){}
+  window.location.replace('/app');
+}
 </script>
 <div id="nassa-auth-loading" style="position:fixed;inset:0;background:var(--bg,#fff);z-index:9999;display:flex;align-items:center;justify-content:center;">
   <div style="font-family:system-ui,sans-serif;font-size:13px;color:#888;">Nassa Studio…</div>
@@ -5428,7 +5432,10 @@ function NassaStrategyHub(){
             transition:"all .15s"}
         }, "✨ AI"),
         h("button", {className:"ns-icon-btn", onClick:toggleTheme, title:"Tema"}, SVG.moon),
-        h("a", {href:"/", className:"hub-link"}, SVG.chevLeft, " Hub")
+        h("a", {href:"/", className:"hub-link"}, SVG.chevLeft, " Hub"),
+        h("button", {className:"ns-icon-btn", onClick:nassaLogout, title:"Esci",
+          style:{fontSize:12,color:"var(--text-2)"}
+        }, "⏻")
       )
     ),
     // ── Content ──
