@@ -1480,6 +1480,9 @@ function openClientFeed(ci){
   storiesClientIdx=ci;storiesAccountIdx=feedAccountIdx;notesClientIdx=ci;
   if(!feedMonth)feedMonth=MONTH_OPTIONS[new Date().getMonth()];
   if(!storiesMonth)storiesMonth=feedMonth;
+  // Push URL so browser back button returns to client list
+  const cid = clients[ci]?.id || ci;
+  history.pushState({clientIdx:ci,clientId:cid}, '', '/a/'+cid+'/feed');
   updateGlobalClientUI();switchTab('feed');rebuildFeedSelects();renderFeedMonthPills();
   // Mostra skeleton feed mentre i dati si caricano
   const grid=document.getElementById('feed-grid');
@@ -12418,6 +12421,18 @@ function renderBrandKitTab(){
 
   // ── ASSET GRAFICI ──
   _bkRenderAssets(body, bk);
+
+  // ── SEZIONI PERSONALIZZATE ──
+  _bkRenderCustomSections(body, bk);
+
+  // ── AGGIUNGI SEZIONE ──
+  const addSecBtn = document.createElement('button');
+  addSecBtn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 16px;border:1.5px dashed var(--border);border-radius:8px;background:transparent;color:var(--text-3);font-size:13px;cursor:pointer;width:100%;margin-top:8px;font-family:var(--font);transition:all .15s;';
+  addSecBtn.innerHTML = '<span style="font-size:16px;">+</span> Aggiungi sezione personalizzata';
+  addSecBtn.onmouseenter = () => { addSecBtn.style.borderColor='var(--text-2)'; addSecBtn.style.color='var(--text-1)'; };
+  addSecBtn.onmouseleave = () => { addSecBtn.style.borderColor='var(--border)'; addSecBtn.style.color='var(--text-3)'; };
+  addSecBtn.onclick = _bkOpenAddSectionModal;
+  body.appendChild(addSecBtn);
 }
 
 // ── Palette ──────────────────────────────────────────────
@@ -12750,7 +12765,7 @@ function _bkOpenAssetModal(idx, catId){
         <div>
           <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Categoria</label>
           <select id="bk-acat" style="width:100%;padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);">
-            ${BK_ASSET_CATS.map(c=>`<option value="${c.id}" ${(a.categoria||catId)===c.id?'selected':''}>${c.icon} ${c.lbl}</option>`).join('')}
+            ${[...BK_ASSET_CATS,...(currentBrandKit().customSections||[]).map(cs=>({id:cs.id,lbl:cs.name,icon:cs.icon||'📁'}))].map(c=>`<option value="${c.id}" ${(a.categoria||catId)===c.id?'selected':''}>${c.icon} ${c.lbl}</option>`).join('')}
           </select>
         </div>
         <div>
@@ -12839,6 +12854,96 @@ function _bkSection(parent, title, btnLabel, btnFn){
   sec.appendChild(hdr);
   parent.appendChild(sec);
   return sec;
+}
+
+function _bkRenderCustomSections(body, bk){
+  const custom = bk.customSections || [];
+  custom.forEach((cs, csIdx) => {
+    const catAssets = (bk.assets||[]).filter(a => a.categoria === cs.id);
+    const sec = _bkSection(body, (cs.icon||'📁')+' '+cs.name, '+ Aggiungi', () => _bkOpenAssetModal(null, cs.id));
+    // Add rename/delete button
+    const delBtn = document.createElement('button');
+    delBtn.style.cssText = 'padding:3px 8px;border:0.5px solid var(--border);border-radius:6px;font-size:10px;color:var(--text-3);cursor:pointer;background:transparent;font-family:var(--font);margin-left:6px;';
+    delBtn.textContent = '✕ Rimuovi';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      if(!confirm('Rimuovere la sezione "'+cs.name+'"? Gli asset in questa sezione verranno eliminati.')) return;
+      updateBrandKit(bk => {
+        const out = {...bk};
+        out.customSections = (out.customSections||[]).filter((_,i) => i !== csIdx);
+        out.assets = (out.assets||[]).filter(a => a.categoria !== cs.id);
+        return out;
+      });
+      renderBrandKitTab();
+    };
+    sec.querySelector('.bk-section-hdr').appendChild(delBtn);
+
+    if(!catAssets.length) return;
+    const grid = document.createElement('div');
+    grid.className = 'bk-asset-grid';
+    catAssets.forEach((a) => {
+      const realIdx = (bk.assets||[]).indexOf(a);
+      const card = document.createElement('div');
+      card.className = 'bk-asset-card';
+      card.onclick = () => _bkOpenAssetModal(realIdx, cs.id);
+      card.innerHTML = `
+        <div style="font-size:22px;flex-shrink:0;">${cs.icon||'📁'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:500;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.name||'Asset')}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">${a.format||''} ${a.data?'· '+a.data:''}</div>
+          ${a.url?`<a href="${a.url}" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--text-accent,#185FA5);text-decoration:none;">↓ Scarica</a>`:''}
+        </div>`;
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+  });
+  // Also add custom categories to asset modal dropdown
+  if(!window._bkCustomCatsRegistered){
+    window._bkCustomCatsRegistered = true;
+  }
+}
+
+function _bkOpenAddSectionModal(){
+  const ICONS = ['📁','📄','🖼','🎨','🎥','🎵','📊','📝','🔗','💡','🏷','🌐','📐','🖋','💼','🗂','📌','⭐','🔑','🎯'];
+  let selectedIcon = '📁';
+
+  _bkModal('Nuova sezione', `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:5px;">Nome sezione</label>
+        <input id="bk-sec-name" type="text" placeholder="es. Video, Press Kit, Contratti…"
+          style="width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--surface-lt);color:var(--text-1);outline:none;box-sizing:border-box;" autofocus>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:8px;">Icona</label>
+        <div id="bk-icon-grid" style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${ICONS.map(ic => `<button data-ic="${ic}" onclick="window._bkSelectIcon(this,'${ic}')"
+            style="width:36px;height:36px;border-radius:8px;border:1.5px solid ${ic===selectedIcon?'var(--green)':'var(--border)'};background:${ic===selectedIcon?'var(--green-lt)':'transparent'};font-size:18px;cursor:pointer;transition:all .1s;">${ic}</button>`).join('')}
+        </div>
+      </div>
+    </div>`,
+    () => {
+      const name = document.getElementById('bk-sec-name')?.value?.trim();
+      if(!name){ alert('Inserisci un nome per la sezione'); return; }
+      const icon = window._bkCurrentIcon || selectedIcon;
+      const id = 'custom_'+Date.now();
+      updateBrandKit(bk => {
+        const out = {...bk};
+        out.customSections = [...(out.customSections||[]), {id, name, icon}];
+        return out;
+      });
+      renderBrandKitTab();
+    }
+  );
+  window._bkCurrentIcon = selectedIcon;
+  window._bkSelectIcon = (btn, ic) => {
+    window._bkCurrentIcon = ic;
+    document.querySelectorAll('#bk-icon-grid button').forEach(b => {
+      const sel = b.dataset.ic === ic;
+      b.style.border = sel ? '1.5px solid var(--green)' : '1.5px solid var(--border)';
+      b.style.background = sel ? 'var(--green-lt)' : 'transparent';
+    });
+  };
 }
 
 function _bkModal(title, bodyHtml, onSave, onDelete){
@@ -13848,3 +13953,21 @@ function renderStratOverviewTab(){
   }
 
 }
+
+// ── Browser back/forward navigation ──────────────────────────────────────
+window.addEventListener('popstate', function(e){
+  const s = e.state;
+  if(s && typeof s.clientIdx === 'number'){
+    // Restore client view
+    openClientFeed(s.clientIdx);
+  } else {
+    // No state = back to client list / hub
+    if(globalClientIdx >= 0){
+      globalClientIdx = -1;
+      feedClientIdx = -1;
+      switchTab('studio');
+    } else {
+      window.location.href = '/';
+    }
+  }
+});
