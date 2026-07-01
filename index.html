@@ -229,13 +229,32 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .qa-tag-btn.N{border-color:var(--border);color:var(--text-3);}
 .qa-tag-btn.N:hover{background:var(--bg);}
 .qa-hint{font-size:10px;color:var(--text-3);white-space:nowrap;}
-.qa-day-select{
-  height:32px;padding:0 8px;border-radius:var(--rs);
-  border:var(--bw) solid var(--border);background:var(--surface);
-  color:var(--text);font-size:12px;font-family:var(--font);
-  cursor:pointer;outline:none;flex-shrink:0;
+.qa-day-picker{
+  display:flex;gap:3px;align-items:center;flex-shrink:0;
 }
-.qa-day-select:focus{border-color:var(--green);}
+.qa-day-pill{
+  height:28px;padding:0 8px;border-radius:var(--r-pill);
+  border:var(--bw) solid var(--border);background:transparent;
+  color:var(--text-3);font-size:10px;font-weight:500;
+  cursor:pointer;transition:all var(--t);white-space:nowrap;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  line-height:1.1;
+}
+.qa-day-pill:hover{background:var(--bg);border-color:var(--text-3);color:var(--text);}
+.qa-day-pill.active{
+  background:var(--green-lt);border-color:var(--green-dk);
+  color:var(--green-text);font-weight:700;
+}
+.qa-day-pill.today-pill{border-color:var(--green);color:var(--green-dk);}
+.qa-day-pill .pill-day{font-size:9px;opacity:.7;}
+.qa-day-pill .pill-num{font-size:12px;font-weight:600;}
+.qa-later-pill{
+  height:28px;padding:0 8px;border-radius:var(--r-pill);
+  border:var(--bw) dashed var(--border);background:transparent;
+  color:var(--text-3);font-size:10px;cursor:pointer;transition:all var(--t);
+}
+.qa-later-pill:hover{border-color:var(--text-3);color:var(--text);}
+.qa-later-pill.active{background:var(--amber-lt);border-color:var(--amber-dk);color:var(--amber-dk);font-weight:700;}
 
 /* ── Type Picker overlay ── */
 .type-picker-overlay{
@@ -604,16 +623,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   <!-- Quick add -->
   <div class="quick-add-bar">
     <input class="qa-input" id="qa-input" placeholder="Scrivi qualcosa... poi scegli il tipo" onkeydown="qaKeydown(event)"/>
-    <select class="qa-day-select" id="qa-day" title="Giorno">
-      <option value="0">Lun</option>
-      <option value="1">Mar</option>
-      <option value="2">Mer</option>
-      <option value="3">Gio</option>
-      <option value="4">Ven</option>
-      <option value="5">Sab</option>
-      <option value="6">Dom</option>
-      <option value="later">Prima o poi</option>
-    </select>
+    <div class="qa-day-picker" id="qa-day-picker">
+      <!-- Populated by renderDayPicker() -->
+    </div>
     <button class="qa-tag-btn T" onclick="qaCommit('T')" title="Task operativo">T</button>
     <button class="qa-tag-btn F" onclick="qaCommit('F')" title="Feed / storyboard">F</button>
     <button class="qa-tag-btn S" onclick="qaCommit('S')" title="Stories">S</button>
@@ -764,39 +776,86 @@ const TASK_MOCK = {
 
 // ─── STATO & SUPABASE ───────────────────────────────────────────────────────
 let _saveTimer = null;
+let selectedDayKey = null; // currently selected day in qa-day-picker
+
+function renderDayPicker() {
+  const picker = document.getElementById('qa-day-picker');
+  if (!picker) return;
+  const days = getWeekDays(state.weekOffset);
+  const todayStr = new Date().toISOString().slice(0,10);
+  if (!selectedDayKey) selectedDayKey = todayStr;
+
+  let html = days.map(day => {
+    const dk = day.date.toISOString().slice(0,10);
+    const isActive = dk === selectedDayKey;
+    const isToday = dk === todayStr;
+    return `<button class="qa-day-pill${isActive?' active':''}${isToday&&!isActive?' today-pill':''}"
+      data-dk="${dk}" onclick="selectDayPill('${dk}')">
+      <span class="pill-day">${day.dayName}</span>
+      <span class="pill-num">${day.num}</span>
+    </button>`;
+  }).join('');
+  html += `<button class="qa-later-pill${selectedDayKey==='later'?' active':''}"
+    onclick="selectDayPill('later')">poi</button>`;
+  picker.innerHTML = html;
+}
+
+function selectDayPill(dk) {
+  selectedDayKey = dk;
+  renderDayPicker();
+}
+
+// ─── DATE KEY HELPERS ─────────────────────────────────────────────────────
+// Tasks are stored by "YYYY-MM-DD" date string (not by column index).
+// This means they stay on the correct date when you navigate weeks.
+function dateKey(d) {
+  // d can be a Date or a day offset from BASE_MON
+  if (typeof d === 'number') {
+    const dt = new Date(getCurrentMonday());
+    dt.setDate(dt.getDate() + d);
+    return dt.toISOString().slice(0,10);
+  }
+  if (d instanceof Date) return d.toISOString().slice(0,10);
+  return d; // already a string
+}
 
 function seedTasks() {
-  return {
-    0: [
-      { id:"h1", tipo:"meeting", testo:"10:00 Quellenhof call", utente:"LG" },
-      { id:"h2", tipo:"T",       testo:"Grafiche Elaxo #538",   utente:"LG", ref:"KK Conto Terzi", promoted:true },
-      { id:"h3", tipo:"N",       testo:"Doric mappa",           utente:"LG" },
-    ],
-    1: [
-      { id:"h5", tipo:"urgente", testo:"Nest DOO – YUK cambo fustella",    utente:"LG" },
-      { id:"h6", tipo:"F",       testo:"Reel backstage laboratorio",        utente:"AA", ref:"L'Artigianale Gelateria" },
-      { id:"h7", tipo:"T",       testo:"PED giugno – caption post",         utente:"LG" },
-      { id:"h8", tipo:"S",       testo:"Stories promo weekend",             utente:"AA", ref:"L'Artigianale Gelateria" },
-    ],
-    2: [
-      { id:"h9",  tipo:"N",       testo:"Staccare Metricool alle 10", utente:"LG" },
-      { id:"h10", tipo:"meeting", testo:"15:00 QBR Ramaddini",        utente:"LG" },
-    ],
-    3: [
-      { id:"h12", tipo:"T",       testo:"Catalogo Monouso",       utente:"LG", ref:"Catolghi KK" },
-      { id:"h13", tipo:"F",       testo:"Vendemmia 2025 – annuncio", utente:"AA", ref:"Ramaddini" },
-    ],
-    4: [
-      { id:"h15", tipo:"T",  testo:"Russian Hair Boutique",   utente:"GC" },
-      { id:"h16", tipo:"F",  testo:"Gusto del mese – luglio", utente:"AA", ref:"L'Artigianale Gelateria" },
-    ],
-    5: [], 6: [],
-    later: [
-      { id:"hp1", tipo:"T",  testo:"Demo Brand Identity",           utente:"LG" },
-      { id:"hp2", tipo:"F",  testo:"ToV – cosa ci rende diversi",   utente:"AA", ref:"L'Artigianale Gelateria" },
-      { id:"hp3", tipo:"N",  testo:"Leggere Codice v5.1 con Giacomo", utente:"LG" },
-    ]
-  };
+  // Seed tasks on their real dates (week of Jun 30 – Jul 6, 2026)
+  const seed = {};
+  const mon = new Date(2026, 5, 29); // Mon Jun 29 2026
+  function dk(offset) {
+    const d = new Date(mon); d.setDate(mon.getDate()+offset);
+    return d.toISOString().slice(0,10);
+  }
+  seed[dk(0)] = [
+    { id:"h1", tipo:"meeting", testo:"10:00 Quellenhof call", utente:"LG" },
+    { id:"h2", tipo:"T",       testo:"Grafiche Elaxo #538",   utente:"LG", ref:"KK Conto Terzi", promoted:true },
+    { id:"h3", tipo:"N",       testo:"Doric mappa",           utente:"LG" },
+  ];
+  seed[dk(1)] = [
+    { id:"h5", tipo:"urgente", testo:"Nest DOO – YUK cambo fustella",    utente:"LG" },
+    { id:"h6", tipo:"F",       testo:"Reel backstage laboratorio",        utente:"AA", ref:"L'Artigianale Gelateria" },
+    { id:"h7", tipo:"T",       testo:"PED giugno – caption post",         utente:"LG" },
+    { id:"h8", tipo:"S",       testo:"Stories promo weekend",             utente:"AA", ref:"L'Artigianale Gelateria" },
+  ];
+  seed[dk(2)] = [
+    { id:"h9",  tipo:"N",       testo:"Staccare Metricool alle 10", utente:"LG" },
+    { id:"h10", tipo:"meeting", testo:"15:00 QBR Ramaddini",        utente:"LG" },
+  ];
+  seed[dk(3)] = [
+    { id:"h12", tipo:"T",       testo:"Catalogo Monouso",           utente:"LG", ref:"Catolghi KK" },
+    { id:"h13", tipo:"F",       testo:"Vendemmia 2025 – annuncio",  utente:"AA", ref:"Ramaddini" },
+  ];
+  seed[dk(4)] = [
+    { id:"h15", tipo:"T",  testo:"Russian Hair Boutique",   utente:"GC" },
+    { id:"h16", tipo:"F",  testo:"Gusto del mese – luglio", utente:"AA", ref:"L'Artigianale Gelateria" },
+  ];
+  seed.later = [
+    { id:"hp1", tipo:"T",  testo:"Demo Brand Identity",             utente:"LG" },
+    { id:"hp2", tipo:"F",  testo:"ToV – cosa ci rende diversi",     utente:"AA", ref:"L'Artigianale Gelateria" },
+    { id:"hp3", tipo:"N",  testo:"Leggere Codice v5.1 con Giacomo", utente:"LG" },
+  ];
+  return seed;
 }
 
 // Seed state immediately (will be overwritten by Supabase data)
@@ -949,26 +1008,27 @@ function renderGrid() {
   let totalFiltered = 0, totalAll = 0;
   const grid = document.getElementById('week-grid');
   grid.innerHTML = days.map((day, gi) => {
-    const dayTasks = (state.tasks[gi] || []);
+    const dk = day.date.toISOString().slice(0,10);
+    const dayTasks = (state.tasks[dk] || []);
     const visible = dayTasks.filter(passFilter);
     totalAll += dayTasks.length;
     totalFiltered += visible.length;
 
     const colClass = ['day-col', day.isToday ? 'today' : '', day.isWeekend ? 'weekend' : ''].filter(Boolean).join(' ');
-    const dropAttrs = `ondragover="dragOver(event,${gi})" ondragleave="dragLeave(event)" ondrop="dragDrop(event,${gi})"`;
+    const dropAttrs = `ondragover="dragOver(event,'${dk}')" ondragleave="dragLeave(event)" ondrop="dragDrop(event,'${dk}')"`;
     const numHtml = day.isToday
       ? `<div class="day-num today-circle">${day.num}</div>`
       : `<div class="day-num">${day.num}</div>`;
 
-    const chipsHtml = visible.map(t => chipHtml(t, gi)).join('');
-    const addHtml = `<div class="add-chip" data-g="${gi}" onclick="inlineAdd(${gi})">+ aggiungi</div>`;
+    const chipsHtml = visible.map(t => chipHtml(t, dk)).join('');
+    const addHtml = `<div class="add-chip" data-g="${dk}" onclick="inlineAdd('${dk}')">+ aggiungi</div>`;
 
     return `<div class="${colClass}" ${dropAttrs}>
       <div class="day-head">
         <div class="day-name">${day.dayName}</div>
         ${numHtml}
       </div>
-      <div class="task-chips" id="chips-${gi}">${chipsHtml}${addHtml}</div>
+      <div class="task-chips" id="chips-${dk}">${chipsHtml}${addHtml}</div>
     </div>`;
   }).join('');
 
@@ -990,6 +1050,9 @@ function renderGrid() {
 
   // Contatore filtri
   const isFiltered = !activeTipi.has("all") || !activeUtenti.has("all");
+  // Update day picker pills when week changes
+  renderDayPicker();
+
   const countEl = document.getElementById('fil-count');
   if (isFiltered) {
     countEl.textContent = `${totalFiltered} di ${totalAll} elementi`;
@@ -1048,7 +1111,7 @@ function closeInlineInput() {
       addEl.className = 'add-chip';
       const gi = inlineGiorno;
       addEl.setAttribute('data-g', gi);
-      addEl.onclick = () => inlineAdd(gi);
+      addEl.onclick = () => inlineAdd(gi); // gi is now a date string
       addEl.textContent = '+ aggiungi';
       parent.insertBefore(addEl, inp);
     }
@@ -1061,7 +1124,7 @@ function inlineCommit(tipo) {
   const inp = document.querySelector('.add-input');
   if (!inp || !inp.value.trim()) { closeInlineInput(); renderGrid(); return; }
   const testo = inp.value.trim();
-  const gi = inlineGiorno !== null ? inlineGiorno : 1;
+  const gi = inlineGiorno !== null ? inlineGiorno : getTodayKey();
   closeInlineInput();
   if (tipo === 'T' || tipo === 'F' || tipo === 'S') {
     openForm(testo, tipo, gi);
@@ -1076,8 +1139,7 @@ function qaKeydown(e) {
     const inp = document.getElementById('qa-input');
     const testo = inp.value.trim();
     if (!testo) { inp.focus(); return; }
-    const dayEl = document.getElementById('qa-day');
-    const giorno = dayEl ? (dayEl.value === 'later' ? 'later' : Number(dayEl.value)) : getTodayIndex();
+    const giorno = selectedDayKey || getTodayKey();
     showTypePicker(testo, giorno);
     inp.value = '';
   }
@@ -1087,8 +1149,7 @@ function qaCommit(tipo) {
   const inp = document.getElementById('qa-input');
   const testo = inp.value.trim();
   if (!testo) { inp.focus(); return; }
-  const dayEl = document.getElementById('qa-day');
-  const giorno = dayEl ? (dayEl.value === 'later' ? 'later' : Number(dayEl.value)) : getTodayIndex();
+  const giorno = selectedDayKey || getTodayKey();
   inp.value = '';
   if (tipo === 'T' || tipo === 'F' || tipo === 'S') {
     openForm(testo, tipo, giorno);
@@ -1098,7 +1159,8 @@ function qaCommit(tipo) {
 }
 
 function addTask(task, giorno) {
-  const key = giorno === 'later' ? 'later' : giorno;
+  // giorno is now a date string "YYYY-MM-DD" or 'later'
+  const key = giorno === 'later' ? 'later' : String(giorno);
   if (!state.tasks[key]) state.tasks[key] = [];
   state.tasks[key].push(task);
   save();
@@ -1149,8 +1211,8 @@ function dragDrop(event, toGiorno) {
   const { id, giorno: fromGiorno } = dragState;
   if (String(fromGiorno) === String(toGiorno)) return; // same column, no-op
   // Find and move the task
-  const fromKey = (fromGiorno === 'later') ? 'later' : Number(fromGiorno);
-  const toKey   = (toGiorno   === 'later') ? 'later' : Number(toGiorno);
+  const fromKey = (fromGiorno === 'later') ? 'later' : String(fromGiorno);
+  const toKey   = (toGiorno   === 'later') ? 'later' : String(toGiorno);
   const fromList = state.tasks[fromKey] || [];
   const taskIdx = fromList.findIndex(t => t.id === id);
   if (taskIdx === -1) return;
@@ -1235,7 +1297,7 @@ function confirmTypePicker() {
   const { testo, giorno, selected } = typePickerState;
   if (!selected) return;
   closeTypePicker();
-  const realGiorno = (giorno === 'today') ? getTodayIndex() : giorno;
+  const realGiorno = (giorno === 'today') ? getTodayKey() : giorno;
   if (selected === 'T' || selected === 'F' || selected === 'S') {
     openForm(testo, selected, realGiorno);
   } else {
@@ -1248,7 +1310,13 @@ function getTodayIndex() {
   today.setHours(0,0,0,0);
   const mon = getCurrentMonday();
   const diff = Math.round((today - mon) / 86400000);
-  return (diff >= 0 && diff < 7) ? diff : 1;
+  return (diff >= 0 && diff < 7) ? diff : 0;
+}
+
+function getTodayKey() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return today.toISOString().slice(0,10);
 }
 
 // ─── FORM T / F CASCATA ──────────────────────────────────────────────────
@@ -1526,7 +1594,7 @@ function fsCloseNuovoCliente() { formState.newClienteOpen = false; formState.new
 
 // ─── TASK PANEL ──────────────────────────────────────────────────────────
 function openPanel(id, giorno) {
-  const key = (giorno === 'later' || giorno === -1) ? 'later' : Number(giorno);
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
   const taskList = state.tasks[key] || [];
   const task = taskList.find(t => t.id === id);
   if (!task) return;
@@ -1598,7 +1666,7 @@ function renderPanel(task, giorno) {
 }
 
 function changeTaskType(id, giorno, nuovoTipo) {
-  const key = (giorno === 'later' || giorno === -1) ? 'later' : Number(giorno);
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
   const taskList = state.tasks[key] || [];
   const task = taskList.find(t => t.id === id);
   if (!task) return;
@@ -1653,14 +1721,12 @@ function toggleTheme() {
 renderGrid(); // render with seed data immediately
 loadFromSupabase(); // then overwrite with real Supabase data
 
-// Set quick-add day selector to today's column
-(function() {
-  const todayIdx = getTodayIndex();
-  const dayEl = document.getElementById('qa-day');
-  if (dayEl) dayEl.value = String(todayIdx >= 0 && todayIdx < 7 ? todayIdx : 0);
-})();
+// Init day picker with today
+selectedDayKey = getTodayKey();
+renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
