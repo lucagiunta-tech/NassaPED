@@ -32,7 +32,16 @@ function safeUser(user) {
 }
 
 // FIX QA: validazione dimensione body — previene oversized payload
-const MAX_BODY_BYTES = 15 * 1024 * 1024; // 15MB max per il JSON del progetto
+const MAX_BODY_BYTES = 15 * 1024 * 1024; // 15MB soft limit (Vercel bodyParser set to 16MB)
+
+// Increase body parser limit above Vercel's 4MB default
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '16mb', // matches MAX_BODY_BYTES below; Vercel enforces this first
+    },
+  },
+};
 
 export default async function handler(req, res) {
   // FIX QA: CORS ristretto
