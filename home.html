@@ -885,11 +885,17 @@ async function loadFromSupabase() {
     const res = await fetch('/api/planning', { credentials: 'include' });
     if (!res.ok) return;
     const { data } = await res.json();
-    if (data && data.tasks) {
-      state.tasks = data.tasks;
-      state.clienti = data.clienti || [...CLIENTI_DEFAULT];
-      state.progetti = data.progetti || JSON.parse(JSON.stringify(PROGETTI_DEFAULT));
-      renderGrid();
+    // Only overwrite seed if we have real saved tasks (object with at least one date key)
+    if (data && data.tasks && typeof data.tasks === 'object') {
+      const keys = Object.keys(data.tasks);
+      const hasRealTasks = keys.some(k => k === 'later' || /^\d{4}-\d{2}-\d{2}$/.test(k));
+      if (hasRealTasks) {
+        state.tasks = data.tasks;
+        state.clienti = data.clienti || [...CLIENTI_DEFAULT];
+        state.progetti = data.progetti || JSON.parse(JSON.stringify(PROGETTI_DEFAULT));
+        renderGrid();
+        renderDayPicker();
+      }
     }
   } catch(e) { console.warn('Planning load error:', e); }
 }
@@ -1237,6 +1243,33 @@ function deleteTask(id, giorno) {
   renderGrid();
 }
 
+// ─── PARTIAL RENDER: task search list only (preserves input focus) ─────────────
+function renderTaskSearch() {
+  const { progetto, taskScelto, search } = formState;
+  const taskAperti = (TASK_MOCK[progetto?.id] || []).filter(t =>
+    !search || t.titolo.toLowerCase().includes(search.toLowerCase()));
+  const listEl = document.getElementById('task-search-list');
+  if (!listEl) return;
+  if (taskAperti.length > 0) {
+    listEl.innerHTML = taskAperti.map(t => `
+      <div class="task-option ${taskScelto?.id===t.id?'active':''}" onclick="formState.taskScelto={id:'${t.id}',titolo:${JSON.stringify(t.titolo)}};renderTaskSearch();renderFormFooter();">
+        <span class="task-option-name">${esc(t.titolo)}</span>
+        <span class="task-option-stato">${t.stato.replace('_',' ')}</span>
+      </div>`).join('');
+  } else {
+    listEl.innerHTML = '<p style="font-size:11px;color:var(--text-3);text-align:center;padding:12px 0;">Nessun task aperto</p>';
+  }
+}
+
+function renderFormFooter() {
+  const { fase, modo, taskScelto } = formState;
+  const btn = document.getElementById('btn-confirm');
+  if (!btn) return;
+  const canConfirm = fase && (modo === 'nuovo' || (modo === 'collega' && taskScelto));
+  btn.disabled = !canConfirm;
+  btn.textContent = modo === 'collega' ? 'Collega come subtask' : 'Crea task';
+}
+
 // ─── TYPE PICKER ─────────────────────────────────────────────────────────────
 let typePickerState = {};
 
@@ -1331,6 +1364,7 @@ function openForm(testo, tipo, giorno) {
     search: '',
     newClienteOpen: false, newClienteNome: '',
     newProgettoOpen: false, newProgettoNome: '',
+    faseAddOpen: false, faseNewName: '', fasePers: [],
   };
   document.getElementById('form-tag').textContent = tipo === 'T' ? 'T task' : (tipo === 'F' ? 'F feed' : 'S stories');
   document.getElementById('form-tag').style.background = tipo === 'T' ? 'var(--green-lt)' : (tipo === 'F' ? 'var(--blue-lt)' : 'var(--pink-lt)');
@@ -1392,6 +1426,8 @@ function renderForm() {
   const body = document.getElementById('form-body');
   const footer = document.getElementById('form-footer');
   const btnConfirm = document.getElementById('btn-confirm');
+  // Track which input was focused before rebuild
+  const _prevFocusId = document.activeElement?.id;
 
   // ── Tipo F / S: form semplificato ──────────────────────────────────────
   if (tipo === 'F' || tipo === 'S') {
@@ -1419,12 +1455,17 @@ function renderForm() {
       </div>
       ${newClienteOpen ? `
         <div class="new-inline">
-          <input class="new-input" id="nc-inp" value="${esc(newClienteNome)}" placeholder="Nome azienda..." oninput="formState.newClienteNome=this.value;renderForm();" onkeydown="if(event.key==='Enter')fsAddCliente();if(event.key==='Escape')fsCloseNuovoCliente();" autofocus/>
+          <input class="new-input" id="nc-inp" value="${esc(newClienteNome)}" placeholder="Nome azienda..." oninput="formState.newClienteNome=this.value;" onkeydown="if(event.key==='Enter')fsAddCliente();if(event.key==='Escape')fsCloseNuovoCliente();" autofocus/>
           <button class="new-add-btn" onclick="fsAddCliente()" ${!newClienteNome.trim() ? 'disabled' : ''}>Aggiungi</button>
           <button class="new-cancel-btn" onclick="fsCloseNuovoCliente()">✕</button>
         </div>` : `
         <button class="add-new-trigger" onclick="formState.newClienteOpen=true;renderForm();">+ Nuovo cliente / azienda</button>`}
     `;
+    // Restore focus to input if it was focused
+    setTimeout(() => {
+      const inp = document.getElementById('nc-inp') || document.getElementById('np-inp');
+      if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    }, 0);
     return;
   }
 
@@ -1443,7 +1484,7 @@ function renderForm() {
       </div>
       ${newClienteOpen ? `
         <div class="new-inline">
-          <input class="new-input" id="nc-inp" value="${esc(newClienteNome)}" placeholder="Nome azienda / cliente..." oninput="formState.newClienteNome=this.value;renderForm();" onkeydown="if(event.key==='Enter')tAddCliente();if(event.key==='Escape')tCloseNuovoCliente();" autofocus/>
+          <input class="new-input" id="nc-inp" value="${esc(newClienteNome)}" placeholder="Nome azienda / cliente..." oninput="formState.newClienteNome=this.value;" onkeydown="if(event.key==='Enter')tAddCliente();if(event.key==='Escape')tCloseNuovoCliente();" autofocus/>
           <button class="new-add-btn" onclick="tAddCliente()" ${!newClienteNome.trim() ? 'disabled' : ''}>Aggiungi</button>
           <button class="new-cancel-btn" onclick="tCloseNuovoCliente()">✕</button>
         </div>` : `
@@ -1468,7 +1509,7 @@ function renderForm() {
         </button>`).join('')}
       ${newProgettoOpen ? `
         <div class="new-inline" style="margin-top:6px;">
-          <input class="new-input" id="np-inp" value="${esc(newProgettoNome)}" placeholder="Nome progetto per ${esc(cliente?.nome||'')}..." oninput="formState.newProgettoNome=this.value;renderForm();" onkeydown="if(event.key==='Enter')tAddProgetto();if(event.key==='Escape')tCloseNuovoProgetto();" autofocus/>
+          <input class="new-input" id="np-inp" value="${esc(newProgettoNome)}" placeholder="Nome progetto per ${esc(cliente?.nome||'')}..." oninput="formState.newProgettoNome=this.value;" onkeydown="if(event.key==='Enter')tAddProgetto();if(event.key==='Escape')tCloseNuovoProgetto();" autofocus/>
           <button class="new-add-btn" onclick="tAddProgetto()" ${!newProgettoNome.trim() ? 'disabled' : ''}>Aggiungi</button>
           <button class="new-cancel-btn" onclick="tCloseNuovoProgetto()">✕</button>
         </div>` : `
@@ -1490,7 +1531,33 @@ function renderForm() {
             <div class="fase-desc">${f.desc}</div>
           </div>
         </button>`).join('')}
+      ${(formState.fasePers||[]).map(f => `
+        <button class="fase-btn ${fase?.id === f.id ? 'active' : ''}" onclick="tSelectFase('${f.id}')">
+          <span class="fase-icon">${f.icon||'📌'}</span>
+          <div>
+            <div class="fase-name">${f.lbl}</div>
+            <div class="fase-desc">${f.desc||''}</div>
+          </div>
+        </button>`).join('')}
+      ${formState.faseAddOpen ? `
+        <div class="new-inline" style="margin-top:8px;">
+          <input class="new-input" id="fase-new-inp"
+            value="${esc(formState.faseNewName||'')}"
+            placeholder="Nome fase personalizzata..."
+            oninput="formState.faseNewName=this.value;"
+            onkeydown="if(event.key==='Enter')tAddFase();if(event.key==='Escape'){formState.faseAddOpen=false;formState.faseNewName='';renderForm();}"/>
+          <button class="new-add-btn" onclick="tAddFase()" ${!(formState.faseNewName||'').trim()?'disabled':''}>Aggiungi</button>
+          <button class="new-cancel-btn" onclick="formState.faseAddOpen=false;formState.faseNewName='';renderForm();">✕</button>
+        </div>` : `
+        <button class="add-new-trigger" style="margin-top:8px;" onclick="formState.faseAddOpen=true;renderForm();">+ Aggiungi fase personalizzata</button>`}
     `;
+    // Restore focus if fase input open
+    if (formState.faseAddOpen) {
+      setTimeout(() => {
+        const inp = document.getElementById('fase-new-inp');
+        if (inp) { inp.focus(); inp.setSelectionRange((inp.value||'').length, (inp.value||'').length); }
+      }, 0);
+    }
   }
 
   else if (step === 4) {
@@ -1519,12 +1586,14 @@ function renderForm() {
       ${modo === 'collega' ? `
         <div style="padding-top:12px;border-top:var(--bw) solid var(--border);">
           <div class="form-section-lbl">Task aperti in ${esc(progetto?.nome||'')}</div>
-          <input class="search-input" value="${esc(search)}" placeholder="Cerca task..." oninput="formState.search=this.value;renderForm();"/>
-          ${taskAperti.length > 0 ? taskAperti.map(t => `
-            <div class="task-option ${taskScelto?.id===t.id?'active':''}" onclick="formState.taskScelto={id:'${t.id}',titolo:${JSON.stringify(t.titolo)}};renderForm();">
-              <span class="task-option-name">${esc(t.titolo)}</span>
-              <span class="task-option-stato">${t.stato.replace('_',' ')}</span>
-            </div>`).join('') : `<p style="font-size:11px;color:var(--text-3);text-align:center;padding:12px 0;">Nessun task aperto</p>`}
+          <input class="search-input" value="${esc(search)}" placeholder="Cerca task..." oninput="formState.search=this.value;renderTaskSearch();"/>
+          <div id="task-search-list">
+            ${taskAperti.length > 0 ? taskAperti.map(t => `
+              <div class="task-option ${taskScelto?.id===t.id?'active':''}" onclick="formState.taskScelto={id:'${t.id}',titolo:${JSON.stringify(t.titolo)}};renderTaskSearch();renderFormFooter();">
+                <span class="task-option-name">${esc(t.titolo)}</span>
+                <span class="task-option-stato">${t.stato.replace('_',' ')}</span>
+              </div>`).join('') : `<p style="font-size:11px;color:var(--text-3);text-align:center;padding:12px 0;">Nessun task aperto</p>`}
+          </div>
         </div>` : ''}
     `;
   }
@@ -1571,8 +1640,20 @@ function tAddProgetto() {
 }
 function tCloseNuovoProgetto() { formState.newProgettoOpen = false; formState.newProgettoNome = ''; renderForm(); }
 
+function tAddFase() {
+  const nome = (formState.faseNewName || '').trim();
+  if (!nome) return;
+  const nuovaFase = { id: 'fase-' + Date.now(), icon: '📌', lbl: nome, desc: '' };
+  if (!formState.fasePers) formState.fasePers = [];
+  formState.fasePers.push(nuovaFase);
+  formState.faseAddOpen = false;
+  formState.faseNewName = '';
+  tSelectFase(nuovaFase.id);
+}
+
 function tSelectFase(id) {
-  formState.fase = FASI.find(f => f.id === id);
+  formState.fase = FASI.find(f => f.id === id)
+    || (formState.fasePers || []).find(f => f.id === id);
   formState.step = 4; renderForm();
 }
 
@@ -1727,6 +1808,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
