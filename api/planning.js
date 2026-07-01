@@ -1,10 +1,9 @@
 /**
  * /api/planning
- * Supabase proxy per i task del planning home hub.
- * Persistenza per user: nassa_planning table.
+ * Supabase proxy — home planning hub + Nassa Plan data
  *
- * GET  → carica tasks dell'utente corrente
- * POST { tasks, clienti, progetti } → salva (upsert)
+ * GET  → carica dati { tasks, contenuti, projects, logged, planningTasks, clienti, progetti }
+ * POST { ...any fields } → upsert (merge con dati esistenti)
  *
  * Vercel env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, JWT_SECRET
  */
@@ -45,6 +44,15 @@ async function getUser(req) {
   } catch { return null; }
 }
 
+async function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let b = '';
+    req.on('data', c => b += c);
+    req.on('end', () => { try { resolve(JSON.parse(b)); } catch { reject(new Error('Invalid JSON')); } });
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   const origin = req.headers.origin;
   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
@@ -64,7 +72,7 @@ export default async function handler(req, res) {
 
   const sb = getSB();
 
-  // GET — load
+  // GET — load all data for this user
   if (req.method === 'GET') {
     const { data, error } = await sb
       .from('nassa_planning')
@@ -78,16 +86,25 @@ export default async function handler(req, res) {
     return res.status(200).json({ data: data?.data || null });
   }
 
-  // POST — save
+  // POST — merge and save
   if (req.method === 'POST') {
     let body;
-    try { body = await new Promise((r, j) => { let b = ''; req.on('data', c => b += c); req.on('end', () => r(JSON.parse(b))); req.on('error', j); }); }
+    try { body = await readBody(req); }
     catch { return res.status(400).json({ error: 'Body non valido' }); }
 
-    const { tasks, clienti, progetti } = body;
+    // Load existing data first, then merge
+    const { data: existing } = await sb
+      .from('nassa_planning')
+      .select('data')
+      .eq('user_id', authedUser)
+      .single();
+
+    const current = existing?.data || {};
+    const merged = { ...current, ...body, updated_at: new Date().toISOString() };
+
     const { error } = await sb
       .from('nassa_planning')
-      .upsert({ user_id: authedUser, data: { tasks, clienti, progetti }, updated_at: new Date().toISOString() });
+      .upsert({ user_id: authedUser, data: merged, updated_at: new Date().toISOString() });
 
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ ok: true });
