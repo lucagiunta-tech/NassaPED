@@ -17,7 +17,7 @@ html,body{height:100%;overflow:hidden;background:#f5f5f7;}
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script>
-// Polyfill React hooks from global React (UMD)
+// React hooks from UMD global
 const {
   useState,
   useRef,
@@ -244,6 +244,63 @@ const PRIORITA = [{
   id: "highest",
   lbl: "Highest",
   icon: "⌃⌃"
+}];
+
+// ─── TEAM MEMBERS — Nassa Studio S.r.l.s. ────────────────────────────────────
+const TEAM_MEMBERS = [{
+  id: "luca",
+  nome: "Luca Giunta",
+  email: "luca.giunta@nassastudio.it",
+  role: "Manager",
+  dept: "Our Team",
+  color: "#f59e0b",
+  costH: 30,
+  rateH: 50
+}, {
+  id: "alberto",
+  nome: "Alberto Arcidiacono",
+  email: "alberto@nassastudio.it",
+  role: "Manager",
+  dept: "Our Team",
+  color: "#3b82f6",
+  costH: 30,
+  rateH: 50
+}, {
+  id: "hermes",
+  nome: "Hermes Cannata",
+  email: "web@nassastudio.it",
+  role: "User",
+  dept: "Demo Users",
+  color: "#6366f1",
+  costH: 20,
+  rateH: 35
+}, {
+  id: "design",
+  nome: "DESIGN GRAFICO",
+  email: "design@nassastudio.it",
+  role: "User",
+  dept: "Demo Users",
+  color: "#8b5cf6",
+  costH: 20,
+  rateH: 35
+}, {
+  id: "nassa",
+  nome: "nassastudiografico@gmail.com",
+  email: "nassastudiografico@gmail.com",
+  role: "User",
+  dept: "Demo Users",
+  color: "#f97316",
+  costH: 0,
+  rateH: 0
+}, {
+  id: "we",
+  nome: "we@nassastudio.it",
+  email: "we@nassastudio.it",
+  role: "User",
+  dept: "Demo Users",
+  color: "#64748b",
+  costH: 0,
+  rateH: 0
 }];
 
 // ─── PROGETTI / CARTELLE (gerarchia stile Goodday sidebar) ──────────────────
@@ -7930,11 +7987,10 @@ function QuickAddPanel({
     }
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Not assigned"), /*#__PURE__*/React.createElement("option", {
-    value: "Luca Giunta"
-  }, "Luca Giunta"), /*#__PURE__*/React.createElement("option", {
-    value: "Alberto Arcidiacono"
-  }, "Alberto Arcidiacono")), user && /*#__PURE__*/React.createElement(Avatar, {
+  }, "Not assigned"), TEAM_MEMBERS.map(m => /*#__PURE__*/React.createElement("option", {
+    key: m.id,
+    value: m.nome
+  }, m.nome))), user && /*#__PURE__*/React.createElement(Avatar, {
     name: user,
     size: 28
   })), /*#__PURE__*/React.createElement("p", {
@@ -8022,6 +8078,1518 @@ function QuickAddPanel({
       cursor: title.trim() ? "pointer" : "default"
     }
   }, "Create task"))));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// USERS — Vista Company Users + Modal profilo utente
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Modal profilo utente ────────────────────────────────────────────────────
+function UserModal({
+  member,
+  tasks,
+  logged,
+  onClose,
+  onUpdate
+}) {
+  const [section, setSection] = useState("info");
+  const [costH, setCostH] = useState(member.costH);
+  const [rateH, setRateH] = useState(member.rateH);
+  const [workDays, setWorkDays] = useState({
+    mon: true,
+    tue: true,
+    wed: true,
+    thu: true,
+    fri: true,
+    sat: false,
+    sun: false
+  });
+  const [workHours, setWorkHours] = useState({
+    mon: 8,
+    tue: 8,
+    wed: 8,
+    thu: 8,
+    fri: 8
+  });
+  const [showCostHistory, setShowCostHistory] = useState(false);
+  const [ttSub, setTtSub] = useState("daybyday");
+  const memberTasks = tasks.filter(t => t.assegnato === member.nome);
+  const actionRequired = memberTasks.filter(t => t.stato === "not_started" || t.stato === "in_progress");
+  const assigned = memberTasks;
+  const totalLogged = memberTasks.reduce((sum, t) => sum + (logged[t.id] || 0), 0);
+  const Toggle = ({
+    on,
+    onToggle,
+    small
+  }) => /*#__PURE__*/React.createElement("div", {
+    onClick: onToggle,
+    style: {
+      width: small ? 32 : 36,
+      height: small ? 18 : 20,
+      borderRadius: 10,
+      background: on ? DS.blueDk : "#ccc",
+      position: "relative",
+      cursor: "pointer",
+      transition: "background .15s",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: small ? 14 : 16,
+      height: small ? 14 : 16,
+      borderRadius: "50%",
+      background: "#fff",
+      position: "absolute",
+      top: 2,
+      left: on ? small ? 16 : 18 : 2,
+      transition: "left .15s",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+    }
+  }));
+  const NavItem = ({
+    id,
+    icon,
+    lbl
+  }) => /*#__PURE__*/React.createElement("div", {
+    onClick: () => setSection(id),
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2,
+      padding: "7px 10px",
+      borderRadius: DS.rs,
+      cursor: "pointer",
+      fontSize: DS.fsSm,
+      fontWeight: section === id ? 600 : 400,
+      color: section === id ? DS.blueDk : DS.text2,
+      background: section === id ? DS.blueLt : "transparent"
+    },
+    onMouseEnter: e => section !== id && (e.currentTarget.style.background = DS.bg),
+    onMouseLeave: e => section !== id && (e.currentTarget.style.background = "transparent")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      width: 16,
+      textAlign: "center"
+    }
+  }, icon), lbl);
+  const Row = ({
+    label,
+    value,
+    children
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: DS.sp4,
+      padding: `${DS.sp2}px 0`,
+      borderBottom: `0.5px solid ${DS.borderLt}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 140,
+      flexShrink: 0,
+      fontSize: DS.fsSm,
+      color: DS.text3
+    }
+  }, label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text,
+      flex: 1
+    }
+  }, children || value || "—"));
+
+  // ─── Sezioni ───────────────────────────────────────────────────────────────
+  const InfoSection = () => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsMd,
+      fontWeight: 700,
+      color: DS.text,
+      margin: `0 0 ${DS.sp5}px`
+    }
+  }, "Info"), /*#__PURE__*/React.createElement(Row, {
+    label: "Name"
+  }, member.nome), /*#__PURE__*/React.createElement(Row, {
+    label: "Primary email"
+  }, member.email), /*#__PURE__*/React.createElement(Row, {
+    label: "Timezone"
+  }, "Europe/Berlin \xA0", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsXs,
+      padding: "2px 6px",
+      background: DS.bg,
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs,
+      color: DS.text3
+    }
+  }, new Date().toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }))), /*#__PURE__*/React.createElement(Row, {
+    label: "Company role"
+  }, member.role), /*#__PURE__*/React.createElement(Row, {
+    label: "Department"
+  }, member.dept), /*#__PURE__*/React.createElement(Row, {
+    label: "Reports to"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: "Luca Giunta",
+    size: 18
+  }), /*#__PURE__*/React.createElement("span", null, "Luca Giunta"))), /*#__PURE__*/React.createElement(Row, {
+    label: "Skills"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: DS.text3
+    }
+  }, "Please select")));
+  const ManagerAccessSection = () => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsMd,
+      fontWeight: 700,
+      color: DS.text,
+      margin: `0 0 ${DS.sp3}px`
+    }
+  }, "Manager access"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2,
+      lineHeight: 1.6,
+      margin: `0 0 ${DS.sp5}px`
+    }
+  }, "Manager Access allows the user's manager to access their My Work section (View For), schedule their work, manage personal events, and modify time reports."), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      color: DS.text,
+      margin: `0 0 ${DS.sp3}px`
+    }
+  }, member.nome, " Has Manager Access to:"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.blueDk,
+      cursor: "pointer",
+      margin: `0 0 ${DS.sp5}px`
+    }
+  }, "+ Add user"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      color: DS.text,
+      margin: `0 0 ${DS.sp3}px`
+    }
+  }, "Users who have Manager Access to ", member.nome.split(" ")[0], "'s account:"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2,
+      padding: `${DS.sp2}px 0`,
+      borderBottom: `0.5px solid ${DS.borderLt}`,
+      marginBottom: DS.sp2
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    name: "Luca Giunta",
+    size: 24
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  }, "Luca Giunta")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.blueDk,
+      cursor: "pointer"
+    }
+  }, "+ Add user"));
+  const WorkScheduleSection = () => {
+    const days = [["mon", "Monday"], ["tue", "Tuesday"], ["wed", "Wednesday"], ["thu", "Thursday"], ["fri", "Friday"], ["sat", "Saturday"], ["sun", "Sunday"]];
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: DS.sp4
+      }
+    }, /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: DS.fsMd,
+        fontWeight: 700,
+        color: DS.text,
+        margin: 0
+      }
+    }, "Work schedule")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: DS.sp3
+      }
+    }, /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: DS.fsBase,
+        fontWeight: 600,
+        color: DS.text,
+        margin: 0
+      }
+    }, "Workweek"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsSm,
+        color: DS.blueDk,
+        cursor: "pointer"
+      }
+    }, "Reset to default")), days.map(([id, lbl]) => /*#__PURE__*/React.createElement("div", {
+      key: id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: DS.sp3,
+        padding: `${DS.sp2}px 0`,
+        borderBottom: `0.5px solid ${DS.borderLt}`
+      }
+    }, /*#__PURE__*/React.createElement(Toggle, {
+      on: workDays[id],
+      onToggle: () => setWorkDays(p => ({
+        ...p,
+        [id]: !p[id]
+      })),
+      small: true
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 90,
+        fontSize: DS.fsSm,
+        color: DS.text
+      }
+    }, lbl), workDays[id] ? /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: workHours[id] || "",
+      min: 0,
+      max: 24,
+      onChange: e => setWorkHours(p => ({
+        ...p,
+        [id]: Number(e.target.value)
+      })),
+      style: {
+        width: 60,
+        padding: "5px 8px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        fontSize: DS.fsSm,
+        color: DS.text,
+        textAlign: "right"
+      }
+    }) : /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsSm,
+        color: DS.text3,
+        padding: "5px 8px"
+      }
+    }, "⊘ Day off"), workDays[id] && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsSm,
+        color: DS.text3
+      }
+    }, "h"))), /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: DS.fsBase,
+        fontWeight: 600,
+        color: DS.text,
+        margin: `${DS.sp5}px 0 ${DS.sp3}px`
+      }
+    }, "Clock in/out"), /*#__PURE__*/React.createElement(Row, {
+      label: "Clock in required"
+    }, /*#__PURE__*/React.createElement(Toggle, {
+      on: false,
+      onToggle: () => {},
+      small: true
+    })), /*#__PURE__*/React.createElement(Row, {
+      label: "Break"
+    }, /*#__PURE__*/React.createElement("select", {
+      style: {
+        padding: "5px 10px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        fontSize: DS.fsSm,
+        color: DS.text
+      }
+    }, /*#__PURE__*/React.createElement("option", null, "1 hour"), /*#__PURE__*/React.createElement("option", null, "30 min"), /*#__PURE__*/React.createElement("option", null, "No break"))), /*#__PURE__*/React.createElement(Row, {
+      label: "Auto clock out time"
+    }, /*#__PURE__*/React.createElement("select", {
+      style: {
+        padding: "5px 10px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        fontSize: DS.fsSm,
+        color: DS.text
+      }
+    }, /*#__PURE__*/React.createElement("option", null, "Auto (workday duration)"))));
+  };
+  const BillingSection = () => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsMd,
+      fontWeight: 700,
+      color: DS.text,
+      margin: `0 0 ${DS.sp5}px`
+    }
+  }, "Billing & Finance"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: DS.sp3,
+      marginBottom: DS.sp5
+    }
+  }, /*#__PURE__*/React.createElement(Row, {
+    label: "Internal cost/hour"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: costH,
+    onChange: e => setCostH(Number(e.target.value)),
+    style: {
+      width: 80,
+      padding: "5px 8px",
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs,
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 6,
+      fontSize: DS.fsSm,
+      color: DS.text3
+    }
+  }, "€/h")), /*#__PURE__*/React.createElement(Row, {
+    label: "Service rate/hour"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: rateH,
+    onChange: e => setRateH(Number(e.target.value)),
+    style: {
+      width: 80,
+      padding: "5px 8px",
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs,
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 6,
+      fontSize: DS.fsSm,
+      color: DS.text3
+    }
+  }, "€/h"))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onUpdate && onUpdate(member.id, {
+      costH,
+      rateH
+    }),
+    style: {
+      padding: "7px 20px",
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs,
+      background: "#fff",
+      fontSize: DS.fsSm,
+      cursor: "pointer",
+      color: DS.text,
+      marginBottom: DS.sp6
+    }
+  }, "Submit"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 700,
+      color: DS.text,
+      margin: `0 0 ${DS.sp2}px`
+    }
+  }, "History of Hourly Costs"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text3,
+      lineHeight: 1.6,
+      margin: `0 0 ${DS.sp4}px`
+    }
+  }, "By creating records of changes to labor and services hourly costs, you will maintain a historical log that ensures cost calculations based on reported time are accurate and consistent with past data."), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowCostHistory(true),
+    style: {
+      padding: "9px 20px",
+      borderRadius: DS.rs,
+      border: "none",
+      background: DS.blueDk,
+      color: "#fff",
+      fontSize: DS.fsSm,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "Add history"), showCostHistory && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 999,
+      background: SEM.overlayDark,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    },
+    onClick: () => setShowCostHistory(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      borderRadius: 12,
+      width: 640,
+      display: "flex",
+      overflow: "hidden"
+    },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 80,
+      background: DS.bg,
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "center",
+      paddingTop: 32
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 36
+    }
+  }, "🧮")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      padding: "24px 28px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: DS.sp6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsMd,
+      fontWeight: 700,
+      color: DS.text
+    }
+  }, "New Hourly Cost History"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowCostHistory(false),
+    style: {
+      background: "transparent",
+      border: "none",
+      fontSize: 18,
+      cursor: "pointer",
+      color: DS.text3
+    }
+  }, "✕")), [["Start Date", ""], ["End Date", ""]].map(([lbl]) => /*#__PURE__*/React.createElement("div", {
+    key: lbl,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp4,
+      marginBottom: DS.sp4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 100,
+      fontSize: DS.fsSm,
+      color: DS.text2,
+      flexShrink: 0
+    }
+  }, lbl), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "8px 12px",
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs,
+      cursor: "pointer",
+      color: DS.text3,
+      fontSize: DS.fsSm
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "📅"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, "Please select"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10
+    }
+  }, "▾")))), [["Labor Rate", "0.00"], ["Service Rate", "0.00"]].map(([lbl, val]) => /*#__PURE__*/React.createElement("div", {
+    key: lbl,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp4,
+      marginBottom: DS.sp4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 100,
+      fontSize: DS.fsSm,
+      color: DS.text2,
+      flexShrink: 0
+    }
+  }, lbl), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "8px 12px",
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: DS.text3,
+      fontSize: DS.fsSm
+    }
+  }, "€"), /*#__PURE__*/React.createElement("input", {
+    defaultValue: val,
+    style: {
+      flex: 1,
+      border: "none",
+      outline: "none",
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginTop: DS.sp5
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowCostHistory(false),
+    style: {
+      padding: "10px 48px",
+      borderRadius: DS.r,
+      border: "none",
+      background: DS.blueDk,
+      color: "#fff",
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "Create"))))));
+  const SummarySection = () => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsMd,
+      fontWeight: 700,
+      color: DS.text,
+      margin: `0 0 ${DS.sp4}px`
+    }
+  }, "Summary"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: DS.sp4,
+      marginBottom: DS.sp5
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: DS.bg,
+      borderRadius: DS.r,
+      padding: DS.sp3,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsLg,
+      fontWeight: 700,
+      color: M,
+      margin: "0 0 2px"
+    }
+  }, actionRequired.length), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3,
+      margin: 0
+    }
+  }, "action required")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: DS.bg,
+      borderRadius: DS.r,
+      padding: DS.sp3,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsLg,
+      fontWeight: 700,
+      color: DS.text,
+      margin: "0 0 2px"
+    }
+  }, assigned.length), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3,
+      margin: 0
+    }
+  }, "assigned")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: DS.bg,
+      borderRadius: DS.r,
+      padding: DS.sp3,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsLg,
+      fontWeight: 700,
+      color: DS.text,
+      margin: "0 0 2px"
+    }
+  }, "0"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3,
+      margin: 0
+    }
+  }, "someday"))), /*#__PURE__*/React.createElement(Row, {
+    label: "Timezone"
+  }, "Europe/Berlin"), /*#__PURE__*/React.createElement(Row, {
+    label: "Primary email"
+  }, member.email), /*#__PURE__*/React.createElement(Row, {
+    label: "Organization role"
+  }, member.role), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      color: DS.text,
+      margin: `${DS.sp5}px 0 ${DS.sp3}px`
+    }
+  }, "Projects"), PROGETTI.filter(p => tasks.some(t => t.assegnato === member.nome && t.progetto === p.id)).slice(0, 5).map(p => /*#__PURE__*/React.createElement("div", {
+    key: p.id,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2,
+      padding: `${DS.sp1}px 0`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: 2,
+      background: p.color || DS.blueDk
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  }, p.nome))));
+  const TasksSection = () => {
+    const [taskTab, setTaskTab] = useState("action");
+    const list = taskTab === "action" ? actionRequired : assigned;
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: DS.sp3,
+        borderBottom: `0.5px solid ${DS.border}`,
+        marginBottom: DS.sp4
+      }
+    }, [["action", "Action required"], ["assigned", "Assigned"]].map(([id, lbl]) => /*#__PURE__*/React.createElement("button", {
+      key: id,
+      onClick: () => setTaskTab(id),
+      style: {
+        padding: "6px 2px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        fontSize: DS.fsSm,
+        fontWeight: taskTab === id ? 600 : 400,
+        color: taskTab === id ? DS.text : DS.text3,
+        borderBottom: taskTab === id ? `2px solid ${DS.blueDk}` : "2px solid transparent"
+      }
+    }, lbl))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 80px 80px 90px",
+        fontSize: DS.fsXs,
+        fontWeight: 700,
+        color: DS.text3,
+        textTransform: "uppercase",
+        letterSpacing: "0.04em",
+        padding: `0 0 ${DS.sp2}px`,
+        borderBottom: `0.5px solid ${DS.border}`
+      }
+    }, /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("span", null, "Deadline"), /*#__PURE__*/React.createElement("span", null, "Reply pend."), /*#__PURE__*/React.createElement("span", null, "Schedule")), list.length === 0 ? /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: DS.fsSm,
+        color: DS.text3,
+        textAlign: "center",
+        padding: "2rem 0"
+      }
+    }, "Nessun task") : list.map(t => /*#__PURE__*/React.createElement("div", {
+      key: t.id,
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 80px 80px 90px",
+        alignItems: "center",
+        padding: `${DS.sp2}px 0`,
+        borderBottom: `0.5px solid ${DS.borderLt}`
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      style: {
+        margin: 0,
+        fontSize: DS.fsSm,
+        color: DS.text
+      }
+    }, t.titolo), t.cartella && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsXs,
+        color: DS.text3
+      }
+    }, PROGETTI.flatMap(p => p.cartelle).find(c => c.id === t.cartella)?.nome)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsXs,
+        color: t.deadline && isPast(t.deadline) ? M : DS.text3
+      }
+    }, t.deadline ? fmtDate(t.deadline) : "—"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsXs,
+        color: DS.text3
+      }
+    }, "—"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: DS.fsXs,
+        color: DS.text3
+      }
+    }, t.schedule ? fmtDate(t.schedule) : "—"))));
+  };
+  const ActivitySection = () => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: DS.sp2,
+      marginBottom: DS.sp4
+    }
+  }, ["daybyday", "daterange"].map(id => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setTtSub(id),
+    style: {
+      padding: "6px 14px",
+      borderRadius: DS.rs,
+      border: "none",
+      cursor: "pointer",
+      background: ttSub === id ? DS.blueDk : DS.bg,
+      color: ttSub === id ? "#fff" : DS.text2,
+      fontSize: DS.fsSm,
+      fontWeight: ttSub === id ? 600 : 400
+    }
+  }, id === "daybyday" ? "Day by day" : "Date range"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: `${DS.sp6}px 0`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: DS.sp5,
+      marginBottom: DS.sp4
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      fontSize: 18,
+      color: DS.text3
+    }
+  }, "‹"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsMd,
+      fontWeight: 600,
+      color: DS.text
+    }
+  }, "Yesterday"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      fontSize: 18,
+      color: DS.text3
+    }
+  }, "›")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: DS.sp8
+    }
+  }, /*#__PURE__*/React.createElement(ProgressRing, {
+    pct: 0,
+    size: 48,
+    color: DS.blueDk
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3,
+      margin: "0 0 2px"
+    }
+  }, "Workday"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      color: DS.text,
+      margin: 0
+    }
+  }, "0h : 00m")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3,
+      margin: "0 0 2px"
+    }
+  }, "Reported time"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      color: DS.text,
+      margin: 0
+    }
+  }, totalLogged > 0 ? `${totalLogged}h` : "0h : 00m")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3,
+      margin: "0 0 2px"
+    }
+  }, "Estimated time"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 600,
+      color: DS.text,
+      margin: 0
+    }
+  }, "0h : 00m"))), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text3,
+      marginTop: DS.sp6
+    }
+  }, "No records found")));
+  const sectionMap = {
+    info: /*#__PURE__*/React.createElement(InfoSection, null),
+    manager: /*#__PURE__*/React.createElement(ManagerAccessSection, null),
+    schedule: /*#__PURE__*/React.createElement(WorkScheduleSection, null),
+    billing: /*#__PURE__*/React.createElement(BillingSection, null),
+    summary: /*#__PURE__*/React.createElement(SummarySection, null),
+    tasks: /*#__PURE__*/React.createElement(TasksSection, null),
+    activity: /*#__PURE__*/React.createElement(ActivitySection, null),
+    timereporting: /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: DS.fsMd,
+        fontWeight: 700,
+        color: DS.text,
+        margin: `0 0 ${DS.sp5}px`
+      }
+    }, "Time reporting"), /*#__PURE__*/React.createElement(Row, {
+      label: "Time reporting"
+    }, /*#__PURE__*/React.createElement("select", {
+      style: {
+        padding: "6px 10px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        fontSize: DS.fsSm,
+        color: DS.text
+      }
+    }, ["Not required", "½ hour", "1 hour", "1½ hours", "2 hours", "2½ hours"].map(o => /*#__PURE__*/React.createElement("option", {
+      key: o
+    }, o)))), /*#__PURE__*/React.createElement(Row, {
+      label: "Guesstimate"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      defaultChecked: true,
+      style: {
+        width: 16,
+        height: 16
+      }
+    })), /*#__PURE__*/React.createElement("button", {
+      style: {
+        marginTop: DS.sp4,
+        padding: "7px 20px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        background: "#fff",
+        fontSize: DS.fsSm,
+        cursor: "pointer",
+        color: DS.text
+      }
+    }, "Submit")),
+    dailybadge: /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontSize: DS.fsMd,
+        fontWeight: 700,
+        color: DS.text,
+        margin: `0 0 ${DS.sp5}px`
+      }
+    }, "Daily badge"), [["Daily badge", true], ["Time report", "No"], ["Event pastdue", "Don't check"], ["Assigned task deadline", "Don't check"], ["Assigned task end date", "Don't check"], ["AR task not scheduled", "Don't check"]].map(([lbl, val]) => /*#__PURE__*/React.createElement(Row, {
+      key: lbl,
+      label: lbl
+    }, val === true ? /*#__PURE__*/React.createElement("div", {
+      onClick: () => {},
+      style: {
+        width: 36,
+        height: 20,
+        borderRadius: 10,
+        background: DS.blueDk,
+        position: "relative",
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 16,
+        height: 16,
+        borderRadius: "50%",
+        background: "#fff",
+        position: "absolute",
+        top: 2,
+        left: 18
+      }
+    })) : /*#__PURE__*/React.createElement("select", {
+      style: {
+        padding: "5px 10px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        fontSize: DS.fsSm,
+        color: DS.text
+      }
+    }, /*#__PURE__*/React.createElement("option", null, val)))), /*#__PURE__*/React.createElement("button", {
+      style: {
+        marginTop: DS.sp4,
+        padding: "7px 20px",
+        border: `0.5px solid ${DS.border}`,
+        borderRadius: DS.rs,
+        background: "#fff",
+        fontSize: DS.fsSm,
+        cursor: "pointer",
+        color: DS.text
+      }
+    }, "Submit"))
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 700,
+      background: SEM.overlayDark,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    },
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      borderRadius: 12,
+      width: 860,
+      maxHeight: "88vh",
+      display: "flex",
+      overflow: "hidden",
+      boxShadow: "0 8px 40px rgba(0,0,0,0.2)"
+    },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 200,
+      flexShrink: 0,
+      borderRight: `0.5px solid ${DS.border}`,
+      padding: `${DS.sp5}px ${DS.sp3}px`,
+      display: "flex",
+      flexDirection: "column",
+      overflowY: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: `${DS.sp3}px 0 ${DS.sp5}px`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 52,
+      height: 52,
+      borderRadius: "50%",
+      background: member.color,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      margin: "0 auto 8px",
+      fontSize: 18,
+      fontWeight: 700,
+      color: "#fff"
+    }
+  }, member.nome.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: DS.fsBase,
+      fontWeight: 700,
+      color: DS.text,
+      margin: 0
+    }
+  }, member.nome)), /*#__PURE__*/React.createElement(NavItem, {
+    id: "info",
+    icon: "ⓘ",
+    lbl: "Info"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "manager",
+    icon: "👥",
+    lbl: "Manager access"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "schedule",
+    icon: "📅",
+    lbl: "Work schedule"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "timereporting",
+    icon: "⏱",
+    lbl: "Time reporting"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "dailybadge",
+    icon: "✓",
+    lbl: "Daily badge"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "billing",
+    icon: "💳",
+    lbl: "Billing & Finance"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "0.5px",
+      background: DS.border,
+      margin: `${DS.sp3}px 0`
+    }
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "summary",
+    icon: "★",
+    lbl: "Summary"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "tasks",
+    icon: "📋",
+    lbl: "Tasks"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "activity",
+    icon: "◉",
+    lbl: "Activity"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "0.5px",
+      background: DS.border,
+      margin: `${DS.sp3}px 0`
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    onClick: () => {},
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2,
+      padding: "7px 10px",
+      borderRadius: DS.rs,
+      cursor: "pointer",
+      fontSize: DS.fsSm,
+      color: M
+    },
+    onMouseEnter: e => e.currentTarget.style.background = DS.redLt,
+    onMouseLeave: e => e.currentTarget.style.background = "transparent"
+  }, "🗑 Delete")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: "auto",
+      padding: `${DS.sp6}px ${DS.sp6}px`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: DS.sp5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsXs,
+      fontWeight: 600,
+      color: DS.text3,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em"
+    }
+  }, "Company user"), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      background: "transparent",
+      border: "none",
+      fontSize: 18,
+      cursor: "pointer",
+      color: DS.text3
+    }
+  }, "✕")), sectionMap[section] || /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: DS.text3
+    }
+  }, "Coming soon"))));
+}
+
+// ─── Vista Company Users (lista + Clock In/Out) ──────────────────────────────
+function UsersView({
+  tasks,
+  logged
+}) {
+  const [subTab, setSubTab] = useState("company");
+  const [selectedMember, setSelectedMember] = useState(null);
+  const managers = TEAM_MEMBERS.filter(m => m.role === "Manager");
+  const users = TEAM_MEMBERS.filter(m => m.role === "User");
+  const days = ["MON", "TUE", "WED", "THU", "FRI"];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: DS.font
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 0,
+      borderBottom: `0.5px solid ${DS.border}`,
+      marginBottom: DS.sp5
+    }
+  }, [["company", "Company users"], ["customers", "Customers"], ["departments", "Departments"], ["teams", "Teams"], ["clockinout", "Clock In/Out"]].map(([id, lbl]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    onClick: () => setSubTab(id),
+    style: {
+      padding: "8px 16px",
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      fontSize: DS.fsSm,
+      fontWeight: subTab === id ? 600 : 400,
+      color: subTab === id ? DS.text : DS.text3,
+      borderBottom: subTab === id ? `2px solid ${DS.blueDk}` : "2px solid transparent"
+    }
+  }, lbl))), subTab === "company" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp3,
+      marginBottom: DS.sp4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2
+    }
+  }, "Group by: ", /*#__PURE__*/React.createElement("strong", null, "Company role ▾")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginLeft: "auto",
+      display: "flex",
+      gap: DS.sp2
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "6px 14px",
+      border: `1.5px solid ${DS.blueDk}`,
+      borderRadius: DS.rs,
+      background: "transparent",
+      color: DS.blueDk,
+      fontSize: DS.fsSm,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, "⊕ Invite user"), /*#__PURE__*/React.createElement("button", {
+    style: {
+      padding: "6px 14px",
+      border: `0.5px solid ${DS.border}`,
+      borderRadius: DS.rs,
+      background: "transparent",
+      color: DS.text2,
+      fontSize: DS.fsSm,
+      cursor: "pointer"
+    }
+  }, "Preferences"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 120px 140px 200px",
+      fontSize: DS.fsXs,
+      fontWeight: 700,
+      color: DS.text3,
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+      padding: `0 ${DS.sp3}px ${DS.sp2}px`,
+      borderBottom: `0.5px solid ${DS.border}`
+    }
+  }, /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("span", null, "COMPANY ROLE"), /*#__PURE__*/React.createElement("span", null, "DEPARTMENT"), /*#__PURE__*/React.createElement("span", null, "PRIMARY EMAIL")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: `${DS.sp3}px 0 ${DS.sp1}px`,
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      fontWeight: 700,
+      color: DS.text
+    }
+  }, "▾ Manager")), managers.map(m => /*#__PURE__*/React.createElement("div", {
+    key: m.id,
+    onClick: () => setSelectedMember(m),
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 120px 140px 200px",
+      alignItems: "center",
+      padding: `${DS.sp2}px ${DS.sp3}px`,
+      borderBottom: `0.5px solid ${DS.borderLt}`,
+      cursor: "pointer"
+    },
+    onMouseEnter: e => e.currentTarget.style.background = DS.bg,
+    onMouseLeave: e => e.currentTarget.style.background = "transparent"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: "50%",
+      background: m.color,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: DS.fsXs,
+      fontWeight: 700,
+      color: "#fff"
+    }
+  }, m.nome.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      fontWeight: 500,
+      color: DS.text
+    }
+  }, m.nome), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsXs,
+      padding: "2px 7px",
+      borderRadius: DS.rs,
+      background: DS.blueDk,
+      color: "#fff",
+      fontWeight: 600
+    }
+  }, "Admin")), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2
+    }
+  }, m.role), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2
+    }
+  }, m.dept), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3
+    }
+  }, m.email))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: `${DS.sp3}px 0 ${DS.sp1}px`,
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2,
+      marginTop: DS.sp3
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      fontWeight: 700,
+      color: DS.text
+    }
+  }, "▾ User")), users.map(m => /*#__PURE__*/React.createElement("div", {
+    key: m.id,
+    onClick: () => setSelectedMember(m),
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 120px 140px 200px",
+      alignItems: "center",
+      padding: `${DS.sp2}px ${DS.sp3}px`,
+      borderBottom: `0.5px solid ${DS.borderLt}`,
+      cursor: "pointer"
+    },
+    onMouseEnter: e => e.currentTarget.style.background = DS.bg,
+    onMouseLeave: e => e.currentTarget.style.background = "transparent"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: "50%",
+      background: m.color,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: DS.fsXs,
+      fontWeight: 700,
+      color: "#fff"
+    }
+  }, m.nome.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  }, m.nome), m.id === "hermes" || m.id === "design" || m.id === "nassa" || m.id === "we" ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsXs,
+      padding: "2px 7px",
+      borderRadius: DS.rs,
+      background: DS.amberLt,
+      color: DS.amberDk,
+      fontWeight: 600
+    }
+  }, "Pending") : null), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2
+    }
+  }, m.role), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2
+    }
+  }, m.dept), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsXs,
+      color: DS.text3
+    }
+  }, m.email))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: `${DS.sp3}px ${DS.sp3}px`,
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2,
+      cursor: "pointer",
+      color: DS.text3,
+      fontSize: DS.fsSm
+    },
+    onMouseEnter: e => e.currentTarget.style.color = DS.text,
+    onMouseLeave: e => e.currentTarget.style.color = DS.text3
+  }, "+ New user")), subTab === "clockinout" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 160px 140px 1fr",
+      fontSize: DS.fsXs,
+      fontWeight: 700,
+      color: DS.text3,
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+      padding: `0 ${DS.sp3}px ${DS.sp2}px`,
+      borderBottom: `0.5px solid ${DS.border}`
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "USER"), /*#__PURE__*/React.createElement("span", null, "CLOCK IN REQUIRED"), /*#__PURE__*/React.createElement("span", null, "BREAK DURATION"), /*#__PURE__*/React.createElement("span", null, "WORK SCHEDULE")), TEAM_MEMBERS.map(m => /*#__PURE__*/React.createElement("div", {
+    key: m.id,
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 160px 140px 1fr",
+      alignItems: "center",
+      padding: `${DS.sp3}px ${DS.sp3}px`,
+      borderBottom: `0.5px solid ${DS.borderLt}`
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: DS.sp2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: "50%",
+      background: m.color,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: DS.fsXs,
+      fontWeight: 700,
+      color: "#fff"
+    }
+  }, m.nome.split(" ").slice(0, 2).map(w => w[0]).join("").slice(0, 2).toUpperCase()), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text
+    }
+  }, m.nome)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      paddingLeft: DS.sp8
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    style: {
+      width: 14,
+      height: 14
+    }
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: DS.fsSm,
+      color: DS.text2
+    }
+  }, "1h"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4
+    }
+  }, days.map(d => /*#__PURE__*/React.createElement("span", {
+    key: d,
+    style: {
+      fontSize: DS.fsXs,
+      padding: "3px 6px",
+      background: DS.bg,
+      borderRadius: DS.rXs,
+      color: DS.text2
+    }
+  }, "8h")))))), (subTab === "customers" || subTab === "departments" || subTab === "teams") && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "4rem 0",
+      color: DS.text3,
+      fontSize: DS.fsSm
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 32,
+      marginBottom: 12
+    }
+  }, subTab === "customers" ? "👥" : subTab === "departments" ? "🏢" : "⛓"), /*#__PURE__*/React.createElement("p", null, subTab === "customers" ? "Customers" : subTab === "departments" ? "Departments" : "Teams", " — coming soon")), selectedMember && /*#__PURE__*/React.createElement(UserModal, {
+    member: selectedMember,
+    tasks: tasks,
+    logged: logged,
+    onClose: () => setSelectedMember(null),
+    onUpdate: () => {}
+  }));
 }
 
 // ─── Helpers serializzazione Date ←→ JSON ───────────────────────────────────
@@ -8176,7 +9744,7 @@ function NassaPlan() {
     })();
   }, []);
 
-  // ─── SAVE reattivo via /api/planning ──────────────────────────────────────
+  // ─── SAVE reattivo: salva ogni volta che tasks/contenuti/projects/logged cambiano ─
   useEffect(() => {
     if (!storageReady || isFirstLoad.current) return;
     setStorageStatus("saving");
@@ -8315,6 +9883,7 @@ function NassaPlan() {
     if (mainTab === "timetracking") base.push("Time Tracking");
     if (mainTab === "events") base.push("Events Summary");
     if (mainTab === "board") base.push("PED — Board");
+    if (mainTab === "users") base.push("Users");
     if (mainTab === "projects" && selectedProject) {
       base.push("Active Projects", "Client Projects", PROGETTI.find(p => p.id === selectedProject)?.nome);
     } else if (mainTab === "projects") {
@@ -8408,6 +9977,10 @@ function NassaPlan() {
     id: "board",
     lbl: "PED — Board",
     icon: "▤"
+  }), /*#__PURE__*/React.createElement(NavItem, {
+    id: "users",
+    lbl: "Users",
+    icon: "👥"
   }), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: 10,
@@ -8657,6 +10230,9 @@ function NassaPlan() {
     onAddTask: addTask,
     onDeleteTask: deleteTask,
     onOpenTask: t => openTaskFull(t, "task")
+  }), mainTab === "users" && /*#__PURE__*/React.createElement(UsersView, {
+    tasks: tasks,
+    logged: logged
   })))), selectedTask && /*#__PURE__*/React.createElement(TaskFullView, {
     item: selectedTask.item,
     kind: selectedTask.kind,
@@ -8670,6 +10246,10 @@ function NassaPlan() {
     status: storageStatus
   }));
 }
+
+// Mount
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(React.createElement(NassaPlan));
 
 // Mount NassaPlan
 const __root = ReactDOM.createRoot(document.getElementById('root'));
