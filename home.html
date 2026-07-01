@@ -447,11 +447,17 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .btn-confirm:disabled{background:var(--border);color:var(--text-3);cursor:default;}
 
 /* ── Task detail panel ── */
+.task-panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:88;
+  display:none;
+}
+.task-panel-overlay.open{display:block;}
 .task-panel{
-  position:fixed;top:var(--topbar);right:0;width:280px;
-  background:var(--surface);border-left:var(--bw) solid var(--border);
-  border-bottom:var(--bw) solid var(--border);padding:16px;z-index:90;
-  border-radius:0 0 0 12px;box-shadow:var(--shadow-lg);
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:320px;max-height:90vh;overflow-y:auto;
+  background:var(--surface);padding:20px;z-index:90;
+  border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);
+  border:var(--bw) solid var(--border);
 }
 .tp-tipo{
   font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);
@@ -715,6 +721,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 </div>
 
 <!-- TASK PANEL -->
+<div class="task-panel-overlay" id="task-panel-overlay" onclick="closePanelAndSave()"></div>
 <div class="task-panel" id="task-panel" style="display:none;">
   <button class="tp-close" onclick="closePanel()">✕</button>
   <div id="tp-body"></div>
@@ -1738,8 +1745,10 @@ function openPanel(id, giorno) {
   if (!task) return;
   const panel = document.getElementById('task-panel');
   panel.dataset.taskId = id;
+  panel.dataset.giorno = String(giorno);
   renderPanel(task, giorno);
   panel.style.display = 'block';
+  document.getElementById('task-panel-overlay').classList.add('open');
 }
 
 function renderPanel(task, giorno) {
@@ -1798,7 +1807,26 @@ function renderPanel(task, giorno) {
       <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">Cambia tipo</div>
       <div style="display:flex;flex-wrap:wrap;gap:0;">${typeButtons}</div>
     </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">
+      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:5px;">Note</label>
+      <textarea id="tp-note-input"
+        style="width:100%;min-height:64px;resize:vertical;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:7px 9px;outline:none;line-height:1.5;"
+        placeholder="Aggiungi una nota..."
+        oninput="tpAutoSave('nota',this.value,'${task.id}',${gStr})"
+      >${esc(task.nota||'')}</textarea>
+    </div>
     <div style="margin-top:10px;">
+      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:5px;">URL</label>
+      <input id="tp-url-input" type="url"
+        style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:7px 9px;outline:none;"
+        placeholder="https://..."
+        value="${esc(task.url||'')}"
+        oninput="tpAutoSave('url',this.value.trim(),'${task.id}',${gStr})"
+      />
+      ${task.url ? `<a href="${esc(task.url)}" target="_blank" rel="noopener"
+        style="font-size:10px;color:var(--blue-dk);display:block;margin-top:4px;word-break:break-all;">↗ ${esc(task.url)}</a>` : ''}
+    </div>
+    <div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);">
       <button onclick="deleteTask('${task.id}',${gStr});closePanel();" style="width:100%;padding:6px;border-radius:var(--rs);border:0.5px solid var(--red-lt);background:transparent;color:var(--red-dk);font-size:12px;cursor:pointer;">✕ Rimuovi task</button>
     </div>
   `;
@@ -1858,6 +1886,19 @@ function applyAssignee(taskId, giorno, utente) {
   renderPanel(task, giorno);
 }
 
+function tpAutoSave(field, value, taskId, giorno) {
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
+  const task = (state.tasks[key] || []).find(t => t.id === taskId);
+  if (!task) return;
+  task[field] = value;
+  save();
+  // Refresh the open link preview if URL changed
+  if (field === 'url') {
+    const linkEl = document.getElementById('tp-url-link');
+    if (linkEl) { linkEl.href = value; linkEl.textContent = value; linkEl.style.display = value ? 'block' : 'none'; }
+  }
+}
+
 function changeTaskType(id, giorno, nuovoTipo) {
   const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
   const taskList = state.tasks[key] || [];
@@ -1876,7 +1917,29 @@ function changeTaskType(id, giorno, nuovoTipo) {
   }
 }
 
-function closePanel() { document.getElementById('task-panel').style.display = 'none'; }
+function closePanel() {
+  document.getElementById('task-panel').style.display = 'none';
+  document.getElementById('task-panel-overlay').classList.remove('open');
+}
+
+function closePanelAndSave() {
+  // Click outside: save note/url if edited, then close
+  const noteEl = document.getElementById('tp-note-input');
+  const urlEl  = document.getElementById('tp-url-input');
+  const panel  = document.getElementById('task-panel');
+  const taskId = panel?.dataset.taskId;
+  const gKey   = panel?.dataset.giorno;
+  if (taskId && gKey) {
+    const key = (gKey === 'later' || gKey === '-1') ? 'later' : gKey;
+    const task = (state.tasks[key] || []).find(t => t.id === taskId);
+    if (task) {
+      if (noteEl) task.nota = noteEl.value;
+      if (urlEl)  task.url  = urlEl.value.trim();
+      save();
+    }
+  }
+  closePanel();
+}
 
 function promoteTask(id, giorno) {
   const key = giorno === 'later' || giorno === -1 ? 'later' : String(giorno);
@@ -1920,6 +1983,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
