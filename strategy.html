@@ -2731,7 +2731,7 @@ function BrandPortalView({
     try {
       await fetch('/api/brand', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-nassa-key': 'NASSA_SECRET_2026' },
+        headers: { 'Content-Type': 'application/json', 'x-nassa-key': STRATEGY_KEY },
         credentials: 'include',
         body: JSON.stringify({ clientId: client.id, field, data }),
       });
@@ -3374,7 +3374,7 @@ function StrategyView({
       await Promise.all(Object.entries(brandUpdate).map(([field, data]) =>
         fetch('/api/brand', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-nassa-key': 'NASSA_SECRET_2026' },
+          headers: { 'Content-Type': 'application/json', 'x-nassa-key': STRATEGY_KEY },
           credentials: 'include',
           body: JSON.stringify({ clientId: client.id, field, data }),
         })
@@ -5270,7 +5270,7 @@ const SVG = {
 
 // ── Supabase API helpers ──────────────────────────────────────────────────────
 const STRATEGY_API  = '/api/project';
-const STRATEGY_KEY  = 'NASSA_SECRET_2026';
+const STRATEGY_KEY  = ''; // auth via HttpOnly cookie — no client-side key needed
 const STRATEGY_USER = 'nassa_strategy'; // chiave separata da NassaPED
 
 async function strategyLoad() {
