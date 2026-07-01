@@ -100,7 +100,29 @@ export default async function handler(req, res) {
       .single();
 
     const current = existing?.data || {};
-    const merged = { ...current, ...body, updated_at: new Date().toISOString() };
+
+    // ── Namespace fix: keep homeTasks and tasks separate ──────────────────
+    // homeTasks = Home Planning tasks (index.html)
+    // tasks     = Nassa Plan tasks    (nplan.html)
+    // If client sends 'homeTasks', never let it overwrite 'tasks' and vice versa.
+    // Also: one-time migration — if old data has 'tasks' from index.html
+    // (detected by absence of nplan-specific fields like 'contenuti'),
+    // rename it to 'homeTasks' to prevent future collisions.
+    const merged = { ...current };
+
+    // Apply incoming fields
+    for (const [k, v] of Object.entries(body)) {
+      merged[k] = v;
+    }
+
+    // One-time migration: if we have tasks but no homeTasks and no contenuti,
+    // the tasks blob is from the old index.html — move it safely.
+    if (merged.tasks && !merged.homeTasks && !merged.contenuti) {
+      merged.homeTasks = merged.tasks;
+      delete merged.tasks;
+    }
+
+    merged.updated_at = new Date().toISOString();
 
     const { error } = await sb
       .from('nassa_planning')
@@ -112,3 +134,4 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
