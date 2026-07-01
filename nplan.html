@@ -9853,6 +9853,25 @@ function NassaPlan() {
             if (data.contenuti) setContenuti(deserializeContenuti(data.contenuti));
             if (data.projects) setProjects(data.projects);
             if (data.logged) setLogged(data.logged);
+            // Merge tasks promoted from Home Planning (index.html)
+            if (data.planTasks && typeof data.planTasks === 'object') {
+              const promoted = Object.values(data.planTasks).filter(t => t && t.id && t.fromHome);
+              if (promoted.length > 0) {
+                setTasks(prev => {
+                  const existingIds = new Set(prev.map(t => t.id));
+                  const newOnes = promoted
+                    .filter(t => !existingIds.has(t.id))
+                    .map(t => ({
+                      id: t.id, numId: 800 + Math.floor(Math.random()*100),
+                      titolo: t.titolo, progetto: t.progetto || '',
+                      assegnato: t.assegnato || '', stato: t.stato || 'planned',
+                      durata: t.durata || null, note: t.note || '',
+                      fromHome: true, messages: [], schedule: null,
+                    }));
+                  return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+                });
+              }
+            }
           }
         }
       } catch (e) {
