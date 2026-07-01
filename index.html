@@ -1142,7 +1142,8 @@ function inlineCommit(tipo) {
   if (tipo === 'T' || tipo === 'F' || tipo === 'S') {
     openForm(testo, tipo, gi);
   } else {
-    addTask({ id: uid(), tipo, testo, utente: 'LG' }, gi);
+    // Route through type picker so user can pick assignee
+    showTypePicker(testo, gi);
   }
 }
 
@@ -1167,7 +1168,8 @@ function qaCommit(tipo) {
   if (tipo === 'T' || tipo === 'F' || tipo === 'S') {
     openForm(testo, tipo, giorno);
   } else {
-    addTask({ id: uid(), tipo, testo, utente: 'LG' }, giorno);
+    // Route through type picker so user can pick assignee
+    showTypePicker(testo, giorno);
   }
 }
 
@@ -1281,7 +1283,7 @@ function renderFormFooter() {
 let typePickerState = {};
 
 function showTypePicker(testo, giorno) {
-  typePickerState = { testo, giorno, selected: null };
+  typePickerState = { testo, giorno, selected: null, utente: 'LG' };
   const overlay = document.createElement('div');
   overlay.className = 'type-picker-overlay';
   overlay.id = 'type-picker';
@@ -1299,6 +1301,9 @@ function renderTypePickerHtml(testo, selected) {
     { id:'meeting', label:'Meeting', sub:'Appuntamento o call',               bg:'var(--amber-lt)',  border:'var(--amber-dk)',  selBg:'var(--amber-lt)'  },
     { id:'urgente', label:'Urgente', sub:'Alta priorità — azione immediata',  bg:'var(--red-lt)',    border:'var(--red-dk)',    selBg:'var(--red-lt)'    },
   ];
+  const memberOptions = Object.entries(UTENTI).map(([key, data]) =>
+    `<option value="${key}" ${typePickerState.utente === key ? 'selected' : ''}>${key} — ${data.nome}</option>`
+  ).join('');
   return `<div class="type-picker-box" onclick="event.stopPropagation()">
     <div class="tp-tit">Tipo di elemento</div>
     <div class="tp-testo-preview">${esc(testo)}</div>
@@ -1311,6 +1316,14 @@ function renderTypePickerHtml(testo, selected) {
           <span class="tp-label">${t.label}</span>
           <span class="tp-sublabel">${t.sub}</span>
         </button>`).join('')}
+    </div>
+    <div style="margin-top:12px;">
+      <div class="tp-row" style="margin-bottom:5px;">Assegna a</div>
+      <select id="tp-member-sel"
+        style="width:100%;padding:6px 8px;border-radius:var(--rs);border:0.5px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;"
+        onchange="typePickerState.utente=this.value">
+        ${memberOptions}
+      </select>
     </div>
     <div class="tp-actions">
       <button class="tp-cancel" onclick="closeTypePicker()">Annulla</button>
@@ -1334,14 +1347,14 @@ function closeTypePicker() {
 }
 
 function confirmTypePicker() {
-  const { testo, giorno, selected } = typePickerState;
+  const { testo, giorno, selected, utente } = typePickerState;
   if (!selected) return;
   closeTypePicker();
   const realGiorno = (giorno === 'today') ? getTodayKey() : giorno;
   if (selected === 'T' || selected === 'F' || selected === 'S') {
-    openForm(testo, selected, realGiorno);
+    openForm(testo, selected, realGiorno, utente);
   } else {
-    addTask({ id: uid(), tipo: selected, testo, utente: 'LG' }, realGiorno);
+    addTask({ id: uid(), tipo: selected, testo, utente: utente || 'LG' }, realGiorno);
   }
 }
 
@@ -1362,12 +1375,13 @@ function getTodayKey() {
 // ─── FORM T / F CASCATA ──────────────────────────────────────────────────
 let formState = {};
 
-function openForm(testo, tipo, giorno) {
+function openForm(testo, tipo, giorno, utenteDefault) {
   // Reset btn binding so the right handler is wired for this form type
   const _btnReset = document.getElementById('btn-confirm');
   if (_btnReset) _btnReset._bound = false;
   formState = {
     testo, tipo, giorno,
+    utente: utenteDefault || 'LG',
     step: 1,
     cliente: null, progetto: null, fase: null,
     modo: null, taskScelto: null,
@@ -1408,11 +1422,11 @@ function formGoBack() {
 }
 
 function confirmTask() {
-  const { testo, tipo, giorno, cliente, fase, modo, taskScelto } = formState;
+  const { testo, tipo, giorno, cliente, fase, modo, taskScelto, utente } = formState;
   if (!fase) return;
   if (tipo !== 'T' || (modo === 'collega' && !taskScelto)) return;
   const task = {
-    id: uid(), tipo, testo, utente: 'LG',
+    id: uid(), tipo, testo, utente: utente || 'LG',
     ref: cliente?.nome,
     fase: fase?.id,
     subtaskDi: modo === 'collega' ? taskScelto?.id : null,
@@ -1463,7 +1477,7 @@ function renderForm() {
       btnConfirm._bound = true;
       btnConfirm.onclick = () => {
         if (!formState.cliente) return;
-        const task = { id: uid(), tipo: formState.tipo, testo: formState.testo, utente: 'LG', ref: formState.cliente.nome };
+        const task = { id: uid(), tipo: formState.tipo, testo: formState.testo, utente: formState.utente || 'LG', ref: formState.cliente.nome };
         addTask(task, formState.giorno);
         closeForm();
       };
@@ -1761,6 +1775,11 @@ function renderPanel(task, giorno) {
     </div>`;
   }
 
+  // Build assignee dropdown options
+  const assigneeOptions = Object.entries(UTENTI).map(([key, data]) =>
+    `<option value="${key}" ${task.utente === key ? 'selected' : ''}>${key} — ${data.nome}</option>`
+  ).join('');
+
   panel.innerHTML = `
     <button class="tp-close" onclick="closePanel()">✕</button>
     <span class="tp-tipo" style="background:${cfg.bg};border:0.5px solid ${cfg.border};color:${cfg.color};">${cfg.lbl}</span>
@@ -1768,6 +1787,14 @@ function renderPanel(task, giorno) {
     ${task.ref ? `<div class="tp-ref">→ ${esc(task.ref)}</div>` : ''}
     <div class="tp-user">
       ${u ? `<span style="width:18px;height:18px;border-radius:50%;background:${u.bg};color:${u.color};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;">${task.utente}</span> ${esc(u.nome)}` : ''}
+    </div>
+    <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;">Assegnato a</div>
+      <select id="panel-assignee-sel"
+        style="width:100%;padding:5px 8px;border-radius:var(--rs);border:0.5px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;cursor:pointer;"
+        onchange="changeTaskAssignee('${task.id}',${gStr},this.value)">
+        ${assigneeOptions}
+      </select>
     </div>
     ${promoteHtml}
     <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
@@ -1796,6 +1823,17 @@ function changeTaskType(id, giorno, nuovoTipo) {
   } else {
     renderPanel(task, giorno);
   }
+}
+
+function changeTaskAssignee(id, giorno, newUtente) {
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
+  const taskList = state.tasks[key] || [];
+  const task = taskList.find(t => t.id === id);
+  if (!task || !UTENTI[newUtente]) return;
+  task.utente = newUtente;
+  save();
+  renderGrid();
+  renderPanel(task, giorno);
 }
 
 function closePanel() { document.getElementById('task-panel').style.display = 'none'; }
@@ -1842,6 +1880,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
