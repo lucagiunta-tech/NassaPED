@@ -19,3 +19,12 @@ insert into nassa_users (username, password_hash, role) values
   ('alberto', '$2b$12$5POQjgM9COcmz4Ce4jaAcutil8mg4lq8ESo0/.MwNPvAlko4P6f.a', 'member'),
   ('nassa',   '$2b$12$Aeog9zRQ/I2/FRf0BchkQu6ZsICiGmtAGp72Ort1jeKXwYjslLNTe', 'admin')
 on conflict (username) do nothing;
+
+-- 4. Planning home hub (nassa_planning)
+create table if not exists nassa_planning (
+  user_id text primary key,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table nassa_planning disable row level security;
+
