@@ -1,8 +1,5 @@
 {
   "outputDirectory": ".",
-  "alias": [
-    "nassa-ped-yp63.vercel.app"
-  ],
   "functions": {
     "api/*.js": {
       "memory": 512,
