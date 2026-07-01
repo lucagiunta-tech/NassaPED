@@ -1482,7 +1482,9 @@ body{
 /* ── Logout globale — disponibile in tutte le app ── */
 async function nassaLogout(){
   try{ await fetch('/api/auth',{method:'DELETE',credentials:'include'}); }catch(_){}
-  window.location.replace('/app');
+  // Redirect back to current page after re-login
+  const redirect = window.location.pathname + window.location.search;
+  window.location.replace('/app?redirect=' + encodeURIComponent(redirect));
 }
 </script>
 <div id="nassa-auth-loading" style="position:fixed;inset:0;background:var(--bg,#fff);z-index:9999;display:flex;align-items:center;justify-content:center;">
