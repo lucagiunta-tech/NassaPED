@@ -137,10 +137,20 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .task-chips{display:flex;flex-direction:column;gap:3px;}
 .chip{
   font-size:10px;padding:3px 6px;border-radius:var(--rs);
-  line-height:1.35;cursor:pointer;display:flex;
+  line-height:1.35;cursor:grab;display:flex;
   align-items:center;justify-content:space-between;gap:4px;
-  transition:filter var(--t);border:var(--bw) solid transparent;
-  position:relative;
+  transition:filter var(--t),opacity var(--t);border:var(--bw) solid transparent;
+  position:relative;user-select:none;
+}
+.chip:active{cursor:grabbing;}
+.chip.dragging{opacity:.4;cursor:grabbing;}
+.day-col.drag-over .task-chips{
+  background:var(--green-lt);border-radius:var(--rs);
+  outline:2px dashed var(--green-dk);outline-offset:2px;
+}
+.later-chips.drag-over{
+  background:var(--green-lt);border-radius:var(--rs);
+  outline:2px dashed var(--green-dk);outline-offset:2px;
 }
 .chip:hover{filter:brightness(.95);}
 .chip.tipo-T{background:var(--green-lt);border-color:var(--green-dk);color:var(--green-text);}
@@ -219,6 +229,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .qa-tag-btn.N{border-color:var(--border);color:var(--text-3);}
 .qa-tag-btn.N:hover{background:var(--bg);}
 .qa-hint{font-size:10px;color:var(--text-3);white-space:nowrap;}
+.qa-day-select{
+  height:32px;padding:0 8px;border-radius:var(--rs);
+  border:var(--bw) solid var(--border);background:var(--surface);
+  color:var(--text);font-size:12px;font-family:var(--font);
+  cursor:pointer;outline:none;flex-shrink:0;
+}
+.qa-day-select:focus{border-color:var(--green);}
 
 /* ── Type Picker overlay ── */
 .type-picker-overlay{
@@ -587,6 +604,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   <!-- Quick add -->
   <div class="quick-add-bar">
     <input class="qa-input" id="qa-input" placeholder="Scrivi qualcosa... poi scegli il tipo" onkeydown="qaKeydown(event)"/>
+    <select class="qa-day-select" id="qa-day" title="Giorno">
+      <option value="0">Lun</option>
+      <option value="1">Mar</option>
+      <option value="2">Mer</option>
+      <option value="3">Gio</option>
+      <option value="4">Ven</option>
+      <option value="5">Sab</option>
+      <option value="6">Dom</option>
+      <option value="later">Prima o poi</option>
+    </select>
     <button class="qa-tag-btn T" onclick="qaCommit('T')" title="Task operativo">T</button>
     <button class="qa-tag-btn F" onclick="qaCommit('F')" title="Feed / storyboard">F</button>
     <button class="qa-tag-btn S" onclick="qaCommit('S')" title="Stories">S</button>
@@ -920,10 +947,16 @@ function chipHtml(task, giorno) {
   const avHtml = u ? `<span class="chip-av" style="background:${u.bg};color:${u.color};">${task.utente}</span>` : '';
   const promoHtml = task.promoted ? `<span class="chip-promoted">✓</span>` : '';
   const gStr = typeof giorno === 'number' ? giorno : `'${giorno}'`;
-  return `<div class="chip tipo-${task.tipo}" data-id="${task.id}" data-g="${giorno}" style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};">
+  return `<div class="chip tipo-${task.tipo}"
+    draggable="true"
+    data-id="${task.id}"
+    data-g="${giorno}"
+    ondragstart="dragStart(event,'${task.id}',${gStr})"
+    ondragend="dragEnd(event)"
+    style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};">
     <span class="chip-text" onclick="openPanel('${task.id}',${gStr})" style="cursor:pointer;">${esc(task.testo)}</span>
     ${promoHtml}${avHtml}
-    <span class="chip-del" onclick="deleteTask('${task.id}',${gStr})" title="Rimuovi">✕</span>
+    <span class="chip-del" onclick="event.stopPropagation();deleteTask('${task.id}',${gStr})" title="Rimuovi">✕</span>
   </div>`;
 }
 
@@ -940,6 +973,7 @@ function renderGrid() {
     totalFiltered += visible.length;
 
     const colClass = ['day-col', day.isToday ? 'today' : '', day.isWeekend ? 'weekend' : ''].filter(Boolean).join(' ');
+    const dropAttrs = `ondragover="dragOver(event,${gi})" ondragleave="dragLeave(event)" ondrop="dragDrop(event,${gi})"`;
     const numHtml = day.isToday
       ? `<div class="day-num today-circle">${day.num}</div>`
       : `<div class="day-num">${day.num}</div>`;
@@ -947,7 +981,7 @@ function renderGrid() {
     const chipsHtml = visible.map(t => chipHtml(t, gi)).join('');
     const addHtml = `<div class="add-chip" data-g="${gi}" onclick="inlineAdd(${gi})">+ aggiungi</div>`;
 
-    return `<div class="${colClass}">
+    return `<div class="${colClass}" ${dropAttrs}>
       <div class="day-head">
         <div class="day-name">${day.dayName}</div>
         ${numHtml}
@@ -961,7 +995,11 @@ function renderGrid() {
   const laterSec = document.getElementById('later-section');
   if (laterTasks.length > 0) {
     laterSec.style.display = '';
-    document.getElementById('later-chips').innerHTML = laterTasks.map(t => chipHtml(t, 'later')).join('');
+    const laterChipsEl = document.getElementById('later-chips');
+    laterChipsEl.innerHTML = laterTasks.map(t => chipHtml(t, 'later')).join('');
+    laterChipsEl.ondragover = (e) => { e.preventDefault(); laterChipsEl.classList.add('drag-over'); };
+    laterChipsEl.ondragleave = () => laterChipsEl.classList.remove('drag-over');
+    laterChipsEl.ondrop = (e) => { e.preventDefault(); laterChipsEl.classList.remove('drag-over'); dragDrop(e,'later'); };
     totalAll += (state.tasks.later || []).length;
     totalFiltered += laterTasks.length;
   } else {
@@ -1056,8 +1094,9 @@ function qaKeydown(e) {
     const inp = document.getElementById('qa-input');
     const testo = inp.value.trim();
     if (!testo) { inp.focus(); return; }
-    // Show type picker — don't silently save as N
-    showTypePicker(testo, 'today');
+    const dayEl = document.getElementById('qa-day');
+    const giorno = dayEl ? (dayEl.value === 'later' ? 'later' : Number(dayEl.value)) : getTodayIndex();
+    showTypePicker(testo, giorno);
     inp.value = '';
   }
 }
@@ -1066,11 +1105,13 @@ function qaCommit(tipo) {
   const inp = document.getElementById('qa-input');
   const testo = inp.value.trim();
   if (!testo) { inp.focus(); return; }
+  const dayEl = document.getElementById('qa-day');
+  const giorno = dayEl ? (dayEl.value === 'later' ? 'later' : Number(dayEl.value)) : getTodayIndex();
   inp.value = '';
   if (tipo === 'T' || tipo === 'F' || tipo === 'S') {
-    openForm(testo, tipo, 1);
+    openForm(testo, tipo, giorno);
   } else {
-    addTask({ id: uid(), tipo, testo, utente: 'LG' }, 1);
+    addTask({ id: uid(), tipo, testo, utente: 'LG' }, giorno);
   }
 }
 
@@ -1078,6 +1119,64 @@ function addTask(task, giorno) {
   const key = giorno === 'later' ? 'later' : giorno;
   if (!state.tasks[key]) state.tasks[key] = [];
   state.tasks[key].push(task);
+  save();
+  renderGrid();
+}
+
+// ─── DRAG & DROP ─────────────────────────────────────────────────────────────
+let dragState = null;
+
+function dragStart(event, id, giorno) {
+  dragState = { id, giorno };
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', id);
+  // Add dragging class after a tick so the original chip shows briefly
+  setTimeout(() => {
+    const el = document.querySelector(`.chip[data-id="${id}"]`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+
+function dragEnd(event) {
+  document.querySelectorAll('.chip.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  dragState = null;
+}
+
+function dragOver(event, toGiorno) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  // Highlight the target column
+  const col = event.currentTarget;
+  document.querySelectorAll('.day-col.drag-over').forEach(el => { if (el !== col) el.classList.remove('drag-over'); });
+  col.classList.add('drag-over');
+}
+
+function dragLeave(event) {
+  // Only remove if leaving the column itself (not a child)
+  const col = event.currentTarget;
+  if (!col.contains(event.relatedTarget)) {
+    col.classList.remove('drag-over');
+  }
+}
+
+function dragDrop(event, toGiorno) {
+  event.preventDefault();
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  if (!dragState) return;
+  const { id, giorno: fromGiorno } = dragState;
+  if (String(fromGiorno) === String(toGiorno)) return; // same column, no-op
+  // Find and move the task
+  const fromKey = (fromGiorno === 'later') ? 'later' : Number(fromGiorno);
+  const toKey   = (toGiorno   === 'later') ? 'later' : Number(toGiorno);
+  const fromList = state.tasks[fromKey] || [];
+  const taskIdx = fromList.findIndex(t => t.id === id);
+  if (taskIdx === -1) return;
+  const [task] = fromList.splice(taskIdx, 1);
+  state.tasks[fromKey] = fromList;
+  if (!state.tasks[toKey]) state.tasks[toKey] = [];
+  state.tasks[toKey].push(task);
+  dragState = null;
   save();
   renderGrid();
 }
@@ -1154,7 +1253,7 @@ function confirmTypePicker() {
   const { testo, giorno, selected } = typePickerState;
   if (!selected) return;
   closeTypePicker();
-  const realGiorno = giorno === 'today' ? getTodayIndex() : giorno;
+  const realGiorno = (giorno === 'today') ? getTodayIndex() : giorno;
   if (selected === 'T' || selected === 'F' || selected === 'S') {
     openForm(testo, selected, realGiorno);
   } else {
@@ -1571,6 +1670,13 @@ function toggleTheme() {
 // ─── INIT ─────────────────────────────────────────────────────────────────
 renderGrid(); // render with seed data immediately
 loadFromSupabase(); // then overwrite with real Supabase data
+
+// Set quick-add day selector to today's column
+(function() {
+  const todayIdx = getTodayIndex();
+  const dayEl = document.getElementById('qa-day');
+  if (dayEl) dayEl.value = String(todayIdx >= 0 && todayIdx < 7 ? todayIdx : 0);
+})();
 </script>
 </body>
 </html>
