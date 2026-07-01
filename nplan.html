@@ -10143,20 +10143,7 @@ function NassaPlan() {
       fontWeight: 700,
       letterSpacing: DS.lsTight
     }
-  }, "Nassa Plan")), /*#__PURE__*/React.createElement("a", {
-    href: "/",
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 4,
-      fontSize: 11,
-      color: "rgba(255,255,255,0.4)",
-      textDecoration: "none",
-      padding: "0 12px 12px"
-    },
-    onMouseEnter: e => e.currentTarget.style.color = "rgba(255,255,255,0.8)",
-    onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"
-  }, "‹ Hub"),
+  }, "Nassa Plan")), 
 
   /* ── App nav ── */
   /*#__PURE__*/React.createElement("div", {
@@ -10414,7 +10401,7 @@ function NassaPlan() {
       gap: 18,
       marginBottom: 0
     }
-  }, [["week", "Week"], ["day", "Day"], ["week2", "Week 2"], ["project", "Project"]].map(([id, lbl]) => /*#__PURE__*/React.createElement("button", {
+  }, [["week", "Week"], ["day", "Day"], ["project", "Project"]].map(([id, lbl]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     onClick: () => setSubView(id),
     style: {
