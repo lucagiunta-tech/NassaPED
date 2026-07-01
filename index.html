@@ -1017,7 +1017,7 @@ function chipHtml(task, giorno) {
     ondragstart="dragStart(event,'${task.id}',${gStr})"
     ondragend="dragEnd(event)"
     style="background:${cfg.bg};border-color:${cfg.border};color:${cfg.color};">
-    <span class="chip-text" onclick="openPanel('${task.id}',${gStr})" style="cursor:pointer;">${esc(task.testo)}</span>
+    <span class="chip-text" onclick="openPanel('${task.id}',${gStr})" style="cursor:pointer;">${task.startTime ? `<span style="font-size:9px;font-weight:700;opacity:.7;margin-right:3px;">${task.startTime}</span>` : ''}${esc(task.testo)}</span>
     ${promoHtml}${avHtml}
     <span class="chip-del" onclick="event.stopPropagation();event.preventDefault();deleteTask('${task.id}',${gStr})" ondragstart="event.stopPropagation();event.preventDefault();" title="Rimuovi">✕</span>
   </div>`;
@@ -1806,17 +1806,26 @@ function renderPanel(task, giorno) {
         `).join('')}
       </div>
     </div>
-    <div style="margin-top:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">
-      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Durata stimata</label>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <input id="tp-durata-input" type="number" min="0.25" max="24" step="0.25"
-          style="width:80px;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;padding:6px 8px;outline:none;"
-          value="${task.durata||''}"
-          placeholder="0"
-          onchange="tpAutoSave('durata',parseFloat(this.value)||null,'${task.id}',${gStr})"
+    <div style="margin-top:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border);display:flex;gap:12px;">
+      <div style="flex:1;">
+        <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Start time</label>
+        <input id="tp-start-input" type="time"
+          style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;padding:6px 8px;outline:none;cursor:pointer;"
+          value="${task.startTime||''}"
+          onchange="tpAutoSave('startTime',this.value,'${task.id}',${gStr})"
         />
-        <span style="font-size:12px;color:var(--text-3);">ore</span>
-        ${task.durata ? `<span style="font-size:11px;color:var(--text-2);margin-left:4px;">(${task.durata}h)</span>` : ''}
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Durata</label>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <input id="tp-durata-input" type="number" min="0.25" max="24" step="0.25"
+            style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;padding:6px 8px;outline:none;"
+            value="${task.durata||''}"
+            placeholder="0"
+            onchange="tpAutoSave('durata',parseFloat(this.value)||null,'${task.id}',${gStr})"
+          />
+          <span style="font-size:12px;color:var(--text-3);flex-shrink:0;">h</span>
+        </div>
       </div>
     </div>
     ${promoteHtml}
@@ -1892,6 +1901,8 @@ function panelSave(taskId, giorno) {
   const durataEl = document.getElementById('tp-durata-input');
   if (noteEl)   task.nota   = noteEl.value;
   if (urlEl)    task.url    = urlEl.value.trim();
+  const startEl  = document.getElementById('tp-start-input');
+  if (startEl)  task.startTime = startEl.value || null;
   if (durataEl) task.durata = parseFloat(durataEl.value) || null;
   save();
   renderGrid();
@@ -1983,6 +1994,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
