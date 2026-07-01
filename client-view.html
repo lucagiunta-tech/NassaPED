@@ -167,6 +167,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 <script>
 const API_URL = '/api/project';
+// TODO(P0): client-view is a public page — replace with a dedicated
+// read-only public token (no auth required for GET /api/project?public=1).
+// For now the key is still here but should be rotated in Vercel env vars.
 const API_KEY = 'NASSA_SECRET_2026';
 const MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
