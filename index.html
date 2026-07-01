@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
 <meta name="version" content="2026-07-01-v5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Nassa Studio · Home</title>
+<title>Nassa Week</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"/>
 <style>
@@ -106,10 +106,21 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .week-grid{
   display:grid;grid-template-columns:repeat(7,1fr);
   gap:6px;padding:0 20px;
+  transition:grid-template-columns .2s ease;
+}
+.week-grid.no-weekend{
+  grid-template-columns:repeat(5,1fr);
+}
+.week-grid .day-col.weekend-col{
+  display:none;
+}
+.week-grid.no-weekend .day-col.weekend-col{
+  display:none;
 }
 .day-col{border-top:2px solid var(--border);padding-top:8px;}
 .day-col.today{border-top-color:var(--green);}
 .day-col.weekend{opacity:.6;}
+.day-col.hidden{display:none;}
 .day-head{text-align:center;margin-bottom:8px;}
 .day-name{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
 .day-num{
@@ -583,7 +594,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div class="topbar">
   <div class="brand-wrap">
     <div class="brand-mark">N</div>
-    <span class="brand-name">Nassa Studio</span>
+    <span class="brand-name">Nassa Week</span>
   </div>
   <div class="topbar-spacer"></div>
   <button class="tb-btn" title="Cerca">🔍</button>
@@ -599,6 +610,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="planning-header">
     <span class="period-lbl" id="period-lbl">Settimana 30 giu – 6 lug 2026</span>
     <div class="nav-group">
+      <button class="nav-btn" id="weekend-toggle" onclick="toggleWeekend()"
+        title="Mostra/nascondi weekend"
+        style="width:auto;padding:0 8px;font-size:10px;font-weight:600;
+               color:var(--text-3);gap:4px;display:flex;align-items:center;">
+        <span id="weekend-icon">SAB·DOM</span>
+      </button>
+      <div style="width:1px;height:16px;background:var(--border);margin:0 2px;"></div>
       <button class="nav-btn" onclick="shiftWeek(-1)" title="Settimana precedente">‹</button>
       <button class="today-btn" onclick="goToday()">Oggi</button>
       <button class="nav-btn" onclick="shiftWeek(1)" title="Settimana successiva">›</button>
@@ -714,7 +732,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   </a>
 </div>
 
-<div class="footer">Nassa Studio · NassaContent · Nassa Plan · Nassa Marketing © 2026</div>
+<div class="footer">Nassa Studio · Nassa Week © 2026</div>
 
 <!-- TASK FORM (overlay) -->
 <div class="form-overlay" id="form-overlay" style="display:none;" onclick="overlayClick(event)">
@@ -916,7 +934,8 @@ let state = {
   clienti: [...CLIENTI_DEFAULT],
   progetti: JSON.parse(JSON.stringify(PROGETTI_DEFAULT)),
   weekOffset: 0,
-  logged: {},   // { taskId: ore } — shared with NassaPlan via /api/planning
+  logged: {},
+  showWeekend: JSON.parse(localStorage.getItem('nw_showWeekend') ?? 'true'),
 };
 async function save() {
   // Debounce — save 800ms after last change
@@ -1084,7 +1103,12 @@ function renderGrid() {
     totalAll += dayTasks.length;
     totalFiltered += visible.length;
 
-    const colClass = ['day-col', day.isToday ? 'today' : '', day.isWeekend ? 'weekend' : ''].filter(Boolean).join(' ');
+    const colClass = ['day-col',
+      day.isToday ? 'today' : '',
+      day.isWeekend ? 'weekend' : '',
+      day.isWeekend ? 'weekend-col' : '',
+      (!state.showWeekend && day.isWeekend) ? 'hidden' : ''
+    ].filter(Boolean).join(' ');
     const dropAttrs = `ondragover="dragOver(event,'${dk}')" ondragleave="dragLeave(event)" ondrop="dragDrop(event,'${dk}')"`;
     const numHtml = day.isToday
       ? `<div class="day-num today-circle">${day.num}</div>`
@@ -1101,6 +1125,9 @@ function renderGrid() {
       <div class="task-chips" id="chips-${dk}">${chipsHtml}${addHtml}</div>
     </div>`;
   }).join('');
+
+  // Apply weekend toggle state
+  applyWeekendToggle();
 
   // Prima o poi
   const laterTasks = (state.tasks.later || []).filter(passFilter);
@@ -2036,6 +2063,29 @@ function esc(s) {
 }
 
 // ─── TEMA ─────────────────────────────────────────────────────────────────
+function toggleWeekend() {
+  state.showWeekend = !state.showWeekend;
+  localStorage.setItem('nw_showWeekend', JSON.stringify(state.showWeekend));
+  applyWeekendToggle();
+  renderGrid();
+}
+
+function applyWeekendToggle() {
+  const grid = document.getElementById('week-grid');
+  const btn  = document.getElementById('weekend-icon');
+  if (!grid || !btn) return;
+  if (state.showWeekend) {
+    grid.classList.remove('no-weekend');
+    btn.textContent = 'SAB·DOM';
+    btn.style.opacity = '1';
+  } else {
+    grid.classList.add('no-weekend');
+    btn.textContent = 'SAB·DOM';
+    btn.style.opacity = '.4';
+    btn.style.textDecoration = 'line-through';
+  }
+}
+
 function toggleTheme() {
   const html = document.documentElement;
   const dark = html.dataset.theme === 'dark';
