@@ -1940,7 +1940,7 @@ async function _tlFetchClients(){
   if(_streamLoaded) return;
   try {
     const r = await fetch('/api/project?user=nassa_studio',
-      {headers:{'x-nassa-key':'NASSA_SECRET_2026'},credentials:'include'});
+      {credentials:'include'});
     if(!r.ok) throw new Error(r.status);
     const d = await r.json();
     const raw = d?.data || d;
@@ -2467,7 +2467,7 @@ document.getElementById('cp-new-name')?.addEventListener('keydown',e=>{if(e.key=
 
 // ── STREAM API constants ──
 const STREAM_API  = '/api/project';
-const STREAM_KEY  = 'NASSA_SECRET_2026';
+const STREAM_KEY  = ''; // auth via HttpOnly cookie — no client-side key needed
 const STREAM_USER = 'nassa_studio';
 
 /* ══ FEED NASSAPED — Phase 2 ══════════════════════════════ */
