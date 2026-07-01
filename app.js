@@ -153,7 +153,7 @@ function triggerUndo(){
 ══════════════════════════════════════════ */
 const CLOUD = {
   apiUrl: window.location.origin + '/api/project',
-  apiKey: 'NASSA_SECRET_2026', // Ripristinato temporaneamente — rimosso quando login UI è pronto
+  apiKey: '', // auth via HttpOnly cookie nassa_session — no client-side key
   user: 'nassa_studio', // shared across all users — one studio, one dataset
   _saveTimer: null,
   _status: 'idle',
@@ -11462,7 +11462,7 @@ async function triggerMockupUpload(item, idx, sectionEl){
         fd.append('path', destPath);
         const res = await fetch('/api/dropbox-upload', {
           method: 'POST',
-          headers: {'x-nassa-key': 'NASSA_SECRET_2026'},
+          headers: {'x-nassa-key': ''},
           credentials: 'include',
           body: fd
         });
@@ -11966,7 +11966,7 @@ function openMoodModal(tipo){
       const fd = new FormData();
       fd.append('file', file); fd.append('path', destPath);
       const res = await fetch('/api/dropbox-upload', {
-        method:'POST', headers:{'x-nassa-key':'NASSA_SECRET_2026'},
+        method:'POST', headers:{'x-nassa-key':''},
         credentials:'include', body:fd
       });
       if(!res.ok) throw new Error('Upload fallito: '+res.status);
@@ -12679,7 +12679,7 @@ function _bkOpenLogoModal(idx){
           const fd = new FormData();
           fd.append('file',file);
           fd.append('path',`/NassaStudio/${cl?.name||'Condiviso'}/BrandKit/Loghi/${file.name}`);
-          const res = await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':'NASSA_SECRET_2026'},credentials:'include',body:fd});
+          const res = await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':''},credentials:'include',body:fd});
           if(!res.ok) throw new Error('Upload '+res.status);
           const d = await res.json();
           _logoUrl = d.url||d.shared_link||d.link||'';
@@ -12799,7 +12799,7 @@ function _bkOpenAssetModal(idx, catId){
           const fd = new FormData();
           fd.append('file',file);
           fd.append('path',`/NassaStudio/${cl?.name||'Condiviso'}/BrandKit/Assets/${file.name}`);
-          const res = await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':'NASSA_SECRET_2026'},credentials:'include',body:fd});
+          const res = await fetch('/api/dropbox-upload',{method:'POST',headers:{'x-nassa-key':''},credentials:'include',body:fd});
           if(!res.ok) throw new Error('Upload '+res.status);
           const d = await res.json();
           _assetUrl = d.url||d.shared_link||d.link||'';
