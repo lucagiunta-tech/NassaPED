@@ -1486,6 +1486,33 @@ body{
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 </head>
 <body>
+<script>
+/* ── Nassa Auth Guard ── */
+(async()=>{
+  try{
+    const r=await fetch('/api/auth',{credentials:'include'});
+    if(!r.ok) throw new Error('unauth');
+    const d=await r.json();
+    if(!d.ok) throw new Error('unauth');
+    // Store user for the app to use
+    window.__nassaUser=d;
+  }catch(e){
+    // Not logged in — redirect to NassaContent login
+    window.location.replace('/app?redirect='+encodeURIComponent(window.location.pathname));
+  }
+})();
+</script>
+<div id="nassa-auth-loading" style="position:fixed;inset:0;background:var(--bg,#fff);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="font-family:system-ui,sans-serif;font-size:13px;color:#888;">Nassa Studio…</div>
+</div>
+<script>
+/* Remove loading overlay once DOM is ready and auth passed */
+document.addEventListener('DOMContentLoaded',()=>{
+  const el=document.getElementById('nassa-auth-loading');
+  if(el) el.remove();
+});
+</script>
+
 
 <div class="app" id="app">
 
