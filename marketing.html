@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="version" content="2026-07-01-v1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nassa Marketing · Suite Strategica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#0dff00;--green-dk:#00cc00;--green-lt:#e6ffe4;--green-text:#003300;
+  --bg:#f5f5f7;--surface:#fff;
+  --border:#e5e7eb;
+  --text:#1c1c1e;--text-2:#6b6b6b;--text-3:#9ca3af;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --r:12px;--rs:6px;--r-pill:99px;
+  --bw:0.5px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 24px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.04);
+  --t:.18s ease;
+}
+[data-theme="dark"]{
+  --bg:#0f0f10;--surface:#1a1a1e;
+  --border:#222228;
+  --text:#f0f0f2;--text-2:#9ca3af;--text-3:#6b7280;
+  --green-lt:#0d2b0c;--green-text:#0a1a00;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);}
+
+/* ── Topbar ── */
+.topbar{
+  height:52px;background:#15151a;
+  display:flex;align-items:center;gap:10px;
+  padding:0 20px;position:sticky;top:0;z-index:100;
+  border-bottom:0.5px solid rgba(255,255,255,.06);
+}
+.brand-wrap{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.brand-mark{
+  width:26px;height:26px;border-radius:6px;
+  background:var(--green);display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:800;color:var(--green-text);
+}
+.brand-name{font-size:13px;font-weight:600;color:#fff;}
+.nav-sep{width:1px;height:18px;background:rgba(255,255,255,.12);margin:0 4px;}
+.page-name{font-size:13px;color:rgba(255,255,255,.5);font-weight:400;}
+.topbar-spacer{flex:1;}
+.back-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:rgba(255,255,255,.5);
+  text-decoration:none;padding:5px 10px;border-radius:6px;
+  border:0.5px solid rgba(255,255,255,.12);
+  transition:all var(--t);
+}
+.back-btn:hover{color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.07);}
+.tb-btn{
+  width:28px;height:28px;border-radius:6px;border:none;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);
+  cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;
+  transition:background var(--t);
+}
+.tb-btn:hover{background:rgba(255,255,255,.14);}
+.av{
+  width:28px;height:28px;border-radius:50%;background:#F5C842;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#1a1a1a;cursor:pointer;
+}
+
+/* ── Hero ── */
+.hero{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:56px 24px 40px;text-align:center;
+}
+.hero-tag{
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--green-dk);background:var(--green-lt);border-radius:var(--r-pill);
+  padding:4px 12px;margin-bottom:18px;display:inline-block;
+}
+[data-theme="dark"] .hero-tag{color:var(--green);}
+.hero-title{
+  font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-.03em;
+  color:var(--text);line-height:1.1;margin-bottom:12px;
+}
+.hero-title span{color:#C2185B;}
+[data-theme="dark"] .hero-title span{color:#f06292;}
+.hero-sub{
+  font-size:15px;color:var(--text-2);max-width:440px;line-height:1.6;
+}
+
+/* ── App grid ── */
+.apps-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;max-width:980px;width:100%;margin:0 auto;
+  padding:0 24px 80px;
+}
+
+.app-card{
+  background:var(--surface);border:var(--bw) solid var(--border);
+  border-radius:var(--r);padding:28px 28px 24px;
+  cursor:pointer;text-decoration:none;color:inherit;
+  display:flex;flex-direction:column;gap:14px;
+  transition:transform var(--t),box-shadow var(--t),border-color var(--t);
+  position:relative;overflow:hidden;
+}
+.app-card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-lg);
+  border-color:var(--accent,var(--green));
+}
+.app-card::before{
+  content:'';position:absolute;inset:0;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--accent-lt,var(--green-lt)) 0%,transparent 60%);
+  opacity:0;transition:opacity var(--t);
+}
+.app-card:hover::before{opacity:1;}
+
+.app-icon{
+  width:52px;height:52px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;letter-spacing:-.03em;
+  position:relative;z-index:1;flex-shrink:0;
+}
+.app-body{position:relative;z-index:1;}
+.app-name{
+  font-size:20px;font-weight:800;color:var(--text);
+  letter-spacing:-.02em;margin-bottom:6px;
+}
+.app-desc{font-size:13px;color:var(--text-2);line-height:1.55;margin-bottom:14px;}
+.app-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.app-tag{
+  font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--r-pill);
+  background:var(--bg);border:var(--bw) solid var(--border);color:var(--text-3);
+}
+.app-arrow{
+  position:absolute;bottom:24px;right:24px;
+  width:30px;height:30px;border-radius:50%;
+  background:var(--accent-lt,var(--green-lt));
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--accent-text,var(--green-dk));
+  transition:all var(--t);z-index:1;
+}
+.app-card:hover .app-arrow{
+  background:var(--accent,var(--green));
+  color:var(--arrow-text-hover,var(--green-text));
+  transform:translateX(2px);
+}
+
+/* ── Card-specific accent colours ── */
+.card-time{
+  --accent:#1a1a1e;--accent-lt:#f0f0f4;--accent-text:#1a1a1e;
+  --arrow-text-hover:#0dff00;
+}
+.card-time:hover{border-color:#1a1a1e;}
+[data-theme="dark"] .card-time:hover{border-color:rgba(255,255,255,.2);}
+
+.card-brand{
+  --accent:#1A8C3F;--accent-lt:#e8f5ee;--accent-text:#1A8C3F;
+  --arrow-text-hover:#fff;
+}
+.card-brand:hover{border-color:#1A8C3F;}
+
+.card-strategy{
+  --accent:#185FA5;--accent-lt:#e8f1fa;--accent-text:#185FA5;
+  --arrow-text-hover:#fff;
+}
+.card-strategy:hover{border-color:#185FA5;}
+
+/* ── Section label ── */
+.section-lbl{
+  text-align:center;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-3);margin-bottom:6px;
+}
+.section-desc{
+  text-align:center;font-size:13px;color:var(--text-3);
+  margin-bottom:36px;
+}
+
+/* ── Footer ── */
+.footer{
+  text-align:center;padding:20px;
+  font-size:11px;color:var(--text-3);
+  border-top:var(--bw) solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a class="brand-wrap" href="/">
+    <div class="brand-mark">N</div>
+    <span class="brand-name">Nassa Studio</span>
+  </a>
+  <div class="nav-sep"></div>
+  <span class="page-name">Nassa Marketing</span>
+  <div class="topbar-spacer"></div>
+  <a class="back-btn" href="/">← Home</a>
+  <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="Tema" style="margin-left:6px;">🌙</button>
+  <div class="av" title="Luca Giunta">LG</div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-tag">Suite Strategica</span>
+  <h1 class="hero-title">Nassa <span>Marketing</span></h1>
+  <p class="hero-sub">Tre strumenti integrati per pianificare il team, costruire brand solidi e definire la strategia dei clienti.</p>
+</div>
+
+<!-- SECTION LABEL -->
+<div style="max-width:980px;margin:0 auto;padding:0 24px;">
+  <div class="section-lbl">Strumenti disponibili</div>
+  <div class="section-desc">Seleziona uno strumento per accedere</div>
+</div>
+
+<!-- APPS GRID -->
+<div class="apps-grid">
+
+  <a class="app-card card-time" href="/tweek">
+    <div class="app-icon" style="background:#1a1a1e;color:#0dff00;">NT</div>
+    <div class="app-body">
+      <div class="app-name">NassaTime</div>
+      <div class="app-desc">Calendario team — task, settimana, mese, anno, planning settimanale e timeline visuale condivisibile.</div>
+      <div class="app-tags">
+        <span class="app-tag">Task</span>
+        <span class="app-tag">Settimana</span>
+        <span class="app-tag">Planning</span>
+        <span class="app-tag">Timeline</span>
+      </div>
+    </div>
+    <div class="app-arrow">→</div>
+  </a>
+
+  <a class="app-card card-brand" href="/brand">
+    <div class="app-icon" style="background:#1A8C3F;color:#fff;">NB</div>
+    <div class="app-body">
+      <div class="app-name">NassaBrand</div>
+      <div class="app-desc">Portale clienti — brand assets, approvazioni contenuti e moodboard per ogni cliente.</div>
+      <div class="app-tags">
+        <span class="app-tag">Brand</span>
+        <span class="app-tag">Approvazioni</span>
+        <span class="app-tag">Moodboard</span>
+        <span class="app-tag">Portale</span>
+      </div>
+    </div>
+    <div class="app-arrow">→</div>
+  </a>
+
+  <a class="app-card card-strategy" href="/strategy">
+    <div class="app-icon" style="background:#185FA5;color:#fff;">NS</div>
+    <div class="app-body">
+      <div class="app-name">NassaStrategy</div>
+      <div class="app-desc">Gestionale strategico — Brand Audit, PDM, PDC, Copy Strategy, PED mensile, Report KPI, QBR e Shooting Brief.</div>
+      <div class="app-tags">
+        <span class="app-tag">Staffetta Nassa</span>
+        <span class="app-tag">PDM · PDC</span>
+        <span class="app-tag">PED</span>
+        <span class="app-tag">Report · QBR</span>
+      </div>
+    </div>
+    <div class="app-arrow">→</div>
+  </a>
+
+</div>
+
+<div class="footer">Nassa Studio · Nassa Marketing · NassaTime + NassaBrand + NassaStrategy © 2026</div>
+
+<script>
+function toggleTheme(){
+  const html = document.documentElement;
+  const dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('theme-btn').textContent = dark ? '🌙' : '☀️';
+  localStorage.setItem('nassa_theme', dark ? 'light' : 'dark');
+}
+(function(){
+  const t = localStorage.getItem('nassa_theme') || 'light';
+  document.documentElement.dataset.theme = t;
+  document.getElementById('theme-btn').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+</script>
+</body>
+</html>
