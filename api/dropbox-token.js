@@ -111,7 +111,7 @@ export default async function handler(req, res) {
   // Auth: accetta sia cookie HttpOnly (nuovo) che x-nassa-key (legacy)
   const sessionCookie = (req.headers.cookie||'').match(/nassa_session=([^;]+)/)?.[1];
   const apiKey = req.headers['x-nassa-key'];
-  const validKey = process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
+  const validKey = process.env.NASSA_API_KEY;
   const authed = apiKey === validKey || !!sessionCookie;
   if (!authed) return res.status(401).json({ error: 'Non autorizzato' });
 
