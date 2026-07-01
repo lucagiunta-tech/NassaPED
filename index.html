@@ -1806,26 +1806,17 @@ function renderPanel(task, giorno) {
         `).join('')}
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">
-      <div style="flex:1;">
-        <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Data</label>
-        <input id="tp-data-input" type="date"
-          style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:6px 8px;outline:none;cursor:pointer;"
-          value="${task.data||''}"
-          onchange="tpAutoSave('data',this.value,'${task.id}',${gStr})"
+    <div style="margin-top:10px;padding-bottom:10px;border-bottom:0.5px solid var(--border);">
+      <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Durata stimata</label>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input id="tp-durata-input" type="number" min="0.25" max="24" step="0.25"
+          style="width:80px;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;padding:6px 8px;outline:none;"
+          value="${task.durata||''}"
+          placeholder="0"
+          onchange="tpAutoSave('durata',parseFloat(this.value)||null,'${task.id}',${gStr})"
         />
-      </div>
-      <div style="width:90px;">
-        <label style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Durata</label>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <input id="tp-durata-input" type="number" min="0.25" max="24" step="0.25"
-            style="width:100%;border:var(--bw) solid var(--border);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;padding:6px 8px;outline:none;"
-            value="${task.durata||''}"
-            placeholder="ore"
-            onchange="tpAutoSave('durata',parseFloat(this.value)||null,'${task.id}',${gStr})"
-          />
-          <span style="font-size:11px;color:var(--text-3);flex-shrink:0;">h</span>
-        </div>
+        <span style="font-size:12px;color:var(--text-3);">ore</span>
+        ${task.durata ? `<span style="font-size:11px;color:var(--text-2);margin-left:4px;">(${task.durata}h)</span>` : ''}
       </div>
     </div>
     ${promoteHtml}
@@ -1898,11 +1889,9 @@ function panelSave(taskId, giorno) {
   if (!task) return;
   const noteEl = document.getElementById('tp-note-input');
   const urlEl  = document.getElementById('tp-url-input');
-  const dataEl = document.getElementById('tp-data-input');
   const durataEl = document.getElementById('tp-durata-input');
   if (noteEl)   task.nota   = noteEl.value;
   if (urlEl)    task.url    = urlEl.value.trim();
-  if (dataEl)   task.data   = dataEl.value;
   if (durataEl) task.durata = parseFloat(durataEl.value) || null;
   save();
   renderGrid();
@@ -1949,7 +1938,7 @@ function tpAutoSave(field, value, taskId, giorno) {
   task[field] = value;
   save();
   // Aggiorna anche la griglia per riflettere data/durata
-  if (field === 'data' || field === 'durata') renderGrid();
+  if (field === 'durata') renderGrid();
 }
 
 function promoteTask(id, giorno) {
@@ -1994,6 +1983,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
