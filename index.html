@@ -880,6 +880,7 @@ let state = {
   clienti: [...CLIENTI_DEFAULT],
   progetti: JSON.parse(JSON.stringify(PROGETTI_DEFAULT)),
   weekOffset: 0,
+  logged: {},   // { taskId: ore } — shared with NassaPlan via /api/planning
 };
 async function save() {
   // Debounce — save 800ms after last change
@@ -890,7 +891,7 @@ async function save() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ tasks: state.tasks, clienti: state.clienti, progetti: state.progetti }),
+        body: JSON.stringify({ tasks: state.tasks, clienti: state.clienti, progetti: state.progetti, planTasks: state.planTasks || {} }),
       });
     } catch(e) { console.warn('Planning save error:', e); }
   }, 800);
@@ -909,6 +910,8 @@ async function loadFromSupabase() {
         state.tasks = data.tasks;
         state.clienti = data.clienti || [...CLIENTI_DEFAULT];
         state.progetti = data.progetti || JSON.parse(JSON.stringify(PROGETTI_DEFAULT));
+        if (data.logged) state.logged = data.logged;
+        if (data.planTasks) state.planTasks = data.planTasks;
         renderGrid();
         renderDayPicker();
       }
@@ -1762,7 +1765,9 @@ function renderPanel(task, giorno) {
   // Promote section — depends on current type
   let promoteHtml = '';
   if (task.promoted) {
-    promoteHtml = `<div class="tp-promote"><div class="tp-promote-lbl" style="color:var(--green-dk);">✓ Già promosso</div></div>`;
+    const loggedH = (state.logged || {})[task.id] || 0;
+    const loggedStr = loggedH > 0 ? `<span style="font-size:11px;color:var(--green-dk);font-weight:600;margin-left:8px;">⏱ ${loggedH}h loggate</span>` : '';
+    promoteHtml = `<div class="tp-promote"><div class="tp-promote-lbl" style="color:var(--green-dk);">✓ In Nassa Plan ${loggedStr}</div><a href="/nplan" style="font-size:11px;color:var(--blue-dk);text-decoration:none;display:inline-block;margin-top:4px;">→ Apri in Nassa Plan ↗</a></div>`;
   } else if (task.tipo === 'T') {
     promoteHtml = `<div class="tp-promote">
       <div class="tp-promote-lbl">Propaga a Nassa Plan</div>
@@ -1958,9 +1963,25 @@ function promoteTask(id, giorno) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
   task.promoted = true;
+  // Write to shared planTasks so NassaPlan can pick it up
+  if (!state.planTasks) state.planTasks = {};
+  const u = UTENTI[task.utente];
+  state.planTasks[task.id] = {
+    id:        task.id,
+    titolo:    task.testo,
+    progetto:  task.ref || '',
+    assegnato: u ? u.nome : (task.utente || ''),
+    stato:     'planned',
+    durata:    task.durata || null,
+    startTime: task.startTime || null,
+    note:      task.nota || '',
+    fromHome:  true,          // flag: created from home planning
+    createdAt: new Date().toISOString(),
+  };
   save();
   closePanel();
   renderGrid();
+  showToast('✓ Task propagato a Nassa Plan');
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────
