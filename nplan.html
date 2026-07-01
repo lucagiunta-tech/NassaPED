@@ -9,7 +9,40 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:#ffffff;}
-#root{height:100%;}
+#root{height:calc(100% - 56px);margin-top:56px;}
+
+/* ── Nplan topbar ── */
+#nplan-topbar{
+  position:fixed;top:0;left:0;right:0;height:56px;
+  background:#15151a;display:flex;align-items:center;gap:8px;
+  padding:0 16px 0 20px;z-index:9000;
+  border-bottom:.5px solid rgba(255,255,255,.08);
+  font-family:'Inter',sans-serif;box-sizing:border-box;
+}
+.ntb-brand{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.ntb-mark{width:28px;height:28px;border-radius:8px;background:#0dff00;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#111;flex-shrink:0;}
+.ntb-name{font-size:13px;font-weight:700;color:#fff;letter-spacing:-.02em;white-space:nowrap;}
+.ntb-nav{display:flex;align-items:center;gap:2px;
+  margin-left:16px;padding-left:16px;
+  border-left:.5px solid rgba(255,255,255,.1);flex-shrink:0;}
+.ntb-app{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 8px;border-radius:8px;text-decoration:none;transition:background .15s;}
+.ntb-app:hover{background:rgba(255,255,255,.08);}
+.ntb-icon{width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;flex-shrink:0;}
+.ntb-lbl{font-size:9px;font-weight:500;color:rgba(255,255,255,.4);}
+.ntb-sp{flex:1;}
+.ntb-av{width:32px;height:32px;border-radius:50%;background:#F5C842;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#1a1a1a;}
+.ntb-esci{background:transparent;border:none;cursor:pointer;
+  color:rgba(255,255,255,.4);font-size:12px;padding:4px 8px;
+  border-radius:8px;font-family:inherit;
+  display:flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0;}
+.ntb-esci:hover{color:rgba(255,255,255,.8);}
 </style>
 </head>
 <body>
@@ -22,6 +55,8 @@ html,body{height:100%;overflow:hidden;background:#ffffff;}
     const d=await r.json();
     if(!d.ok) throw new Error('unauth');
     window.__nassaUser=d;
+    const _av=document.getElementById('nplan-av');
+    if(_av&&d.username)_av.textContent=d.username.slice(0,2).toUpperCase();
   }catch(e){
     window.location.replace('/app?redirect='+encodeURIComponent(window.location.pathname));
   }
@@ -46,6 +81,29 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 
+<div id="nplan-topbar">
+  <div class="ntb-brand">
+    <div class="ntb-mark">N</div>
+    <span class="ntb-name">Nassa Plan</span>
+  </div>
+  <nav class="ntb-nav">
+    <a class="ntb-app" href="/">
+      <div class="ntb-icon" style="background:#0dff00;color:#111;">N</div>
+      <span class="ntb-lbl">Week</span>
+    </a>
+    <a class="ntb-app" href="/app">
+      <div class="ntb-icon" style="background:#0dff00;color:#111;">N</div>
+      <span class="ntb-lbl">Content</span>
+    </a>
+    <a class="ntb-app" href="/marketing">
+      <div class="ntb-icon" style="background:#C2185B;color:#fff;">NM</div>
+      <span class="ntb-lbl">Market</span>
+    </a>
+  </nav>
+  <div class="ntb-sp"></div>
+  <div class="ntb-av" id="nplan-av">LG</div>
+  <button class="ntb-esci" onclick="nassaLogout()">⏻ Esci</button>
+</div>
 <div id="root"></div>
 <div id="err" style="display:none;position:fixed;inset:0;background:#fff;padding:20px;font-family:monospace;font-size:12px;color:red;white-space:pre-wrap;overflow:auto;z-index:9999;"></div>
 <script>window.onerror=function(m,s,l,c,e){var d=document.getElementById('err');d.style.display='block';d.textContent='ERROR: '+m+'\nLine: '+l+'\n\n'+(e&&e.stack?e.stack:'');return true;};</script>
@@ -10100,105 +10158,11 @@ function NassaPlan() {
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      flexDirection: "column",
       height: "100vh",
       fontFamily: DS.font,
       background: DS.bg
     }
-  },
-
-  /* ── Topbar fixed ── */
-  /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "fixed",
-      top: 0, left: 0, right: 0,
-      height: 56,
-      background: "#15151a",
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "0 16px 0 20px",
-      borderBottom: "0.5px solid rgba(255,255,255,.08)",
-      zIndex: 200,
-      position: "sticky",
-      top: 0
-    }
-  },
-    /* Brand */
-    /*#__PURE__*/React.createElement("div", {
-      style: { display:"flex", alignItems:"center", gap:9 }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { width:28, height:28, borderRadius:DS.r, background:"#0dff00",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:12, fontWeight:800, color:"#111", flexShrink:0 }
-      }, "N"),
-      /*#__PURE__*/React.createElement("span", {
-        style: { fontSize:DS.fsSm, fontWeight:700, color:"#fff",
-          letterSpacing:DS.lsTight, whiteSpace:"nowrap" }
-      }, "Nassa Plan")
-    ),
-    /* App nav */
-    /*#__PURE__*/React.createElement("nav", {
-      style: { display:"flex", alignItems:"center", gap:2,
-        marginLeft:16, paddingLeft:16,
-        borderLeft:"0.5px solid rgba(255,255,255,.1)" }
-    },
-      [
-        { href:"/",         label:"Week",    bg:"#0dff00", color:"#111", icon:"N"  },
-        { href:"/app",      label:"Content", bg:"#0dff00", color:"#111", icon:"N"  },
-        { href:"/marketing",label:"Market",  bg:"#C2185B", color:"#fff", icon:"NM" },
-      ].map(app => /*#__PURE__*/React.createElement("a", {
-        key: app.href, href: app.href,
-        style: { display:"flex", flexDirection:"column", alignItems:"center", gap:2,
-          padding:"4px 8px", borderRadius:DS.r, textDecoration:"none",
-          transition:"background .15s" },
-        onMouseEnter: e => e.currentTarget.style.background = "rgba(255,255,255,.08)",
-        onMouseLeave: e => e.currentTarget.style.background = "transparent"
-      },
-        /*#__PURE__*/React.createElement("div", {
-          style: { width:26, height:26, borderRadius:6, background:app.bg,
-            color:app.color, display:"flex", alignItems:"center",
-            justifyContent:"center", fontSize:9, fontWeight:800 }
-        }, app.icon),
-        /*#__PURE__*/React.createElement("span", {
-          style: { fontSize:9, fontWeight:500, color:"rgba(255,255,255,.4)",
-            letterSpacing:".01em" }
-        }, app.label)
-      ))
-    ),
-    /* Spacer */
-    /*#__PURE__*/React.createElement("div", { style:{ flex:1 } }),
-    /* Storage indicator */
-    /*#__PURE__*/React.createElement(StorageIndicator, { status: storageStatus }),
-    /* Avatar */
-    /*#__PURE__*/React.createElement("div", {
-      style: { width:32, height:32, borderRadius:"50%", background:"#F5C842",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        fontSize:11, fontWeight:700, color:"#1a1a1a", cursor:"pointer",
-        flexShrink:0 },
-      id: "nplan-avatar",
-      title: "Utente"
-    }, window.__nassaUser?.username?.slice(0,2).toUpperCase() || "LG"),
-    /* Logout */
-    /*#__PURE__*/React.createElement("button", {
-      onClick: () => { if(typeof nassaLogout!=="undefined") nassaLogout();
-        else fetch("/api/auth",{method:"DELETE",credentials:"include"})
-          .finally(()=>window.location.replace("/app")); },
-      style: { background:"transparent", border:"none", cursor:"pointer",
-        color:"rgba(255,255,255,.4)", fontSize:12, padding:"4px 6px",
-        borderRadius:DS.r, display:"flex", alignItems:"center", gap:4 },
-      onMouseEnter: e => e.currentTarget.style.color = "rgba(255,255,255,.8)",
-      onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,.4)",
-      title: "Esci"
-    }, "⏻ Esci")
-  ),
-
-  /* ── Body row: sidebar + content ── */
-  /*#__PURE__*/React.createElement("div", {
-    style: { display:"flex", flex:1, height:"calc(100vh - 56px)", marginTop:56, overflow:"hidden" }
-  },
-  /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: DS.sidebarExpanded,
       flexShrink: 0,
@@ -10207,9 +10171,83 @@ function NassaPlan() {
       flexDirection: "column",
       padding: `${DS.sp2}px ${DS.sp2}px`
     }
-  }, 
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "6px 8px 8px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 28,
+      height: 28,
+      borderRadius: DS.r,
+      background: G,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#003300",
+      fontSize: 12,
+      fontWeight: 800
+    }
+  }, "N")), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#fff",
+      fontSize: DS.fsSm,
+      fontWeight: 700,
+      letterSpacing: DS.lsTight
+    }
+  }, "Nassa Plan")), 
 
-  /*#__PURE__*/React.createElement("p", {
+  /* ── App nav ── */
+  /*#__PURE__*/React.createElement("div", {
+    style: { padding: "8px 8px 4px", borderTop: "0.5px solid rgba(255,255,255,.08)", marginTop: 4 }
+  },
+    [
+      { href: "/",         label: "Week",    bg: "#0dff00", color: "#111",    icon: "N"  },
+      { href: "/app",      label: "Content", bg: "#0dff00", color: "#111",    icon: "N"  },
+      { href: "/marketing",label: "Market",  bg: "#C2185B", color: "#fff",    icon: "NM" },
+    ].map(app => /*#__PURE__*/React.createElement("a", {
+      key: app.href,
+      href: app.href,
+      style: {
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "5px 8px", borderRadius: 6, textDecoration: "none",
+        transition: "background .15s", marginBottom: 2
+      },
+      onMouseEnter: e => e.currentTarget.style.background = "rgba(255,255,255,.08)",
+      onMouseLeave: e => e.currentTarget.style.background = "transparent"
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 20, height: 20, borderRadius: 5,
+          background: app.bg, color: app.color,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 8, fontWeight: 800, flexShrink: 0
+        }
+      }, app.icon),
+      /*#__PURE__*/React.createElement("span", {
+        style: { fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 500 }
+      }, app.label)
+    ))
+  ),
+
+  /*#__PURE__*/React.createElement("button", {
+    onClick: () => { if(typeof nassaLogout !== 'undefined') nassaLogout(); else { fetch('/api/auth',{method:'DELETE',credentials:'include'}).finally(()=>window.location.replace('/app')); } },
+    title: "Esci",
+    style: {
+      display: "flex", alignItems: "center", gap: 6,
+      background: "transparent", border: "none", cursor: "pointer",
+      color: "rgba(255,255,255,0.35)", fontSize: 11, padding: "2px 12px",
+      textDecoration: "none", marginTop: 2
+    },
+    onMouseEnter: e => e.currentTarget.style.color = "rgba(255,255,255,0.8)",
+    onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"
+  }, "⏻ Esci"), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: DS.fsXs,
       color: "rgba(255,255,255,0.35)",
@@ -10370,7 +10408,7 @@ function NassaPlan() {
       justifyContent: "center",
       gap: 6
     }
-  }, "+ Nuovo task")),  /*#__PURE__*/React.createElement("div", {
+  }, "+ Nuovo task"))), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       overflow: "hidden",
@@ -10406,8 +10444,8 @@ function NassaPlan() {
       borderRadius: "50%",
       border: "none",
       cursor: "pointer",
-      background: "#0dff00",
-      color: "#111",
+      background: DS.blueDk,
+      color: "#fff",
       fontSize: 17,
       fontWeight: 400,
       display: "flex",
@@ -10504,7 +10542,9 @@ function NassaPlan() {
     onUpdate: selectedTask.kind === "ped" ? updateContenuto : updateTask,
     onLogTime: logTime,
     logged: logged
-  }), ));
+  }), /*#__PURE__*/React.createElement(StorageIndicator, {
+    status: storageStatus
+  }));
 }
 const __root = ReactDOM.createRoot(document.getElementById("root"));
 __root.render(React.createElement(NassaPlan));
