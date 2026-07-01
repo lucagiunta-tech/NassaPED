@@ -276,61 +276,37 @@ const PRIORITA = [{
 }];
 
 // ─── TEAM MEMBERS — Nassa Studio S.r.l.s. ────────────────────────────────────
-const TEAM_MEMBERS = [{
-  id: "luca",
-  nome: "Luca Giunta",
-  email: "luca.giunta@nassastudio.it",
-  role: "Manager",
-  dept: "Our Team",
-  color: "#f59e0b",
-  costH: 30,
-  rateH: 50
-}, {
-  id: "alberto",
-  nome: "Alberto Arcidiacono",
-  email: "alberto@nassastudio.it",
-  role: "Manager",
-  dept: "Our Team",
-  color: "#3b82f6",
-  costH: 30,
-  rateH: 50
-}, {
-  id: "hermes",
-  nome: "Hermes Cannata",
-  email: "web@nassastudio.it",
-  role: "User",
-  dept: "Demo Users",
-  color: "#6366f1",
-  costH: 20,
-  rateH: 35
-}, {
-  id: "design",
-  nome: "DESIGN GRAFICO",
-  email: "design@nassastudio.it",
-  role: "User",
-  dept: "Demo Users",
-  color: "#8b5cf6",
-  costH: 20,
-  rateH: 35
-}, {
-  id: "nassa",
-  nome: "nassastudiografico@gmail.com",
-  email: "nassastudiografico@gmail.com",
-  role: "User",
-  dept: "Demo Users",
-  color: "#f97316",
-  costH: 0,
-  rateH: 0
-}, {
-  id: "we",
-  nome: "we@nassastudio.it",
-  email: "we@nassastudio.it",
-  role: "User",
-  dept: "Demo Users",
-  color: "#64748b",
-  costH: 0,
-  rateH: 0
-}];
+// TEAM_MEMBERS — seed hardcoded, overwritten by /api/team at runtime
+// This ensures nplan works offline/on slow connections with the last-known data
+let TEAM_MEMBERS = [
+  { id:"luca",     initials:"LG", nome:"Luca Giunta",         email:"luca.giunta@nassastudio.it",    role:"Manager", dept:"Our Team",    color:"#F5C842", costH:30, rateH:50 },
+  { id:"alberto",  initials:"AA", nome:"Alberto Arcidiacono", email:"alberto@nassastudio.it",         role:"Manager", dept:"Our Team",    color:"#3B5BDB", costH:30, rateH:50 },
+  { id:"giacomo",  initials:"GC", nome:"Giacomo Cannizzaro",  email:"giacomo@nassastudio.it",         role:"Member",  dept:"Our Team",    color:"#0F6E56", costH:25, rateH:40 },
+  { id:"paolone",  initials:"PF", nome:"Paolone (Paolo F.)",  email:"paolo.f@nassastudio.it",         role:"Member",  dept:"Our Team",    color:"#7C3AED", costH:25, rateH:40 },
+  { id:"akash",    initials:"AK", nome:"Akash",               email:"akash@nassastudio.it",            role:"Member",  dept:"Our Team",    color:"#C2185B", costH:20, rateH:35 },
+  { id:"paoletto", initials:"PC", nome:"Paoletto (Paolo C.)", email:"paolo.c@nassastudio.it",          role:"Member",  dept:"Our Team",    color:"#E65100", costH:20, rateH:35 },
+];
+
+// Fetch canonical team and update TEAM_MEMBERS in place
+(async () => {
+  try {
+    const r = await fetch('/api/team', { credentials: 'include' });
+    if (!r.ok) return;
+    const { team } = await r.json();
+    // Map canonical → nplan format, preserve any extra local fields
+    TEAM_MEMBERS = team.map(m => ({
+      id:       m.id,
+      initials: m.initials,
+      nome:     m.nome,
+      email:    m.email,
+      role:     m.role,
+      dept:     m.role === 'Manager' ? 'Our Team' : 'Our Team',
+      color:    m.bg,
+      costH:    m.costH,
+      rateH:    m.rateH,
+    }));
+  } catch(e) { console.warn('[team] nplan fallback', e.message); }
+})();
 
 // ─── PROGETTI / CARTELLE (gerarchia stile Goodday sidebar) ──────────────────
 const PROGETTI = [{
