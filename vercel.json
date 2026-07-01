@@ -20,6 +20,14 @@
       "destination": "/home.html"
     },
     {
+      "source": "/marketing",
+      "destination": "/marketing.html"
+    },
+    {
+      "source": "/marketing/",
+      "destination": "/marketing.html"
+    },
+    {
       "source": "/strategy",
       "destination": "/strategy.html"
     },
