@@ -10102,17 +10102,17 @@ function NassaPlan() {
       display: "flex",
       flexDirection: "column",
       height: "100vh",
-      minHeight: 0,
       fontFamily: DS.font,
       background: DS.bg
     }
   },
 
-  /* ── Topbar ── */
+  /* ── Topbar fixed ── */
   /*#__PURE__*/React.createElement("div", {
     style: {
+      position: "fixed",
+      top: 0, left: 0, right: 0,
       height: 56,
-      flexShrink: 0,
       background: "#15151a",
       display: "flex",
       alignItems: "center",
@@ -10196,7 +10196,7 @@ function NassaPlan() {
 
   /* ── Body row: sidebar + content ── */
   /*#__PURE__*/React.createElement("div", {
-    style: { display:"flex", flex:"1 1 0", minHeight:0, overflow:"hidden" }
+    style: { display:"flex", flex:1, height:"100vh", paddingTop:56, overflow:"hidden" }
   },
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10370,10 +10370,9 @@ function NassaPlan() {
       justifyContent: "center",
       gap: 6
     }
-  }, "+ Nuovo task")), /*#__PURE__*/React.createElement("div", {
+  }, "+ Nuovo task")),  /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: "1 1 0",
-      minHeight: 0,
+      flex: 1,
       overflow: "hidden",
       display: "flex",
       flexDirection: "column"
