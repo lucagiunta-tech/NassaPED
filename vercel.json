@@ -8,6 +8,14 @@
   },
   "rewrites": [
     {
+      "source": "/week",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/week/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/marketing",
       "destination": "/marketing.html"
     },
