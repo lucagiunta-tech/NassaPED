@@ -9894,18 +9894,21 @@ function NassaPlan() {
     setStorageStatus("saving");
     const timer = setTimeout(async () => {
       try {
+        const nplanBody = JSON.stringify({
+            tasks: serializeTasks(tasks),
+            contenuti: serializeContenuti(contenuti),
+            projects,
+            logged
+          });
+        const nplanSizeKB = Math.round(nplanBody.length / 1024);
+        if (nplanSizeKB > 4096) console.warn('[NassaPlan] ⚠️ Blob grande:', nplanSizeKB, 'KB');
         await fetch('/api/planning', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({
-            tasks: serializeTasks(tasks),
-            contenuti: serializeContenuti(contenuti),
-            projects,
-            logged
-          })
+          body: nplanBody
         });
         showSaved();
       } catch (e) {
