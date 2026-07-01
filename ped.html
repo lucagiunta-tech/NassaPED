@@ -182,21 +182,21 @@
 
   <!-- Right: cloud + dark mode + avatar -->
   <div class="topbar-right">
-    <!-- App nav -->
-    <div style="display:flex;align-items:center;gap:2px;margin-right:8px;padding-right:12px;border-right:0.5px solid var(--border);">
+    <!-- App nav — stile identico a Nassa Week topbar -->
+    <nav style="display:flex;align-items:center;gap:2px;margin-right:8px;padding-right:12px;border-right:0.5px solid var(--border);">
       <a href="/" title="Nassa Week"
-         style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 7px;border-radius:var(--r);text-decoration:none;transition:background var(--t-fast);"
+         style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;border-radius:var(--r);text-decoration:none;transition:background var(--t-fast);"
          onmouseover="this.style.background='var(--surface-lt)'" onmouseout="this.style.background='transparent'">
-        <div style="width:22px;height:22px;border-radius:5px;background:var(--green);color:var(--green-text);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;">N</div>
-        <span style="font-size:9px;color:var(--text-3);font-weight:500;">Week</span>
+        <div style="width:26px;height:26px;border-radius:6px;background:var(--green);color:var(--green-text);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">N</div>
+        <span style="font-size:9px;color:var(--text-3);font-weight:500;letter-spacing:.01em;">Week</span>
       </a>
       <a href="/nplan" title="Nassa Plan"
-         style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 7px;border-radius:var(--r);text-decoration:none;transition:background var(--t-fast);"
+         style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;border-radius:var(--r);text-decoration:none;transition:background var(--t-fast);"
          onmouseover="this.style.background='var(--surface-lt)'" onmouseout="this.style.background='transparent'">
-        <div style="width:22px;height:22px;border-radius:5px;background:#5B4FD9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;">NP</div>
-        <span style="font-size:9px;color:var(--text-3);font-weight:500;">Plan</span>
+        <div style="width:26px;height:26px;border-radius:6px;background:#5B4FD9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;">NP</div>
+        <span style="font-size:9px;color:var(--text-3);font-weight:500;letter-spacing:.01em;">Plan</span>
       </a>
-    </div>
+    </nav>
     <span class="cloud-badge" id="cloud-status" title="Cloud sync">☁ Cloud</span>
     <button id="theme-toggle" onclick="toggleDarkMode()" title="Cambia tema" aria-label="Dark/Light mode" style="width:32px;height:32px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background var(--t-fast);">🌙</button>
     <div style="position:relative;display:inline-block;">
