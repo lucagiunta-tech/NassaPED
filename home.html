@@ -448,16 +448,17 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* ── Task detail panel ── */
 .task-panel-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:88;
+  position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:188;
   display:none;
+  align-items:center;justify-content:center;
 }
-.task-panel-overlay.open{display:block;}
+.task-panel-overlay.open{display:flex;}
 .task-panel{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
   width:320px;max-height:90vh;overflow-y:auto;
-  background:var(--surface);padding:20px;z-index:90;
-  border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.18);
+  background:var(--surface);padding:20px;
+  border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.22);
   border:var(--bw) solid var(--border);
+  position:relative;
 }
 .tp-tipo{
   font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);
@@ -721,10 +722,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 </div>
 
 <!-- TASK PANEL -->
-<div class="task-panel-overlay" id="task-panel-overlay" onclick="closePanelAndSave()"></div>
-<div class="task-panel" id="task-panel" style="display:none;">
-  <button class="tp-close" onclick="closePanel()">✕</button>
-  <div id="tp-body"></div>
+<div class="task-panel-overlay" id="task-panel-overlay" onclick="closePanelAndSave()">
+  <div class="task-panel" id="task-panel" onclick="event.stopPropagation()">
+    <button class="tp-close" onclick="closePanel()">✕</button>
+    <div id="tp-body"></div>
+  </div>
 </div>
 
 <script>
@@ -1747,7 +1749,6 @@ function openPanel(id, giorno) {
   panel.dataset.taskId = id;
   panel.dataset.giorno = String(giorno);
   renderPanel(task, giorno);
-  panel.style.display = 'block';
   document.getElementById('task-panel-overlay').classList.add('open');
 }
 
@@ -1918,7 +1919,6 @@ function changeTaskType(id, giorno, nuovoTipo) {
 }
 
 function closePanel() {
-  document.getElementById('task-panel').style.display = 'none';
   document.getElementById('task-panel-overlay').classList.remove('open');
 }
 
@@ -1983,6 +1983,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
