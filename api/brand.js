@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   if (!isPublic) {
     const cookie = (req.headers.cookie||'').match(/nassa_session=([^;]+)/)?.[1];
     const key = req.headers['x-nassa-key'];
-    const validKey = process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
+    const validKey = process.env.NASSA_API_KEY;
     if (!cookie && key !== validKey) return res.status(401).json({ error: 'Non autorizzato' });
   }
 
