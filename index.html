@@ -142,6 +142,14 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .day-col{
   border-top:2px solid var(--border);
   padding-top:12px;min-height:520px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 50px,
+    var(--border) 50px,
+    var(--border) 51px
+  );
+  background-position: 0 63px; /* offset: padding-top + day-head height */
 }
 .day-col.today{border-top-color:var(--green);}
 .day-col.weekend{opacity:.55;}
@@ -155,7 +163,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   background:var(--green);color:var(--green-text);font-weight:700;
   width:30px;height:30px;border-radius:50%;margin:0 auto;font-size:15px;
 }
-.task-chips{display:flex;flex-direction:column;gap:16px;}
+.task-chips{display:flex;flex-direction:column;gap:16px;position:relative;z-index:1;}
 
 /* ── Chips ───────────────────────────────────────────────── */
 .chip{
@@ -199,7 +207,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 }
 .chip:hover .chip-del{opacity:.5;}
 .chip-del:hover{opacity:1 !important;}
-.add-chip{
+.add-chip{position:relative;z-index:1;
   font-size:var(--fs-xs);padding:4px 7px;border-radius:var(--r);
   color:var(--text-3);border:var(--bw) dashed var(--border);
   cursor:text;background:transparent;
