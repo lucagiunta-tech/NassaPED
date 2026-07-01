@@ -10102,6 +10102,7 @@ function NassaPlan() {
       display: "flex",
       flexDirection: "column",
       height: "100vh",
+      minHeight: 0,
       fontFamily: DS.font,
       background: DS.bg
     }
@@ -10195,7 +10196,7 @@ function NassaPlan() {
 
   /* ── Body row: sidebar + content ── */
   /*#__PURE__*/React.createElement("div", {
-    style: { display:"flex", flex:1, overflow:"hidden" }
+    style: { display:"flex", flex:"1 1 0", minHeight:0, overflow:"hidden" }
   },
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10206,37 +10207,7 @@ function NassaPlan() {
       flexDirection: "column",
       padding: `${DS.sp2}px ${DS.sp2}px`
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "6px 8px 8px"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 28,
-      height: 28,
-      borderRadius: DS.r,
-      background: G,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#003300",
-      fontSize: 12,
-      fontWeight: 800
-    }
-  }, "N")), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#fff",
-      fontSize: DS.fsSm,
-      fontWeight: 700,
-      letterSpacing: DS.lsTight
-    }
-  }, "Nassa Plan")),
+  }, 
 
   /*#__PURE__*/React.createElement("p", {
     style: {
