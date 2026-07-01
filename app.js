@@ -221,6 +221,12 @@ const CLOUD = {
       const body = JSON.stringify({ user: CLOUD.user, data: projectData });
       const sizeKB = Math.round(body.length / 1024);
       console.log('%c[NassaPED] saveNow → '+sizeKB+'KB', 'color:#f59e0b;font-weight:700');
+      // Warn team in console if approaching Supabase JSONB practical limit
+      if (sizeKB > 8192) {
+        console.error('[NassaPED] ⚠️ Blob molto grande ('+sizeKB+'KB). Contattare il tecnico.');
+      } else if (sizeKB > 4096) {
+        console.warn('[NassaPED] ⚠️ Blob in crescita ('+sizeKB+'KB). Monitorare.');
+      }
       const res = await fetch(CLOUD.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-nassa-key': CLOUD.apiKey },
@@ -286,10 +292,11 @@ const CLOUD = {
   snapshot() {
     // Strip blob: URLs before saving — they're only valid in the current session
     // and waste space in the JSON payload. externalUrl is what persists.
+    const MAX_FEED_ITEMS = 500; // max feed items per client key — prevents unbounded growth
     function cleanFeeds(feedsObj) {
       const out = {};
       Object.keys(feedsObj||{}).forEach(k => {
-        out[k] = (feedsObj[k]||[]).map(item => {
+        let items = (feedsObj[k]||[]).map(item => {
           const clean = {...item};
           if(clean.url && clean.url.startsWith('blob:')) clean.url = '';
           if(clean.slides) clean.slides = clean.slides.map(s => {
@@ -299,13 +306,20 @@ const CLOUD = {
           });
           return clean;
         });
+        // Prune oldest items if over limit (keep most recent by index position)
+        if (items.length > MAX_FEED_ITEMS) {
+          console.warn('[NassaPED] Feed key', k, 'has', items.length, 'items — pruning to', MAX_FEED_ITEMS);
+          items = items.slice(items.length - MAX_FEED_ITEMS);
+        }
+        out[k] = items;
       });
       return out;
     }
+    const MAX_STORY_ITEMS = 300;
     function cleanStories(storiesObj) {
       const out = {};
       Object.keys(storiesObj||{}).forEach(k => {
-        out[k] = (storiesObj[k]||[]).map(st => {
+        let stItems = (storiesObj[k]||[]).map(st => {
           const clean={...st};
           if(clean.url&&clean.url.startsWith('blob:'))clean.url='';
           if(clean.slides)clean.slides=clean.slides.map(s=>{const sc={...s};if(sc.url&&sc.url.startsWith('blob:'))sc.url='';return sc;});
