@@ -1383,7 +1383,7 @@ function openForm(testo, tipo, giorno) {
   document.getElementById('form-overlay').style.display = 'flex';
   // Show back button only for F/S (T has internal back navigation per step)
   const backBtn = document.getElementById('form-back-btn');
-  if (backBtn) backBtn.style.display = (tipo === 'F' || tipo === 'S') ? 'inline-flex' : 'none';
+  if (backBtn) backBtn.style.display = 'inline-flex';
   renderForm();
 }
 
@@ -1841,6 +1841,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
