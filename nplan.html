@@ -13,6 +13,33 @@ html,body{height:100%;overflow:hidden;background:#f5f5f7;}
 </style>
 </head>
 <body>
+<script>
+/* ── Nassa Auth Guard ── */
+(async()=>{
+  try{
+    const r=await fetch('/api/auth',{credentials:'include'});
+    if(!r.ok) throw new Error('unauth');
+    const d=await r.json();
+    if(!d.ok) throw new Error('unauth');
+    // Store user for the app to use
+    window.__nassaUser=d;
+  }catch(e){
+    // Not logged in — redirect to NassaContent login
+    window.location.replace('/app?redirect='+encodeURIComponent(window.location.pathname));
+  }
+})();
+</script>
+<div id="nassa-auth-loading" style="position:fixed;inset:0;background:var(--bg,#fff);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="font-family:system-ui,sans-serif;font-size:13px;color:#888;">Nassa Studio…</div>
+</div>
+<script>
+/* Remove loading overlay once DOM is ready and auth passed */
+document.addEventListener('DOMContentLoaded',()=>{
+  const el=document.getElementById('nassa-auth-loading');
+  if(el) el.remove();
+});
+</script>
+
 <div id="root"></div>
 <div id="err" style="display:none;position:fixed;inset:0;background:#fff;padding:20px;font-family:monospace;font-size:12px;color:red;white-space:pre-wrap;overflow:auto;z-index:9999;"></div>
 <script>window.onerror=function(m,s,l,c,e){var d=document.getElementById('err');d.style.display='block';d.textContent='ERROR: '+m+'\nLine: '+l+'\n\n'+(e&&e.stack?e.stack:'');return true;};</script>
