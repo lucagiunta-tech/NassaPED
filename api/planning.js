@@ -38,7 +38,7 @@ async function getUser(req) {
   const token = getCookie(req);
   if (!token) return null;
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'nassa_fallback_secret_2026');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     return payload.user || 'default';
   } catch { return null; }
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
   // Auth
   const user = await getUser(req);
   const legacyKey = req.headers['x-nassa-key'];
-  const legacyOk = legacyKey && legacyKey === (process.env.NASSA_API_KEY || 'NASSA_SECRET_2026');
+  const legacyOk = legacyKey && legacyKey === process.env.NASSA_API_KEY;
   const authedUser = user || (legacyOk ? 'shared' : null);
   if (!authedUser) return res.status(401).json({ error: 'Non autorizzato.' });
 
