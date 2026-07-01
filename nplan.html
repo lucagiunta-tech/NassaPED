@@ -4956,13 +4956,18 @@ function TimeReportsSection({
 
   // ── Stop + log hours ───────────────────────────────────────────────────
   const stopTimer = () => {
+    // Use startRef.current directly — avoids stale closure on elapsed state
+    const elapsedSecs = startRef.current
+      ? Math.floor((Date.now() - startRef.current) / 1000)
+      : 0;
     setRunning(false);
+    setElapsed(0);
     localStorage.removeItem('nassa_timer_' + taskId);
-    const totalHours = Math.round((elapsed / 3600) * 100) / 100;
+    const totalHours = Math.round((elapsedSecs / 3600) * 100) / 100;
     if (totalHours >= 0.01) {
       onLog(taskId, totalHours);
     }
-    setElapsed(0);
+    startRef.current = null;
   };
 
   // ── Manual submit ──────────────────────────────────────────────────────
