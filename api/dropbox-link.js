@@ -11,7 +11,7 @@ async function getToken(req) {
   const proto = host.includes('localhost') ? 'http' : 'https';
   const res = await fetch(`${proto}://${host}/api/dropbox-token`, {
     headers: {
-      'x-nassa-key': process.env.NASSA_API_KEY || 'NASSA_SECRET_2026',
+      'x-nassa-key': process.env.NASSA_API_KEY,
       'cookie': req.headers.cookie || ''
     }
   });
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
   const _cookie = (req.headers.cookie||'').match(/nassa_session=([^;]+)/)?.[1];
   const key = req.headers['x-nassa-key'];
-  const validKey = process.env.NASSA_API_KEY || 'NASSA_SECRET_2026';
+  const validKey = process.env.NASSA_API_KEY;
   if(!_cookie && key !== validKey) return res.status(401).json({error:'Non autorizzato'});
 
   try {
