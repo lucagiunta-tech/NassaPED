@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;background:#f5f5f7;}
+html,body{height:100%;overflow:hidden;background:#ffffff;}
 #root{height:100%;}
 </style>
 </head>
@@ -89,7 +89,7 @@ const DS = {
   text2: "#6b6b6b",
   text3: "#6b7280",
   // Superfici
-  bg: "#f5f5f7",
+  bg: "#ffffff",
   surface: "#ffffff",
   border: "#e5e7eb",
   borderLt: "#f0f0f2",
@@ -6673,7 +6673,7 @@ function TaskFullView({
       color: DS.text3,
       padding: `2px ${DS.sp2}px`,
       border: `${DS.bw} solid ${DS.border}`,
-      borderRadius: DS.rs
+      borderRadius: DS.r
     }
   }, "#", item.numId || "—"), /*#__PURE__*/React.createElement(Breadcrumb, {
     items: breadcrumb
@@ -8343,14 +8343,14 @@ function UserModal({
       alignItems: "center",
       gap: DS.sp2,
       padding: "7px 10px",
-      borderRadius: DS.rs,
+      borderRadius: DS.r,
       cursor: "pointer",
       fontSize: DS.fsSm,
       fontWeight: section === id ? 600 : 400,
-      color: section === id ? DS.blueDk : DS.text2,
-      background: section === id ? DS.blueLt : "transparent"
+      color: section === id ? DS.greenDk : DS.text2,
+      background: section === id ? DS.greenLt : "transparent"
     },
-    onMouseEnter: e => section !== id && (e.currentTarget.style.background = DS.bg),
+    onMouseEnter: e => section !== id && (e.currentTarget.style.background = "#f5f5f7"),
     onMouseLeave: e => section !== id && (e.currentTarget.style.background = "transparent")
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -10111,7 +10111,7 @@ function NassaPlan() {
       background: "#15151a",
       display: "flex",
       flexDirection: "column",
-      padding: `${DS.sp3}px ${DS.sp2}px`
+      padding: `${DS.sp2}px ${DS.sp2}px`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10122,9 +10122,9 @@ function NassaPlan() {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 24,
-      height: 24,
-      borderRadius: 6,
+      width: 28,
+      height: 28,
+      borderRadius: DS.r,
       background: G,
       display: "flex",
       alignItems: "center",
@@ -10133,14 +10133,15 @@ function NassaPlan() {
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#003300",
-      fontSize: 11,
-      fontWeight: 700
+      fontSize: 12,
+      fontWeight: 800
     }
   }, "N")), /*#__PURE__*/React.createElement("span", {
     style: {
       color: "#fff",
-      fontSize: 13,
-      fontWeight: 500
+      fontSize: DS.fsSm,
+      fontWeight: 700,
+      letterSpacing: DS.lsTight
     }
   }, "Nassa Plan")), /*#__PURE__*/React.createElement("a", {
     href: "/",
@@ -10203,11 +10204,12 @@ function NassaPlan() {
     onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"
   }, "⏻ Esci"), /*#__PURE__*/React.createElement("p", {
     style: {
-      fontSize: 10,
-      color: "rgba(255,255,255,0.4)",
+      fontSize: DS.fsXs,
+      color: "rgba(255,255,255,0.35)",
       padding: "8px 12px 4px",
       textTransform: "uppercase",
-      letterSpacing: "0.05em"
+      letterSpacing: DS.lsWide,
+      fontWeight: 600
     }
   }, "Home"), /*#__PURE__*/React.createElement(NavItem, {
     id: "mywork",
@@ -10235,11 +10237,12 @@ function NassaPlan() {
     icon: "👥"
   }), /*#__PURE__*/React.createElement("p", {
     style: {
-      fontSize: 10,
-      color: "rgba(255,255,255,0.4)",
+      fontSize: DS.fsXs,
+      color: "rgba(255,255,255,0.35)",
       padding: "16px 12px 4px",
       textTransform: "uppercase",
-      letterSpacing: "0.05em"
+      letterSpacing: DS.lsWide,
+      fontWeight: 600
     }
   }, "Projects"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10259,13 +10262,13 @@ function NassaPlan() {
       padding: "7px 12px",
       border: "none",
       cursor: "pointer",
-      fontSize: 13,
+      fontSize: DS.fsSm,
       background: mainTab === "projects" && selectedProject === p.id ? "rgba(255,255,255,0.1)" : "transparent",
-      color: mainTab === "projects" && selectedProject === p.id ? "#fff" : "rgba(255,255,255,0.65)",
+      color: mainTab === "projects" && selectedProject === p.id ? "#fff" : "rgba(255,255,255,0.6)",
       display: "flex",
       alignItems: "center",
       gap: 8,
-      borderRadius: 6
+      borderRadius: DS.r
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
