@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<link rel="stylesheet" href="/nassa-tokens.css"/>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>Nassa Studio — Anteprima</title>
@@ -167,10 +168,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 <script>
 const API_URL = '/api/project';
-// TODO(P0): client-view is a public page — replace with a dedicated
-// read-only public token (no auth required for GET /api/project?public=1).
-// For now the key is still here but should be rotated in Vercel env vars.
-const API_KEY = 'NASSA_SECRET_2026';
+// client-view is a public page — served at /client/:slug
+// Auth: uses NASSA_API_KEY env var server-side (no client-side secret)
+// TODO(P1): create dedicated read-only public endpoint /api/project?public=1
+const API_KEY = '';
 const MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
 let cvData = null;
@@ -420,7 +421,7 @@ function cvRenderPreview() {
         try {
           await fetch('/api/project', {
             method:'POST',
-            headers:{'Content-Type':'application/json','x-nassa-key':'NASSA_SECRET_2026'},
+            headers:{'Content-Type':'application/json','x-nassa-key':API_KEY},
             body: JSON.stringify({ user:'shared', data: cvData })
           });
           cvShowToast('✓ Contenuto approvato');
@@ -452,7 +453,7 @@ function cvRenderPreview() {
         const k = accountKey(acc.id, cvMonth !== 'tutti' ? cvMonth : '');
         if(cvData.feeds[k]) cvData.feeds[k] = cvData.feeds[k].map(it => items.find(vi=>vi===it) || it);
         try {
-          await fetch('/api/project', {method:'POST',headers:{'Content-Type':'application/json','x-nassa-key':'NASSA_SECRET_2026'},body:JSON.stringify({user:'shared',data:cvData})});
+          await fetch('/api/project', {method:'POST',headers:{'Content-Type':'application/json','x-nassa-key':API_KEY},body:JSON.stringify({user:'shared',data:cvData})});
           cvRenderPreview();
         } catch(err) {}
       };
@@ -524,7 +525,7 @@ async function cvSubmitRevision() {
   try {
     await fetch('/api/project', {
       method:'POST',
-      headers:{'Content-Type':'application/json','x-nassa-key':'NASSA_SECRET_2026'},
+      headers:{'Content-Type':'application/json','x-nassa-key':API_KEY},
       body: JSON.stringify({ user:'shared', data: cvData })
     });
     cvCloseRevisionModal();
