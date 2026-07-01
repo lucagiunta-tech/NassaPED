@@ -167,7 +167,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 </div>
 
 <script>
-const API_URL = '/api/project';
+const API_URL = '/api/client-view';
 // client-view is a public page — served at /client/:slug
 // Auth: uses NASSA_API_KEY env var server-side (no client-side secret)
 // TODO(P1): create dedicated read-only public endpoint /api/project?public=1
@@ -212,18 +212,12 @@ async function cvInit() {
 
   try {
     // Load project data — we use 'shared' user for client view
-    const res = await fetch(API_URL + '?user=nassa_studio', { headers: { 'x-nassa-key': API_KEY } });
+    const res = await fetch(API_URL + '?slug=' + encodeURIComponent(shareToken));
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    const { data } = await res.json();
-    if(!data) throw new Error('No data');
-    cvData = data;
-
-    // Find client by shareToken (new) or legacy id/name (backward compat)
-    cvClient = (data.clients||[]).find(c =>
-      c.shareToken === shareToken ||
-      c.id === shareToken ||
-      encodeURIComponent(c.name) === shareToken
-    );
+    const { client: clientData, feeds: clientFeeds } = await res.json();
+    if(!clientData) throw new Error('No data');
+    cvClient = clientData;
+    cvData = { feeds: clientFeeds || {}, clients: [clientData] };
     if(!cvClient) { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#999;font-family:Inter,sans-serif;">Cliente non trovato.</div>'; return; }
 
     document.title = cvClient.name + ' — Nassa Studio';
@@ -415,15 +409,20 @@ function cvRenderPreview() {
         items[i].apprNote = items[i].apprNote || '';
         // Save back to cloud
         const k = accountKey(acc.id, cvMonth !== 'tutti' ? cvMonth : '');
-        if(cvData.feeds[k]) {
-          cvData.feeds[k] = cvData.feeds[k].map(it => items.find(vi=>vi===it) || it);
-        }
         try {
-          await fetch('/api/project', {
-            method:'POST',
-            headers:{'Content-Type':'application/json','x-nassa-key':API_KEY},
-            body: JSON.stringify({ user:'shared', data: cvData })
+          const itemIdx = (cvData.feeds[k]||[]).findIndex(it => it === items[i] || JSON.stringify(it) === JSON.stringify(items[i]));
+          await fetch('/api/client-view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              slug: shareToken,
+              feedKey: k,
+              itemIndex: itemIdx,
+              updates: { apprStato: 'approvato', apprNote: items[i].apprNote || '' }
+            })
           });
+          // Update local state
+          if(cvData.feeds[k]) cvData.feeds[k] = cvData.feeds[k].map((it,idx) => idx===itemIdx ? {...it,apprStato:'approvato'} : it);
           cvShowToast('✓ Contenuto approvato');
           cvRenderPreview();
         } catch(err) { cvShowToast('Errore — riprova'); }
@@ -453,7 +452,7 @@ function cvRenderPreview() {
         const k = accountKey(acc.id, cvMonth !== 'tutti' ? cvMonth : '');
         if(cvData.feeds[k]) cvData.feeds[k] = cvData.feeds[k].map(it => items.find(vi=>vi===it) || it);
         try {
-          await fetch('/api/project', {method:'POST',headers:{'Content-Type':'application/json','x-nassa-key':API_KEY},body:JSON.stringify({user:'shared',data:cvData})});
+          await fetch('/api/client-view', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:shareToken,feedKey:k,itemIndex:cvData.feeds[k]?.findIndex(it=>JSON.stringify(it)===JSON.stringify(items[idx])),updates:{apprStato:'revisione'}})});
           cvRenderPreview();
         } catch(err) {}
       };
@@ -523,11 +522,14 @@ async function cvSubmitRevision() {
     });
   }
   try {
-    await fetch('/api/project', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-nassa-key':API_KEY},
-      body: JSON.stringify({ user:'shared', data: cvData })
-    });
+    // Note: revision modal save — uses feedKey+itemIndex from modal context
+    if(typeof _cvRevFeedKey !== 'undefined' && _cvRevItemIdx != null) {
+      await fetch('/api/client-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: shareToken, feedKey: _cvRevFeedKey, itemIndex: _cvRevItemIdx, updates: { apprStato: 'revisione', revision: body } })
+      });
+    }
     cvCloseRevisionModal();
     cvRenderPreview();
     cvShowToast('✓ Revisione inviata all\'agenzia');
