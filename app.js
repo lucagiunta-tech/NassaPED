@@ -10121,6 +10121,12 @@ async function _doLogin() {
     }
     // Success — hide login, boot app
     _nassaUser = { username: data.username, role: data.role };
+    // Check for redirect param (set by auth guard on protected pages)
+    const _redir = new URLSearchParams(window.location.search).get('redirect');
+    if (_redir && _redir.startsWith('/') && !_redir.startsWith('//')) {
+      window.location.replace(_redir);
+      return;
+    }
     document.getElementById('nassa-login-screen')?.remove();
     document.querySelector('.app').style.display = '';
     _bootApp();
