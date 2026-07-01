@@ -44,10 +44,21 @@ async function getUser(req) {
   } catch { return null; }
 }
 
+const MAX_PLANNING_BYTES = 8 * 1024 * 1024; // 8MB hard limit for planning blob
+
 async function readBody(req) {
   return new Promise((resolve, reject) => {
     let b = '';
-    req.on('data', c => b += c);
+    let size = 0;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > MAX_PLANNING_BYTES) {
+        req.destroy();
+        reject(new Error(`Payload troppo grande: ${Math.round(size/1024)}KB (max ${Math.round(MAX_PLANNING_BYTES/1024)}KB)`));
+        return;
+      }
+      b += chunk;
+    });
     req.on('end', () => { try { resolve(JSON.parse(b)); } catch { reject(new Error('Invalid JSON')); } });
     req.on('error', reject);
   });
@@ -83,7 +94,10 @@ export default async function handler(req, res) {
     if (error && error.code !== 'PGRST116') {
       return res.status(500).json({ error: error.message });
     }
-    return res.status(200).json({ data: data?.data || null });
+    const dataBlob = data?.data || null;
+    const sizeKB = dataBlob ? Math.round(JSON.stringify(dataBlob).length / 1024) : 0;
+    if (sizeKB > 2048) console.warn(`[planning] GET blob ${sizeKB}KB for ${authedUser}`);
+    return res.status(200).json({ data: dataBlob, sizeKB });
   }
 
   // POST — merge and save
@@ -124,12 +138,18 @@ export default async function handler(req, res) {
 
     merged.updated_at = new Date().toISOString();
 
+    // Warn when blob grows large (soft limit: 2MB)
+    const blobSize = JSON.stringify(merged).length;
+    if (blobSize > 2 * 1024 * 1024) {
+      console.warn(`[planning] Blob large: ${Math.round(blobSize/1024)}KB for user ${authedUser}`);
+    }
+
     const { error } = await sb
       .from('nassa_planning')
       .upsert({ user_id: authedUser, data: merged, updated_at: new Date().toISOString() });
 
     if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, sizeKB: Math.round(blobSize / 1024) });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
