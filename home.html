@@ -1238,7 +1238,7 @@ function dragDrop(event, toGiorno) {
 }
 
 function deleteTask(id, giorno) {
-  const key = giorno === 'later' ? 'later' : Number(giorno);
+  const key = (giorno === 'later' || giorno === -1) ? 'later' : String(giorno);
   if (state.tasks[key]) {
     state.tasks[key] = state.tasks[key].filter(t => t.id !== id);
   }
@@ -1800,7 +1800,7 @@ function changeTaskType(id, giorno, nuovoTipo) {
 function closePanel() { document.getElementById('task-panel').style.display = 'none'; }
 
 function promoteTask(id, giorno) {
-  const key = giorno === 'later' || giorno === -1 ? 'later' : Number(giorno);
+  const key = giorno === 'later' || giorno === -1 ? 'later' : String(giorno);
   const tasks = state.tasks[key] || [];
   const task = tasks.find(t => t.id === id);
   if (!task) return;
@@ -1841,6 +1841,7 @@ renderDayPicker();
 </script>
 </body>
 </html>
+
 
 
 
