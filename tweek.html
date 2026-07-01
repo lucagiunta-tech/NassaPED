@@ -1822,11 +1822,30 @@ const HOURS=['7:00','8:00','9:00','10:00','11:00','12:00','13:00','14:00','15:00
 const TODAY=new Date();
 const DEFAULT_CLIENTS=[{id:'ramaddini',label:'Ramaddini',color:'#1D9E75'},{id:'kosmetikal',label:'Kosmetikal',color:'#D4537E'},{id:'g2g',label:'G2G',color:'#378ADD'},{id:'nassa',label:'Nassa',color:'#7F77DD'},{id:'generale',label:'Generale',color:'#888780'}];
 
-const TEAM=[
-  {id:'luca',    label:'Luca',    initials:'LU', color:'#0dff00', textColor:'#111'},
-  {id:'alberto', label:'Alberto', initials:'AL', color:'#378ADD', textColor:'#fff'},
-  {id:'giacomo', label:'Giacomo', initials:'GI', color:'#D4537E', textColor:'#fff'},
+let TEAM = [
+  {id:'luca',     label:'Luca',     initials:'LG', color:'#F5C842', textColor:'#111'},
+  {id:'alberto',  label:'Alberto',  initials:'AA', color:'#3B5BDB', textColor:'#fff'},
+  {id:'giacomo',  label:'Giacomo',  initials:'GC', color:'#0F6E56', textColor:'#fff'},
+  {id:'paolone',  label:'Paolone',  initials:'PF', color:'#7C3AED', textColor:'#fff'},
+  {id:'akash',    label:'Akash',    initials:'AK', color:'#C2185B', textColor:'#fff'},
+  {id:'paoletto', label:'Paoletto', initials:'PC', color:'#E65100', textColor:'#fff'},
 ];
+
+// Sync with canonical /api/team
+(async () => {
+  try {
+    const r = await fetch('/api/team', { credentials: 'include' });
+    if (!r.ok) return;
+    const { team } = await r.json();
+    TEAM = team.filter(m => m.active).map(m => ({
+      id:        m.id,
+      label:     m.label,
+      initials:  m.initials,
+      color:     m.bg,
+      textColor: m.color,
+    }));
+  } catch(e) { console.warn('[team] tweek fallback', e.message); }
+})();
 let selAssignee=''; // selected assignee in modal
 
 let view='week',weekOffset=0,monthOffset=0,selCl='';
