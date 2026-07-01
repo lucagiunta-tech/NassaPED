@@ -399,50 +399,65 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 }
 .sep-line{flex:1;height:var(--bw);background:var(--border);}
 .sep-lbl{
-  font-size:10px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.07em;color:var(--text-3);white-space:nowrap;
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text-3);white-space:nowrap;
 }
 
 /* ── App grid ── */
 .apps-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:12px;padding:0 20px 32px;max-width:1000px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;padding:0 20px 40px;
 }
 .app-card{
-  background:var(--surface);border:var(--bw) solid var(--border);
-  border-radius:10px;padding:16px 18px;cursor:pointer;
-  text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;
+  background:var(--surface);
+  border:var(--bw) solid var(--border);
+  border-radius:12px;
+  padding:24px 24px 20px;
+  cursor:pointer;text-decoration:none;color:inherit;
+  display:flex;flex-direction:column;gap:12px;
   transition:transform var(--t),box-shadow var(--t),border-color var(--t);
   position:relative;overflow:hidden;
 }
-.app-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--green);}
+.app-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 24px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.04);
+  border-color:var(--green);
+}
 .app-card::before{
-  content:'';position:absolute;inset:0;border-radius:10px;
+  content:'';position:absolute;inset:0;border-radius:12px;
   background:linear-gradient(135deg,var(--green-lt) 0%,transparent 60%);
   opacity:0;transition:opacity var(--t);
 }
 .app-card:hover::before{opacity:1;}
 .app-icon{
-  width:40px;height:40px;border-radius:8px;
-  background:var(--green);display:flex;align-items:center;
-  justify-content:center;font-size:15px;font-weight:800;
-  color:var(--green-text);position:relative;z-index:1;flex-shrink:0;
+  width:48px;height:48px;border-radius:10px;
+  background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:var(--green-text);
+  position:relative;z-index:1;flex-shrink:0;
 }
 .app-body{position:relative;z-index:1;}
-.app-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:3px;letter-spacing:-.01em;}
-.app-desc{font-size:12px;color:var(--text-2);line-height:1.5;margin-bottom:10px;}
-.app-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.app-name{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-.02em;}
+.app-desc{font-size:13px;color:var(--text-2);line-height:1.5;margin-bottom:12px;}
+.app-tags{display:flex;gap:6px;flex-wrap:wrap;}
 .app-tag{
-  font-size:10px;font-weight:600;padding:2px 7px;border-radius:var(--r-pill);
-  background:var(--bg);border:var(--bw) solid var(--border);color:var(--text-3);
+  font-size:11px;font-weight:600;
+  padding:2px 8px;border-radius:var(--r-pill);
+  background:var(--bg);border:var(--bw) solid var(--border);
+  color:var(--text-3);letter-spacing:.02em;
 }
 .app-arrow{
-  position:absolute;bottom:16px;right:16px;width:24px;height:24px;
-  border-radius:50%;background:var(--green-lt);
+  position:absolute;bottom:20px;right:20px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--green-lt);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;color:var(--green-dk);transition:all var(--t);z-index:1;
+  font-size:14px;color:var(--green-dk);
+  transition:all var(--t);z-index:1;
 }
-.app-card:hover .app-arrow{background:var(--green);color:var(--green-text);transform:translateX(2px);}
+.app-card:hover .app-arrow{
+  background:var(--green);color:var(--green-text);transform:translateX(2px);
+}
 
 /* ── Footer ── */
 .footer{
@@ -492,7 +507,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     </div>
     <div class="fil-sep"></div>
     <div class="fil-group" id="fil-utente">
-      <button class="fil-pill active-all" data-utente="all" onclick="toggleUtente('all')">Tutti</button>
+      <button class="fil-pill active-all" data-utente="all" onclick="toggleUtente('all')" style="min-width:44px;">Tutti</button>
       <button class="fil-pill" data-utente="LG" onclick="toggleUtente('LG')" style="background:#F5C84220;border-color:#F5C842;color:#7a5e00;">LG</button>
       <button class="fil-pill" data-utente="AA" onclick="toggleUtente('AA')" style="background:#3B5BDB18;border-color:#3B5BDB;color:#3B5BDB;">AA</button>
       <button class="fil-pill" data-utente="GC" onclick="toggleUtente('GC')" style="background:#0F6E5618;border-color:#0F6E56;color:#0F6E56;">GC</button>
@@ -543,38 +558,61 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <!-- APP GRID -->
 <div class="apps-grid">
   <a class="app-card" href="/app">
-    <div class="app-icon">N</div>
+    <div class="app-icon" style="font-size:22px;background:var(--green);">N</div>
     <div class="app-body">
       <div class="app-name">NassaPED</div>
       <div class="app-desc">Gestione contenuti social — feed, stories, UGC, calendario, clienti e documenti.</div>
-      <div class="app-tags"><span class="app-tag">Feed</span><span class="app-tag">UGC</span><span class="app-tag">Calendario</span><span class="app-tag">Clienti</span></div>
+      <div class="app-tags">
+        <span class="app-tag">Feed</span>
+        <span class="app-tag">UGC</span>
+        <span class="app-tag">Calendario</span>
+        <span class="app-tag">Clienti</span>
+        <span class="app-tag">Documenti</span>
+      </div>
     </div>
     <div class="app-arrow">→</div>
   </a>
   <a class="app-card" href="/tweek">
-    <div class="app-icon" style="background:#1a1a1e;color:var(--green);">NT</div>
+    <div class="app-icon" style="font-size:14px;background:#1a1a1e;color:var(--green);">NT</div>
     <div class="app-body">
       <div class="app-name">NassaTime</div>
-      <div class="app-desc">Task, week, month, anno e planning avanzato per il team e i clienti.</div>
-      <div class="app-tags"><span class="app-tag">Task</span><span class="app-tag">Team</span><span class="app-tag">Anno</span><span class="app-tag">Stream</span></div>
+      <div class="app-desc">Pianifica il lavoro del team — task, feed NassaPED, vista settimana, mese e anno per cliente.</div>
+      <div class="app-tags">
+        <span class="app-tag">Task</span>
+        <span class="app-tag">Team</span>
+        <span class="app-tag">Feed</span>
+        <span class="app-tag">Anno</span>
+        <span class="app-tag">Stream</span>
+      </div>
     </div>
     <div class="app-arrow">→</div>
   </a>
   <a class="app-card" href="/brand">
-    <div class="app-icon" style="background:#1A8C3F;font-size:13px;">NB</div>
+    <div class="app-icon" style="font-size:14px;background:#1A8C3F;">NB</div>
     <div class="app-body">
       <div class="app-name">NassaBrand</div>
-      <div class="app-desc">Portale clienti — brand assets, approvazioni contenuti e moodboard.</div>
-      <div class="app-tags"><span class="app-tag">Brand</span><span class="app-tag">Approvazioni</span><span class="app-tag">Portale</span></div>
+      <div class="app-desc">Portale clienti — brand assets, approvazioni contenuti e moodboard per ogni cliente.</div>
+      <div class="app-tags">
+        <span class="app-tag">Brand</span>
+        <span class="app-tag">Approvazioni</span>
+        <span class="app-tag">Moodboard</span>
+        <span class="app-tag">Portale</span>
+      </div>
     </div>
     <div class="app-arrow">→</div>
   </a>
   <a class="app-card" href="/strategy">
-    <div class="app-icon" style="background:#185FA5;font-size:13px;">NS</div>
+    <div class="app-icon" style="font-size:14px;background:#185FA5;">NS</div>
     <div class="app-body">
       <div class="app-name">NassaStrategy</div>
-      <div class="app-desc">Gestionale strategico — Staffetta Nassa, PDM, PDC, Brand Portal e Strategy Builder.</div>
-      <div class="app-tags"><span class="app-tag">PDM</span><span class="app-tag">PDC</span><span class="app-tag">Strategy</span></div>
+      <div class="app-desc">Gestionale strategico — PDM, PDC, Brand Portal, Strategy Builder e Output seguendo la Staffetta Nassa.</div>
+      <div class="app-tags">
+        <span class="app-tag">PDM</span>
+        <span class="app-tag">PDC</span>
+        <span class="app-tag">Brand</span>
+        <span class="app-tag">Strategy</span>
+        <span class="app-tag">Output</span>
+      </div>
     </div>
     <div class="app-arrow">→</div>
   </a>
@@ -742,14 +780,23 @@ async function loadFromSupabase() {
 }
 
 // ─── SETTIMANA ────────────────────────────────────────────────────────────
-const BASE_MON = new Date(2026, 5, 29); // Lunedì 29 giugno 2026
+// Calculate current week's Monday dynamically
+function getCurrentMonday() {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const day = d.getDay(); // 0=Sun, 1=Mon...
+  const diff = (day === 0 ? -6 : 1 - day); // adjust to Monday
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+const BASE_MON = getCurrentMonday();
 const DAY_NAMES = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 const MON_NAMES = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
 
 function getWeekDays(offset) {
   const mon = new Date(BASE_MON);
   mon.setDate(mon.getDate() + offset * 7);
-  const today = new Date(2026, 6, 1); // 1 luglio 2026 = oggi
+  const today = new Date(); today.setHours(0,0,0,0); // oggi reale
   return Array.from({length:7}, (_,i) => {
     const d = new Date(mon);
     d.setDate(mon.getDate() + i);
@@ -918,7 +965,20 @@ function inlineKeydown(e) {
 
 function closeInlineInput() {
   const inp = document.querySelector('.add-input');
-  if (inp) { inp.remove(); }
+  if (inp) {
+    // Re-insert the add-chip before removing input
+    const parent = inp.parentNode;
+    if (parent) {
+      const addEl = document.createElement('div');
+      addEl.className = 'add-chip';
+      const gi = inlineGiorno;
+      addEl.setAttribute('data-g', gi);
+      addEl.onclick = () => inlineAdd(gi);
+      addEl.textContent = '+ aggiungi';
+      parent.insertBefore(addEl, inp);
+    }
+    inp.remove();
+  }
   inlineGiorno = null;
 }
 
@@ -1302,3 +1362,4 @@ loadFromSupabase(); // then overwrite with real Supabase data
 </script>
 </body>
 </html>
+
