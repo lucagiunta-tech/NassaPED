@@ -10155,7 +10155,42 @@ function NassaPlan() {
     },
     onMouseEnter: e => e.currentTarget.style.color = "rgba(255,255,255,0.8)",
     onMouseLeave: e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"
-  }, "‹ Hub"), /*#__PURE__*/React.createElement("button", {
+  }, "‹ Hub"),
+
+  /* ── App nav ── */
+  /*#__PURE__*/React.createElement("div", {
+    style: { padding: "8px 8px 4px", borderTop: "0.5px solid rgba(255,255,255,.08)", marginTop: 4 }
+  },
+    [
+      { href: "/",         label: "Week",    bg: "#0dff00", color: "#111",    icon: "N"  },
+      { href: "/app",      label: "Content", bg: "#0dff00", color: "#111",    icon: "N"  },
+      { href: "/marketing",label: "Market",  bg: "#C2185B", color: "#fff",    icon: "NM" },
+    ].map(app => /*#__PURE__*/React.createElement("a", {
+      key: app.href,
+      href: app.href,
+      style: {
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "5px 8px", borderRadius: 6, textDecoration: "none",
+        transition: "background .15s", marginBottom: 2
+      },
+      onMouseEnter: e => e.currentTarget.style.background = "rgba(255,255,255,.08)",
+      onMouseLeave: e => e.currentTarget.style.background = "transparent"
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 20, height: 20, borderRadius: 5,
+          background: app.bg, color: app.color,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 8, fontWeight: 800, flexShrink: 0
+        }
+      }, app.icon),
+      /*#__PURE__*/React.createElement("span", {
+        style: { fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 500 }
+      }, app.label)
+    ))
+  ),
+
+  /*#__PURE__*/React.createElement("button", {
     onClick: () => { if(typeof nassaLogout !== 'undefined') nassaLogout(); else { fetch('/api/auth',{method:'DELETE',credentials:'include'}).finally(()=>window.location.replace('/app')); } },
     title: "Esci",
     style: {
