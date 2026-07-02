@@ -15,7 +15,7 @@ html,body{height:100%;overflow:hidden;background:#ffffff;}
 #nplan-topbar{
   position:fixed;top:0;left:0;right:0;height:56px;
   background:#15151a;display:flex;align-items:center;gap:8px;
-  padding:0 16px 0 20px;z-index:9000;
+  padding:0 16px 0 20px;z-index:200;
   border-bottom:.5px solid rgba(255,255,255,.08);
   font-family:'Inter',sans-serif;box-sizing:border-box;
 }
@@ -6708,7 +6708,10 @@ function TaskFullView({
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
-      inset: 0,
+      top: 56,
+      left: 0,
+      right: 0,
+      bottom: 0,
       zIndex: 500,
       background: "#fff",
       display: "flex",
